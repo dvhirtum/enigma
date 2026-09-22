@@ -150,3 +150,4 @@ docs/
 
 - Officer keys (Offizier)
 - Stichwort (keyword) procedure
+- Bombe simulator
