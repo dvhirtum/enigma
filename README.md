@@ -9,7 +9,8 @@ See [docs/design.md](docs/design.md) for the design.
 Requires the .NET 10 SDK and Node.js 22.
 
 ```
-dotnet test Enigma.slnx                  # backend
-cd src/frontend && npm ci && npm test    # frontend unit tests
-cd src/frontend && npm run test:e2e      # frontend end-to-end tests
+dotnet test --solution Enigma.slnx        # backend
+cd src/frontend && npm ci && npm test     # renderer unit tests
+cd src/frontend && npm run test:e2e       # packages the app, then drives it with Playwright
+cd src/frontend && npm start              # run the app
 ```

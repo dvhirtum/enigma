@@ -433,3 +433,6 @@ dist/
 playwright-report/
 test-results/
 .vite/
+TestResults/
+out/
+.vite/

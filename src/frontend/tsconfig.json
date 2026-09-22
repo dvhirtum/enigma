@@ -10,10 +10,11 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noEmit": true,
+    "esModuleInterop": true,
     "isolatedModules": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src", "e2e", "vite.config.ts", "vitest.setup.ts", "playwright.config.ts"]
+  "include": ["src", "e2e", "forge.config.ts", "forge.env.d.ts", "*.config.ts", "vitest.setup.ts"]
 }

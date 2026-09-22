@@ -9,6 +9,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Enigma.Api.Tests/Enigma.Api.Tests.csproj" />
     <Project Path="tests/Enigma.Application.Tests/Enigma.Application.Tests.csproj" />
+    <Project Path="tests/Enigma.Architecture.Tests/Enigma.Architecture.Tests.csproj" />
     <Project Path="tests/Enigma.Domain.Tests/Enigma.Domain.Tests.csproj" />
   </Folder>
 </Solution>

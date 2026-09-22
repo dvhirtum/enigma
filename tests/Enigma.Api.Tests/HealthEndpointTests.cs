@@ -11,12 +11,13 @@ public class HealthEndpointTests(WebApplicationFactory<Program> factory)
     {
         // Arrange
         var client = factory.CreateClient();
+        var cancellationToken = TestContext.Current.CancellationToken;
 
         // Act
-        var response = await client.GetAsync("/health");
+        var response = await client.GetAsync("/health", cancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("ok", await response.Content.ReadAsStringAsync());
+        Assert.Contains("ok", await response.Content.ReadAsStringAsync(cancellationToken));
     }
 }

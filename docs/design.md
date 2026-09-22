@@ -118,6 +118,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 
 - **Backend:** xUnit.
   - `Enigma.Domain.Tests`, `Enigma.Application.Tests`, and `Enigma.Api.Tests` (using `WebApplicationFactory`).
+  - `Enigma.Architecture.Tests` checks that project references point inward.
   - Test names follow `Should_<expected>_When_<condition>`.
   - Tests mark `// Arrange`, `// Act` and `// Assert`.
   - Tests include historical vectors, such as the U-264 message.
@@ -129,7 +130,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ```
 src/backend/{Enigma.Domain, Enigma.Application, Enigma.Infrastructure, Enigma.Api}
 src/frontend/
-tests/{Enigma.Domain.Tests, Enigma.Application.Tests, Enigma.Api.Tests}
+tests/{Enigma.Domain.Tests, Enigma.Application.Tests, Enigma.Api.Tests, Enigma.Architecture.Tests}
 data/keysheets/
 docs/
 .github/workflows/

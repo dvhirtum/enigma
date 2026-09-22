@@ -1,7 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { _electron as electron, expect, test } from '@playwright/test';
+import { packagedAppPath } from './packagedApp';
 
-test('shows the machine name', async ({ page }) => {
-  await page.goto('/');
+test('shows the machine name', async () => {
+  const app = await electron.launch({ executablePath: packagedAppPath() });
 
-  await expect(page.getByRole('heading', { name: 'Navy Enigma' })).toBeVisible();
+  try {
+    const window = await app.firstWindow();
+
+    await expect(window.getByRole('heading', { name: 'Navy Enigma' })).toBeVisible();
+  } finally {
+    await app.close();
+  }
 });
