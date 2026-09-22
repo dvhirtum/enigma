@@ -1,39 +1,36 @@
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
+const productName = 'Enigma';
 const outDirectory = path.resolve(__dirname, '..', 'out');
 
 /// Locates the executable that `electron-forge package` produced for this platform.
 export function packagedAppPath(): string {
   const directory = path.join(outDirectory, appDirectoryName());
-  const entries = readdirSync(directory);
+  const executable =
+    process.platform === 'darwin'
+      ? path.join(directory, `${productName}.app`, 'Contents', 'MacOS', productName)
+      : path.join(directory, process.platform === 'win32' ? `${productName}.exe` : productName);
 
-  if (process.platform === 'darwin') {
-    const bundle = expect(entries, (name) => name.endsWith('.app'), directory);
-    return path.join(directory, bundle, 'Contents', 'MacOS', path.basename(bundle, '.app'));
+  if (!existsSync(executable)) {
+    throw new Error(`No packaged app at ${executable}. Run: npm run package`);
   }
 
-  if (process.platform === 'win32') {
-    return path.join(directory, expect(entries, (name) => name === 'Enigma.exe', directory));
-  }
-
-  return path.join(directory, expect(entries, (name) => name === 'enigma', directory));
+  return executable;
 }
 
 function appDirectoryName(): string {
-  return expect(
-    readdirSync(outDirectory),
-    (name) => name.includes(`-${process.platform}-`),
-    outDirectory,
-  );
-}
-
-function expect(names: string[], matches: (name: string) => boolean, directory: string): string {
-  const found = names.filter(matches);
-
-  if (found.length !== 1) {
-    throw new Error(`Expected one match in ${directory}, found: ${names.join(', ')}`);
+  if (!existsSync(outDirectory)) {
+    throw new Error(`No ${outDirectory}. Run: npm run package`);
   }
 
-  return found[0];
+  const matches = readdirSync(outDirectory).filter((name) =>
+    name.includes(`-${process.platform}-`),
+  );
+
+  if (matches.length !== 1) {
+    throw new Error(`Expected one package in ${outDirectory}, found: ${matches.join(', ')}`);
+  }
+
+  return matches[0];
 }
