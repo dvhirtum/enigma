@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Enigma.Application\Enigma.Application.csproj" />
+  </ItemGroup>
+
+</Project>
