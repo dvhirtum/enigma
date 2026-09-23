@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      semver: ${{ steps.gitversion.outputs.semver }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet tool restore
+      - id: gitversion
+        name: Run GitVersion
+        run: |
+          semver=$(dotnet gitversion /showvariable SemVer)
+          echo "semver=$semver" >> "$GITHUB_OUTPUT"
+          echo "Version: $semver" >> "$GITHUB_STEP_SUMMARY"
+
+  backend:
+    name: Backend
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+      - run: dotnet restore Enigma.slnx --locked-mode
+      - run: dotnet build Enigma.slnx --no-restore --configuration Release -p:Version=${{ needs.version.outputs.semver }}
+      - run: dotnet test --solution Enigma.slnx --no-build --configuration Release
+      - name: Check for vulnerable packages
+        run: |
+          dotnet list Enigma.slnx package --vulnerable --include-transitive | tee vulnerable.txt
+          ! grep -q 'has the following vulnerable packages' vulnerable.txt
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Check for vulnerable packages
+        run: npm audit --omit=dev
+
+  package:
+    name: Package (${{ matrix.os }})
+    needs: [version, backend, frontend]
+    strategy:
+      matrix:
+        os: [windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: src/frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - run: npm ci
+      - run: npm version ${{ needs.version.outputs.semver }} --no-git-tag-version --allow-same-version
+      - run: npm run make
+      - name: Smoke test the published backend
+        run: |
+          build/backend/Enigma.Api > api.log &
+          for _ in $(seq 30); do
+            port=$(sed -n 's/^ENIGMA_API_PORT=\([0-9]*\).*/\1/p' api.log)
+            [ -n "$port" ] && break
+            sleep 1
+          done
+          curl --fail --silent --show-error "http://127.0.0.1:$port/api/health"
+          kill %1
+      - run: npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ runner.os }}
+          path: src/frontend/playwright-report/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: enigma-${{ needs.version.outputs.semver }}-${{ runner.os }}
+          path: src/frontend/out/make/**/*Setup.exe
+          if-no-files-found: error
+          # main: the release keeps the files. PRs: deleted on close by cleanup.yml.
+          retention-days: ${{ github.event_name == 'push' && 7 || 0 }}
+
+  release:
+    name: Release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [version, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v${{ needs.version.outputs.semver }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: enigma-*
+          path: dist
+          merge-multiple: true
+      - name: Create GitHub release
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $TAG already exists." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          mapfile -d '' files < <(find dist -type f -print0)
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "$TAG" --generate-notes "${files[@]}"

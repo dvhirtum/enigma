@@ -1,0 +1,28 @@
+name: Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  actions: write
+
+jobs:
+  artifacts:
+    name: Delete PR artifacts
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: ${{ github.head_ref }}
+    steps:
+      - name: Delete artifacts of this branch's PR runs
+        run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs?event=pull_request&branch=$BRANCH" \
+            --jq '.workflow_runs[].id' |
+          while read -r run; do
+            gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$run/artifacts" --jq '.artifacts[] | "\(.id) \(.name)"' |
+            while read -r id name; do
+              echo "Deleting $name (run $run)"
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$id"
+            done
+          done

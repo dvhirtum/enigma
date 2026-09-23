@@ -54,7 +54,8 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - The renderer runs with `contextIsolation` on and `nodeIntegration` off.
 - All machine logic lives in the backend. The frontend renders state and sends user actions.
 - A key press returns the lit lamp and the new rotor positions.
-- The backend ships self-contained as an Electron Forge `extraResource`.
+- The renderer calls the backend through IPC. Main forwards each call to the API over HTTP.
+- The backend ships as a Native AOT executable, as an Electron Forge `extraResource`.
 
 ## Backend
 
@@ -97,6 +98,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ### Api
 - ASP.NET Core minimal API. This is the composition root.
 - Invariant violations are returned as `ProblemDetails`.
+- Published with Native AOT. JSON uses source generation (`ApiJsonContext`).
 
 ## Frontend
 
@@ -122,7 +124,15 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - Tests mark `// Arrange`, `// Act` and `// Assert`.
   - Tests include historical vectors, such as the U-264 message.
 - **Frontend:** Vitest + React Testing Library, plus Playwright for end-to-end tests. They use plain JavaScript naming.
-- **CI:** GitHub Actions runs all tests on every PR.
+- **CI:** GitHub Actions runs on every PR and every push to `main`.
+
+## Build and release
+
+- GitVersion (GitHubFlow, Conventional Commits) sets the version.
+- CI builds the app, runs all tests and static analysis (the .NET analyzers with warnings as errors, ESLint, and vulnerability checks for NuGet and npm), and packages the app with `npm run make`.
+- Packaging runs as a matrix over operating systems. Windows only for now: a Squirrel installer (`Setup.exe`).
+- Every push to `main` creates a GitHub release `v<version>` with the packaged app.
+- Artifacts from `main` are kept for 7 days. PR artifacts are deleted when the PR closes.
 
 ## Repository layout
 
