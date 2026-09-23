@@ -2,23 +2,7 @@ import path from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import started from 'electron-squirrel-startup';
 import type { Health } from './api';
-import { startBackend, type Backend } from './backend';
-
-if (started) {
-  app.quit();
-}
-
-const backend: Promise<Backend> = startBackend();
-backend.catch((error: unknown) => console.error(error));
-
-ipcMain.handle('api:health', async (): Promise<Health> => {
-  const { baseUrl } = await backend;
-  const response = await fetch(`${baseUrl}/api/health`);
-  if (!response.ok) {
-    throw new Error(`Health check failed with status ${response.status}.`);
-  }
-  return (await response.json()) as Health;
-});
+import { startBackend } from './backend';
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -39,20 +23,38 @@ const createWindow = () => {
   }
 };
 
-void app.whenReady().then(createWindow);
+const run = () => {
+  const backend = startBackend();
+  backend.baseUrl.catch((error: unknown) => console.error(error));
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+  ipcMain.handle('api:health', async (): Promise<Health> => {
+    const baseUrl = await backend.baseUrl;
+    const response = await fetch(`${baseUrl}/api/health`);
+    if (!response.ok) {
+      throw new Error(`Health check failed with status ${response.status}.`);
+    }
+    return (await response.json()) as Health;
+  });
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
+  void app.whenReady().then(createWindow);
 
-app.on('will-quit', () => {
-  backend.then((b) => b.stop(), () => undefined);
-});
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+
+  app.on('will-quit', () => backend.stop());
+};
+
+if (started) {
+  app.quit();
+} else {
+  run();
+}

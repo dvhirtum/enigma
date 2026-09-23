@@ -7,12 +7,12 @@ const PORT_LINE = /^ENIGMA_API_PORT=(\d+)$/;
 const START_TIMEOUT_MS = 60_000;
 
 export interface Backend {
-  baseUrl: string;
+  baseUrl: Promise<string>;
   stop(): void;
 }
 
 function spawnApi(): ChildProcess {
-  const options: SpawnOptions = { stdio: ['ignore', 'pipe', 'inherit'] };
+  const options: SpawnOptions = { stdio: ['ignore', 'pipe', 'inherit'], windowsHide: true };
 
   if (app.isPackaged) {
     const exe = process.platform === 'win32' ? 'Enigma.Api.exe' : 'Enigma.Api';
@@ -29,16 +29,16 @@ function kill(child: ChildProcess): void {
   }
 
   if (process.platform === 'win32') {
-    spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
+    spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true });
   } else {
     child.kill();
   }
 }
 
-export function startBackend(): Promise<Backend> {
+export function startBackend(): Backend {
   const child = spawnApi();
 
-  return new Promise((resolve, reject) => {
+  const baseUrl = new Promise<string>((resolve, reject) => {
     const timer = setTimeout(() => {
       kill(child);
       reject(new Error('Backend did not report its port in time.'));
@@ -58,8 +58,10 @@ export function startBackend(): Promise<Backend> {
       const match = PORT_LINE.exec(line.trim());
       if (match) {
         clearTimeout(timer);
-        resolve({ baseUrl: `http://127.0.0.1:${match[1]}`, stop: () => kill(child) });
+        resolve(`http://127.0.0.1:${match[1]}`);
       }
     });
   });
+
+  return { baseUrl, stop: () => kill(child) };
 }
