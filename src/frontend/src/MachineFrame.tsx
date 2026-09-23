@@ -75,7 +75,7 @@ export function MachineFrame() {
   }, [load]);
 
   const onTabKeyDown = (event: KeyboardEvent) => {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+    const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
     if (step === undefined) {
       return;
     }
@@ -94,7 +94,7 @@ export function MachineFrame() {
         <ModelSwitch />
         <MachineSummary />
       </header>
-      <nav role="tablist" aria-label="Views" onKeyDown={onTabKeyDown}>
+      <nav role="tablist" aria-label="Views" aria-orientation="vertical" onKeyDown={onTabKeyDown}>
         {views.map((view, index) => (
           <button
             key={view.id}

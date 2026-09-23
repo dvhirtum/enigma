@@ -61,7 +61,7 @@ describe('MachineFrame', () => {
     renderFrame();
     screen.getByRole('tab', { name: 'Top-down' }).focus();
 
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Top-down' }), { key: 'ArrowLeft' });
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Top-down' }), { key: 'ArrowUp' });
 
     expect(screen.getByRole('tab', { name: 'Plugboard' })).toHaveFocus();
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Plugboard');
