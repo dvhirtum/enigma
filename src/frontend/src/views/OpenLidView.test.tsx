@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { MachineState, RotorState } from '../api';
 import { defaultM3 } from '../test/fakeApi';
@@ -82,13 +82,16 @@ describe('OpenLidView', () => {
     expect(api.machine.insertRotors).toHaveBeenCalledWith(['V', 'I', 'VIII']);
   });
 
-  it('does not offer a rotor that is picked for another slot', async () => {
+  it('clears the other slot when its rotor is picked again', async () => {
     renderMachine(<OpenLidView />, rotorsOut);
-
-    fireEvent.change(await screen.findByRole('combobox', { name: 'Left slot' }), { target: { value: 'V' } });
-
+    const left = await screen.findByRole('combobox', { name: 'Left slot' });
     const middle = screen.getByRole('combobox', { name: 'Middle slot' });
-    expect(within(middle).getByRole('option', { name: 'V' })).toBeDisabled();
+
+    fireEvent.change(middle, { target: { value: 'V' } });
+    fireEvent.change(left, { target: { value: 'V' } });
+
+    expect(left).toHaveValue('V');
+    expect(middle).toHaveValue('');
   });
 
   it('offers only Beta and Gamma for the Greek slot', async () => {

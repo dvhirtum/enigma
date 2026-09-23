@@ -97,7 +97,7 @@ export function OpenLidView() {
   });
 
   const choose = (index: number, rotor: string) => {
-    setChoice(chosen.map((current, i) => (i === index ? rotor : current)));
+    setChoice(chosen.map((current, i) => (i === index ? rotor : current === rotor ? '' : current)));
   };
 
   const remove = () => {
@@ -135,9 +135,7 @@ export function OpenLidView() {
                     {boxRotors
                       .filter((rotor) => fits(slot, rotor))
                       .map((rotor) => (
-                        <option key={rotor} disabled={chosen.includes(rotor) && chosen[index] !== rotor}>
-                          {rotor}
-                        </option>
+                        <option key={rotor}>{rotor}</option>
                       ))}
                   </select>
                 </label>
