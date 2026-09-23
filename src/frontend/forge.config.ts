@@ -53,10 +53,10 @@ const config: ForgeConfig = {
   plugins: [
     new VitePlugin({
       build: [
-        { entry: 'src/main.ts', config: 'vite.main.config.ts', target: 'main' },
-        { entry: 'src/preload.ts', config: 'vite.preload.config.ts', target: 'preload' },
+        { entry: 'src/main.ts', config: 'vite.main.config.mts', target: 'main' },
+        { entry: 'src/preload.ts', config: 'vite.preload.config.mts', target: 'preload' },
       ],
-      renderer: [{ name: 'main_window', config: 'vite.renderer.config.ts' }],
+      renderer: [{ name: 'main_window', config: 'vite.renderer.config.mts' }],
     }),
     new FusesPlugin({
       version: FuseVersion.V1,
