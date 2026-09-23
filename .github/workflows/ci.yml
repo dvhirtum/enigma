@@ -111,6 +111,8 @@ jobs:
           name: enigma-${{ needs.version.outputs.semver }}-${{ runner.os }}
           path: src/frontend/out/make/**/*
           if-no-files-found: error
+          # main: the release keeps the files. PRs: deleted on close by cleanup.yml.
+          retention-days: ${{ github.event_name == 'push' && 7 || 0 }}
 
   release:
     name: Release

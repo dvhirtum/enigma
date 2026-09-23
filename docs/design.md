@@ -131,6 +131,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - CI builds the app, runs all tests and static analysis (the .NET analyzers with warnings as errors, ESLint, and vulnerability checks for NuGet and npm), and packages the app with `npm run make`.
 - Packaging runs as a matrix over operating systems. Windows only for now: a Squirrel installer and a zip.
 - Every push to `main` creates a GitHub release `v<version>` with the packaged app.
+- Artifacts from `main` are kept for 7 days. PR artifacts are deleted when the PR closes.
 
 ## Repository layout
 
