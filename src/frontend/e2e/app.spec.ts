@@ -49,6 +49,17 @@ test('forwards machine operations to the backend', async () => {
   expect(pressed).toMatchObject({ ok: true, value: { litLamp: 'B', heldKey: 'A' } });
 });
 
+test('runs machine operations in the order they were sent', async () => {
+  const results = await page.evaluate(() =>
+    Promise.all([window.enigma.machine.pressKey('A'), window.enigma.machine.releaseKey()]),
+  );
+
+  expect(results).toMatchObject([
+    { ok: true, value: { heldKey: 'A' } },
+    { ok: true, value: { heldKey: null, litLamp: null } },
+  ]);
+});
+
 test('returns rejected operations as problems', async () => {
   const result = await page.evaluate(() => window.enigma.machine.connectPlug('AA'));
 
