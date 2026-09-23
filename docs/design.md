@@ -71,7 +71,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
     - Beta and Gamma go only in the Greek slot, and only on the M4.
     - The M4 takes a thin reflector; the M3 takes B or C.
     - At most 13 plug pairs.
-    - Only one key can be held down at a time.
+    - Only one key can be held down at a time. While it is held, the machine cannot be changed.
   - Events: `RotorsStepped`, `LampLit`.
   - `Create(model)` fits I-II-III + B (M3) or Beta-I-II-III + B-thin (M4), rings and positions at A, no plugs.
   - Rotor box: I–VIII, plus Beta and Gamma on the M4. Each rotor keeps its own ring and position in or out of the machine.

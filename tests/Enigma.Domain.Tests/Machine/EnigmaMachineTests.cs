@@ -267,6 +267,59 @@ public sealed class EnigmaMachineTests
         Assert.Equal("AAB", machine.Positions());
     }
 
+    [Theory]
+    [InlineData("InsertRotors")]
+    [InlineData("RemoveRotors")]
+    [InlineData("SetReflector")]
+    [InlineData("SetRingSetting")]
+    [InlineData("TurnRotor")]
+    [InlineData("ConnectPlug")]
+    [InlineData("DisconnectPlug")]
+    public void Should_reject_the_change_and_keep_the_machine_When_a_key_is_held_down(string operation)
+    {
+        // Arrange
+        var machine = EnigmaMachine.Create(MachineModel.M3);
+        machine.ConnectPlug(PlugPair.Parse("QW"));
+        machine.PressKey(Letter.A);
+        Action act = operation switch
+        {
+            "InsertRotors" => () => machine.InsertRotors([RotorType.IV, RotorType.V, RotorType.VI]),
+            "RemoveRotors" => machine.RemoveRotors,
+            "SetReflector" => () => machine.SetReflector(ReflectorType.C),
+            "SetRingSetting" => () => machine.SetRingSetting(RotorType.IV, RingSetting.FromNumber(5)),
+            "TurnRotor" => () => machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q')),
+            "ConnectPlug" => () => machine.ConnectPlug(PlugPair.Parse("AT")),
+            _ => () => machine.DisconnectPlug(Letter.FromChar('Q')),
+        };
+
+        // Act
+        var exception = Assert.Throws<DomainException>(act);
+
+        // Assert
+        Assert.Equal("Key A is still held down.", exception.Message);
+        Assert.Equal([RotorType.I, RotorType.II, RotorType.III], machine.Rotors.Select(r => r.Type));
+        Assert.Equal("AAB", machine.Positions());
+        Assert.Equal(ReflectorType.B, machine.Reflector.Type);
+        Assert.Equal(RingSetting.A, machine.RotorBox.Single(r => r.Type == RotorType.IV).RingSetting);
+        Assert.Equal([PlugPair.Parse("QW")], machine.Plugboard.Pairs);
+        Assert.Equal(Letter.A, machine.HeldKey);
+    }
+
+    [Fact]
+    public void Should_allow_changes_again_When_the_key_is_released()
+    {
+        // Arrange
+        var machine = EnigmaMachine.Create(MachineModel.M3);
+        machine.PressKey(Letter.A);
+        machine.ReleaseKey();
+
+        // Act
+        machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q'));
+
+        // Assert
+        Assert.Equal("AAQ", machine.Positions());
+    }
+
     [Fact]
     public void Should_turn_lamp_off_When_key_is_released()
     {
