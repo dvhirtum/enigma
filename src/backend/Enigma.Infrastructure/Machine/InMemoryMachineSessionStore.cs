@@ -1,0 +1,31 @@
+using Enigma.Application.Machine;
+using Enigma.Domain.Machine;
+
+namespace Enigma.Infrastructure.Machine;
+
+/// <summary>Keeps one machine in memory, starting as a default M3.</summary>
+public sealed class InMemoryMachineSessionStore : IMachineSessionStore
+{
+    private readonly Lock _lock = new();
+    private EnigmaMachine _machine = EnigmaMachine.Create(MachineModel.M3);
+
+    public T Use<T>(Func<EnigmaMachine, T> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+
+        lock (_lock)
+        {
+            return action(_machine);
+        }
+    }
+
+    public void Replace(EnigmaMachine machine)
+    {
+        ArgumentNullException.ThrowIfNull(machine);
+
+        lock (_lock)
+        {
+            _machine = machine;
+        }
+    }
+}

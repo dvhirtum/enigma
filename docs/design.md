@@ -90,19 +90,36 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - encrypting and decrypting the indicator
 
 ### Application
-- Commands: `CreateMachine`, `ConfigureMachine`, `ApplyDailyKey`, `PressKey`, `ReleaseKey`, `TurnRotor`, `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
-- Queries: `GetMachineState`, `ListKeySheets`, `GetKeySheet`.
-- Ports: `IKeySheetRepository`, `IMachineSessionStore`.
+- Machine commands: `CreateMachine`, `InsertRotors`, `RemoveRotors`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
+- Key-sheet commands (milestone 7): `ApplyDailyKey`, `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
+- Queries: `GetMachineState`; `ListKeySheets`, `GetKeySheet` (milestone 7).
+- Ports: `IMachineSessionStore`; `IKeySheetRepository` (milestone 7).
 - Commands and queries use plain handlers, without a mediator library.
+- There is one machine. It starts as a default M3; `CreateMachine` replaces it.
 
 ### Infrastructure
 - `JsonKeySheetRepository`: historical sheets are read-only in `data/keysheets/`. Generated and user-defined sheets are stored in app data.
-- `InMemoryMachineSessionStore`.
+- `InMemoryMachineSessionStore`: runs operations on the machine one at a time.
 
 ### Api
 - ASP.NET Core minimal API. This is the composition root.
-- Invariant violations are returned as `ProblemDetails`.
+- Invariant violations are returned as 400 `ProblemDetails`.
 - Published with Native AOT. JSON uses source generation (`ApiJsonContext`).
+- Ring settings are numbers 1–26. Positions, keys and lamps are letters.
+
+| Method | Path | Body |
+|---|---|---|
+| GET | `/api/machine` | |
+| POST | `/api/machine` | `{ model }` |
+| PUT | `/api/machine/rotors` | `{ rotors: [...] }` (left to right) |
+| DELETE | `/api/machine/rotors` | |
+| PUT | `/api/machine/rotors/{slot}/position` | `{ position }` |
+| PUT | `/api/machine/rotor-box/{rotor}/ring` | `{ ringSetting }` |
+| PUT | `/api/machine/reflector` | `{ reflector }` |
+| POST | `/api/machine/plugs` | `{ pair }` |
+| DELETE | `/api/machine/plugs/{letter}` | |
+| POST | `/api/machine/keyboard/press` | `{ key }` |
+| POST | `/api/machine/keyboard/release` | |
 
 ## Frontend
 
