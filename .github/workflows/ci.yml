@@ -100,6 +100,16 @@ jobs:
       - run: npm ci
       - run: npm version ${{ needs.version.outputs.semver }} --no-git-tag-version --allow-same-version
       - run: npm run make
+      - name: Smoke test the published backend
+        run: |
+          build/backend/Enigma.Api > api.log &
+          for _ in $(seq 30); do
+            port=$(sed -n 's/^ENIGMA_API_PORT=\([0-9]*\).*/\1/p' api.log)
+            [ -n "$port" ] && break
+            sleep 1
+          done
+          curl --fail --silent --show-error "http://127.0.0.1:$port/api/health"
+          kill %1
       - run: npm run test:e2e
       - if: failure()
         uses: actions/upload-artifact@v7
@@ -109,7 +119,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: enigma-${{ needs.version.outputs.semver }}-${{ runner.os }}
-          path: src/frontend/out/make/**/*
+          path: src/frontend/out/make/**/*Setup.exe
           if-no-files-found: error
           # main: the release keeps the files. PRs: deleted on close by cleanup.yml.
           retention-days: ${{ github.event_name == 'push' && 7 || 0 }}
