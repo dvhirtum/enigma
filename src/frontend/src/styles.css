@@ -123,11 +123,22 @@ body {
   font-size: 0.8rem;
 }
 
-.model {
+.model,
+.model label,
+.model-confirm {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
+}
+
+.model {
+  gap: 1rem;
   color: var(--muted);
+}
+
+.model-confirm {
+  margin: 0;
+  color: var(--fg);
 }
 
 select,

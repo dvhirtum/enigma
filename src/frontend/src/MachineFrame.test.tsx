@@ -33,12 +33,39 @@ describe('MachineFrame', () => {
     expect(await screen.findByLabelText('Machine')).toHaveTextContent('M3 · UKW B · rotors out');
   });
 
-  it('creates a new machine when the model is switched', async () => {
+  it('creates a new machine when the model switch is confirmed', async () => {
     const api = renderFrame();
 
     fireEvent.change(await screen.findByRole('combobox', { name: 'Model' }), { target: { value: 'M4' } });
+    expect(api.machine.create).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Switch' }));
 
     expect(api.machine.create).toHaveBeenCalledWith('M4');
+    expect(screen.queryByRole('group', { name: 'Confirm model switch' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the machine when the model switch is cancelled', async () => {
+    const api = renderFrame();
+    const model = await screen.findByRole('combobox', { name: 'Model' });
+
+    fireEvent.change(model, { target: { value: 'M4' } });
+    expect(screen.getByRole('group', { name: 'Confirm model switch' })).toHaveTextContent('Switch to the M4? This resets the machine.');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(api.machine.create).not.toHaveBeenCalled();
+    expect(model).toHaveValue('M3');
+  });
+
+  it('disables the model switch while a key is held', async () => {
+    const { api } = createFakeApi();
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, heldKey: 'A', litLamp: 'B' } });
+    render(
+      <MachineStoreProvider api={api}>
+        <MachineFrame />
+      </MachineStoreProvider>,
+    );
+
+    expect(await screen.findByRole('combobox', { name: 'Model' })).toBeDisabled();
   });
 
   it('starts on the top-down view', () => {

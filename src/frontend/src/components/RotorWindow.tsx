@@ -1,5 +1,6 @@
-import type { KeyboardEvent, WheelEvent } from 'react';
+import type { KeyboardEvent } from 'react';
 import { alphabet } from '../machine';
+import { useWheelTurn } from './useWheelTurn';
 
 interface RotorWindowProps {
   slot: string;
@@ -15,6 +16,7 @@ export const windowHeight = 48;
 /** The window in the lid that shows a rotor's letter. Arrow Up/Down and the mouse wheel turn the rotor. */
 export function RotorWindow({ slot, position, x, y, onTurn }: RotorWindowProps) {
   const empty = position === null;
+  const wheel = useWheelTurn<SVGGElement>(onTurn, empty);
 
   const onKeyDown = (event: KeyboardEvent) => {
     const steps = { ArrowUp: 1, ArrowDown: -1 }[event.key];
@@ -24,14 +26,9 @@ export function RotorWindow({ slot, position, x, y, onTurn }: RotorWindowProps) 
     }
   };
 
-  const onWheel = (event: WheelEvent) => {
-    if (event.deltaY !== 0 && !empty) {
-      onTurn(event.deltaY < 0 ? 1 : -1);
-    }
-  };
-
   return (
     <g
+      ref={wheel}
       className="rotor-window"
       transform={`translate(${x} ${y})`}
       role="spinbutton"
@@ -43,7 +40,6 @@ export function RotorWindow({ slot, position, x, y, onTurn }: RotorWindowProps) 
       aria-disabled={empty}
       tabIndex={empty ? -1 : 0}
       onKeyDown={onKeyDown}
-      onWheel={onWheel}
     >
       <rect className="rotor-window-frame" x={-windowWidth / 2 - 5} y={-windowHeight / 2 - 5} width={windowWidth + 10} height={windowHeight + 10} rx={8} />
       <rect className="rotor-window-glass" x={-windowWidth / 2} y={-windowHeight / 2} width={windowWidth} height={windowHeight} rx={5} />

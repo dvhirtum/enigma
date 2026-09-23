@@ -1,9 +1,8 @@
-import { useRef } from 'react';
 import { Key } from '../components/Key';
 import { Lamp } from '../components/Lamp';
 import { RotorWindow } from '../components/RotorWindow';
 import { Thumbwheel } from '../components/Thumbwheel';
-import { keyboardRows, shiftLetter, slots } from '../machine';
+import { keyboardRows, slots } from '../machine';
 import { useMachine } from '../store';
 import { useKeys, usePhysicalKeyboard } from '../useKeys';
 
@@ -17,26 +16,10 @@ function rowX(row: string, index: number): number {
   return width / 2 + (index - (row.length - 1) / 2) * pitch;
 }
 
-/** Turns rotors toward a target letter, so quick turns add up before the backend answers. */
-function useTurnRotor(): (slot: string, position: string, steps: number) => void {
-  const turnRotor = useMachine((store) => store.turnRotor);
-  const targets = useRef(new Map<string, string>());
-
-  return (slot, position, steps) => {
-    const next = shiftLetter(targets.current.get(slot) ?? position, steps);
-    targets.current.set(slot, next);
-    void turnRotor(slot, next).then(() => {
-      if (targets.current.get(slot) === next) {
-        targets.current.delete(slot);
-      }
-    });
-  };
-}
-
 export function TopDownView() {
   const machine = useMachine((store) => store.machine);
+  const stepRotor = useMachine((store) => store.stepRotor);
   const keys = useKeys();
-  const turn = useTurnRotor();
   usePhysicalKeyboard(keys);
 
   if (!machine) {
@@ -69,7 +52,7 @@ export function TopDownView() {
           {machineSlots.map((slot, index) => {
             const rotor = machine.rotors.find((r) => r.slot === slot);
             const x = width / 2 + (index - (machineSlots.length - 1) / 2) * rotorPitch - 12;
-            const onTurn = (steps: number) => rotor && turn(slot, rotor.position, steps);
+            const onTurn = (steps: number) => void stepRotor(slot, steps);
             return (
               <g key={slot}>
                 <RotorWindow slot={slot} position={rotor?.position ?? null} x={x} y={rotorsY} onTurn={onTurn} />
@@ -92,7 +75,7 @@ export function TopDownView() {
           )}
         </g>
 
-        <g aria-label="Keyboard" role="group">
+        <g className="keyboard" aria-hidden="true">
           {keyboardRows.map((row, rowIndex) =>
             [...row].map((letter, index) => (
               <Key key={letter} letter={letter} down={machine.heldKey === letter} x={rowX(row, index)} y={keyRowsY[rowIndex]} keys={keys} />

@@ -51,7 +51,7 @@ test('lights a lamp while a key is held on the physical keyboard', async () => {
 });
 
 test('turns a rotor with the thumbwheel', async () => {
-  await page.getByRole('button', { name: 'Turn Right rotor down' }).click();
+  await page.getByTestId('thumbwheel-Right-down').click();
 
   await expect(page.getByRole('spinbutton', { name: 'Right rotor' })).toHaveAttribute('aria-valuetext', 'A');
 });
@@ -68,9 +68,11 @@ test('sets a ring with the rotors out and puts them back', async () => {
 
 test('switches to the M4 and back', async () => {
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
+  await page.getByRole('button', { name: 'Switch' }).click();
   await expect(page.getByLabel('Machine')).toHaveText('M4 · UKW B-thin · Beta I II III');
 
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');
+  await page.getByRole('button', { name: 'Switch' }).click();
   await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
 });
 

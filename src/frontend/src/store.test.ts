@@ -50,6 +50,32 @@ describe('machine store', () => {
     expect(store.getState().error).toMatchObject({ status: 0, detail: 'Error: channel closed' });
   });
 
+  it('steps a rotor from its position after the queued operations', async () => {
+    const { api } = createFakeApi();
+    const stepped = { ...defaultM3, rotors: defaultM3.rotors.map((rotor) => (rotor.slot === 'Right' ? { ...rotor, position: 'B' } : rotor)) };
+    api.machine.pressKey.mockResolvedValue({ ok: true, value: stepped });
+    const store = createMachineStore(api);
+    await store.getState().load();
+
+    void store.getState().enqueue(() => store.getState().pressKey('A'));
+    const accepted = await store.getState().stepRotor('Right', -3);
+
+    expect(accepted).toBe(true);
+    expect(api.machine.turnRotor).toHaveBeenCalledWith('Right', 'Y');
+  });
+
+  it('does not step a rotor that is not inserted', async () => {
+    const { api } = createFakeApi();
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, rotors: [] } });
+    const store = createMachineStore(api);
+    await store.getState().load();
+
+    const accepted = await store.getState().stepRotor('Right', 1);
+
+    expect(accepted).toBe(false);
+    expect(api.machine.turnRotor).not.toHaveBeenCalled();
+  });
+
   it('clears the problem when dismissed', async () => {
     const { api } = createFakeApi();
     api.machine.removeRotors.mockResolvedValue({ ok: false, problem: { status: 400, title: 'Rejected.' } });

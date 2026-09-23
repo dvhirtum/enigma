@@ -19,6 +19,15 @@ const pressedA: MachineState = {
   litLamp: 'B',
 };
 
+/** Makes the fake backend keep the positions it is turned to. */
+function turnRotors(api: ReturnType<typeof renderMachine>) {
+  let state = defaultM3;
+  api.machine.turnRotor.mockImplementation((slot: string, position: string) => {
+    state = { ...state, rotors: state.rotors.map((rotor) => (rotor.slot === slot ? { ...rotor, position } : rotor)) };
+    return Promise.resolve({ ok: true, value: state });
+  });
+}
+
 describe('TopDownView', () => {
   it('shows a window for each rotor', async () => {
     renderMachine(<TopDownView />);
@@ -38,29 +47,37 @@ describe('TopDownView', () => {
   it('shows the lamps and keys in the German keyboard layout', async () => {
     renderMachine(<TopDownView />);
 
-    const keyboard = await screen.findByRole('group', { name: 'Keyboard' });
-    const keys = Array.from(keyboard.querySelectorAll('[role="button"]'), (key) => key.getAttribute('aria-label'));
-    expect(keys.join('')).toBe('QWERTZUIOASDFGHJKPYXCVBNML');
-    expect(screen.getAllByRole('img', { name: /^Lamp / })).toHaveLength(26);
+    const lamps = await screen.findAllByRole('img', { name: /^Lamp / });
+    expect(lamps.map((lamp) => lamp.getAttribute('aria-label')!.slice(-1)).join('')).toBe('QWERTZUIOASDFGHJKPYXCVBNML');
+    const keys = screen.getAllByTestId(/^key-/);
+    expect(keys.map((key) => key.textContent).join('')).toBe('QWERTZUIOASDFGHJKPYXCVBNML');
+  });
+
+  it('hides the keys and thumbwheels from assistive technology', async () => {
+    renderMachine(<TopDownView />);
+
+    await screen.findByRole('group', { name: 'Lampboard' });
+
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
   it('lights the lamp while a key is held with the mouse', async () => {
     const api = renderMachine(<TopDownView />);
     api.machine.pressKey.mockResolvedValue({ ok: true, value: pressedA });
-    const key = await screen.findByRole('button', { name: 'A' });
+    const key = await screen.findByTestId('key-A');
 
     fireEvent.pointerDown(key, { button: 0, pointerId: 1 });
 
     expect(await screen.findByRole('img', { name: 'Lamp B, lit' })).toBeInTheDocument();
     expect(api.machine.pressKey).toHaveBeenCalledWith('A');
-    expect(screen.getByRole('button', { name: 'A' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('key-A')).toHaveClass('down');
     expect(screen.getByRole('spinbutton', { name: 'Right rotor' })).toHaveAttribute('aria-valuetext', 'B');
   });
 
   it('releases the key when the mouse button goes up', async () => {
     const api = renderMachine(<TopDownView />);
     api.machine.pressKey.mockResolvedValue({ ok: true, value: pressedA });
-    const key = await screen.findByRole('button', { name: 'A' });
+    const key = await screen.findByTestId('key-A');
 
     fireEvent.pointerDown(key, { button: 0, pointerId: 1 });
     fireEvent.pointerUp(key, { button: 0, pointerId: 1 });
@@ -70,23 +87,33 @@ describe('TopDownView', () => {
 
   it('presses and releases keys typed on the physical keyboard', async () => {
     const api = renderMachine(<TopDownView />);
-    await screen.findByRole('group', { name: 'Keyboard' });
+    await screen.findByRole('group', { name: 'Lampboard' });
 
-    fireEvent.keyDown(window, { key: 'q' });
-    fireEvent.keyUp(window, { key: 'q' });
+    fireEvent.keyDown(window, { key: 'q', code: 'KeyQ' });
+    fireEvent.keyUp(window, { key: 'q', code: 'KeyQ' });
 
     await waitFor(() => expect(api.machine.pressKey).toHaveBeenCalledWith('Q'));
     await waitFor(() => expect(api.machine.releaseKey).toHaveBeenCalledOnce());
   });
 
+  it('releases a physical key that types another character when it goes up', async () => {
+    const api = renderMachine(<TopDownView />);
+    await screen.findByRole('group', { name: 'Lampboard' });
+
+    fireEvent.keyDown(window, { key: 'q', code: 'KeyQ' });
+    fireEvent.keyUp(window, { key: '@', code: 'KeyQ' });
+
+    await waitFor(() => expect(api.machine.releaseKey).toHaveBeenCalledOnce());
+  });
+
   it('holds only one key down at a time', async () => {
     const api = renderMachine(<TopDownView />);
-    await screen.findByRole('group', { name: 'Keyboard' });
+    await screen.findByRole('group', { name: 'Lampboard' });
 
-    fireEvent.keyDown(window, { key: 'a' });
-    fireEvent.keyDown(window, { key: 'a', repeat: true });
-    fireEvent.keyDown(window, { key: 'b' });
-    fireEvent.keyUp(window, { key: 'b' });
+    fireEvent.keyDown(window, { key: 'a', code: 'KeyA' });
+    fireEvent.keyDown(window, { key: 'a', code: 'KeyA', repeat: true });
+    fireEvent.keyDown(window, { key: 'b', code: 'KeyB' });
+    fireEvent.keyUp(window, { key: 'b', code: 'KeyB' });
 
     await waitFor(() => expect(api.machine.pressKey).toHaveBeenCalled());
     await act(() => Promise.resolve());
@@ -96,9 +123,9 @@ describe('TopDownView', () => {
 
   it('ignores keys typed with a modifier', async () => {
     const api = renderMachine(<TopDownView />);
-    await screen.findByRole('group', { name: 'Keyboard' });
+    await screen.findByRole('group', { name: 'Lampboard' });
 
-    fireEvent.keyDown(window, { key: 'c', ctrlKey: true });
+    fireEvent.keyDown(window, { key: 'c', code: 'KeyC', ctrlKey: true });
     await act(() => Promise.resolve());
 
     expect(api.machine.pressKey).not.toHaveBeenCalled();
@@ -107,10 +134,10 @@ describe('TopDownView', () => {
   it('does not release a key press the backend rejected', async () => {
     const api = renderMachine(<TopDownView />);
     api.machine.pressKey.mockResolvedValue({ ok: false, problem: { status: 400, title: 'No rotors are inserted.' } });
-    await screen.findByRole('group', { name: 'Keyboard' });
+    await screen.findByRole('group', { name: 'Lampboard' });
 
-    fireEvent.keyDown(window, { key: 'a' });
-    fireEvent.keyUp(window, { key: 'a' });
+    fireEvent.keyDown(window, { key: 'a', code: 'KeyA' });
+    fireEvent.keyUp(window, { key: 'a', code: 'KeyA' });
     await waitFor(() => expect(api.machine.pressKey).toHaveBeenCalled());
     await act(() => Promise.resolve());
 
@@ -120,37 +147,67 @@ describe('TopDownView', () => {
   it('turns a rotor with the thumbwheel', async () => {
     const api = renderMachine(<TopDownView />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Turn Right rotor up' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Turn Left rotor down' }));
+    fireEvent.click(await screen.findByTestId('thumbwheel-Right-up'));
+    fireEvent.click(screen.getByTestId('thumbwheel-Left-down'));
 
+    await waitFor(() => expect(api.machine.turnRotor).toHaveBeenCalledWith('Left', 'Z'));
     expect(api.machine.turnRotor).toHaveBeenCalledWith('Right', 'B');
-    expect(api.machine.turnRotor).toHaveBeenCalledWith('Left', 'Z');
   });
 
   it('adds up quick turns before the backend answers', async () => {
     const api = renderMachine(<TopDownView />);
-    const up = await screen.findByRole('button', { name: 'Turn Middle rotor up' });
+    turnRotors(api);
+    const up = await screen.findByTestId('thumbwheel-Middle-up');
 
     fireEvent.click(up);
     fireEvent.click(up);
 
+    await waitFor(() => expect(api.machine.turnRotor).toHaveBeenCalledTimes(2));
     expect(api.machine.turnRotor).toHaveBeenNthCalledWith(1, 'Middle', 'B');
     expect(api.machine.turnRotor).toHaveBeenNthCalledWith(2, 'Middle', 'C');
   });
 
+  it('turns a rotor after the key released before it', async () => {
+    const api = renderMachine(<TopDownView />);
+    api.machine.pressKey.mockResolvedValue({ ok: true, value: pressedA });
+    api.machine.releaseKey.mockResolvedValue({ ok: true, value: { ...pressedA, heldKey: null, litLamp: null } });
+    const key = await screen.findByTestId('key-A');
+
+    fireEvent.pointerDown(key, { button: 0, pointerId: 1 });
+    fireEvent.pointerUp(key, { button: 0, pointerId: 1 });
+    fireEvent.click(screen.getByTestId('thumbwheel-Right-up'));
+
+    await waitFor(() => expect(api.machine.turnRotor).toHaveBeenCalledWith('Right', 'C'));
+    expect(api.machine.releaseKey.mock.invocationCallOrder[0]).toBeLessThan(api.machine.turnRotor.mock.invocationCallOrder[0]);
+  });
+
   it('turns a rotor with the arrow keys and the mouse wheel', async () => {
     const api = renderMachine(<TopDownView />);
+    turnRotors(api);
     const leftWindow = await screen.findByRole('spinbutton', { name: 'Left rotor' });
 
     fireEvent.keyDown(leftWindow, { key: 'ArrowDown' });
     fireEvent.wheel(leftWindow, { deltaY: 100 });
     fireEvent.wheel(leftWindow, { deltaY: -100 });
 
+    await waitFor(() => expect(api.machine.turnRotor).toHaveBeenCalledTimes(3));
     expect(api.machine.turnRotor.mock.calls).toEqual([
       ['Left', 'Z'],
       ['Left', 'Y'],
       ['Left', 'Z'],
     ]);
+  });
+
+  it('adds up small wheel movements to one step', async () => {
+    const api = renderMachine(<TopDownView />);
+    const leftWindow = await screen.findByRole('spinbutton', { name: 'Left rotor' });
+
+    for (let event = 0; event < 9; event++) {
+      fireEvent.wheel(leftWindow, { deltaY: -10 });
+    }
+
+    await waitFor(() => expect(api.machine.turnRotor).toHaveBeenCalledOnce());
+    expect(api.machine.turnRotor).toHaveBeenCalledWith('Left', 'B');
   });
 
   it('shows empty windows when the rotors are out', async () => {

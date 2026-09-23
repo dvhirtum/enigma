@@ -126,7 +126,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ## Frontend
 
 - Electron Forge (Vite + TypeScript) with React. The machine state lives in a Zustand store.
-- App frame: tabs for the views, the M3/M4 model switch, a machine summary, an error banner for rejected operations, and the backend version.
+- App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, an error banner for rejected operations, and the backend version.
 - SVG components: `RotorWindow`, `Thumbwheel`, `Lamp`, `Key`, `PlugSocket`.
 - Views:
   - **Top-down:**

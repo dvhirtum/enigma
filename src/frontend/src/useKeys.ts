@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { alphabet } from './machine';
-import { createQueue } from './queue';
 import { useMachine } from './store';
 
 export interface Keys {
@@ -10,13 +9,13 @@ export interface Keys {
 }
 
 /**
- * Holds down one key at a time. Presses and releases reach the store in order,
- * and a release is sent only for a press the backend accepted.
+ * Holds down one key at a time. Presses and releases reach the store in order with the other
+ * queued operations, and a release is sent only for a press the backend accepted.
  */
 export function useKeys(): Keys {
   const pressKey = useMachine((store) => store.pressKey);
   const releaseKey = useMachine((store) => store.releaseKey);
-  const [enqueue] = useState(createQueue);
+  const enqueue = useMachine((store) => store.enqueue);
   const held = useRef<string | null>(null);
   const accepted = useRef(false);
 
@@ -56,7 +55,12 @@ function isFormControl(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement;
 }
 
-/** Presses the machine key for a letter typed on the physical keyboard, and releases it with the same key. */
+/** The key on the keyboard, whatever letter it types with the modifiers held. */
+function physicalKey(event: KeyboardEvent): string {
+  return event.code || event.key.toUpperCase();
+}
+
+/** Presses the machine key for a letter typed on the physical keyboard, and releases it when that physical key goes up. */
 export function usePhysicalKeyboard({ press, release }: Keys): void {
   useEffect(() => {
     let down: string | null = null;
@@ -71,12 +75,12 @@ export function usePhysicalKeyboard({ press, release }: Keys): void {
       }
       event.preventDefault();
       if (press(letter)) {
-        down = letter;
+        down = physicalKey(event);
       }
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      if (down && event.key.toUpperCase() === down) {
+      if (down && physicalKey(event) === down) {
         down = null;
         release();
       }

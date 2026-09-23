@@ -25,22 +25,43 @@ function MachineSummary() {
   );
 }
 
+/** Switches the model once the user confirms that the machine resets. */
 function ModelSwitch() {
   const model = useMachine((store) => store.machine?.model);
+  const keyHeld = useMachine((store) => store.machine?.heldKey != null);
   const create = useMachine((store) => store.create);
+  const [pending, setPending] = useState<string | null>(null);
   if (!model) {
     return null;
   }
 
+  const confirm = (next: string) => {
+    setPending(null);
+    void create(next);
+  };
+
   return (
-    <label className="model">
-      Model
-      <select value={model} onChange={(event) => void create(event.target.value)}>
-        {models.map((name) => (
-          <option key={name}>{name}</option>
-        ))}
-      </select>
-    </label>
+    <div className="model">
+      <label>
+        Model
+        <select value={pending ?? model} disabled={keyHeld} onChange={(event) => setPending(event.target.value === model ? null : event.target.value)}>
+          {models.map((name) => (
+            <option key={name}>{name}</option>
+          ))}
+        </select>
+      </label>
+      {pending && (
+        <p className="model-confirm" role="group" aria-label="Confirm model switch">
+          Switch to the {pending}? This resets the machine.
+          <button type="button" onClick={() => confirm(pending)}>
+            Switch
+          </button>
+          <button type="button" onClick={() => setPending(null)}>
+            Cancel
+          </button>
+        </p>
+      )}
+    </div>
   );
 }
 

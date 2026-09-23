@@ -11,7 +11,7 @@ interface KeyProps {
   keys: Keys;
 }
 
-/** A keyboard key. It stays down while the mouse button is held. */
+/** A keyboard key. It stays down while the mouse button is held. The physical keyboard does the same for assistive technology. */
 export function Key({ letter, down, x, y, keys }: KeyProps) {
   const pressed = useRef(false);
 
@@ -34,9 +34,7 @@ export function Key({ letter, down, x, y, keys }: KeyProps) {
     <g
       className={down ? 'key down' : 'key'}
       transform={`translate(${x} ${y})`}
-      role="button"
-      aria-label={letter}
-      aria-pressed={down}
+      data-testid={`key-${letter}`}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
