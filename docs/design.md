@@ -83,7 +83,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - `KeySheet`: id, network, month, `Provenance` (`Historical(source)` | `Generated` | `UserDefined`), and `DailyKey`s.
 - `DailyKey`: date, Walzenlage (rotor order), Ringstellung (ring settings), Steckerverbindungen (plug pairs), and optionally Kenngruppen (key identification groups).
 - `KeySheetGenerator`: generates sheets in Navy format.
-- Milestone 2:
+- Milestone 8:
   - `Kenngruppenbuch` (indicator book)
   - `Doppelbuchstabentauschtafel` (bigram tables)
   - `MessageKey`: Grundstellung (basic setting) and Spruchschlüssel (message key)
