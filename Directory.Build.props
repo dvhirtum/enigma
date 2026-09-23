@@ -13,5 +13,7 @@
     <NuGetAuditLevel>low</NuGetAuditLevel>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Packaged platforms; keeps the lock files stable across dotnet publish. -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 </Project>

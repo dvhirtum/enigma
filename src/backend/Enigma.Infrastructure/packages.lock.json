@@ -5,7 +5,7 @@
       "enigma.application": {
         "type": "Project",
         "dependencies": {
-          "Enigma.Domain": "[0.1.0-solution-skeleton.1, )"
+          "Enigma.Domain": "[1.0.0, )"
         }
       },
       "enigma.domain": {
