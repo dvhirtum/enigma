@@ -1,8 +1,9 @@
 import path from 'node:path';
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import started from 'electron-squirrel-startup';
-import type { Health } from './api';
-import { startBackend } from './backend';
+import { createBackend } from './backend';
+import { registerIpc } from './ipc';
+import { harden } from './security';
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -24,19 +25,23 @@ const createWindow = () => {
 };
 
 const run = () => {
-  const backend = startBackend();
-  backend.baseUrl.catch((error: unknown) => console.error(error));
+  const backend = createBackend();
+  registerIpc(backend);
 
-  ipcMain.handle('api:health', async (): Promise<Health> => {
-    const baseUrl = await backend.baseUrl;
-    const response = await fetch(`${baseUrl}/api/health`);
-    if (!response.ok) {
-      throw new Error(`Health check failed with status ${response.status}.`);
-    }
-    return (await response.json()) as Health;
+  void app.whenReady().then(() => {
+    harden();
+    createWindow();
   });
 
-  void app.whenReady().then(createWindow);
+  app.on('second-instance', () => {
+    const [window] = BrowserWindow.getAllWindows();
+    if (window) {
+      if (window.isMinimized()) {
+        window.restore();
+      }
+      window.focus();
+    }
+  });
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -53,7 +58,7 @@ const run = () => {
   app.on('will-quit', () => backend.stop());
 };
 
-if (started) {
+if (started || !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   run();

@@ -1,29 +1,54 @@
 import { useEffect, useState } from 'react';
-import type { EnigmaApi } from './api';
+import type { BackendStatus, EnigmaApi } from './api';
+import { MachineFrame } from './MachineFrame';
+import { MachineStoreProvider } from './store';
 
-type Status =
-  | { state: 'connecting' }
-  | { state: 'connected'; version: string }
-  | { state: 'failed'; message: string };
-
-export function App({ api }: { api: EnigmaApi }) {
-  const [status, setStatus] = useState<Status>({ state: 'connecting' });
+function useBackendStatus(api: EnigmaApi): BackendStatus {
+  const [status, setStatus] = useState<BackendStatus>({ state: 'starting' });
 
   useEffect(() => {
-    api.health().then(
-      (health) => setStatus({ state: 'connected', version: health.version }),
-      (error: unknown) => setStatus({ state: 'failed', message: String(error) }),
-    );
+    let pushed = false;
+    const unsubscribe = api.backend.onStatus((next) => {
+      pushed = true;
+      setStatus(next);
+    });
+    void api.backend.status().then((current) => {
+      if (!pushed) {
+        setStatus(current);
+      }
+    });
+    return unsubscribe;
   }, [api]);
 
+  return status;
+}
+
+export function App({ api }: { api: EnigmaApi }) {
+  const status = useBackendStatus(api);
+
+  if (status.state === 'starting') {
+    return (
+      <div className="screen">
+        <p role="status">Starting the machine...</p>
+      </div>
+    );
+  }
+
+  if (status.state === 'failed') {
+    return (
+      <div className="screen" role="alert">
+        <h1>The backend stopped</h1>
+        <p>{status.message}</p>
+        <button type="button" onClick={() => void api.backend.restart()}>
+          Restart
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <main>
-      <h1>Enigma</h1>
-      <p role="status">
-        {status.state === 'connecting' && 'Connecting to backend...'}
-        {status.state === 'connected' && `Backend connected (v${status.version})`}
-        {status.state === 'failed' && `Backend unavailable: ${status.message}`}
-      </p>
-    </main>
+    <MachineStoreProvider api={api}>
+      <MachineFrame />
+    </MachineStoreProvider>
   );
 }
