@@ -6,7 +6,11 @@ See [docs/design.md](docs/design.md) for the design.
 
 ## Development
 
-Requires the .NET SDK from `global.json`, Node.js 24, and (for `npm run make`, which publishes the backend with Native AOT) the Visual Studio "Desktop development with C++" workload.
+Requires the .NET SDK from `global.json` and Node.js 24. Packaging publishes the backend with Native AOT, which needs the MSVC C++ tools. Visual Studio isn't required; Build Tools are enough:
+
+```sh
+winget install --id Microsoft.VisualStudio.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --wait"
+```
 
 ```sh
 cd src/frontend
