@@ -19,8 +19,9 @@ describe('machine store', () => {
     api.machine.pressKey.mockResolvedValue({ ok: true, value: lit });
     const store = createMachineStore(api);
 
-    await store.getState().pressKey('A');
+    const accepted = await store.getState().pressKey('A');
 
+    expect(accepted).toBe(true);
     expect(api.machine.pressKey).toHaveBeenCalledWith('A');
     expect(store.getState().machine).toEqual(lit);
   });
@@ -32,8 +33,9 @@ describe('machine store', () => {
     const store = createMachineStore(api);
     await store.getState().load();
 
-    await store.getState().connectPlug('AB');
+    const accepted = await store.getState().connectPlug('AB');
 
+    expect(accepted).toBe(false);
     expect(store.getState().machine).toEqual(defaultM3);
     expect(store.getState().error).toEqual(problem);
   });
@@ -46,6 +48,32 @@ describe('machine store', () => {
     await store.getState().releaseKey();
 
     expect(store.getState().error).toMatchObject({ status: 0, detail: 'Error: channel closed' });
+  });
+
+  it('steps a rotor from its position after the queued operations', async () => {
+    const { api } = createFakeApi();
+    const stepped = { ...defaultM3, rotors: defaultM3.rotors.map((rotor) => (rotor.slot === 'Right' ? { ...rotor, position: 'B' } : rotor)) };
+    api.machine.pressKey.mockResolvedValue({ ok: true, value: stepped });
+    const store = createMachineStore(api);
+    await store.getState().load();
+
+    void store.getState().enqueue(() => store.getState().pressKey('A'));
+    const accepted = await store.getState().stepRotor('Right', -3);
+
+    expect(accepted).toBe(true);
+    expect(api.machine.turnRotor).toHaveBeenCalledWith('Right', 'Y');
+  });
+
+  it('does not step a rotor that is not inserted', async () => {
+    const { api } = createFakeApi();
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, rotors: [] } });
+    const store = createMachineStore(api);
+    await store.getState().load();
+
+    const accepted = await store.getState().stepRotor('Right', 1);
+
+    expect(accepted).toBe(false);
+    expect(api.machine.turnRotor).not.toHaveBeenCalled();
   });
 
   it('clears the problem when dismissed', async () => {

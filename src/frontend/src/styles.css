@@ -38,15 +38,22 @@ body {
 
 .frame {
   display: grid;
-  grid-template-rows: auto auto auto 1fr auto;
-  min-height: 100vh;
+  grid-template:
+    'header header' auto
+    'nav error' auto
+    'nav main' 1fr
+    'footer footer' auto
+    / auto 1fr;
+  height: 100vh;
 }
 
 .frame header {
+  grid-area: header;
   display: flex;
   align-items: baseline;
   gap: 1.5rem;
   padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--line);
 }
 
 .frame h1 {
@@ -63,32 +70,41 @@ body {
 }
 
 [role='tablist'] {
+  grid-area: nav;
   display: flex;
+  flex-direction: column;
   gap: 0.25rem;
-  padding: 0 1.25rem;
-  border-bottom: 1px solid var(--line);
+  padding: 1rem 0;
+  border-right: 1px solid var(--line);
 }
 
 [role='tab'] {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-left: 2px solid transparent;
   background: none;
   color: var(--muted);
   font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
 [role='tab'][aria-selected='true'] {
-  border-bottom-color: var(--accent);
+  border-left-color: var(--accent);
   color: var(--fg);
 }
 
 [role='tabpanel'] {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 1.25rem;
+  overflow: auto;
 }
 
 .error {
+  grid-area: error;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -100,8 +116,294 @@ body {
 }
 
 .frame footer {
+  grid-area: footer;
   padding: 0.5rem 1.25rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.model,
+.model label,
+.model-confirm {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.model {
+  gap: 1rem;
+  color: var(--muted);
+}
+
+.model-confirm {
+  margin: 0;
+  color: var(--fg);
+}
+
+select,
+button {
+  font: inherit;
+}
+
+/* Machine drawings */
+
+.machine {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  user-select: none;
+  font-family: 'DIN Alternate', 'Bahnschrift', system-ui, sans-serif;
+}
+
+.machine text {
+  text-anchor: middle;
+}
+
+.machine .case {
+  fill: #1f1e1c;
+  stroke: #0b0b0a;
+  stroke-width: 2;
+}
+
+.machine .lid {
+  fill: #2a2926;
+  stroke: #3b3934;
+}
+
+.machine-note {
+  fill: #b9b2a2;
+  font-size: 13px;
+}
+
+.rotor-plate {
+  fill: #9a968c;
+  stroke: #5c5a54;
+}
+
+.rotor-window:focus {
+  outline: none;
+}
+
+.rotor-window-frame {
+  fill: #5c5a54;
+}
+
+.rotor-window:focus-visible .rotor-window-frame {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.rotor-window-glass {
+  fill: #f1ead8;
+  stroke: #2b2a27;
+  stroke-width: 2;
+}
+
+.rotor-window[aria-disabled='true'] .rotor-window-glass {
+  fill: #151514;
+}
+
+.rotor-window-letter {
+  fill: #1b1a18;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.thumbwheel-body {
+  fill: #b7b3a8;
+  stroke: #4b4944;
+}
+
+.thumbwheel-rib {
+  stroke: #5e5b54;
+  stroke-width: 1.5;
+}
+
+.thumbwheel-arrow {
+  fill: #b9b2a2;
+}
+
+.thumbwheel-half rect {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.thumbwheel.disabled {
+  opacity: 0.4;
+}
+
+.thumbwheel.disabled .thumbwheel-half rect {
+  cursor: default;
+}
+
+.lamp-rim {
+  fill: #0f0f0e;
+  stroke: #45433e;
+}
+
+.lamp-glass {
+  fill: #3b3a35;
+}
+
+.lamp-letter {
+  fill: #8b8676;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.lamp.lit .lamp-glass {
+  fill: url(#lamp-lit);
+  filter: drop-shadow(0 0 10px #ffc34d);
+}
+
+.lamp.lit .lamp-letter {
+  fill: #3b2a06;
+}
+
+.key {
+  cursor: pointer;
+}
+
+.key-rim {
+  fill: #8f8c84;
+  stroke: #4b4944;
+}
+
+.key-cap {
+  fill: url(#key-cap);
+  stroke: #000;
+}
+
+.key-letter {
+  fill: #f4f1ea;
+  font-size: 20px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.key.down .key-cap {
+  transform: scale(0.92);
+}
+
+.key.down .key-rim {
+  fill: #6d6a63;
+}
+
+/* Open lid */
+
+.open-lid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.rotor-stack {
+  max-width: 640px;
+}
+
+.reflector,
+.entry-wheel {
+  fill: #6d6a63;
+  stroke: #3b3934;
+}
+
+.drum {
+  fill: #2e2d2a;
+  stroke: #0b0b0a;
+}
+
+.drum-ring {
+  fill: #e9e2cf;
+}
+
+.drum-ring-text {
+  fill: #1b1a18;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.drum-name {
+  fill: #f4f1ea;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.drum-position {
+  fill: #b9b2a2;
+  font-size: 18px;
+}
+
+.drum-empty {
+  fill: none;
+  stroke: #6b675e;
+  stroke-dasharray: 6 4;
+}
+
+.drum-slot {
+  fill: #b9b2a2;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.setup {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.setup fieldset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 12rem;
+  border: 1px solid var(--line);
+}
+
+.setup label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.hint {
+  margin: 0;
+  max-width: 16rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.rotor-box {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 0.4rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rotor-name {
+  min-width: 3.5rem;
+  font-weight: 600;
+}
+
+.reflector-name {
+  font-size: 16px;
+}
+
+/* Top-down: the machine scales to fit the height of the view. */
+
+.top-down {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.top-down .machine {
+  height: 100%;
+  min-height: 360px;
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { models } from './machine';
 import { useMachine } from './store';
 import { OpenLidView } from './views/OpenLidView';
 import { PlugboardView } from './views/PlugboardView';
@@ -17,11 +18,50 @@ function MachineSummary() {
   }
 
   const rotors = machine.rotors.map((rotor) => rotor.rotor).join(' ');
-  const windows = machine.rotors.map((rotor) => rotor.position).join('');
   return (
     <p className="summary" aria-label="Machine">
-      {machine.model} · UKW {machine.reflector} · {rotors} · {windows}
+      {machine.model} · UKW {machine.reflector} · {rotors || 'rotors out'}
     </p>
+  );
+}
+
+/** Switches the model once the user confirms that the machine resets. */
+function ModelSwitch() {
+  const model = useMachine((store) => store.machine?.model);
+  const keyHeld = useMachine((store) => store.machine?.heldKey != null);
+  const create = useMachine((store) => store.create);
+  const [pending, setPending] = useState<string | null>(null);
+  if (!model) {
+    return null;
+  }
+
+  const confirm = (next: string) => {
+    setPending(null);
+    void create(next);
+  };
+
+  return (
+    <div className="model">
+      <label>
+        Model
+        <select value={pending ?? model} disabled={keyHeld} onChange={(event) => setPending(event.target.value === model ? null : event.target.value)}>
+          {models.map((name) => (
+            <option key={name}>{name}</option>
+          ))}
+        </select>
+      </label>
+      {pending && (
+        <p className="model-confirm" role="group" aria-label="Confirm model switch">
+          Switch to the {pending}? This resets the machine.
+          <button type="button" onClick={() => confirm(pending)}>
+            Switch
+          </button>
+          <button type="button" onClick={() => setPending(null)}>
+            Cancel
+          </button>
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -56,7 +96,7 @@ export function MachineFrame() {
   }, [load]);
 
   const onTabKeyDown = (event: KeyboardEvent) => {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+    const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
     if (step === undefined) {
       return;
     }
@@ -72,9 +112,10 @@ export function MachineFrame() {
     <div className="frame">
       <header>
         <h1>Enigma</h1>
+        <ModelSwitch />
         <MachineSummary />
       </header>
-      <nav role="tablist" aria-label="Views" onKeyDown={onTabKeyDown}>
+      <nav role="tablist" aria-label="Views" aria-orientation="vertical" onKeyDown={onTabKeyDown}>
         {views.map((view, index) => (
           <button
             key={view.id}

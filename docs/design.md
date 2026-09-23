@@ -126,14 +126,14 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ## Frontend
 
 - Electron Forge (Vite + TypeScript) with React. The machine state lives in a Zustand store.
-- App frame: tabs for the views, a machine summary, an error banner for rejected operations, and the backend version.
+- App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, an error banner for rejected operations, and the backend version.
 - SVG components: `RotorWindow`, `Thumbwheel`, `Lamp`, `Key`, `PlugSocket`.
 - Views:
   - **Top-down:**
-    - rotor windows with thumbwheels (3 on the M3, 4 on the M4)
+    - rotor windows with thumbwheels (3 on the M3, 4 on the M4), turned with the thumbwheel, the mouse wheel or Arrow Up/Down
     - the lampboard (QWERTZUIO / ASDFGHJK / PYXCVBNML), lit while a key is held down
     - the keyboard, used with the mouse or the physical keyboard
-  - **Open lid:** insert and remove rotors, set the rings and choose the reflector.
+  - **Open lid:** remove the rotors, set the rings of the rotors in the box, pick a rotor for each slot and insert them, and choose the reflector.
   - **Plugboard:** drag cables between sockets.
 - Panels:
   - message pad (4-letter groups)
