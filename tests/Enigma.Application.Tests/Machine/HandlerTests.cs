@@ -1,0 +1,250 @@
+using Enigma.Application.Machine;
+using Enigma.Domain.Machine;
+
+namespace Enigma.Application.Tests.Machine;
+
+public sealed class HandlerTests
+{
+    [Fact]
+    public void Should_replace_the_machine_with_an_M4_When_M4_is_created()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var handler = new CreateMachineHandler(store);
+
+        // Act
+        var state = handler.Handle(new CreateMachine("M4"));
+
+        // Assert
+        Assert.Equal(MachineModel.M4, store.Machine.Model);
+        Assert.Equal("M4", state.Model);
+        Assert.Equal("B-thin", state.Reflector);
+        Assert.Equal(["Beta", "I", "II", "III"], state.Rotors.Select(r => r.Rotor));
+        Assert.Equal(["Greek", "Left", "Middle", "Right"], state.Rotors.Select(r => r.Slot));
+        Assert.Equal(["IV", "V", "VI", "VII", "VIII", "Gamma"], state.RotorBox.Select(r => r.Rotor));
+        Assert.All(state.RotorBox, r => Assert.Null(r.Slot));
+    }
+
+    [Fact]
+    public void Should_keep_the_machine_When_the_model_is_unknown()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var original = store.Machine;
+        var handler = new CreateMachineHandler(store);
+
+        // Act
+        void Act() => handler.Handle(new CreateMachine("M5"));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+        Assert.Same(original, store.Machine);
+    }
+
+    [Fact]
+    public void Should_return_the_current_state_When_the_state_is_requested()
+    {
+        // Arrange
+        var handler = new GetMachineStateHandler(new FakeMachineSessionStore());
+
+        // Act
+        var state = handler.Handle(new GetMachineState());
+
+        // Assert
+        Assert.Equal("M3", state.Model);
+        Assert.Equal("B", state.Reflector);
+        Assert.Equal(["I", "II", "III"], state.Rotors.Select(r => r.Rotor));
+        Assert.All(state.Rotors, r => Assert.Equal(1, r.RingSetting));
+        Assert.All(state.Rotors, r => Assert.Equal("A", r.Position));
+        Assert.Empty(state.Plugs);
+        Assert.Null(state.HeldKey);
+        Assert.Null(state.LitLamp);
+    }
+
+    [Fact]
+    public void Should_move_rotors_to_the_box_When_rotors_are_removed()
+    {
+        // Arrange
+        var handler = new RemoveRotorsHandler(new FakeMachineSessionStore());
+
+        // Act
+        var state = handler.Handle(new RemoveRotors());
+
+        // Assert
+        Assert.Empty(state.Rotors);
+        Assert.Equal(8, state.RotorBox.Count);
+    }
+
+    [Fact]
+    public void Should_insert_rotors_with_their_rings_When_rings_were_set_in_the_box()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        new RemoveRotorsHandler(store).Handle(new RemoveRotors());
+        new SetRingSettingHandler(store).Handle(new SetRingSetting("VIII", 13));
+
+        // Act
+        var state = new InsertRotorsHandler(store).Handle(new InsertRotors(["III", "VI", "VIII"]));
+
+        // Assert
+        Assert.Equal(["III", "VI", "VIII"], state.Rotors.Select(r => r.Rotor));
+        Assert.Equal([1, 1, 13], state.Rotors.Select(r => r.RingSetting));
+    }
+
+    [Theory]
+    [InlineData("IX", 1)]
+    [InlineData("IV", 0)]
+    [InlineData("IV", 27)]
+    [InlineData("I", 5)]
+    public void Should_reject_the_ring_setting_When_rotor_or_ring_is_invalid(string rotor, int ring)
+    {
+        // Arrange
+        var handler = new SetRingSettingHandler(new FakeMachineSessionStore());
+
+        // Act
+        void Act() => handler.Handle(new SetRingSetting(rotor, ring));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+    }
+
+    [Fact]
+    public void Should_change_the_reflector_When_reflector_C_is_set()
+    {
+        // Arrange
+        var handler = new SetReflectorHandler(new FakeMachineSessionStore());
+
+        // Act
+        var state = handler.Handle(new SetReflector("C"));
+
+        // Assert
+        Assert.Equal("C", state.Reflector);
+    }
+
+    [Fact]
+    public void Should_list_the_pair_When_a_plug_is_connected()
+    {
+        // Arrange
+        var handler = new ConnectPlugHandler(new FakeMachineSessionStore());
+
+        // Act
+        var state = handler.Handle(new ConnectPlug("TA"));
+
+        // Assert
+        Assert.Equal(["AT"], state.Plugs);
+    }
+
+    [Fact]
+    public void Should_remove_the_pair_When_one_of_its_letters_is_disconnected()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        new ConnectPlugHandler(store).Handle(new ConnectPlug("AT"));
+
+        // Act
+        var state = new DisconnectPlugHandler(store).Handle(new DisconnectPlug("t"));
+
+        // Assert
+        Assert.Empty(state.Plugs);
+    }
+
+    [Theory]
+    [InlineData("right", "Q", "AAQ")]
+    [InlineData("Middle", "D", "ADA")]
+    [InlineData("LEFT", "z", "ZAA")]
+    public void Should_show_the_letter_in_the_window_When_a_rotor_is_turned(string slot, string position, string expected)
+    {
+        // Arrange
+        var handler = new TurnRotorHandler(new FakeMachineSessionStore());
+
+        // Act
+        var state = handler.Handle(new TurnRotor(slot, position));
+
+        // Assert
+        Assert.Equal(expected, string.Concat(state.Rotors.Select(r => r.Position)));
+    }
+
+    [Theory]
+    [InlineData("Greek", "A")]
+    [InlineData("Top", "A")]
+    [InlineData("Right", "AB")]
+    [InlineData("Right", "1")]
+    [InlineData("Right", "")]
+    public void Should_reject_the_turn_When_slot_or_position_is_invalid(string slot, string position)
+    {
+        // Arrange
+        var handler = new TurnRotorHandler(new FakeMachineSessionStore());
+
+        // Act
+        void Act() => handler.Handle(new TurnRotor(slot, position));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+    }
+
+    [Fact]
+    public void Should_return_the_lamp_and_new_positions_When_a_key_is_pressed()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var handler = new PressKeyHandler(store);
+
+        // Act
+        var state = handler.Handle(new PressKey("A"));
+
+        // Assert
+        Assert.Equal("A", state.HeldKey);
+        Assert.Equal("B", state.LitLamp);
+        Assert.Equal("AAB", string.Concat(state.Rotors.Select(r => r.Position)));
+        Assert.Empty(store.Machine.DomainEvents);
+    }
+
+    [Fact]
+    public void Should_turn_off_the_lamp_When_the_key_is_released()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        new PressKeyHandler(store).Handle(new PressKey("A"));
+
+        // Act
+        var state = new ReleaseKeyHandler(store).Handle(new ReleaseKey());
+
+        // Assert
+        Assert.Null(state.HeldKey);
+        Assert.Null(state.LitLamp);
+    }
+
+    [Fact]
+    public void Should_decrypt_the_Scharnhorst_message_When_the_machine_is_set_up_through_handlers()
+    {
+        // Arrange
+        // Schlachtschiff Scharnhorst, 26 December 1943.
+        var store = new FakeMachineSessionStore();
+        new RemoveRotorsHandler(store).Handle(new RemoveRotors());
+        new SetRingSettingHandler(store).Handle(new SetRingSetting("VI", 8));
+        new SetRingSettingHandler(store).Handle(new SetRingSetting("VIII", 13));
+        new InsertRotorsHandler(store).Handle(new InsertRotors(["III", "VI", "VIII"]));
+        foreach (var pair in "AN EZ HK IJ LR MQ OT PV SW UX".Split(' '))
+        {
+            new ConnectPlugHandler(store).Handle(new ConnectPlug(pair));
+        }
+
+        new TurnRotorHandler(store).Handle(new TurnRotor("Left", "U"));
+        new TurnRotorHandler(store).Handle(new TurnRotor("Middle", "Z"));
+        new TurnRotorHandler(store).Handle(new TurnRotor("Right", "V"));
+        var press = new PressKeyHandler(store);
+        var release = new ReleaseKeyHandler(store);
+
+        // Act
+        var plaintext = string.Concat("YKAENZAPMSCHZBFOCUVMRMDPYCOFHADZIZMEFXTHFLOLPZLFGGBOTGOXGRETDWTJIQHLMXVJWKZUASTR"
+            .Select(c =>
+            {
+                var lamp = press.Handle(new PressKey(c.ToString())).LitLamp;
+                release.Handle(new ReleaseKey());
+                return lamp;
+            }));
+
+        // Assert
+        Assert.Equal("STEUEREJTANAFJORDJANSTANDORTQUAAACCCVIERNEUNNEUNZWOFAHRTZWONULSMXXSCHARNHORSTHCO", plaintext);
+    }
+}

@@ -70,6 +70,7 @@ public sealed class EnigmaMachine
     public void InsertRotors(IReadOnlyList<RotorType> types)
     {
         ArgumentNullException.ThrowIfNull(types);
+        EnsureNoKeyHeld();
 
         if (types.Count != Model.Slots.Count)
         {
@@ -96,11 +97,16 @@ public sealed class EnigmaMachine
     }
 
     /// <summary>Lifts all rotors out of the machine into the box.</summary>
-    public void RemoveRotors() => _rotors = [];
+    public void RemoveRotors()
+    {
+        EnsureNoKeyHeld();
+        _rotors = [];
+    }
 
     public void SetReflector(ReflectorType type)
     {
         ArgumentNullException.ThrowIfNull(type);
+        EnsureNoKeyHeld();
 
         if (type.IsThin != Model.HasGreekSlot)
         {
@@ -115,6 +121,8 @@ public sealed class EnigmaMachine
     /// <summary>Sets the ring of a rotor in the box. Inserted rotors must be removed first.</summary>
     public void SetRingSetting(RotorType type, RingSetting ringSetting)
     {
+        EnsureNoKeyHeld();
+
         var rotor = FindRotor(type);
         if (_rotors.Contains(rotor))
         {
@@ -125,19 +133,28 @@ public sealed class EnigmaMachine
     }
 
     /// <summary>Turns the thumbwheel of <paramref name="slot"/> until the window shows <paramref name="position"/>.</summary>
-    public void TurnRotor(RotorSlot slot, RotorPosition position) => GetRotor(slot).Position = position;
+    public void TurnRotor(RotorSlot slot, RotorPosition position)
+    {
+        EnsureNoKeyHeld();
+        GetRotor(slot).Position = position;
+    }
 
-    public void ConnectPlug(PlugPair pair) => Plugboard.Connect(pair);
+    public void ConnectPlug(PlugPair pair)
+    {
+        EnsureNoKeyHeld();
+        Plugboard.Connect(pair);
+    }
 
-    public void DisconnectPlug(Letter letter) => Plugboard.Disconnect(letter);
+    public void DisconnectPlug(Letter letter)
+    {
+        EnsureNoKeyHeld();
+        Plugboard.Disconnect(letter);
+    }
 
     /// <summary>Steps the rotors, then encrypts <paramref name="key"/> and returns the lit lamp.</summary>
     public Letter PressKey(Letter key)
     {
-        if (HeldKey is { } held)
-        {
-            throw new DomainException($"Key {held} is still held down.");
-        }
+        EnsureNoKeyHeld();
 
         if (_rotors.Length == 0)
         {
@@ -167,6 +184,15 @@ public sealed class EnigmaMachine
     }
 
     public void ClearDomainEvents() => _domainEvents.Clear();
+
+    /// <summary>While a key is held down, only <see cref="ReleaseKey"/> is allowed.</summary>
+    private void EnsureNoKeyHeld()
+    {
+        if (HeldKey is { } held)
+        {
+            throw new DomainException($"Key {held} is still held down.");
+        }
+    }
 
     private Rotor FindRotor(RotorType type) =>
         Array.Find(_allRotors, r => r.Type == type) ?? throw new DomainException($"The {Model} has no rotor {type}.");
