@@ -15,7 +15,17 @@ npm start        # starts Electron, which starts the backend
 npm run make     # builds the installer into src/frontend/out/make
 ```
 
-Backend only:
+Frontend checks and tests (in `src/frontend`):
+
+```sh
+npm run lint       # ESLint
+npm run typecheck  # TypeScript
+npm test           # Vitest unit tests
+npm run package    # builds the app; needed before the end-to-end tests
+npm run test:e2e   # Playwright end-to-end tests
+```
+
+Backend:
 
 ```sh
 dotnet test --solution Enigma.slnx
