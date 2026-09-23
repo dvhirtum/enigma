@@ -2,7 +2,6 @@ import { execFileSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import path from 'node:path';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import type { ForgeConfig } from '@electron-forge/shared-types';
@@ -29,6 +28,7 @@ function publishBackend(platform: string, arch: string): void {
       '--self-contained',
       '--output', backendOutput,
       `-p:Version=${version}`,
+      '-p:DebugType=none',
     ],
     { stdio: 'inherit' },
   );
@@ -49,7 +49,6 @@ const config: ForgeConfig = {
   },
   makers: [
     new MakerSquirrel({ name: 'Enigma' }),
-    new MakerZIP({}, ['win32']),
   ],
   plugins: [
     new VitePlugin({

@@ -1,9 +1,12 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateSlimBuilder(args);
 builder.WebHost.UseUrls("http://127.0.0.1:0");
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, ApiJsonContext.Default));
 
 var app = builder.Build();
 
@@ -26,3 +29,6 @@ app.Lifetime.ApplicationStarted.Register(() =>
 await app.RunAsync();
 
 internal sealed record HealthResponse(string Status, string Version);
+
+[JsonSerializable(typeof(HealthResponse))]
+internal sealed partial class ApiJsonContext : JsonSerializerContext;

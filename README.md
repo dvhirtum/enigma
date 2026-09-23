@@ -6,13 +6,13 @@ See [docs/design.md](docs/design.md) for the design.
 
 ## Development
 
-Requires the .NET 10 SDK and Node.js 24.
+Requires the .NET SDK from `global.json`, Node.js 24, and (for `npm run make`, which publishes the backend with Native AOT) the Visual Studio "Desktop development with C++" workload.
 
 ```sh
 cd src/frontend
 npm ci
 npm start        # starts Electron, which starts the backend
-npm run make     # builds the installer and zip into src/frontend/out/make
+npm run make     # builds the installer into src/frontend/out/make
 ```
 
 Backend only:
