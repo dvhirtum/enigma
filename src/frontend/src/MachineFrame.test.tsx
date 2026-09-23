@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MachineFrame } from './MachineFrame';
 import { MachineStoreProvider } from './store';
-import { createFakeApi } from './test/fakeApi';
+import { createFakeApi, defaultM3 } from './test/fakeApi';
 
 function renderFrame() {
   const { api } = createFakeApi();
@@ -19,6 +19,26 @@ describe('MachineFrame', () => {
     renderFrame();
 
     expect(await screen.findByLabelText('Machine')).toHaveTextContent('M3 · UKW B · I II III · AAA');
+  });
+
+  it('says so in the summary when the rotors are out', async () => {
+    const { api } = createFakeApi();
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, rotors: [] } });
+    render(
+      <MachineStoreProvider api={api}>
+        <MachineFrame />
+      </MachineStoreProvider>,
+    );
+
+    expect(await screen.findByLabelText('Machine')).toHaveTextContent('M3 · UKW B · rotors out');
+  });
+
+  it('creates a new machine when the model is switched', async () => {
+    const api = renderFrame();
+
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Model' }), { target: { value: 'M4' } });
+
+    expect(api.machine.create).toHaveBeenCalledWith('M4');
   });
 
   it('starts on the top-down view', () => {

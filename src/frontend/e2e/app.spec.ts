@@ -39,6 +39,41 @@ test('switches between the views', async () => {
   await expect(page.getByRole('tabpanel')).toHaveAccessibleName('Open lid');
 });
 
+test('lights a lamp while a key is held on the physical keyboard', async () => {
+  await page.getByRole('tab', { name: 'Top-down' }).click();
+
+  await page.keyboard.down('a');
+  await expect(page.getByRole('img', { name: 'Lamp B, lit' })).toBeVisible();
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III · AAB');
+  await page.keyboard.up('a');
+
+  await expect(page.getByRole('img', { name: /lit$/ })).toHaveCount(0);
+});
+
+test('turns a rotor with the thumbwheel', async () => {
+  await page.getByRole('button', { name: 'Turn Right rotor down' }).click();
+
+  await expect(page.getByRole('spinbutton', { name: 'Right rotor' })).toHaveAttribute('aria-valuetext', 'A');
+});
+
+test('sets a ring with the rotors out and puts them back', async () => {
+  await page.getByRole('tab', { name: 'Open lid' }).click();
+
+  await page.getByRole('button', { name: 'Remove rotors' }).click();
+  await page.getByRole('combobox', { name: 'Ring setting of rotor I', exact: true }).selectOption('2');
+  await page.getByRole('button', { name: 'Insert rotors' }).click();
+
+  await expect(page.getByRole('img', { name: 'Left slot: rotor I, ring 02 B, position A' })).toBeVisible();
+});
+
+test('switches to the M4 and back', async () => {
+  await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
+  await expect(page.getByLabel('Machine')).toHaveText('M4 · UKW B-thin · Beta I II III · AAAA');
+
+  await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III · AAA');
+});
+
 test('forwards machine operations to the backend', async () => {
   const pressed = await page.evaluate(async () => {
     const result = await window.enigma.machine.pressKey('A');

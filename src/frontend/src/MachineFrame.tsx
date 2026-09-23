@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { models } from './machine';
 import { useMachine } from './store';
 import { OpenLidView } from './views/OpenLidView';
 import { PlugboardView } from './views/PlugboardView';
@@ -20,8 +21,27 @@ function MachineSummary() {
   const windows = machine.rotors.map((rotor) => rotor.position).join('');
   return (
     <p className="summary" aria-label="Machine">
-      {machine.model} · UKW {machine.reflector} · {rotors} · {windows}
+      {machine.model} · UKW {machine.reflector} · {rotors ? `${rotors} · ${windows}` : 'rotors out'}
     </p>
+  );
+}
+
+function ModelSwitch() {
+  const model = useMachine((store) => store.machine?.model);
+  const create = useMachine((store) => store.create);
+  if (!model) {
+    return null;
+  }
+
+  return (
+    <label className="model">
+      Model
+      <select value={model} onChange={(event) => void create(event.target.value)}>
+        {models.map((name) => (
+          <option key={name}>{name}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -72,6 +92,7 @@ export function MachineFrame() {
     <div className="frame">
       <header>
         <h1>Enigma</h1>
+        <ModelSwitch />
         <MachineSummary />
       </header>
       <nav role="tablist" aria-label="Views" onKeyDown={onTabKeyDown}>

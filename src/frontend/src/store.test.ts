@@ -19,8 +19,9 @@ describe('machine store', () => {
     api.machine.pressKey.mockResolvedValue({ ok: true, value: lit });
     const store = createMachineStore(api);
 
-    await store.getState().pressKey('A');
+    const accepted = await store.getState().pressKey('A');
 
+    expect(accepted).toBe(true);
     expect(api.machine.pressKey).toHaveBeenCalledWith('A');
     expect(store.getState().machine).toEqual(lit);
   });
@@ -32,8 +33,9 @@ describe('machine store', () => {
     const store = createMachineStore(api);
     await store.getState().load();
 
-    await store.getState().connectPlug('AB');
+    const accepted = await store.getState().connectPlug('AB');
 
+    expect(accepted).toBe(false);
     expect(store.getState().machine).toEqual(defaultM3);
     expect(store.getState().error).toEqual(problem);
   });

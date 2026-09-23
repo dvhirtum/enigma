@@ -2,7 +2,8 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { createStore, useStore, type StoreApi } from 'zustand';
 import type { ApiResult, EnigmaApi, MachineApi, MachineState, Problem } from './api';
 
-type Actions = { [K in Exclude<keyof MachineApi, 'getState'>]: (...args: Parameters<MachineApi[K]>) => Promise<void> };
+/** Each action resolves to true when the backend accepted the operation. */
+type Actions = { [K in Exclude<keyof MachineApi, 'getState'>]: (...args: Parameters<MachineApi[K]>) => Promise<boolean> };
 
 export interface MachineStore extends Actions {
   machine: MachineState | null;
@@ -25,6 +26,7 @@ export function createMachineStore({ machine: api, health }: EnigmaApi): StoreAp
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
       set(result.ok ? { machine: result.value, error: null } : { error: result.problem });
+      return result.ok;
     };
 
     return {
