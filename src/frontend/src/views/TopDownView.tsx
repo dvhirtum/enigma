@@ -48,7 +48,7 @@ export function TopDownView() {
 
   return (
     <section className="top-down" aria-label="Top-down">
-      <svg className="machine" viewBox={`0 0 ${width} 610`}>
+      <svg className="machine" viewBox={`0 0 ${width} 610`} preserveAspectRatio="xMidYMin meet">
         <defs>
           <radialGradient id="lamp-lit" cx="50%" cy="45%" r="60%">
             <stop offset="0%" stopColor="#fff6c8" />

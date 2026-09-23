@@ -44,7 +44,7 @@ body {
     'nav main' 1fr
     'footer footer' auto
     / auto 1fr;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .frame header {
@@ -96,7 +96,11 @@ body {
 
 [role='tabpanel'] {
   grid-area: main;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 1.25rem;
+  overflow: auto;
 }
 
 .error {
@@ -378,4 +382,17 @@ button {
 
 .reflector-name {
   font-size: 16px;
+}
+
+/* Top-down: the machine scales to fit the height of the view. */
+
+.top-down {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.top-down .machine {
+  height: 100%;
+  min-height: 360px;
 }
