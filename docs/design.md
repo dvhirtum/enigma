@@ -31,7 +31,7 @@ Wirings to be verified against primary sources and historical test vectors.
 
 | Reflector | Wiring |
 |---|---|
-| B | YRUHQLSDPXNGOKMIEBFZCWVJAT |
+| B | YRUHQSLDPXNGOKMIEBFZCWVJAT |
 | C | FVPJIAOYEDRZXWGCTKUQSBNMHL |
 | B-thin | ENKQAUYWJICOPBLMDXZVFTHRGS |
 | C-thin | RDOBJNTKVEHMLFCWZAXGYIPSUQ |
@@ -64,7 +64,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - Catalog: `RotorType`, `ReflectorType`.
 - Entities: `Rotor`, `Reflector`, `Plugboard`.
 - Aggregate root `EnigmaMachine`:
-  - Operations: `Create(model)`, `InsertRotors`, `SetReflector`, `SetRingSetting`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey → Letter`, `ReleaseKey`.
+  - Operations: `Create(model)`, `InsertRotors`, `RemoveRotors`, `SetReflector`, `SetRingSetting`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey → Letter`, `ReleaseKey`.
   - Invariants:
     - The rotor count matches the model.
     - Each rotor type is used at most once.
@@ -73,13 +73,17 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
     - At most 13 plug pairs.
     - Only one key can be held down at a time.
   - Events: `RotorsStepped`, `LampLit`.
+  - `Create(model)` fits I-II-III + B (M3) or Beta-I-II-III + B-thin (M4), rings and positions at A, no plugs.
+  - Rotor box: I–VIII, plus Beta and Gamma on the M4. Each rotor keeps its own ring and position in or out of the machine.
+  - `InsertRotors` takes all rotors from the box; `RemoveRotors` lifts them all out. `SetRingSetting` works only on rotors in the box.
+  - `TurnRotor` sets a rotor to a given window letter.
   - Switching model creates a new machine.
 
 ### Domain: Key Procedure
 - `KeySheet`: id, network, month, `Provenance` (`Historical(source)` | `Generated` | `UserDefined`), and `DailyKey`s.
 - `DailyKey`: date, Walzenlage (rotor order), Ringstellung (ring settings), Steckerverbindungen (plug pairs), and optionally Kenngruppen (key identification groups).
 - `KeySheetGenerator`: generates sheets in Navy format.
-- Milestone 2:
+- Milestone 8:
   - `Kenngruppenbuch` (indicator book)
   - `Doppelbuchstabentauschtafel` (bigram tables)
   - `MessageKey`: Grundstellung (basic setting) and Spruchschlüssel (message key)
