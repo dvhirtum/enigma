@@ -18,10 +18,9 @@ function MachineSummary() {
   }
 
   const rotors = machine.rotors.map((rotor) => rotor.rotor).join(' ');
-  const windows = machine.rotors.map((rotor) => rotor.position).join('');
   return (
     <p className="summary" aria-label="Machine">
-      {machine.model} · UKW {machine.reflector} · {rotors ? `${rotors} · ${windows}` : 'rotors out'}
+      {machine.model} · UKW {machine.reflector} · {rotors || 'rotors out'}
     </p>
   );
 }

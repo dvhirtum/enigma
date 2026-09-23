@@ -18,7 +18,7 @@ describe('MachineFrame', () => {
   it('shows a summary of the machine', async () => {
     renderFrame();
 
-    expect(await screen.findByLabelText('Machine')).toHaveTextContent('M3 · UKW B · I II III · AAA');
+    expect(await screen.findByLabelText('Machine')).toHaveTextContent(/^M3 · UKW B · I II III$/);
   });
 
   it('says so in the summary when the rotors are out', async () => {

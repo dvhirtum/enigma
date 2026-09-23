@@ -29,7 +29,7 @@ test.afterAll(async () => {
 });
 
 test('shows the default machine and the backend version', async () => {
-  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III · AAA');
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
   await expect(page.getByText(/^Backend v.+/)).toBeVisible();
 });
 
@@ -44,7 +44,7 @@ test('lights a lamp while a key is held on the physical keyboard', async () => {
 
   await page.keyboard.down('a');
   await expect(page.getByRole('img', { name: 'Lamp B, lit' })).toBeVisible();
-  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III · AAB');
+  await expect(page.getByRole('spinbutton', { name: 'Right rotor' })).toHaveAttribute('aria-valuetext', 'B');
   await page.keyboard.up('a');
 
   await expect(page.getByRole('img', { name: /lit$/ })).toHaveCount(0);
@@ -68,10 +68,10 @@ test('sets a ring with the rotors out and puts them back', async () => {
 
 test('switches to the M4 and back', async () => {
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
-  await expect(page.getByLabel('Machine')).toHaveText('M4 · UKW B-thin · Beta I II III · AAAA');
+  await expect(page.getByLabel('Machine')).toHaveText('M4 · UKW B-thin · Beta I II III');
 
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');
-  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III · AAA');
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
 });
 
 test('forwards machine operations to the backend', async () => {
@@ -121,5 +121,5 @@ test('restarts the backend after it stops', async () => {
   await expect(page.getByRole('alert')).toContainText('The backend stopped', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Restart' }).click();
 
-  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III · AAA', { timeout: 90_000 });
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III', { timeout: 90_000 });
 });
