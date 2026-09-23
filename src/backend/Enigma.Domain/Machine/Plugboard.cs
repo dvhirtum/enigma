@@ -16,6 +16,11 @@ public sealed class Plugboard
             throw new DomainException($"The plugboard holds at most {MaxPairs} pairs.");
         }
 
+        if (pair.First == pair.Second)
+        {
+            throw new DomainException($"A plug pair needs two different letters, got {pair}.");
+        }
+
         var taken = _pairs.FindIndex(p => p.Contains(pair.First) || p.Contains(pair.Second));
         if (taken >= 0)
         {

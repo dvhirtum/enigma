@@ -50,6 +50,20 @@ public sealed class PlugboardTests
     }
 
     [Fact]
+    public void Should_reject_pair_When_it_is_the_default_value()
+    {
+        // Arrange
+        var plugboard = new Plugboard();
+
+        // Act
+        void Act() => plugboard.Connect(default);
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+        Assert.Empty(plugboard.Pairs);
+    }
+
+    [Fact]
     public void Should_remove_cable_When_either_end_is_disconnected()
     {
         // Arrange
