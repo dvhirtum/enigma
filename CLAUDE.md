@@ -15,3 +15,11 @@ Navy Enigma simulator (M3 + M4). Electron + React frontend, C# (.NET 10) backend
 
 - Never commit directly to `main`. Work on `feature/<topic>` branches and open a PR.
 - Merge with squash only, and always replace the default message: `gh pr merge --squash --subject "<subject>" --body "<body>"`.
+- The squash subject follows Conventional Commits. GitVersion derives the next version from it: `feat!:` or `BREAKING CHANGE:` bumps major, `feat:` bumps minor, anything else bumps patch.
+- Every merge to `main` creates a GitHub release `v<version>` with the Windows installer and zip.
+
+## Commands
+
+- Backend: `dotnet build Enigma.slnx`, `dotnet test --solution Enigma.slnx`, `dotnet run --project src/backend/Enigma.Api`.
+- Frontend (in `src/frontend`): `npm start`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run make`, then `npm run test:e2e`.
+- Version: `dotnet tool restore`, then `dotnet gitversion`.
