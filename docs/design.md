@@ -135,7 +135,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - Panels:
   - message pad (4-letter groups)
   - key-sheet browser and editor, with "Apply daily key"
-  - operator mode (milestone 2)
+  - operator mode (milestone 8)
 
 ## Testing
 
