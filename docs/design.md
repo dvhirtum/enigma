@@ -54,7 +54,9 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - The renderer runs with `contextIsolation` on and `nodeIntegration` off.
 - All machine logic lives in the backend. The frontend renders state and sends user actions.
 - A key press returns the lit lamp and the new rotor positions.
-- The renderer calls the backend through IPC. Main forwards each call to the API over HTTP.
+- The renderer calls the backend through IPC, one channel per operation (`machine:pressKey`, ...). Main forwards each call to the API over HTTP and returns `{ ok, value }` or `{ ok: false, problem }`.
+- Main supervises the API. If it stops, the renderer shows an error screen with a Restart button, which starts a fresh default M3.
+- Hardening: a single instance, a Content Security Policy, no navigation, new windows, webviews or permissions.
 - The backend ships as a Native AOT executable, as an Electron Forge `extraResource`.
 
 ## Backend
@@ -123,7 +125,8 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 
 ## Frontend
 
-- Electron Forge (Vite + TypeScript) with React.
+- Electron Forge (Vite + TypeScript) with React. The machine state lives in a Zustand store.
+- App frame: tabs for the views, a machine summary, an error banner for rejected operations, and the backend version.
 - SVG components: `RotorWindow`, `Thumbwheel`, `Lamp`, `Key`, `PlugSocket`.
 - Views:
   - **Top-down:**

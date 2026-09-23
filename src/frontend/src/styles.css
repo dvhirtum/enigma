@@ -1,0 +1,107 @@
+:root {
+  --bg: #f4f1ea;
+  --fg: #1d1d1b;
+  --muted: #6b675e;
+  --line: #d6d0c2;
+  --accent: #7a5c2e;
+  --error-bg: #f7dcd6;
+  --error-fg: #7a1f12;
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1a18;
+    --fg: #ece8df;
+    --muted: #a39e92;
+    --line: #3a3833;
+    --accent: #d2a867;
+    --error-bg: #4a1f18;
+    --error-fg: #f5c7bd;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.screen {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  min-height: 100vh;
+  text-align: center;
+}
+
+.frame {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  min-height: 100vh;
+}
+
+.frame header {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  padding: 0.75rem 1.25rem;
+}
+
+.frame h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.summary {
+  margin: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+[role='tablist'] {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+[role='tab'] {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+[role='tab'][aria-selected='true'] {
+  border-bottom-color: var(--accent);
+  color: var(--fg);
+}
+
+[role='tabpanel'] {
+  padding: 1.25rem;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.75rem 1.25rem 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--error-bg);
+  color: var(--error-fg);
+}
+
+.frame footer {
+  padding: 0.5rem 1.25rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+}

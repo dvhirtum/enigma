@@ -2,12 +2,16 @@ import { spawn, spawnSync, type ChildProcess, type SpawnOptions } from 'node:chi
 import path from 'node:path';
 import readline from 'node:readline';
 import { app } from 'electron';
+import type { BackendStatus } from './api';
 
 const PORT_LINE = /^ENIGMA_API_PORT=(\d+)$/;
 const START_TIMEOUT_MS = 60_000;
 
 export interface Backend {
-  baseUrl: Promise<string>;
+  status(): BackendStatus;
+  onStatus(listener: (status: BackendStatus) => void): void;
+  baseUrl(): Promise<string>;
+  restart(): void;
   stop(): void;
 }
 
@@ -35,33 +39,90 @@ function kill(child: ChildProcess): void {
   }
 }
 
-export function startBackend(): Backend {
-  const child = spawnApi();
+function rejected(message: string): Promise<string> {
+  const promise = Promise.reject(new Error(message));
+  promise.catch(() => undefined);
+  return promise;
+}
 
-  const baseUrl = new Promise<string>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      kill(child);
-      reject(new Error('Backend did not report its port in time.'));
-    }, START_TIMEOUT_MS);
+/** Runs the API as a child process and reports its status. */
+export function createBackend(): Backend {
+  const listeners: ((status: BackendStatus) => void)[] = [];
+  let status: BackendStatus = { state: 'starting' };
+  let child: ChildProcess | undefined;
+  let url = rejected('The backend has not been started.');
 
-    child.once('error', (error) => {
-      clearTimeout(timer);
-      reject(error);
-    });
+  const setStatus = (next: BackendStatus) => {
+    status = next;
+    listeners.forEach((listener) => listener(next));
+  };
 
-    child.once('exit', (code) => {
-      clearTimeout(timer);
-      reject(new Error(`Backend exited with code ${code}.`));
-    });
+  const release = () => {
+    const current = child;
+    child = undefined;
+    if (current) {
+      kill(current);
+    }
+  };
 
-    readline.createInterface({ input: child.stdout! }).on('line', (line) => {
-      const match = PORT_LINE.exec(line.trim());
-      if (match) {
-        clearTimeout(timer);
-        resolve(`http://127.0.0.1:${match[1]}`);
+  const start = () => {
+    const current = spawnApi();
+    child = current;
+    setStatus({ state: 'starting' });
+
+    const fail = (message: string) => {
+      if (child !== current) {
+        return;
       }
-    });
-  });
+      release();
+      url = rejected(message);
+      setStatus({ state: 'failed', message });
+    };
 
-  return { baseUrl, stop: () => kill(child) };
+    url = new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('The backend did not report its port in time.')), START_TIMEOUT_MS);
+
+      current.once('error', (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+
+      current.once('exit', (code) => {
+        clearTimeout(timer);
+        const message = `The backend exited with code ${code}.`;
+        reject(new Error(message));
+        fail(message);
+      });
+
+      readline.createInterface({ input: current.stdout! }).on('line', (line) => {
+        const match = PORT_LINE.exec(line.trim());
+        if (match) {
+          clearTimeout(timer);
+          resolve(`http://127.0.0.1:${match[1]}`);
+        }
+      });
+    });
+
+    url.then(
+      () => {
+        if (child === current) {
+          setStatus({ state: 'running' });
+        }
+      },
+      (error: unknown) => fail(error instanceof Error ? error.message : String(error)),
+    );
+  };
+
+  start();
+
+  return {
+    status: () => status,
+    onStatus: (listener) => listeners.push(listener),
+    baseUrl: () => url,
+    restart: () => {
+      release();
+      start();
+    },
+    stop: release,
+  };
 }
