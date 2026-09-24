@@ -18,6 +18,20 @@ const api: EnigmaApi = {
     movePlug: (from, to) => invoke('machine:movePlug', from, to),
     pressKey: (key) => invoke('machine:pressKey', key),
     releaseKey: () => invoke('machine:releaseKey'),
+    applyDailyKey: (sheetId, day) => invoke('machine:applyDailyKey', sheetId, day),
+  },
+  keySheets: {
+    list: () => invoke('keySheets:list'),
+    get: (id) => invoke('keySheets:get', id),
+    create: (network, month, text) => invoke('keySheets:create', network, month, text),
+    update: (id, network, month, text) => invoke('keySheets:update', id, network, month, text),
+    remove: (id) => invoke('keySheets:remove', id),
+    generate: (model, network, month) => invoke('keySheets:generate', model, network, month),
+    import: (file) => invoke('keySheets:import', file),
+  },
+  files: {
+    openKeySheet: () => invoke('files:openKeySheet'),
+    saveKeySheet: (name, content) => invoke('files:saveKeySheet', name, content),
   },
   backend: {
     status: () => invoke('backend:status'),

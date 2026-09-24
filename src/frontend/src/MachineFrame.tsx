@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { models, slots } from './machine';
+import { KeySheetPanel } from './panels/KeySheetPanel';
 import { useMachine } from './store';
 import { OpenLidView } from './views/OpenLidView';
 import { PlugboardView } from './views/PlugboardView';
@@ -92,6 +93,7 @@ export function MachineFrame() {
   const load = useMachine((store) => store.load);
   const version = useMachine((store) => store.version);
   const [selected, setSelected] = useState(0);
+  const [panelOpen, setPanelOpen] = useState(false);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
@@ -117,6 +119,9 @@ export function MachineFrame() {
         <h1>Enigma</h1>
         <ModelSwitch />
         <MachineSummary />
+        <button type="button" className="panel-toggle" aria-expanded={panelOpen} aria-controls="key-sheet-panel" onClick={() => setPanelOpen(!panelOpen)}>
+          Key sheets
+        </button>
       </header>
       <nav role="tablist" aria-label="Views" aria-orientation="vertical" onKeyDown={onTabKeyDown}>
         {views.map((view, index) => (
@@ -141,6 +146,9 @@ export function MachineFrame() {
       <main role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`}>
         <View />
       </main>
+      <aside id="key-sheet-panel" aria-label="Key sheets" hidden={!panelOpen}>
+        {panelOpen && <KeySheetPanel />}
+      </aside>
       <footer>{version && `Backend v${version}`}</footer>
     </div>
   );

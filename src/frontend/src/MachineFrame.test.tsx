@@ -105,4 +105,20 @@ describe('MachineFrame', () => {
     expect(screen.getByRole('tab', { name: 'Plugboard' })).toHaveFocus();
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Plugboard');
   });
+
+  it('opens and closes the key sheet panel beside the view', async () => {
+    renderFrame();
+    const toggle = screen.getByRole('button', { name: 'Key sheets' });
+    expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
+
+    fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(await screen.findByRole('complementary', { name: 'Key sheets' })).toBeInTheDocument();
+    expect(screen.getByRole('tabpanel')).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+
+    expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
+  });
 });

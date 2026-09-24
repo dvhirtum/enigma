@@ -1,13 +1,30 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { createStore, useStore, type StoreApi } from 'zustand';
-import type { ApiResult, EnigmaApi, MachineApi, MachineState, Problem } from './api';
+import type { ApiResult, EnigmaApi, KeySheet, KeySheetFile, KeySheetSummary, MachineApi, MachineState, Problem } from './api';
 import { shiftLetter, shiftRing } from './machine';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
 type Actions = { [K in Exclude<keyof MachineApi, 'getState'>]: (...args: Parameters<MachineApi[K]>) => Promise<boolean> };
 
-export interface MachineStore extends Actions {
+/** Key sheet operations. Each resolves to true when it succeeded; problems go to `error`. */
+export interface KeySheetSlice {
+  keySheets: KeySheetSummary[];
+  /** The sheet shown in the panel. */
+  keySheet: KeySheet | null;
+  loadKeySheets: () => Promise<boolean>;
+  openKeySheet: (id: string | null) => Promise<boolean>;
+  createKeySheet: (network: string, month: string, text: string) => Promise<boolean>;
+  updateKeySheet: (id: string, network: string, month: string, text: string) => Promise<boolean>;
+  deleteKeySheet: (id: string) => Promise<boolean>;
+  generateKeySheet: (model: string, network: string, month: string) => Promise<boolean>;
+  /** Asks for a key sheet file and imports it. */
+  importKeySheet: () => Promise<boolean>;
+  /** Saves the open sheet to a file the user picks. */
+  exportKeySheet: () => Promise<boolean>;
+}
+
+export interface MachineStore extends Actions, KeySheetSlice {
   machine: MachineState | null;
   version: string | null;
   error: Problem | null;
@@ -29,7 +46,7 @@ async function settle<T>(call: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
   }
 }
 
-export function createMachineStore({ machine: api, health }: EnigmaApi): StoreApi<MachineStore> {
+export function createMachineStore({ machine: api, keySheets: sheets, files, health }: EnigmaApi): StoreApi<MachineStore> {
   return createStore<MachineStore>()((set, get) => {
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
@@ -38,10 +55,92 @@ export function createMachineStore({ machine: api, health }: EnigmaApi): StoreAp
     };
     const enqueue = createQueue();
 
+    const fail = (problem: Problem) => {
+      set({ error: problem });
+      return false;
+    };
+    const check = async <T,>(call: Promise<ApiResult<T>>) => {
+      const result = await settle(call);
+      set(result.ok ? { error: null } : { error: result.problem });
+      return result;
+    };
+    const loadKeySheets = async () => {
+      const result = await check(sheets.list());
+      if (result.ok) {
+        set({ keySheets: result.value });
+      }
+      return result.ok;
+    };
+    const show = async (call: Promise<ApiResult<KeySheet>>) => {
+      const result = await check(call);
+      if (!result.ok) {
+        return false;
+      }
+      set({ keySheet: result.value });
+      await loadKeySheets();
+      return true;
+    };
+
     return {
       machine: null,
       version: null,
       error: null,
+      keySheets: [],
+      keySheet: null,
+      loadKeySheets,
+      openKeySheet: async (id) => {
+        if (id === null) {
+          set({ keySheet: null });
+          return true;
+        }
+        const result = await check(sheets.get(id));
+        if (result.ok) {
+          set({ keySheet: result.value });
+        }
+        return result.ok;
+      },
+      createKeySheet: (network, month, text) => show(sheets.create(network, month, text)),
+      updateKeySheet: (id, network, month, text) => show(sheets.update(id, network, month, text)),
+      generateKeySheet: (model, network, month) => show(sheets.generate(model, network, month)),
+      deleteKeySheet: async (id) => {
+        const result = await check(sheets.remove(id));
+        if (!result.ok) {
+          return false;
+        }
+        set((state) => ({ keySheet: state.keySheet?.id === id ? null : state.keySheet }));
+        await loadKeySheets();
+        return true;
+      },
+      importKeySheet: async () => {
+        let content: string | null;
+        try {
+          content = await files.openKeySheet();
+        } catch (error) {
+          return fail({ status: 0, title: 'The file could not be read.', detail: String(error) });
+        }
+        if (content === null) {
+          return false;
+        }
+        let file: KeySheetFile;
+        try {
+          file = JSON.parse(content) as KeySheetFile;
+        } catch {
+          return fail({ status: 0, title: 'The file is not a key sheet.', detail: 'It does not contain valid JSON.' });
+        }
+        return show(sheets.import(file));
+      },
+      exportKeySheet: async () => {
+        const sheet = get().keySheet;
+        if (!sheet) {
+          return false;
+        }
+        const file: KeySheetFile = { network: sheet.network, month: sheet.month, days: sheet.days };
+        try {
+          return (await files.saveKeySheet(`${sheet.network}-${sheet.month}.json`, `${JSON.stringify(file, null, 2)}\n`)) !== null;
+        } catch (error) {
+          return fail({ status: 0, title: 'The file could not be saved.', detail: String(error) });
+        }
+      },
       load: async () => {
         const [state, info] = await Promise.all([settle(api.getState()), settle(health())]);
         set({
@@ -73,6 +172,7 @@ export function createMachineStore({ machine: api, health }: EnigmaApi): StoreAp
       movePlug: (from, to) => apply(api.movePlug(from, to)),
       pressKey: (key) => apply(api.pressKey(key)),
       releaseKey: () => apply(api.releaseKey()),
+      applyDailyKey: (sheetId, day) => apply(api.applyDailyKey(sheetId, day)),
     };
   });
 }

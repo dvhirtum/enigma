@@ -1,4 +1,4 @@
-import type { MachineApi } from './api';
+import type { KeySheetApi, MachineApi } from './api';
 
 export interface Route {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -6,14 +6,15 @@ export interface Route {
   body?: unknown;
 }
 
-type MachineRoutes = { [K in keyof MachineApi]: (...args: Parameters<MachineApi[K]>) => Route };
+type Routes<Api> = { [K in keyof Api]: Api[K] extends (...args: infer Args) => unknown ? (...args: Args) => Route : never };
 
 const machine = '/api/machine';
+const keySheets = '/api/keysheets';
 const segment = encodeURIComponent;
 
 export const healthRoute: Route = { method: 'GET', path: '/api/health' };
 
-export const machineRoutes: MachineRoutes = {
+export const machineRoutes: Routes<MachineApi> = {
   getState: () => ({ method: 'GET', path: machine }),
   create: (model) => ({ method: 'POST', path: machine, body: { model } }),
   insertRotor: (slot, rotor) => ({ method: 'PUT', path: `${machine}/rotors/${segment(slot)}`, body: { rotor } }),
@@ -26,4 +27,15 @@ export const machineRoutes: MachineRoutes = {
   movePlug: (from, to) => ({ method: 'PUT', path: `${machine}/plugs/${segment(from)}`, body: { to } }),
   pressKey: (key) => ({ method: 'POST', path: `${machine}/keyboard/press`, body: { key } }),
   releaseKey: () => ({ method: 'POST', path: `${machine}/keyboard/release` }),
+  applyDailyKey: (sheetId, day) => ({ method: 'POST', path: `${machine}/daily-key`, body: { sheetId, day } }),
+};
+
+export const keySheetRoutes: Routes<KeySheetApi> = {
+  list: () => ({ method: 'GET', path: keySheets }),
+  get: (id) => ({ method: 'GET', path: `${keySheets}/${segment(id)}` }),
+  create: (network, month, text) => ({ method: 'POST', path: keySheets, body: { network, month, text } }),
+  update: (id, network, month, text) => ({ method: 'PUT', path: `${keySheets}/${segment(id)}`, body: { network, month, text } }),
+  remove: (id) => ({ method: 'DELETE', path: `${keySheets}/${segment(id)}` }),
+  generate: (model, network, month) => ({ method: 'POST', path: `${keySheets}/generate`, body: { model, network, month } }),
+  import: (file) => ({ method: 'POST', path: `${keySheets}/import`, body: file }),
 };

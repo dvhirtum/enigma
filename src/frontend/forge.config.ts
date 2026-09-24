@@ -10,6 +10,7 @@ import { version } from './package.json';
 
 const backendProject = path.resolve(__dirname, '../backend/Enigma.Api/Enigma.Api.csproj');
 const backendOutput = path.resolve(__dirname, 'build/backend');
+const keySheets = path.resolve(__dirname, '../../data/keysheets');
 
 const runtimeIdentifiers: Record<string, string> = {
   win32: 'win',
@@ -38,7 +39,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     executableName: 'Enigma',
-    extraResource: [backendOutput],
+    extraResource: [backendOutput, keySheets],
   },
   rebuildConfig: {},
   hooks: {

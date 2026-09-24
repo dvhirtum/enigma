@@ -92,6 +92,33 @@ test('switches to the M4 and back', async () => {
   await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
 });
 
+test('generates a key sheet, applies a daily key and deletes the sheet', async () => {
+  await page.getByRole('button', { name: 'Key sheets' }).click();
+  const panel = page.getByRole('complementary', { name: 'Key sheets' });
+
+  await panel.getByRole('button', { name: 'Generate' }).click();
+  const form = panel.getByRole('form', { name: 'Generate key sheet' });
+  await form.getByRole('combobox', { name: 'Model' }).selectOption('M4');
+  await form.getByRole('textbox', { name: 'Network' }).fill('E2E');
+  await form.getByLabel('Month').fill('1944-02');
+  await form.getByRole('button', { name: 'Generate' }).click();
+
+  const day = panel.getByRole('listitem', { name: 'Day 29' });
+  await expect(day).toContainText(/UKW (B|C)-thin/);
+  await day.getByRole('button', { name: 'Apply' }).click();
+  await day.getByRole('button', { name: 'Switch' }).click();
+  await expect(page.getByLabel('Machine')).toHaveText(/^M4 · UKW (B|C)-thin · (Beta|Gamma) /);
+
+  await panel.getByRole('button', { name: 'Delete' }).click();
+  await panel.getByRole('group', { name: 'Confirm delete' }).getByRole('button', { name: 'Delete' }).click();
+  await expect(panel.getByRole('option', { name: /^E2E 1944-02/ })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Key sheets' }).click();
+  await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');
+  await page.getByRole('button', { name: 'Switch' }).click();
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
+});
+
 test('forwards machine operations to the backend', async () => {
   const pressed = await page.evaluate(async () => {
     const result = await window.enigma.machine.pressKey('A');

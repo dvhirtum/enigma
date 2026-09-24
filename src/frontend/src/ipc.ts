@@ -3,7 +3,8 @@ import type { ApiResult } from './api';
 import type { Backend } from './backend';
 import { send } from './http';
 import { createQueue } from './queue';
-import { healthRoute, machineRoutes, type Route } from './routes';
+import { registerFiles } from './files';
+import { healthRoute, keySheetRoutes, machineRoutes, type Route } from './routes';
 
 /** Registers one IPC channel per API operation. Machine calls reach the backend one at a time, in order. */
 export function registerIpc(backend: Backend): void {
@@ -24,6 +25,13 @@ export function registerIpc(backend: Backend): void {
     const route = toRoute as (...args: unknown[]) => Route;
     ipcMain.handle(`machine:${name}`, (_event, ...args: unknown[]) => enqueue(() => call(route(...args))));
   }
+
+  for (const [name, toRoute] of Object.entries(keySheetRoutes)) {
+    const route = toRoute as (...args: unknown[]) => Route;
+    ipcMain.handle(`keySheets:${name}`, (_event, ...args: unknown[]) => call(route(...args)));
+  }
+
+  registerFiles();
 
   ipcMain.handle('backend:status', () => backend.status());
   ipcMain.handle('backend:restart', () => backend.restart());

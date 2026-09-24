@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Enigma.Api;
+using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
 using Enigma.Infrastructure.Machine;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -14,6 +15,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddSingleton<IMachineSessionStore, InMemoryMachineSessionStore>();
 builder.Services.AddMachineHandlers();
+builder.Services.AddKeySheets(builder.Configuration);
 
 var app = builder.Build();
 
@@ -24,6 +26,7 @@ var version = typeof(Program).Assembly
 
 app.MapGet("/api/health", () => new HealthResponse("ok", version));
 app.MapMachineEndpoints();
+app.MapKeySheetEndpoints();
 
 app.Lifetime.ApplicationStarted.Register(() =>
 {
@@ -50,4 +53,10 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(RingSettingRequest))]
 [JsonSerializable(typeof(PositionRequest))]
 [JsonSerializable(typeof(PlugMoveRequest))]
+[JsonSerializable(typeof(KeySheetRequest))]
+[JsonSerializable(typeof(DailyKeyRequest))]
+[JsonSerializable(typeof(GenerateKeySheet))]
+[JsonSerializable(typeof(KeySheetDocument))]
+[JsonSerializable(typeof(KeySheetDetails))]
+[JsonSerializable(typeof(IReadOnlyList<KeySheetSummary>))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;
