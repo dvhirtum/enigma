@@ -96,7 +96,8 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - Machine commands: `CreateMachine`, `InsertRotor`, `RemoveRotor`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
 - Key-sheet commands: `ApplyDailyKey` (replaces the machine, switching model if needed), `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
 - Queries: `GetMachineState`, `ListKeySheets`, `GetKeySheet`.
-- Ports: `IMachineSessionStore`, `IKeySheetRepository`.
+- Ports: `IMachineSessionStore` (the machine and the daily key applied to it), `IKeySheetRepository`.
+- `MachineState.appliedKey`: the sheet, month and day last applied, `modified` once the reflector, rotor order, rings or plugs differ from it (turning rotors does not count). Switching model clears it.
 - `KeySheetText`: daily keys as text, one row per day in Navy column order: day, reflector, rotors, rings (01–26), plugs, Kenngruppen. Create and update take this text; errors name the line.
 - Key sheet files (JSON): `{ network, month, days: [{ day, reflector, rotors, rings, plugs, kenngruppen }] }`. Imports become user-defined.
 - Commands and queries use plain handlers, without a mediator library.
@@ -138,7 +139,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ## Frontend
 
 - Electron Forge (Vite + TypeScript) with React. The machine state lives in a Zustand store.
-- App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, an error banner for rejected operations, and the backend version.
+- App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, the applied daily key ("Key: Triton 1944-06, day 19", with "(modified)" after a setup change), an error banner for rejected operations, and the backend version.
 - SVG components: `RotorWindow`, `Thumbwheel`, `RotorDrum`, `Lamp`, `Key`, `PlugSocket`.
 - Views:
   - **Top-down:**
@@ -149,7 +150,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
 - Panels:
   - message pad (4-letter groups)
-  - key sheets: a side panel opened from the header. Choose, create, generate, import, export, edit (as text rows) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first.
+  - key sheets: a side panel opened from the header. Choose, create, generate, import, export, edit (as text rows) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first. The applied day is marked.
   - operator mode (milestone 8)
 
 ## Testing

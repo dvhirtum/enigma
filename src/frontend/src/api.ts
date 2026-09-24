@@ -18,6 +18,16 @@ export interface MachineState {
   plugs: string[];
   heldKey: string | null;
   litLamp: string | null;
+  appliedKey: AppliedKey | null;
+}
+
+/** The daily key the machine was set up with; `modified` once the setup no longer matches it. */
+export interface AppliedKey {
+  sheetId: string;
+  network: string;
+  month: string;
+  day: number;
+  modified: boolean;
 }
 
 export interface DailyKey {

@@ -88,6 +88,18 @@ public sealed class DailyKey
 
     public IReadOnlyList<Kenngruppe> Kenngruppen { get; }
 
+    /// <summary>True when <paramref name="machine"/> has this key's reflector, rotor order, rings and plugs. Positions are ignored.</summary>
+    public bool IsSetUpOn(EnigmaMachine machine)
+    {
+        ArgumentNullException.ThrowIfNull(machine);
+
+        return machine.Model == Model
+            && machine.Reflector.Type == Reflector
+            && Model.Slots.Select(machine.RotorIn).Select(r => r?.Type).SequenceEqual(Rotors)
+            && machine.Rotors.Select(r => r.RingSetting).SequenceEqual(Rings)
+            && machine.Plugboard.Pairs.ToHashSet().SetEquals(Plugs);
+    }
+
     /// <summary>Creates a machine of <see cref="Model"/> set up with this key. All rotors show A.</summary>
     public EnigmaMachine SetUp()
     {

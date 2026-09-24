@@ -12,7 +12,13 @@ internal sealed class FakeMachineSessionStore(EnigmaMachine machine) : IMachineS
 
     public EnigmaMachine Machine { get; private set; } = machine;
 
+    public AppliedKey? AppliedKey { get; private set; }
+
     public T Use<T>(Func<EnigmaMachine, T> action) => action(Machine);
 
-    public void Replace(EnigmaMachine machine) => Machine = machine;
+    public void Replace(EnigmaMachine machine, AppliedKey? appliedKey = null)
+    {
+        Machine = machine;
+        AppliedKey = appliedKey;
+    }
 }

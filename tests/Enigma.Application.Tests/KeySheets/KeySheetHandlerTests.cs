@@ -1,4 +1,5 @@
 using Enigma.Application.KeySheets;
+using Enigma.Application.Machine;
 using Enigma.Application.Tests.Machine;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
@@ -200,6 +201,54 @@ public sealed class KeySheetHandlerTests
         Assert.Equal([1, 1, 1, 22], state.Rotors.Select(r => r.RingSetting));
         Assert.All(state.Rotors, r => Assert.Equal("A", r.Position));
         Assert.Equal(10, state.Plugs.Count);
+    }
+
+    [Fact]
+    public void Should_report_the_applied_key_as_unmodified_When_a_key_is_applied()
+    {
+        // Arrange
+        var repository = new FakeKeySheetRepository(Sheet("t", "Triton", "1942-11", Provenance.UserDefined, "19" + M4Row[1..]));
+        var handler = new ApplyDailyKeyHandler(repository, new FakeMachineSessionStore());
+
+        // Act
+        var state = handler.Handle(new ApplyDailyKey("t", 19));
+
+        // Assert
+        Assert.Equal(new AppliedKeyState("t", "Triton", "1942-11", 19, false), state.AppliedKey);
+    }
+
+    [Fact]
+    public void Should_mark_the_applied_key_as_modified_When_a_plug_is_moved_but_not_when_a_rotor_is_turned()
+    {
+        // Arrange
+        var repository = new FakeKeySheetRepository(Sheet("t", "Hydra", "1944-06", Provenance.UserDefined));
+        var store = new FakeMachineSessionStore();
+        new ApplyDailyKeyHandler(repository, store).Handle(new ApplyDailyKey("t", 1));
+
+        // Act
+        var turned = new TurnRotorHandler(store).Handle(new TurnRotor("Right", "Q"));
+        var moved = new MovePlugHandler(store).Handle(new MovePlug("A", "B"));
+
+        // Assert
+        Assert.False(turned.AppliedKey!.Modified);
+        Assert.True(moved.AppliedKey!.Modified);
+        Assert.Equal(1, moved.AppliedKey.Day);
+    }
+
+    [Fact]
+    public void Should_forget_the_applied_key_When_the_model_is_switched()
+    {
+        // Arrange
+        var repository = new FakeKeySheetRepository(Sheet("t", "Hydra", "1944-06", Provenance.UserDefined));
+        var store = new FakeMachineSessionStore();
+        new ApplyDailyKeyHandler(repository, store).Handle(new ApplyDailyKey("t", 1));
+
+        // Act
+        var state = new CreateMachineHandler(store).Handle(new CreateMachine("M4"));
+
+        // Assert
+        Assert.Null(state.AppliedKey);
+        Assert.Null(new GetMachineStateHandler(store).Handle(new GetMachineState()).AppliedKey);
     }
 
     [Fact]

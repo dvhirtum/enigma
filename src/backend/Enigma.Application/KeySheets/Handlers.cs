@@ -101,9 +101,12 @@ public sealed class ApplyDailyKeyHandler(IKeySheetRepository repository, IMachin
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var machine = repository.Get(command.SheetId).KeyFor(command.Day).SetUp();
-        var state = MachineState.From(machine);
-        store.Replace(machine);
+        var sheet = repository.Get(command.SheetId);
+        var key = sheet.KeyFor(command.Day);
+        var machine = key.SetUp();
+        var appliedKey = new AppliedKey(sheet.Id, sheet.Network, sheet.Month.ToString(), key);
+        var state = MachineState.From(machine, appliedKey);
+        store.Replace(machine, appliedKey);
         return state;
     }
 }

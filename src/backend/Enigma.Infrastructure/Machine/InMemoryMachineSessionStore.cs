@@ -9,6 +9,8 @@ public sealed class InMemoryMachineSessionStore : IMachineSessionStore
     private readonly Lock _lock = new();
     private EnigmaMachine _machine = EnigmaMachine.Create(MachineModel.M3);
 
+    public AppliedKey? AppliedKey { get; private set; }
+
     public T Use<T>(Func<EnigmaMachine, T> action)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -19,13 +21,14 @@ public sealed class InMemoryMachineSessionStore : IMachineSessionStore
         }
     }
 
-    public void Replace(EnigmaMachine machine)
+    public void Replace(EnigmaMachine machine, AppliedKey? appliedKey = null)
     {
         ArgumentNullException.ThrowIfNull(machine);
 
         lock (_lock)
         {
             _machine = machine;
+            AppliedKey = appliedKey;
         }
     }
 }

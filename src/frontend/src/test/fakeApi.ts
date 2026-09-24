@@ -13,6 +13,7 @@ export const defaultM3: MachineState = {
   plugs: [],
   heldKey: null,
   litLamp: null,
+  appliedKey: null,
 };
 
 export const generatedSheet: KeySheet = {

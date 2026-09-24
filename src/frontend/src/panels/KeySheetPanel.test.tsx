@@ -1,6 +1,6 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { historicalSheet, summaryOf } from '../test/fakeApi';
+import { defaultM3, historicalSheet, summaryOf } from '../test/fakeApi';
 import { renderMachine } from '../test/renderMachine';
 import { KeySheetPanel } from './KeySheetPanel';
 
@@ -29,6 +29,17 @@ describe('KeySheetPanel', () => {
     expect(day).toHaveTextContent('UKW B-thin · Beta II IV I · 01 01 01 22');
     expect(day).toHaveTextContent('AT BL DF');
     expect(day).toHaveTextContent('Kenngruppen ABC DEF');
+  });
+
+  it('marks the day applied to the machine', async () => {
+    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 2, modified: true };
+    renderMachine(<KeySheetPanel />, { ...defaultM3, appliedKey });
+    await openSheet();
+
+    const day = await screen.findByRole('listitem', { name: 'Day 2' });
+    expect(day).toHaveAttribute('aria-current', 'true');
+    expect(day).toHaveTextContent('Applied, since modified');
+    expect(screen.getByRole('listitem', { name: 'Day 1' })).not.toHaveAttribute('aria-current');
   });
 
   it('asks before applying a key for the other model', async () => {

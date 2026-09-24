@@ -29,6 +29,20 @@ function MachineSummary() {
   );
 }
 
+function AppliedKeyLabel() {
+  const key = useMachine((store) => store.machine?.appliedKey);
+  if (!key) {
+    return null;
+  }
+
+  return (
+    <p className="summary" aria-label="Daily key">
+      Key: {key.network} {key.month}, day {key.day}
+      {key.modified && ' (modified)'}
+    </p>
+  );
+}
+
 /** Switches the model once the user confirms that the machine resets. */
 function ModelSwitch() {
   const model = useMachine((store) => store.machine?.model);
@@ -119,6 +133,7 @@ export function MachineFrame() {
         <h1>Enigma</h1>
         <ModelSwitch />
         <MachineSummary />
+        <AppliedKeyLabel />
         <button type="button" className="panel-toggle" aria-expanded={panelOpen} aria-controls="key-sheet-panel" onClick={() => setPanelOpen(!panelOpen)}>
           Key sheets
         </button>

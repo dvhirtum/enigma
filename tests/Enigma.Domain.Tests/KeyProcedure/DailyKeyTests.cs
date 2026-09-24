@@ -45,6 +45,70 @@ public sealed class DailyKeyTests
         Assert.Equal(["AN", "EZ"], machine.Plugboard.Pairs.Select(p => p.ToString()));
     }
 
+    [Fact]
+    public void Should_still_match_the_machine_When_only_rotor_positions_changed()
+    {
+        // Arrange
+        var key = Keys.Day(1, "C", "III VI VIII", "01 08 13", "AN EZ");
+        var machine = key.SetUp();
+
+        // Act
+        machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q'));
+        machine.Type("HELLO");
+
+        // Assert
+        Assert.True(key.IsSetUpOn(machine));
+    }
+
+    [Theory]
+    [InlineData("plug")]
+    [InlineData("reflector")]
+    [InlineData("rotor")]
+    [InlineData("ring")]
+    public void Should_no_longer_match_the_machine_When_its_setup_changed(string change)
+    {
+        // Arrange
+        var key = Keys.Day(1, "C", "III VI VIII", "01 08 13", "AN EZ");
+        var machine = key.SetUp();
+
+        // Act
+        switch (change)
+        {
+            case "plug":
+                machine.MovePlug(Letter.FromChar('A'), Letter.FromChar('B'));
+                break;
+            case "reflector":
+                machine.SetReflector(ReflectorType.B);
+                break;
+            case "rotor":
+                machine.InsertRotor(RotorSlot.Left, RotorType.I);
+                break;
+            default:
+                machine.RemoveRotor(RotorSlot.Left);
+                machine.SetRingSetting(RotorType.III, RingSetting.FromNumber(2));
+                machine.InsertRotor(RotorSlot.Left, RotorType.III);
+                break;
+        }
+
+        // Assert
+        Assert.False(key.IsSetUpOn(machine));
+    }
+
+    [Fact]
+    public void Should_match_again_When_a_change_is_undone()
+    {
+        // Arrange
+        var key = Keys.Day(1, "B", "I II III", "01 01 01", "AN EZ");
+        var machine = key.SetUp();
+        machine.DisconnectPlug(Letter.FromChar('A'));
+
+        // Act
+        machine.ConnectPlug(PlugPair.Parse("NA"));
+
+        // Assert
+        Assert.True(key.IsSetUpOn(machine));
+    }
+
     [Theory]
     [InlineData("B", "I II", "01 01", "3 rotors (M3) or 4 (M4)")]
     [InlineData("B", "I II III", "01 01", "need 3 ring settings")]

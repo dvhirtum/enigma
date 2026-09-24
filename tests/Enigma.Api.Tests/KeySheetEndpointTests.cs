@@ -124,6 +124,26 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(["III", "VI", "VIII"], state.Rotors.Select(r => r.Rotor));
         Assert.Equal([1, 8, 13], state.Rotors.Select(r => r.RingSetting));
         Assert.Equal(10, state.Plugs.Count);
+        Assert.Equal(new AppliedKeyState("historical-hydra-1943-12", "Hydra", "1943-12", 26, false), state.AppliedKey);
+    }
+
+    [Fact]
+    public async Task Should_mark_the_applied_key_as_modified_When_a_plug_is_moved_afterwards()
+    {
+        // Arrange
+        var client = CreateClient();
+        await SendAsync<MachineState>(
+            client, HttpMethod.Post, "/api/machine/daily-key", new { sheetId = "historical-hydra-1943-12", day = 26 });
+
+        // Act
+        await SendAsync<MachineState>(client, HttpMethod.Put, "/api/machine/plugs/A", new { to = "B" });
+        var json = await client.GetStringAsync(Url("/api/machine"), Token);
+
+        // Assert
+        Assert.Contains(
+            "\"appliedKey\":{\"sheetId\":\"historical-hydra-1943-12\",\"network\":\"Hydra\",\"month\":\"1943-12\",\"day\":26,\"modified\":true}",
+            json,
+            StringComparison.Ordinal);
     }
 
     [Fact]

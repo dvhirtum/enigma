@@ -116,7 +116,9 @@ function DayRow({ sheet, dailyKey }: { sheet: KeySheet; dailyKey: DailyKey }) {
   const model = useMachine((store) => store.machine?.model);
   const keyHeld = useMachine((store) => store.machine?.heldKey != null);
   const applyDailyKey = useMachine((store) => store.applyDailyKey);
+  const appliedKey = useMachine((store) => store.machine?.appliedKey);
   const [confirming, setConfirming] = useState(false);
+  const applied = appliedKey?.sheetId === sheet.id && appliedKey.day === dailyKey.day ? appliedKey : null;
 
   const apply = () => {
     setConfirming(false);
@@ -124,7 +126,7 @@ function DayRow({ sheet, dailyKey }: { sheet: KeySheet; dailyKey: DailyKey }) {
   };
 
   return (
-    <li className="day" aria-label={`Day ${dailyKey.day}`}>
+    <li className="day" aria-label={`Day ${dailyKey.day}`} aria-current={applied ? 'true' : undefined}>
       <span className="day-number">{dailyKey.day}</span>
       <span className="day-inner">
         UKW {dailyKey.reflector} · {dailyKey.rotors.join(' ')} · {dailyKey.rings.map(ring).join(' ')}
@@ -134,6 +136,7 @@ function DayRow({ sheet, dailyKey }: { sheet: KeySheet; dailyKey: DailyKey }) {
       </button>
       <span className="day-plugs">{dailyKey.plugs.join(' ') || 'no plugs'}</span>
       {dailyKey.kenngruppen && dailyKey.kenngruppen.length > 0 && <span className="day-groups">Kenngruppen {dailyKey.kenngruppen.join(' ')}</span>}
+      {applied && <span className="day-applied">{applied.modified ? 'Applied, since modified' : 'Applied'}</span>}
       {confirming && (
         <p className="day-confirm" role="group" aria-label="Confirm model switch">
           Switch to the {sheet.model}? This resets the machine.

@@ -106,6 +106,30 @@ describe('MachineFrame', () => {
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Plugboard');
   });
 
+  it('shows no daily key until one is applied', async () => {
+    renderFrame();
+
+    await screen.findByLabelText('Machine');
+
+    expect(screen.queryByLabelText('Daily key')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [false, 'Key: Triton 1944-06, day 19'],
+    [true, 'Key: Triton 1944-06, day 19 (modified)'],
+  ])('shows the applied sheet and day in the header (modified: %s)', async (modified, label) => {
+    const { api } = createFakeApi();
+    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 19, modified };
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, appliedKey } });
+    render(
+      <MachineStoreProvider api={api}>
+        <MachineFrame />
+      </MachineStoreProvider>,
+    );
+
+    expect(await screen.findByLabelText('Daily key')).toHaveTextContent(new RegExp(`^${label.replace(/[()]/g, '\\$&')}$`));
+  });
+
   it('opens and closes the key sheet panel beside the view', async () => {
     renderFrame();
     const toggle = screen.getByRole('button', { name: 'Key sheets' });
