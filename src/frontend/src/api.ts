@@ -38,8 +38,8 @@ type MachineCall<Args extends unknown[]> = (...args: Args) => Promise<ApiResult<
 export interface MachineApi {
   getState: MachineCall<[]>;
   create: MachineCall<[model: string]>;
-  insertRotors: MachineCall<[rotors: string[]]>;
-  removeRotors: MachineCall<[]>;
+  insertRotor: MachineCall<[slot: string, rotor: string]>;
+  removeRotor: MachineCall<[slot: string]>;
   turnRotor: MachineCall<[slot: string, position: string]>;
   setRingSetting: MachineCall<[rotor: string, ringSetting: number]>;
   setReflector: MachineCall<[reflector: string]>;

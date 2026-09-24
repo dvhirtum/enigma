@@ -56,14 +56,16 @@ test('turns a rotor with the thumbwheel', async () => {
   await expect(page.getByRole('spinbutton', { name: 'Right rotor' })).toHaveAttribute('aria-valuetext', 'A');
 });
 
-test('sets a ring with the rotors out and puts them back', async () => {
+test('moves a rotor to the box, sets its ring and puts it back', async () => {
   await page.getByRole('tab', { name: 'Open lid' }).click();
 
-  await page.getByRole('button', { name: 'Remove rotors' }).click();
-  await page.getByRole('combobox', { name: 'Ring setting of rotor I', exact: true }).selectOption('2');
-  await page.getByRole('button', { name: 'Insert rotors' }).click();
+  await page.getByRole('spinbutton', { name: /^Left slot/ }).click();
+  await page.getByRole('spinbutton', { name: 'Rotor I in the box, ring' }).press('ArrowUp');
+  await expect(page.getByRole('spinbutton', { name: 'Rotor I in the box, ring' })).toHaveAttribute('aria-valuetext', '02 (B)');
+  await page.getByRole('spinbutton', { name: 'Rotor I in the box, ring' }).click();
+  await page.getByRole('button', { name: 'Left slot: empty' }).click();
 
-  await expect(page.getByRole('img', { name: 'Left slot: rotor I, ring 02 B, position A' })).toBeVisible();
+  await expect(page.getByRole('spinbutton', { name: 'Left slot: rotor I, ring 02 (B)' })).toBeVisible();
 });
 
 test('plugs a cable on the plugboard, moves it and removes it', async () => {

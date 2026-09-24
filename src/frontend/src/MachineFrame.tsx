@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { models } from './machine';
+import { models, slots } from './machine';
 import { useMachine } from './store';
 import { OpenLidView } from './views/OpenLidView';
 import { PlugboardView } from './views/PlugboardView';
@@ -17,7 +17,10 @@ function MachineSummary() {
     return null;
   }
 
-  const rotors = machine.rotors.map((rotor) => rotor.rotor).join(' ');
+  const rotors =
+    machine.rotors.length > 0
+      ? (slots[machine.model] ?? []).map((slot) => machine.rotors.find((rotor) => rotor.slot === slot)?.rotor ?? '–').join(' ')
+      : '';
   return (
     <p className="summary" aria-label="Machine">
       {machine.model} · UKW {machine.reflector} · {rotors || 'rotors out'}

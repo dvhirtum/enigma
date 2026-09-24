@@ -15,20 +15,27 @@ public sealed class CreateMachineHandler(IMachineSessionStore store)
     }
 }
 
-public sealed class InsertRotorsHandler(IMachineSessionStore store)
+public sealed class InsertRotorHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(InsertRotors command)
+    public MachineState Handle(InsertRotor command)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        RotorType[] rotors = [.. (command.Rotors ?? []).Select(Input.Rotor)];
-        return store.Update(m => m.InsertRotors(rotors));
+        var slot = Input.Slot(command.Slot);
+        var rotor = Input.Rotor(command.Rotor);
+        return store.Update(m => m.InsertRotor(slot, rotor));
     }
 }
 
-public sealed class RemoveRotorsHandler(IMachineSessionStore store)
+public sealed class RemoveRotorHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(RemoveRotors command) => store.Update(m => m.RemoveRotors());
+    public MachineState Handle(RemoveRotor command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var slot = Input.Slot(command.Slot);
+        return store.Update(m => m.RemoveRotor(slot));
+    }
 }
 
 public sealed class SetRingSettingHandler(IMachineSessionStore store)

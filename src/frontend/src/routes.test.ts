@@ -5,8 +5,8 @@ describe('machine routes', () => {
   it.each([
     ['getState', machineRoutes.getState(), 'GET', '/api/machine', undefined],
     ['create', machineRoutes.create('M4'), 'POST', '/api/machine', { model: 'M4' }],
-    ['insertRotors', machineRoutes.insertRotors(['II', 'IV', 'V']), 'PUT', '/api/machine/rotors', { rotors: ['II', 'IV', 'V'] }],
-    ['removeRotors', machineRoutes.removeRotors(), 'DELETE', '/api/machine/rotors', undefined],
+    ['insertRotor', machineRoutes.insertRotor('Left', 'IV'), 'PUT', '/api/machine/rotors/Left', { rotor: 'IV' }],
+    ['removeRotor', machineRoutes.removeRotor('Middle'), 'DELETE', '/api/machine/rotors/Middle', undefined],
     ['turnRotor', machineRoutes.turnRotor('Greek', 'Q'), 'PUT', '/api/machine/rotors/Greek/position', { position: 'Q' }],
     ['setRingSetting', machineRoutes.setRingSetting('IV', 21), 'PUT', '/api/machine/rotor-box/IV/ring', { ringSetting: 21 }],
     ['setReflector', machineRoutes.setReflector('C'), 'PUT', '/api/machine/reflector', { reflector: 'C' }],

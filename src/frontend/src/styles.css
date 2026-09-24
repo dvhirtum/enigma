@@ -301,104 +301,198 @@ button {
 
 .open-lid {
   display: grid;
-  gap: 1.25rem;
+  gap: 0.75rem;
+  justify-items: center;
 }
 
-.rotor-stack {
-  max-width: 640px;
+.open-lid .hint {
+  max-width: 60rem;
+  text-align: center;
 }
 
-.reflector,
-.entry-wheel {
+.open-lid .machine {
+  max-width: 1040px;
+}
+
+.axle {
   fill: #6d6a63;
-  stroke: #3b3934;
 }
 
-.drum {
-  fill: #2e2d2a;
+.rotor-drum,
+.empty-slot,
+.spare-reflector {
+  cursor: pointer;
+}
+
+.rotor-drum:focus,
+.empty-slot:focus,
+.spare-reflector:focus {
+  outline: none;
+}
+
+.drum-outline {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 3;
+}
+
+.drum-core {
+  fill: url(#drum-dark);
   stroke: #0b0b0a;
 }
 
-.drum-ring {
-  fill: #e9e2cf;
-}
-
-.drum-ring-text {
-  fill: #1b1a18;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-
-.drum-name {
-  fill: #f4f1ea;
-  font-size: 22px;
+.drum-core-name {
+  fill: #ece6d6;
+  font-size: 20px;
   font-weight: 600;
 }
 
-.drum-position {
-  fill: #b9b2a2;
+.ring-mark {
+  fill: #c8321e;
+  stroke: #5a1409;
+}
+
+.drum-core-name.greek {
+  font-size: 13px;
+}
+
+.drum-ratchet {
+  fill: url(#drum-metal);
+  stroke: #3b3934;
+}
+
+.drum-alphabet {
+  fill: url(#drum-metal);
+  stroke: #3b3934;
+}
+
+.drum-front {
+  fill: #fbf8ef;
+  stroke: #2b2a27;
+}
+
+.drum-letter {
+  fill: #1b1a18;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.drum-letter.front {
   font-size: 18px;
 }
 
-.drum-empty {
-  fill: none;
-  stroke: #6b675e;
-  stroke-dasharray: 6 4;
+.rotor-drum:hover .drum-outline,
+.rotor-drum:focus-visible .drum-outline {
+  stroke: #8b8676;
 }
 
-.drum-slot {
-  fill: #b9b2a2;
-  font-size: 12px;
+.rotor-drum.picked .drum-outline {
+  fill: rgb(210 168 103 / 0.18);
+  stroke: var(--accent);
+  stroke-width: 5;
+}
+
+.empty-slot rect {
+  fill: #0e0e0d;
+  stroke: #55534d;
+  stroke-width: 2;
+  stroke-dasharray: 7 5;
+}
+
+.empty-slot[aria-disabled='true'] {
+  cursor: default;
+}
+
+.rotor-drum.target .drum-outline,
+.empty-slot.target rect {
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-dasharray: none;
+}
+
+.empty-slot:focus-visible rect {
+  stroke: #b9b2a2;
+}
+
+.reflector-body {
+  fill: url(#drum-metal);
+  stroke: #3b3934;
+}
+
+.reflector-hub,
+.entry-wheel-rim {
+  fill: #8f8c84;
+  stroke: #3b3934;
+}
+
+.entry-wheel-body {
+  fill: url(#drum-metal);
+  stroke: #3b3934;
+}
+
+.reflector-letter {
+  fill: #1b1a18;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.caption-title {
+  fill: #ece6d6;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.setup {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
+.caption-detail {
+  fill: #b9b2a2;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
-.setup fieldset {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  min-width: 12rem;
-  border: 1px solid var(--line);
+.caption.muted .caption-title,
+.caption.muted .caption-detail {
+  fill: #8b8676;
 }
 
-.setup label {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  width: 100%;
+.felt {
+  fill: #1f4430;
+  stroke: #10261a;
 }
 
-.hint {
-  margin: 0;
-  max-width: 16rem;
-  color: var(--muted);
-  font-size: 0.85rem;
+.divider {
+  fill: #7b5230;
 }
 
-.rotor-box {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 0.4rem 1.25rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.box-plate {
+  fill: #c9c6bc;
+  stroke: #55534d;
 }
 
-.rotor-name {
-  min-width: 3.5rem;
-  font-weight: 600;
+.box-plate-text {
+  fill: #1b1a18;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.reflector-name {
-  font-size: 16px;
+.compartment-note {
+  fill: #8fae98;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.spare-reflector-area {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 3;
+}
+
+.spare-reflector:hover .spare-reflector-area,
+.spare-reflector:focus-visible .spare-reflector-area {
+  stroke: var(--accent);
 }
 
 /* Top-down: the machine scales to fit the height of the view. */

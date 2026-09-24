@@ -43,7 +43,7 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(MachineState))]
 [JsonSerializable(typeof(CreateMachine))]
-[JsonSerializable(typeof(InsertRotors))]
+[JsonSerializable(typeof(RotorRequest))]
 [JsonSerializable(typeof(SetReflector))]
 [JsonSerializable(typeof(ConnectPlug))]
 [JsonSerializable(typeof(PressKey))]

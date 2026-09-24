@@ -33,6 +33,18 @@ describe('MachineFrame', () => {
     expect(await screen.findByLabelText('Machine')).toHaveTextContent('M3 · UKW B · rotors out');
   });
 
+  it('marks an empty slot in the summary', async () => {
+    const { api } = createFakeApi();
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, rotors: defaultM3.rotors.filter((rotor) => rotor.slot !== 'Middle') } });
+    render(
+      <MachineStoreProvider api={api}>
+        <MachineFrame />
+      </MachineStoreProvider>,
+    );
+
+    expect(await screen.findByLabelText('Machine')).toHaveTextContent(/^M3 · UKW B · I – III$/);
+  });
+
   it('creates a new machine when the model switch is confirmed', async () => {
     const api = renderFrame();
 

@@ -5,7 +5,7 @@ public sealed class EnigmaMachine
 {
     private readonly List<IDomainEvent> _domainEvents = [];
     private readonly Rotor[] _allRotors;
-    private Rotor[] _rotors = [];
+    private readonly Rotor?[] _slots;
 
     private EnigmaMachine(MachineModel model, Reflector reflector)
     {
@@ -14,15 +14,19 @@ public sealed class EnigmaMachine
         _allRotors = [.. RotorType.All
             .Where(t => model.HasGreekSlot || !t.IsGreek)
             .Select(t => new Rotor(t, RingSetting.A, RotorPosition.A))];
+        _slots = new Rotor?[model.Slots.Count];
     }
 
     public MachineModel Model { get; }
 
-    /// <summary>The inserted rotors from left to right; on the M4 the Greek rotor comes first. Empty when removed.</summary>
-    public IReadOnlyList<Rotor> Rotors => _rotors;
+    /// <summary>The inserted rotors from left to right, skipping empty slots; on the M4 the Greek rotor comes first.</summary>
+    public IReadOnlyList<Rotor> Rotors => [.. _slots.OfType<Rotor>()];
 
     /// <summary>The rotors in the box, outside the machine.</summary>
-    public IReadOnlyList<Rotor> RotorBox => [.. _allRotors.Except(_rotors)];
+    public IReadOnlyList<Rotor> RotorBox => [.. _allRotors.Except(Rotors)];
+
+    /// <summary>True when every slot holds a rotor.</summary>
+    public bool IsComplete => Array.TrueForAll(_slots, r => r is not null);
 
     public Reflector Reflector { get; private set; }
 
@@ -45,62 +49,62 @@ public sealed class EnigmaMachine
         ArgumentNullException.ThrowIfNull(model);
 
         var machine = new EnigmaMachine(model, new Reflector(model.HasGreekSlot ? ReflectorType.BThin : ReflectorType.B));
-        machine.InsertRotors(model.HasGreekSlot
+        RotorType[] rotors = model.HasGreekSlot
             ? [RotorType.Beta, RotorType.I, RotorType.II, RotorType.III]
-            : [RotorType.I, RotorType.II, RotorType.III]);
+            : [RotorType.I, RotorType.II, RotorType.III];
+        foreach (var (slot, type) in model.Slots.Zip(rotors))
+        {
+            machine.InsertRotor(slot, type);
+        }
 
         return machine;
     }
 
-    public Rotor GetRotor(RotorSlot slot)
-    {
-        var index = Model.IndexOf(slot);
-        if (index < 0)
-        {
-            throw new DomainException($"The {Model} has no {slot} slot.");
-        }
+    /// <summary>The rotor in <paramref name="slot"/>, or null when the slot is empty.</summary>
+    public Rotor? RotorIn(RotorSlot slot) => _slots[SlotIndex(slot)];
 
-        return _rotors.Length > 0 ? _rotors[index] : throw new DomainException("No rotors are inserted.");
-    }
+    public Rotor GetRotor(RotorSlot slot) =>
+        RotorIn(slot) ?? throw new DomainException($"The {slot} slot is empty.");
 
     /// <summary>
-    /// Inserts rotors from the box, listed from left to right. Rotors already inserted go back to the box.
+    /// Puts a rotor from the box into <paramref name="slot"/>. A rotor already in that slot goes back to the box.
     /// Each rotor keeps its own ring setting and position.
     /// </summary>
-    public void InsertRotors(IReadOnlyList<RotorType> types)
+    public void InsertRotor(RotorSlot slot, RotorType type)
     {
-        ArgumentNullException.ThrowIfNull(types);
+        ArgumentNullException.ThrowIfNull(type);
         EnsureNoKeyHeld();
 
-        if (types.Count != Model.Slots.Count)
+        var index = SlotIndex(slot);
+        var rotor = FindRotor(type);
+        var current = Array.IndexOf(_slots, rotor);
+        if (current >= 0)
         {
-            throw new DomainException($"The {Model} takes {Model.Slots.Count} rotors, got {types.Count}.");
+            throw new DomainException($"Rotor {type} is already in the {Model.Slots[current]} slot.");
         }
 
-        if (types.Distinct().Count() != types.Count)
+        if (type.IsGreek != (slot == RotorSlot.Greek))
         {
-            throw new DomainException("Each rotor can be used only once.");
+            throw new DomainException(slot == RotorSlot.Greek
+                ? $"The Greek slot takes Beta or Gamma, got {type}."
+                : $"Rotor {type} fits only the Greek slot of the M4.");
         }
 
-        for (var i = 0; i < types.Count; i++)
-        {
-            var greekSlot = Model.Slots[i] == RotorSlot.Greek;
-            if (types[i].IsGreek != greekSlot)
-            {
-                throw new DomainException(greekSlot
-                    ? $"The Greek slot takes Beta or Gamma, got {types[i]}."
-                    : $"Rotor {types[i]} fits only the Greek slot of the M4.");
-            }
-        }
-
-        _rotors = [.. types.Select(FindRotor)];
+        _slots[index] = rotor;
     }
 
-    /// <summary>Lifts all rotors out of the machine into the box.</summary>
-    public void RemoveRotors()
+    /// <summary>Lifts the rotor in <paramref name="slot"/> out of the machine into the box.</summary>
+    public void RemoveRotor(RotorSlot slot)
     {
         EnsureNoKeyHeld();
-        _rotors = [];
+
+        var index = SlotIndex(slot);
+        if (_slots[index] is null)
+        {
+            throw new DomainException($"The {slot} slot is empty.");
+        }
+
+        _slots[index] = null;
     }
 
     public void SetReflector(ReflectorType type)
@@ -124,7 +128,7 @@ public sealed class EnigmaMachine
         EnsureNoKeyHeld();
 
         var rotor = FindRotor(type);
-        if (_rotors.Contains(rotor))
+        if (_slots.Contains(rotor))
         {
             throw new DomainException($"Remove rotor {type} from the machine before setting its ring.");
         }
@@ -162,13 +166,13 @@ public sealed class EnigmaMachine
     {
         EnsureNoKeyHeld();
 
-        if (_rotors.Length == 0)
+        if (!IsComplete)
         {
-            throw new DomainException("No rotors are inserted.");
+            throw new DomainException("Every rotor slot needs a rotor.");
         }
 
         StepRotors();
-        _domainEvents.Add(new RotorsStepped([.. _rotors.Select(r => r.Position)]));
+        _domainEvents.Add(new RotorsStepped([.. Rotors.Select(r => r.Position)]));
 
         var lamp = Encrypt(key);
         HeldKey = key;
@@ -200,6 +204,12 @@ public sealed class EnigmaMachine
         }
     }
 
+    private int SlotIndex(RotorSlot slot)
+    {
+        var index = Model.IndexOf(slot);
+        return index >= 0 ? index : throw new DomainException($"The {Model} has no {slot} slot.");
+    }
+
     private Rotor FindRotor(RotorType type) =>
         Array.Find(_allRotors, r => r.Type == type) ?? throw new DomainException($"The {Model} has no rotor {type}.");
 
@@ -228,15 +238,16 @@ public sealed class EnigmaMachine
     private Letter Encrypt(Letter key)
     {
         var signal = Plugboard.Swap(key);
+        var rotors = Rotors;
 
-        for (var i = _rotors.Length - 1; i >= 0; i--)
+        for (var i = rotors.Count - 1; i >= 0; i--)
         {
-            signal = _rotors[i].Forward(signal);
+            signal = rotors[i].Forward(signal);
         }
 
         signal = Reflector.Reflect(signal);
 
-        foreach (var rotor in _rotors)
+        foreach (var rotor in rotors)
         {
             signal = rotor.Backward(signal);
         }

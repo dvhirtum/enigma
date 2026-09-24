@@ -62,9 +62,9 @@ export function TopDownView() {
             );
           })}
         </g>
-        {machine.rotors.length === 0 && (
+        {machine.rotors.length < machineSlots.length && (
           <text className="machine-note" x={width / 2} y={rotorsY + 72}>
-            The rotors are out. Insert them in the open-lid view.
+            A rotor slot is empty. Fill it in the open-lid view.
           </text>
         )}
 

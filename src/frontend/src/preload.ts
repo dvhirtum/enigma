@@ -8,8 +8,8 @@ const api: EnigmaApi = {
   machine: {
     getState: () => invoke('machine:getState'),
     create: (model) => invoke('machine:create', model),
-    insertRotors: (rotors) => invoke('machine:insertRotors', rotors),
-    removeRotors: () => invoke('machine:removeRotors'),
+    insertRotor: (slot, rotor) => invoke('machine:insertRotor', slot, rotor),
+    removeRotor: (slot) => invoke('machine:removeRotor', slot),
     turnRotor: (slot, position) => invoke('machine:turnRotor', slot, position),
     setRingSetting: (rotor, ringSetting) => invoke('machine:setRingSetting', rotor, ringSetting),
     setReflector: (reflector) => invoke('machine:setReflector', reflector),

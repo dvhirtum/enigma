@@ -24,8 +24,8 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     machine: {
       getState: ok(),
       create: ok(),
-      insertRotors: ok(),
-      removeRotors: ok(),
+      insertRotor: ok(),
+      removeRotor: ok(),
       turnRotor: ok(),
       setRingSetting: ok(),
       setReflector: ok(),
