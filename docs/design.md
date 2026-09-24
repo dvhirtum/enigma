@@ -79,6 +79,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - Rotor box: I–VIII, plus Beta and Gamma on the M4. Each rotor keeps its own ring and position in or out of the machine.
   - `InsertRotors` takes all rotors from the box; `RemoveRotors` lifts them all out. `SetRingSetting` works only on rotors in the box.
   - `TurnRotor` sets a rotor to a given window letter.
+  - `MovePlug` moves one end of a cable to a free socket.
   - Switching model creates a new machine.
 
 ### Domain: Key Procedure
@@ -120,6 +121,8 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 | PUT | `/api/machine/reflector` | `{ reflector }` |
 | POST | `/api/machine/plugs` | `{ pair }` |
 | DELETE | `/api/machine/plugs/{letter}` | |
+| PUT | `/api/machine/plugs/{letter}` | `{ to }` |
+| PUT | `/api/machine/plugs/{letter}` | `{ to }` |
 | POST | `/api/machine/keyboard/press` | `{ key }` |
 | POST | `/api/machine/keyboard/release` | |
 
@@ -134,7 +137,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
     - the lampboard (QWERTZUIO / ASDFGHJK / PYXCVBNML), lit while a key is held down
     - the keyboard, used with the mouse or the physical keyboard
   - **Open lid:** remove the rotors, set the rings of the rotors in the box, pick a rotor for each slot and insert them, and choose the reflector.
-  - **Plugboard:** drag cables between sockets.
+  - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
 - Panels:
   - message pad (4-letter groups)
   - key-sheet browser and editor, with "Apply daily key"

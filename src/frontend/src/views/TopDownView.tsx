@@ -44,8 +44,9 @@ export function TopDownView() {
           </radialGradient>
         </defs>
 
-        <rect className="case" x={0} y={0} width={width} height={610} rx={18} />
-        <rect className="lid" x={16} y={16} width={width - 32} height={352} rx={10} />
+        <rect className="wood" width={width} height={610} rx={10} />
+        <rect className="case" x={14} y={12} width={width - 28} height={610 - 24} rx={4} />
+        <rect className="lid" x={28} y={26} width={width - 56} height={342} rx={8} />
 
         <g aria-label="Rotors" role="group">
           <rect className="rotor-plate" x={width / 2 - (machineSlots.length * rotorPitch) / 2} y={rotorsY - 50} width={machineSlots.length * rotorPitch} height={100} rx={8} />

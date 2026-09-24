@@ -6,6 +6,8 @@ internal sealed record RingSettingRequest(int RingSetting);
 
 internal sealed record PositionRequest(string Position);
 
+internal sealed record PlugMoveRequest(string To);
+
 internal static class MachineEndpoints
 {
     public static IServiceCollection AddMachineHandlers(this IServiceCollection services) => services
@@ -16,6 +18,7 @@ internal static class MachineEndpoints
         .AddSingleton<SetReflectorHandler>()
         .AddSingleton<ConnectPlugHandler>()
         .AddSingleton<DisconnectPlugHandler>()
+        .AddSingleton<MovePlugHandler>()
         .AddSingleton<TurnRotorHandler>()
         .AddSingleton<PressKeyHandler>()
         .AddSingleton<ReleaseKeyHandler>()
@@ -51,6 +54,9 @@ internal static class MachineEndpoints
 
         machine.MapDelete("/plugs/{letter}", (string letter, DisconnectPlugHandler handler) =>
             handler.Handle(new DisconnectPlug(letter)));
+
+        machine.MapPut("/plugs/{letter}", (string letter, PlugMoveRequest request, MovePlugHandler handler) =>
+            handler.Handle(new MovePlug(letter, request.To)));
 
         machine.MapPost("/keyboard/press", (PressKey command, PressKeyHandler handler) =>
             handler.Handle(command));

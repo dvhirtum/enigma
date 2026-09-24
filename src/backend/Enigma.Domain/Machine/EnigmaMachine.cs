@@ -151,6 +151,12 @@ public sealed class EnigmaMachine
         Plugboard.Disconnect(letter);
     }
 
+    public void MovePlug(Letter from, Letter to)
+    {
+        EnsureNoKeyHeld();
+        Plugboard.Move(from, to);
+    }
+
     /// <summary>Steps the rotors, then encrypts <paramref name="key"/> and returns the lit lamp.</summary>
     public Letter PressKey(Letter key)
     {

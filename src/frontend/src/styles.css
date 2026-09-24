@@ -161,6 +161,12 @@ button {
   text-anchor: middle;
 }
 
+.wood {
+  fill: #6e4526;
+  stroke: #3d2412;
+  stroke-width: 2;
+}
+
 .machine .case {
   fill: #1f1e1c;
   stroke: #0b0b0a;
@@ -406,4 +412,118 @@ button {
 .top-down .machine {
   height: 100%;
   min-height: 360px;
+}
+
+/* Plugboard */
+
+.plugboard {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+}
+
+.plugboard .hint {
+  max-width: 40rem;
+  text-align: center;
+}
+
+.cable-list {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.plugboard-panel {
+  fill: #151514;
+  stroke: #000;
+  stroke-width: 2;
+}
+
+.screw circle {
+  fill: #a9a69c;
+  stroke: #55534d;
+}
+
+.screw line {
+  stroke: #3b3934;
+  stroke-width: 1.5;
+}
+
+.socket {
+  cursor: pointer;
+  touch-action: none;
+}
+
+.socket:focus {
+  outline: none;
+}
+
+.socket-area {
+  fill: transparent;
+}
+
+.socket-letter {
+  fill: #ece6d6;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.socket-ring {
+  fill: #c9c6bc;
+  stroke: #6d6a63;
+}
+
+.socket-hole {
+  fill: #080808;
+}
+
+.socket:focus-visible .socket-ring,
+.socket.selected .socket-ring {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.socket.selected .socket-letter {
+  fill: var(--accent);
+}
+
+.plug-body {
+  fill: #0e0d0c;
+  stroke: #3a3834;
+  stroke-width: 1.5;
+}
+
+.plug-screw {
+  fill: #c9c6bc;
+  stroke: #55534d;
+}
+
+.plug-screw-slot {
+  stroke: #3b3934;
+  stroke-width: 1.5;
+}
+
+.cables {
+  pointer-events: none;
+}
+
+.cable,
+.cable-braid {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.cable {
+  stroke: #45443f;
+  stroke-width: 5;
+}
+
+.cable-braid {
+  stroke: #75726a;
+  stroke-width: 3;
+  stroke-dasharray: 2 3;
+}
+
+.plugboard .machine {
+  max-width: 900px;
 }

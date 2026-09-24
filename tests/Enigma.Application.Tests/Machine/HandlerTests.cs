@@ -148,6 +148,20 @@ public sealed class HandlerTests
         Assert.Empty(state.Plugs);
     }
 
+    [Fact]
+    public void Should_list_the_new_pair_When_a_plug_is_moved()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        new ConnectPlugHandler(store).Handle(new ConnectPlug("AT"));
+
+        // Act
+        var state = new MovePlugHandler(store).Handle(new MovePlug("a", "C"));
+
+        // Assert
+        Assert.Equal(["CT"], state.Plugs);
+    }
+
     [Theory]
     [InlineData("right", "Q", "AAQ")]
     [InlineData("Middle", "D", "ADA")]

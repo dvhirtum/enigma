@@ -23,6 +23,7 @@ export const machineRoutes: MachineRoutes = {
   setReflector: (reflector) => ({ method: 'PUT', path: `${machine}/reflector`, body: { reflector } }),
   connectPlug: (pair) => ({ method: 'POST', path: `${machine}/plugs`, body: { pair } }),
   disconnectPlug: (letter) => ({ method: 'DELETE', path: `${machine}/plugs/${segment(letter)}` }),
+  movePlug: (from, to) => ({ method: 'PUT', path: `${machine}/plugs/${segment(from)}`, body: { to } }),
   pressKey: (key) => ({ method: 'POST', path: `${machine}/keyboard/press`, body: { key } }),
   releaseKey: () => ({ method: 'POST', path: `${machine}/keyboard/release` }),
 };
