@@ -40,7 +40,9 @@ Drop the filler at the front of the top row and at the end of the bottom row:
 
 ## 3. Find the key
 
-The Schlüsselkenngruppe names the network, and so the key sheet. In the **Kenngruppenbuch** viewer, it appears in a column allotted to the network in the Zuteilungsliste. On a [printed sheet](key-sheets.md#printing-a-sheet), the Suchtafel gives its column. Use that sheet's key for the day the message was sent. The Verfahrenkenngruppe must come from the Verfahrenkenngruppen columns.
+The Schlüsselkenngruppe names the network, and so the key sheet. In the **Kenngruppenbuch** viewer, it appears in a column allotted to the network in the Zuteilungsliste. Use that sheet's key for the day the message was sent. The Verfahrenkenngruppe must come from the Verfahrenkenngruppen columns.
+
+On a [printed sheet](key-sheets.md#using-the-suchtafel), look the Schlüsselkenngruppe up in the Suchtafel: block `Kenngruppen O..`, row `OF`, column `P` gives the column of `OFP`. Then find that column's range in the Zuteilungsliste.
 
 If you don't know which sheet to use, paste the message into operator mode and click **Find key**. It only lists the matching sheets and starts nothing until you choose one.
 
