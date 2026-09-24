@@ -6,7 +6,7 @@ import { useMachine } from '../store';
 
 const maxCables = 13;
 const width = 640;
-const height = 300;
+const height = 264;
 const pitch = 62;
 const rowsY = [54, 106, 158];
 const panel = { x: 14, y: 12, width: width - 28, height: height - 24 };
@@ -52,7 +52,7 @@ function Cable({ from, to }: { from: Point; to: Point }) {
   const y1 = from.y + plugHeight / 2;
   const x2 = to.x;
   const y2 = to.y + plugHeight / 2;
-  const sag = Math.max(y1, y2) + 20 + Math.abs(x2 - x1) * 0.12;
+  const sag = Math.max(y1, y2) + 8 + Math.abs(x2 - x1) * 0.06;
   const d = `M ${x1} ${y1} C ${x1} ${sag} ${x2} ${sag} ${x2} ${y2}`;
   return (
     <>

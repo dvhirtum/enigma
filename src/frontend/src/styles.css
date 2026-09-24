@@ -522,3 +522,7 @@ button {
   stroke-width: 3;
   stroke-dasharray: 2 3;
 }
+
+.plugboard .machine {
+  max-width: 900px;
+}
