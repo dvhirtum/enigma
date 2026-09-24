@@ -12,7 +12,7 @@ export default defineConfig(
   {
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
-      parserOptions: { projectService: { allowDefaultProject: ['eslint.config.mjs'] } },
+      parserOptions: { projectService: { allowDefaultProject: ['eslint.config.mjs', 'scripts/*.mjs'] } },
     },
   },
 );

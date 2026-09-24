@@ -39,6 +39,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     executableName: 'Enigma',
+    icon: path.resolve(__dirname, 'assets/icon'),
     extraResource: [backendOutput, keySheets],
   },
   rebuildConfig: {},
@@ -49,7 +50,7 @@ const config: ForgeConfig = {
     },
   },
   makers: [
-    new MakerSquirrel({ name: 'Enigma' }),
+    new MakerSquirrel({ name: 'Enigma', setupIcon: path.resolve(__dirname, 'assets/icon.ico') }),
   ],
   plugins: [
     new VitePlugin({
