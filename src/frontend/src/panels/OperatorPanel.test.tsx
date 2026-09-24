@@ -28,11 +28,12 @@ const indicatorChosen: Partial<OperatorState> = {
 };
 
 describe('OperatorPanel', () => {
-  it('asks for a daily key first', () => {
+  it('asks for a daily key before sending but receives without one', async () => {
     renderMachine(<OperatorPanel />);
 
-    expect(screen.getByText(/Apply a daily key first/)).toBeInTheDocument();
+    expect(await screen.findByText(/Apply a daily key to send/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Send a message' })).not.toBeInTheDocument();
+    expect(screen.getByRole('form', { name: 'Receive a message' })).toBeInTheDocument();
   });
 
   it('warns when the setup differs from the daily key', async () => {
@@ -42,16 +43,43 @@ describe('OperatorPanel', () => {
     expect(screen.getByRole('button', { name: 'Send a message' })).toBeEnabled();
   });
 
-  it('starts sending or receiving', async () => {
+  it('starts sending', async () => {
     const api = renderOperator(null);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Send a message' }));
-    const form = screen.getByRole('form', { name: 'Receive a message' });
-    fireEvent.change(within(form).getByRole('textbox', { name: 'Received message' }), { target: { value: 'QWER TZUI ABCD QWER TZUI' } });
-    fireEvent.click(within(form).getByRole('button', { name: 'Receive' }));
 
     expect(api.machine.startSending).toHaveBeenCalled();
-    expect(api.machine.startReceiving).toHaveBeenCalledWith('QWER TZUI ABCD QWER TZUI');
+  });
+
+  it('finds the keys that fit a received message on the applied day and receives with the chosen one', async () => {
+    const message = 'QWER TZUI ABCD QWER TZUI';
+    const keys = [
+      { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 1, model: 'M4', schluesselkenngruppe: 'DWA' },
+      { sheetId: 'g2', network: 'Triton', month: '1944-06', day: 1, model: 'M3', schluesselkenngruppe: 'DWA' },
+    ];
+    const api = renderOperator(null);
+    api.procedure.findReceivingKeys.mockResolvedValue({ ok: true, value: keys });
+
+    const form = await screen.findByRole('form', { name: 'Receive a message' });
+    expect(within(form).getByLabelText('Date')).toHaveValue('1944-06-01');
+    fireEvent.change(within(form).getByRole('textbox', { name: 'Received message' }), { target: { value: message } });
+    fireEvent.click(within(form).getByRole('button', { name: 'Find key' }));
+    const list = await screen.findByRole('list', { name: 'Matching keys' });
+    fireEvent.click(within(within(list).getAllByRole('listitem')[1]).getByRole('button', { name: 'Receive with this key' }));
+
+    expect(api.procedure.findReceivingKeys).toHaveBeenCalledWith(message, '1944-06-01');
+    expect(api.machine.startReceiving).toHaveBeenCalledWith(message, 'g2', 1);
+  });
+
+  it('says when no key sheet fits the received message', async () => {
+    renderMachine(<OperatorPanel />);
+
+    const form = await screen.findByRole('form', { name: 'Receive a message' });
+    fireEvent.change(within(form).getByLabelText('Date'), { target: { value: '1944-06-19' } });
+    fireEvent.change(within(form).getByRole('textbox', { name: 'Received message' }), { target: { value: 'QWER TZUI ABCD QWER TZUI' } });
+    fireEvent.click(within(form).getByRole('button', { name: 'Find key' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('No key sheet for 1944-06-19 fits this message.');
   });
 
   it('picks the groups from the network and Verfahrenkenngruppen columns', async () => {

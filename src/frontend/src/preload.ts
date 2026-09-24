@@ -20,7 +20,7 @@ const api: EnigmaApi = {
     releaseKey: () => invoke('machine:releaseKey'),
     applyDailyKey: (sheetId, day) => invoke('machine:applyDailyKey', sheetId, day),
     startSending: () => invoke('machine:startSending'),
-    startReceiving: (message) => invoke('machine:startReceiving', message),
+    startReceiving: (message, sheetId, day) => invoke('machine:startReceiving', message, sheetId, day),
     chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
       invoke('machine:chooseGroups', schluesselkenngruppe, verfahrenkenngruppe, fillers),
     finishMessage: () => invoke('machine:finishMessage'),
@@ -38,6 +38,7 @@ const api: EnigmaApi = {
   procedure: {
     getBook: (id) => invoke('procedure:getBook', id),
     getTables: (id) => invoke('procedure:getTables', id),
+    findReceivingKeys: (message, date) => invoke('procedure:findReceivingKeys', message, date),
   },
   files: {
     openKeySheet: () => invoke('files:openKeySheet'),

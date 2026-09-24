@@ -17,7 +17,7 @@ describe('machine routes', () => {
     ['releaseKey', machineRoutes.releaseKey(), 'POST', '/api/machine/keyboard/release', undefined],
     ['applyDailyKey', machineRoutes.applyDailyKey('g1', 19), 'POST', '/api/machine/daily-key', { sheetId: 'g1', day: 19 }],
     ['startSending', machineRoutes.startSending(), 'POST', '/api/operator/send', undefined],
-    ['startReceiving', machineRoutes.startReceiving('QWER'), 'POST', '/api/operator/receive', { message: 'QWER' }],
+    ['startReceiving', machineRoutes.startReceiving('QWER', 'g1', 19), 'POST', '/api/operator/receive', { message: 'QWER', sheetId: 'g1', day: 19 }],
     [
       'chooseGroups',
       machineRoutes.chooseGroups('DWA', 'AAB', 'QX'),
@@ -60,5 +60,10 @@ describe('procedure routes', () => {
   it('maps the book and tables to their endpoints', () => {
     expect(procedureRoutes.getBook('b/1')).toEqual({ method: 'GET', path: '/api/kenngruppenbuecher/b%2F1' });
     expect(procedureRoutes.getTables('t1')).toEqual({ method: 'GET', path: '/api/tauschtafeln/t1' });
+    expect(procedureRoutes.findReceivingKeys('QWER', '1944-06-19')).toEqual({
+      method: 'POST',
+      path: '/api/operator/receiving-keys',
+      body: { message: 'QWER', date: '1944-06-19' },
+    });
   });
 });

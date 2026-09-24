@@ -10,6 +10,7 @@ import type {
   MachineApi,
   MachineState,
   Problem,
+  ReceivingKey,
   TauschtafelSet,
 } from './api';
 import { shiftLetter, shiftRing } from './machine';
@@ -41,6 +42,8 @@ export interface ProcedureSlice {
   tables: Record<string, TauschtafelSet>;
   loadBook: (id: string) => Promise<boolean>;
   loadTables: (id: string) => Promise<boolean>;
+  /** The key sheet days that fit a received message on Thu Sep 24 21:20:27 WEDT 2026 (yyyy-MM-dd), or null when the lookup failed. */
+  findReceivingKeys: (message: string, date: string) => Promise<ReceivingKey[] | null>;
 }
 
 export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
@@ -127,6 +130,10 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           set((state) => ({ tables: { ...state.tables, [id]: result.value } }));
         }
         return result.ok;
+      },
+      findReceivingKeys: async (message, date) => {
+        const result = await check(procedure.findReceivingKeys(message, date));
+        return result.ok ? result.value : null;
       },
       loadKeySheets,
       openKeySheet: async (id) => {
@@ -215,7 +222,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       releaseKey: () => apply(api.releaseKey()),
       applyDailyKey: (sheetId, day) => apply(api.applyDailyKey(sheetId, day)),
       startSending: () => apply(api.startSending()),
-      startReceiving: (message) => apply(api.startReceiving(message)),
+      startReceiving: (message, sheetId, day) => apply(api.startReceiving(message, sheetId, day)),
       chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
         apply(api.chooseGroups(schluesselkenngruppe, verfahrenkenngruppe, fillers)),
       finishMessage: () => apply(api.finishMessage()),

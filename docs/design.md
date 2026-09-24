@@ -94,18 +94,19 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - `RadioMessage`: a preamble (time of origin `HHMM`, total letter count), the 2 indicator groups, the cipher text in groups of 4, and the indicator groups again. For example `1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI`.
 - `OperatorProcedure`: the guided send or receive procedure.
   - Send: choose the groups and fillers → set the Grundstellung → type the Verfahrenkenngruppe → set the Spruchschlüssel → type the plaintext and fill the last group with X → the radio message.
-  - Receive: read the radio message and decrypt the indicator → set the Grundstellung → type the Verfahrenkenngruppe → set the Spruchschlüssel → type the cipher text → the plaintext.
+  - Receive: decrypt the indicator; the Schlüsselkenngruppe names the key → set the Grundstellung → type the Verfahrenkenngruppe → set the Spruchschlüssel → type the cipher text → the plaintext.
   - Setting steps finish once the rotor windows show the setting. Keys other than the expected one are rejected, and so is any key outside a typing step. Turning a rotor while typing the Verfahrenkenngruppe goes back to setting the Grundstellung.
   - Receive warns when the letter count differs, the Schlüsselkenngruppe is not allotted to the network, or the Verfahrenkenngruppe is not a Verfahrenkenngruppe.
 
 ### Application
 - Machine commands: `CreateMachine`, `InsertRotor`, `RemoveRotor`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
 - Key-sheet commands: `ApplyDailyKey` (replaces the machine, switching model if needed), `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
-- Operator commands: `StartSending`, `StartReceiving`, `ChooseGroups`, `FinishMessage`, `CancelOperator`. Each returns the `MachineState`.
+- Operator commands: `StartSending`, `StartReceiving` (applies the chosen sheet's day first), `ChooseGroups`, `FinishMessage`, `CancelOperator`. Each returns the `MachineState`.
+- `FindReceivingKeys`: for a received message and a date, the sheets of that month whose network the Schlüsselkenngruppe (decrypted with each sheet's table for the date) is allotted to.
 - Queries: `GetMachineState`, `ListKeySheets`, `GetKeySheet`, `GetKenngruppenbuch`, `GetTauschtafelSet`.
 - Ports: `IMachineSessionStore` (the machine, the daily key applied to it and the operator procedure), `IKeySheetRepository`, `IKenngruppenbuchRepository`, `ITauschtafelSetRepository`.
-- `KeySheetLinker`: links every sheet when it is saved or loaded. It links the newest Kenngruppenbuch, allotting columns to a new network (or generating a new book when none are free), and the Tauschtafel set for the sheet's year. Missing books and sets are generated.
-- `MachineState.operator`: the procedure's direction, step, groups, indicator, Grundstellung, Spruchschlüssel, the pad (lamps lit while typing the message), the radio message and warnings. Applying a key or creating a machine ends the procedure. Starting one needs an applied daily key with a Grundstellung.
+- `KeySheetLinker`: links every sheet when it is saved or loaded. It links the newest Kenngruppenbuch, allotting columns to a new network (or generating a new book when none are free), and the Tauschtafel set for the sheet's year. Missing books and sets are generated. Days without a Grundstellung get a random one.
+- `MachineState.operator`: the procedure's direction, step, groups, indicator, Grundstellung, Spruchschlüssel, the pad (lamps lit while typing the message), the radio message and warnings. Applying a key or creating a machine ends the procedure. Sending needs an applied daily key.
 - `MachineState.appliedKey`: the sheet, month and day last applied, `modified` once the reflector, rotor order, rings or plugs differ from it (turning rotors does not count). Switching model clears it.
 - `KeySheetText`: daily keys as text, one row per day in Navy column order: day, reflector, rotors, rings (01–26), plugs, Grundstellung. Create and update take this text; errors name the line.
 - Key sheet files (JSON): `{ network, month, days: [{ day, reflector, rotors, rings, plugs, grundstellung }] }`. Imports become user-defined.
@@ -114,7 +115,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 
 ### Infrastructure
 - `JsonKeySheetRepository`: historical sheets are read-only in `data/keysheets/` (`KeySheets:HistoricalPath`; none are included yet). Generated and user-defined sheets are stored as one file each in app data (`KeySheets:UserPath`). Electron passes both paths.
-- `JsonKenngruppenbuchRepository` and `JsonTauschtafelSetRepository`: one file each in `procedure/books/` and `procedure/tables/` under the user path. Links of historical sheets are kept in `procedure/historical-links.json`.
+- `JsonKenngruppenbuchRepository` and `JsonTauschtafelSetRepository`: one file each in `procedure/books/` and `procedure/tables/` under the user path. The links and filled-in Grundstellungen of historical sheets are kept in `procedure/historical-links.json`.
 - `InMemoryMachineSessionStore`: runs operations on the machine one at a time.
 
 ### Api
@@ -148,7 +149,8 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 | GET | `/api/kenngruppenbuecher/{id}` | |
 | GET | `/api/tauschtafeln/{id}` | |
 | POST | `/api/operator/send` | |
-| POST | `/api/operator/receive` | `{ message }` |
+| POST | `/api/operator/receiving-keys` | `{ message, date }` |
+| POST | `/api/operator/receive` | `{ message, sheetId, day }` |
 | PUT | `/api/operator/groups` | `{ schluesselkenngruppe, verfahrenkenngruppe, fillers }` |
 | POST | `/api/operator/finish` | |
 | DELETE | `/api/operator` | |
@@ -167,7 +169,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
 - Panels:
   - key sheets: a side panel opened from the header. Choose, create, generate, import, export, edit (as text rows) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first. The applied day is marked. A read-only viewer shows the sheet's Kenngruppenbuch (Zuteilungsliste and columns) and the Tauschtafel in force for a day.
-  - operator mode: a side panel that walks through sending or receiving while the operator works the machine. Sending starts with picking the Schlüsselkenngruppe from the network's columns and the Verfahrenkenngruppe from theirs (or "Random"), and ends with the radio message and a Copy button. Receiving starts from a pasted radio message and highlights the next cipher letter. It needs an applied daily key and warns when the setup is modified. Its message pad shows the lamps in 4-letter groups.
+  - operator mode: a side panel that walks through sending or receiving while the operator works the machine. Sending starts with picking the Schlüsselkenngruppe from the network's columns and the Verfahrenkenngruppe from theirs (or "Random"), and ends with the radio message and a Copy button. Receiving starts from a pasted radio message and a date (prefilled from the applied key, or today), lists the matching key sheet days to receive with, and highlights the next cipher letter. Sending needs an applied daily key; the panel warns when the setup is modified. Its message pad shows the lamps in 4-letter groups.
 
 ## Testing
 

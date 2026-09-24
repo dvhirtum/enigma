@@ -52,6 +52,37 @@ public sealed class KeySheet
         DailyKeys.FirstOrDefault(k => k.Day == day)
         ?? throw new DomainException($"Key sheet {Network} {Month} has no key for day {day}.");
 
+    public bool HasMissingGrundstellungen => DailyKeys.Any(k => k.Grundstellung is null);
+
+    /// <summary>
+    /// Gives every day without a Grundstellung a random one. Allowed on historical sheets, which gave none.
+    /// Returns true when a day changed.
+    /// </summary>
+    public bool FillMissingGrundstellungen(Random random)
+    {
+        ArgumentNullException.ThrowIfNull(random);
+
+        if (!HasMissingGrundstellungen)
+        {
+            return false;
+        }
+
+        DailyKeys =
+        [
+            .. DailyKeys.Select(key => key.Grundstellung is null
+                ? key.WithGrundstellung(new RotorPositions(key.Rotors.Select(_ => new RotorPosition(Letter.FromIndex(random.Next(Letter.Count))))))
+                : key),
+        ];
+        return true;
+    }
+
+    /// <summary>Gives <paramref name="day"/> a Grundstellung. Allowed on historical sheets.</summary>
+    public void SetGrundstellung(int day, RotorPositions grundstellung)
+    {
+        var key = KeyFor(day);
+        DailyKeys = [.. DailyKeys.Select(k => k == key ? k.WithGrundstellung(grundstellung) : k)];
+    }
+
     /// <summary>Replaces the network, month and daily keys.</summary>
     public void Update(string network, KeyMonth month, IReadOnlyList<DailyKey> dailyKeys)
     {

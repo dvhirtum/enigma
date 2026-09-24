@@ -7,6 +7,7 @@ internal static class OperatorEndpoints
     public static IServiceCollection AddOperatorHandlers(this IServiceCollection services) => services
         .AddSingleton<OperatorContexts>()
         .AddSingleton<StartSendingHandler>()
+        .AddSingleton<FindReceivingKeysHandler>()
         .AddSingleton<StartReceivingHandler>()
         .AddSingleton<ChooseGroupsHandler>()
         .AddSingleton<FinishMessageHandler>()
@@ -18,6 +19,9 @@ internal static class OperatorEndpoints
 
         operatorMode.MapPost("/send", (StartSendingHandler handler) =>
             handler.Handle(new StartSending()));
+
+        operatorMode.MapPost("/receiving-keys", (FindReceivingKeys query, FindReceivingKeysHandler handler) =>
+            handler.Handle(query));
 
         operatorMode.MapPost("/receive", (StartReceiving command, StartReceivingHandler handler) =>
             handler.Handle(command));

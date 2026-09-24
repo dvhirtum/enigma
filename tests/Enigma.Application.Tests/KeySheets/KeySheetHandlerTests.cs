@@ -164,7 +164,7 @@ public sealed class KeySheetHandlerTests
         Assert.NotEqual("historical-x", details.Id);
         Assert.Equal("UserDefined", details.Provenance);
         Assert.Null(details.Source);
-        Assert.Equal("26 B III VI VIII 01 08 13 AN EZ\n", details.Text);
+        Assert.Matches("^26 B III VI VIII 01 08 13 AN EZ [A-Z]{3}\n$", details.Text);
     }
 
     [Fact]

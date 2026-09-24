@@ -100,6 +100,10 @@ public sealed class DailyKey
             && machine.Plugboard.Pairs.ToHashSet().SetEquals(Plugs);
     }
 
+    /// <summary>A copy of this key with <paramref name="grundstellung"/>.</summary>
+    public DailyKey WithGrundstellung(RotorPositions grundstellung) =>
+        new(Day, Reflector, Rotors, Rings, Plugs, grundstellung);
+
     /// <summary>Creates a machine of <see cref="Model"/> set up with this key. All rotors show A.</summary>
     public EnigmaMachine SetUp()
     {

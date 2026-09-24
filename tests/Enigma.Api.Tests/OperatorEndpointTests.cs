@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
+using Enigma.Application.OperatorMode;
 using Enigma.Application.Procedure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -131,17 +132,38 @@ public sealed class OperatorEndpointTests : IDisposable
         await Type(client, "ANGRIFF");
         await Type(client, "X");
         var sent = await Send(client, HttpMethod.Post, "/api/operator/finish", null);
-        await Send(client, HttpMethod.Post, "/api/machine/daily-key", new { sheetId = sheet.Id, day = 26 });
+        await Send(client, HttpMethod.Post, "/api/machine", new { model = "M4" });
 
         // Act
-        var received = await Send(client, HttpMethod.Post, "/api/operator/receive", new { message = sent.Operator!.Message });
+        using var found = await client.PostAsJsonAsync(
+            Url("/api/operator/receiving-keys"), new { message = sent.Operator!.Message, date = "1943-12-26" }, Token);
+        var keys = await found.Content.ReadFromJsonAsync<List<ReceivingKey>>(Token);
+        var received = await Send(client, HttpMethod.Post, "/api/operator/receive", new { message = sent.Operator.Message, sheetId = keys![0].SheetId, day = keys[0].Day });
         await SetUpMessageKey(client, received.Operator!.Verfahrenkenngruppe!);
         var plaintext = await Type(client, received.Operator.CipherText!);
 
         // Assert
         Assert.Equal("Done", sent.Operator.Step);
+        Assert.Equal(new ReceivingKey(sheet.Id, "Hydra", "1943-12", 26, "M3", schluessel), Assert.Single(keys));
         Assert.Equal(schluessel, received.Operator.Schluesselkenngruppe);
         Assert.Equal("ANGRIFFX", plaintext);
+    }
+
+    [Fact]
+    public async Task Should_keep_the_filled_in_Grundstellung_of_a_historical_sheet_When_the_backend_restarts()
+    {
+        // Arrange
+        await File.WriteAllTextAsync(
+            Path.Combine(HistoricalPath, "hydra-old.json"), HistoricalJson.Replace(", \"grundstellung\": \"QRS\"", string.Empty, StringComparison.Ordinal), Token);
+        var first = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-old"), Token);
+
+        // Act
+        var second = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-old"), Token);
+
+        // Assert
+        var grundstellung = Assert.Single(first!.Days).Grundstellung;
+        Assert.Matches("^[A-Z]{3}$", grundstellung);
+        Assert.Equal(grundstellung, Assert.Single(second!.Days).Grundstellung);
     }
 
     private static async Task SetUpMessageKey(HttpClient client, string verfahren)

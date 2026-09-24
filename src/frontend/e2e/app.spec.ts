@@ -229,8 +229,14 @@ test('sends a message with the indicator procedure and receives it again', async
   expect(message).toMatch(/^\d{4} = 24 = ([A-Z]{4} ){5}[A-Z]{4}$/);
 
   await panel.getByRole('button', { name: 'New message' }).click();
+  await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
+  await page.getByRole('button', { name: 'Switch' }).click();
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveCount(0);
   await panel.getByRole('textbox', { name: 'Received message' }).fill(message);
-  await panel.getByRole('button', { name: 'Receive' }).click();
+  await panel.getByLabel('Date').fill('1944-03-01');
+  await panel.getByRole('button', { name: 'Find key' }).click();
+  await panel.getByRole('list', { name: 'Matching keys' }).getByRole('button', { name: 'Receive with this key' }).click();
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText('Key: Triton 1944-03, day 1');
   await runMessageKey();
   const cipher = message.split(' = ')[2].split(' ').slice(2, 4).join('');
   await typeLetters(cipher);

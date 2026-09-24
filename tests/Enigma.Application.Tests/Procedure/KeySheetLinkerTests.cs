@@ -123,6 +123,22 @@ public sealed class KeySheetLinkerTests
     }
 
     [Fact]
+    public void Should_fill_and_store_the_Grundstellungen_When_a_sheet_without_them_is_loaded()
+    {
+        // Arrange
+        var sheets = new FakeKeySheetRepository(
+            new KeySheet("old", "Triton", KeyMonth.Parse("1944-06"), Provenance.Generated, KeySheetText.Parse("1 B I II III 01 01 01 AT\n")));
+        var linker = Linking.For(sheets);
+
+        // Act
+        var sheet = linker.Load("old");
+
+        // Assert
+        Assert.Equal(3, sheet.KeyFor(1).Grundstellung!.Count);
+        Assert.False(sheets.Sheets["old"].HasMissingGrundstellungen);
+    }
+
+    [Fact]
     public void Should_throw_not_found_When_a_book_does_not_exist()
     {
         // Arrange

@@ -7,6 +7,7 @@ namespace Enigma.Application.Procedure;
 /// Links key sheets to a Kenngruppenbuch and a Tauschtafel set. A sheet keeps a linked book that covers its network;
 /// otherwise it gets the newest book, which allots columns to a new network. When no book has free columns, or none
 /// exists, a new one is generated. The Tauschtafel set is the one for the sheet's year, generated when missing.
+/// Days without a Grundstellung get a random one.
 /// </summary>
 public sealed class KeySheetLinker(
     IKeySheetRepository sheets,
@@ -15,23 +16,26 @@ public sealed class KeySheetLinker(
     Random random,
     TimeProvider time)
 {
-    /// <summary>Links <paramref name="sheet"/> without saving it. Returns true when its links changed.</summary>
+    /// <summary>
+    /// Links <paramref name="sheet"/> and fills missing Grundstellungen, without saving it. Returns true when it changed.
+    /// </summary>
     public bool Link(KeySheet sheet)
     {
         ArgumentNullException.ThrowIfNull(sheet);
 
+        var filled = sheet.FillMissingGrundstellungen(random);
         var book = BookFor(sheet);
         var set = SetFor(sheet);
         if (sheet.KenngruppenbuchId == book.Id && sheet.TauschtafelSetId == set.Id)
         {
-            return false;
+            return filled;
         }
 
         sheet.Link(book.Id, set.Id);
         return true;
     }
 
-    /// <summary>Loads a sheet, linking it (and storing the links) first if needed.</summary>
+    /// <summary>Loads a sheet, linking and completing it (and storing that) first if needed.</summary>
     public KeySheet Load(string id)
     {
         var sheet = sheets.Get(id);
@@ -43,11 +47,11 @@ public sealed class KeySheetLinker(
         return sheet;
     }
 
-    /// <summary>Lists all sheets, linking those without links.</summary>
+    /// <summary>Lists all sheets, linking and completing those without links or Grundstellungen.</summary>
     public IReadOnlyList<KeySheet> List()
     {
         var all = sheets.List();
-        foreach (var sheet in all.Where(s => !s.IsLinked))
+        foreach (var sheet in all.Where(s => !s.IsLinked || s.HasMissingGrundstellungen))
         {
             Link(sheet);
             sheets.SaveLinks(sheet);

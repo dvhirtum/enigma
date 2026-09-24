@@ -1,3 +1,5 @@
+using System.Globalization;
+using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
 using Enigma.Application.Procedure;
 using Enigma.Domain.KeyProcedure;
@@ -11,9 +13,10 @@ public sealed class OperatorContexts(IMachineSessionStore store, KeySheetLinker 
     public OperatorContext ForAppliedKey()
     {
         var applied = store.AppliedKey ?? throw new DomainException("Apply a daily key first.");
-        var grundstellung = applied.Key.Grundstellung
-            ?? throw new DomainException($"Day {applied.Key.Day} of {applied.Network} {applied.Month} has no Grundstellung.");
         var sheet = linker.Load(applied.SheetId);
+        var grundstellung = applied.Key.Grundstellung
+            ?? sheet.KeyFor(applied.Key.Day).Grundstellung
+            ?? throw new DomainException($"Day {applied.Key.Day} of {applied.Network} {applied.Month} has no Grundstellung.");
         var book = linker.Book(sheet.KenngruppenbuchId!);
         var table = linker.Tables(sheet.TauschtafelSetId!).TableFor(KeyMonth.Parse(applied.Month), applied.Key.Day);
         return new OperatorContext(applied.Network, grundstellung, book, table);
@@ -33,13 +36,44 @@ public sealed class StartSendingHandler(IMachineSessionStore store, OperatorCont
     private Letter RandomLetter() => Letter.FromIndex(random.Next(Letter.Count));
 }
 
-public sealed class StartReceivingHandler(IMachineSessionStore store, OperatorContexts contexts)
+/// <summary>A key sheet day that fits a received message.</summary>
+public sealed record ReceivingKey(string SheetId, string Network, string Month, int Day, string Model, string Schluesselkenngruppe);
+
+public sealed class FindReceivingKeysHandler(KeySheetLinker linker)
+{
+    /// <summary>Decrypts the indicator with each sheet's table for the date and keeps the sheets it is allotted to.</summary>
+    public IReadOnlyList<ReceivingKey> Handle(FindReceivingKeys query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var message = RadioMessage.Parse(query.Message ?? string.Empty);
+        var date = DateOnly.TryParseExact(query.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)
+            ? parsed
+            : throw new DomainException($"'{query.Date}' is not a date such as 1944-06-19.");
+        var month = new KeyMonth(date.Year, date.Month);
+
+        return
+        [
+            .. linker.List()
+                .Where(s => s.Month == month && s.DailyKeys.Any(k => k.Day == date.Day))
+                .Select(s => linker.Load(s.Id))
+                .Select(s => (Sheet: s, Indicator: Indicator.Decrypt(message.Indicator, linker.Tables(s.TauschtafelSetId!).TableFor(month, date.Day))))
+                .Where(x => linker.Book(x.Sheet.KenngruppenbuchId!).IsSchluesselkenngruppe(x.Sheet.Network, x.Indicator.Schluesselkenngruppe))
+                .OrderBy(x => x.Sheet.Network, StringComparer.OrdinalIgnoreCase)
+                .Select(x => new ReceivingKey(
+                    x.Sheet.Id, x.Sheet.Network, month.ToString(), date.Day, x.Sheet.Model.Name, x.Indicator.Schluesselkenngruppe.ToString())),
+        ];
+    }
+}
+
+public sealed class StartReceivingHandler(IMachineSessionStore store, ApplyDailyKeyHandler apply, OperatorContexts contexts)
 {
     public MachineState Handle(StartReceiving command)
     {
         ArgumentNullException.ThrowIfNull(command);
 
         var message = RadioMessage.Parse(command.Message ?? string.Empty);
+        apply.Handle(new ApplyDailyKey(command.SheetId, command.Day));
         return store.Begin(OperatorProcedure.StartReceiving(contexts.ForAppliedKey(), message));
     }
 }

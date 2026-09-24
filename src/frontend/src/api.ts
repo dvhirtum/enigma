@@ -146,7 +146,8 @@ export interface MachineApi {
   releaseKey: MachineCall<[]>;
   applyDailyKey: MachineCall<[sheetId: string, day: number]>;
   startSending: MachineCall<[]>;
-  startReceiving: MachineCall<[message: string]>;
+  /** Applies the day of the sheet and starts receiving. */
+  startReceiving: MachineCall<[message: string, sheetId: string, day: number]>;
   chooseGroups: MachineCall<[schluesselkenngruppe: string, verfahrenkenngruppe: string, fillers: string]>;
   finishMessage: MachineCall<[]>;
   cancelOperator: MachineCall<[]>;
@@ -164,9 +165,21 @@ export interface KeySheetApi {
   import: Call<[file: KeySheetFile], KeySheet>;
 }
 
+/** A key sheet day whose network the Schlüsselkenngruppe of a received message is allotted to. */
+export interface ReceivingKey {
+  sheetId: string;
+  network: string;
+  month: string;
+  day: number;
+  model: string;
+  schluesselkenngruppe: string;
+}
+
 export interface ProcedureApi {
   getBook: Call<[id: string], Kenngruppenbuch>;
   getTables: Call<[id: string], TauschtafelSet>;
+  /** Thu Sep 24 21:20:27 WEDT 2026 is yyyy-MM-dd. */
+  findReceivingKeys: Call<[message: string, date: string], ReceivingKey[]>;
 }
 
 /** Native file dialogs. Each resolves to null when the user cancels. */

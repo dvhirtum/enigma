@@ -30,7 +30,7 @@ export const machineRoutes: Routes<MachineApi> = {
   releaseKey: () => ({ method: 'POST', path: `${machine}/keyboard/release` }),
   applyDailyKey: (sheetId, day) => ({ method: 'POST', path: `${machine}/daily-key`, body: { sheetId, day } }),
   startSending: () => ({ method: 'POST', path: `${operator}/send` }),
-  startReceiving: (message) => ({ method: 'POST', path: `${operator}/receive`, body: { message } }),
+  startReceiving: (message, sheetId, day) => ({ method: 'POST', path: `${operator}/receive`, body: { message, sheetId, day } }),
   chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) => ({
     method: 'PUT',
     path: `${operator}/groups`,
@@ -43,6 +43,7 @@ export const machineRoutes: Routes<MachineApi> = {
 export const procedureRoutes: Routes<ProcedureApi> = {
   getBook: (id) => ({ method: 'GET', path: `/api/kenngruppenbuecher/${segment(id)}` }),
   getTables: (id) => ({ method: 'GET', path: `/api/tauschtafeln/${segment(id)}` }),
+  findReceivingKeys: (message, date) => ({ method: 'POST', path: `${operator}/receiving-keys`, body: { message, date } }),
 };
 
 export const keySheetRoutes: Routes<KeySheetApi> = {

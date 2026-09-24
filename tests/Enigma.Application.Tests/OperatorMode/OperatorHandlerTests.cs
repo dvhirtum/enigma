@@ -150,15 +150,17 @@ public sealed class OperatorHandlerTests
         Type("FUNKSPRUCH");
         Type("XX");
         var message = new FinishMessageHandler(_store).Handle(new FinishMessage()).Operator!.Message!;
-        Apply(1);
+        new CreateMachineHandler(_store).Handle(new CreateMachine("M4"));
 
         // Act
-        var received = new StartReceivingHandler(_store, _contexts).Handle(new StartReceiving(message));
+        var received = new StartReceivingHandler(_store, new ApplyDailyKeyHandler(_linker, _store), _contexts)
+            .Handle(new StartReceiving(message, "t", 1));
         SetUpMessageKey(received.Operator!.Verfahrenkenngruppe!);
         Type(received.Operator.CipherText!);
         var state = new GetMachineStateHandler(_store).Handle(new GetMachineState());
 
         // Assert
+        Assert.Equal(new AppliedKeyState("t", "Triton", "1944-06", 1, false), received.AppliedKey);
         Assert.Equal(verfahren, received.Operator.Verfahrenkenngruppe);
         Assert.Equal(schluessel, received.Operator.Schluesselkenngruppe);
         Assert.Empty(received.Operator.Warnings);
@@ -209,16 +211,67 @@ public sealed class OperatorHandlerTests
     }
 
     [Fact]
-    public void Should_refuse_to_start_When_the_day_has_no_Grundstellung()
+    public void Should_use_the_filled_in_Grundstellung_When_the_day_had_none()
     {
         // Arrange
         Apply(2);
 
         // Act
-        void Act() => StartSending();
+        var state = StartSending();
+
+        // Assert
+        var filled = _sheets.Sheets["t"].KeyFor(2).Grundstellung!.ToString();
+        Assert.Equal(filled, state.Operator!.Grundstellung);
+        Assert.Equal(3, filled.Length);
+    }
+
+    [Fact]
+    public void Should_use_the_filled_in_Grundstellung_When_the_key_was_applied_before_the_sheet_was_filled()
+    {
+        // Arrange
+        var key = _sheets.Sheets["t"].KeyFor(2);
+        _store.Replace(key.SetUp(), new AppliedKey("t", "Triton", "1944-06", key));
+
+        // Act
+        var state = StartSending();
+
+        // Assert
+        Assert.Equal(_sheets.Sheets["t"].KeyFor(2).Grundstellung!.ToString(), state.Operator!.Grundstellung);
+    }
+
+    [Fact]
+    public void Should_find_the_sheet_of_the_Schluesselkenngruppe_When_keys_for_a_received_message_are_looked_up()
+    {
+        // Arrange
+        _sheets.Save(new KeySheet("h", "Hydra", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 C II III IV 01 01 01 BX KLM\n")));
+        _sheets.Save(new KeySheet("j", "Triton", KeyMonth.Parse("1944-07"), Provenance.UserDefined, KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n")));
+        Apply(1);
+        StartSending();
+        var (schluessel, verfahren) = Groups();
+        new ChooseGroupsHandler(_store).Handle(new ChooseGroups(schluessel, verfahren, "QX"));
+        SetUpMessageKey(verfahren);
+        Type("ABCD");
+        var message = new FinishMessageHandler(_store).Handle(new FinishMessage()).Operator!.Message!;
+        var handler = new FindReceivingKeysHandler(_linker);
+
+        // Act
+        var keys = handler.Handle(new FindReceivingKeys(message, "1944-06-01"));
+
+        // Assert
+        Assert.Equal(new ReceivingKey("t", "Triton", "1944-06", 1, "M3", schluessel), Assert.Single(keys));
+    }
+
+    [Fact]
+    public void Should_reject_the_date_When_it_is_not_a_date()
+    {
+        // Arrange
+        var handler = new FindReceivingKeysHandler(_linker);
+
+        // Act
+        void Act() => handler.Handle(new FindReceivingKeys("QWER TZUI ABCD QWER TZUI", "June"));
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
-        Assert.Equal("Day 2 of Triton 1944-06 has no Grundstellung.", exception.Message);
+        Assert.Equal("'June' is not a date such as 1944-06-19.", exception.Message);
     }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Kenngruppenbuch, OperatorState, OperatorStep } from '../api';
+import type { AppliedKey, Kenngruppenbuch, OperatorState, OperatorStep, ReceivingKey } from '../api';
 import { useMachine } from '../store';
 
 const stepLabels: Record<OperatorStep, string> = {
@@ -306,34 +306,101 @@ function Procedure({ operator }: { operator: OperatorState }) {
   );
 }
 
-function Start() {
-  const startSending = useMachine((store) => store.startSending);
+/** yyyy-MM-dd of the applied key's day, or of today. */
+function initialDate(appliedKey: AppliedKey | null | undefined): string {
+  if (appliedKey) {
+    return `${appliedKey.month}-${String(appliedKey.day).padStart(2, '0')}`;
+  }
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/** Finds the key sheets whose network the message's Schlüsselkenngruppe is allotted to, and receives with the chosen one. */
+function Receive() {
+  const appliedKey = useMachine((store) => store.machine?.appliedKey);
+  const findReceivingKeys = useMachine((store) => store.findReceivingKeys);
   const startReceiving = useMachine((store) => store.startReceiving);
   const [message, setMessage] = useState('');
+  const [editedDate, setDate] = useState<string | null>(null);
+  const date = editedDate ?? initialDate(appliedKey);
+  const [keys, setKeys] = useState<ReceivingKey[] | null>(null);
 
-  const receive = (event: FormEvent) => {
+  const find = async (event: FormEvent) => {
     event.preventDefault();
-    void startReceiving(message);
+    setKeys(await findReceivingKeys(message, date));
   };
 
   return (
-    <div className="operator">
+    <form className="operator-form" aria-label="Receive a message" onSubmit={(event) => void find(event)}>
+      <label>
+        Received message
+        <textarea
+          value={message}
+          rows={5}
+          spellCheck={false}
+          placeholder="1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI"
+          onChange={(event) => {
+            setMessage(event.target.value);
+            setKeys(null);
+          }}
+        />
+      </label>
+      <label>
+        Date
+        <input
+          type="date"
+          value={date}
+          required
+          onChange={(event) => {
+            setDate(event.target.value);
+            setKeys(null);
+          }}
+        />
+      </label>
       <div className="sheet-actions">
-        <button type="button" onClick={() => void startSending()}>
-          Send a message
+        <button type="submit" disabled={message.trim() === '' || date === ''}>
+          Find key
         </button>
       </div>
-      <form className="operator-form" aria-label="Receive a message" onSubmit={receive}>
-        <label>
-          Received message
-          <textarea value={message} rows={5} spellCheck={false} placeholder="1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI" onChange={(event) => setMessage(event.target.value)} />
-        </label>
+      {keys && keys.length === 0 && (
+        <p className="operator-hint" role="status">
+          No key sheet for {date} fits this message.
+        </p>
+      )}
+      {keys && keys.length > 0 && (
+        <ul className="receiving-keys" aria-label="Matching keys">
+          {keys.map((key) => (
+            <li key={key.sheetId}>
+              <span>
+                {key.network} {key.month}, day {key.day} · {key.model} · Schlüsselkenngruppe {key.schluesselkenngruppe}
+              </span>
+              <button type="button" onClick={() => void startReceiving(message, key.sheetId, key.day)}>
+                Receive with this key
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </form>
+  );
+}
+
+function Start() {
+  const appliedKey = useMachine((store) => store.machine?.appliedKey);
+  const startSending = useMachine((store) => store.startSending);
+
+  return (
+    <div className="operator">
+      {appliedKey ? (
         <div className="sheet-actions">
-          <button type="submit" disabled={message.trim() === ''}>
-            Receive
+          <button type="button" onClick={() => void startSending()}>
+            Send a message
           </button>
         </div>
-      </form>
+      ) : (
+        <p className="operator-hint">Apply a daily key to send. Sending uses its network, Grundstellung, Kenngruppenbuch and Tauschtafel.</p>
+      )}
+      <Receive />
     </div>
   );
 }
@@ -343,20 +410,14 @@ export function OperatorPanel() {
   const appliedKey = useMachine((store) => store.machine?.appliedKey);
   const operator = useMachine((store) => store.machine?.operator);
 
-  if (!appliedKey) {
-    return (
-      <div className="operator">
-        <p className="operator-hint">Apply a daily key first. Operator mode uses its network, Grundstellung, Kenngruppenbuch and Tauschtafel.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="operator">
-      <p className="sheet-meta">
-        Key: {appliedKey.network} {appliedKey.month}, day {appliedKey.day}
-      </p>
-      {appliedKey.modified && (
+      {appliedKey && (
+        <p className="sheet-meta">
+          Key: {appliedKey.network} {appliedKey.month}, day {appliedKey.day}
+        </p>
+      )}
+      {appliedKey?.modified && (
         <p className="operator-warning" role="status">
           The machine setup differs from the daily key.
         </p>

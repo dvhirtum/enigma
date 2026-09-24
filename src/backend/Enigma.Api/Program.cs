@@ -65,6 +65,8 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(IReadOnlyList<KeySheetSummary>))]
 [JsonSerializable(typeof(KenngruppenbuchDocument))]
 [JsonSerializable(typeof(TauschtafelSetDocument))]
+[JsonSerializable(typeof(FindReceivingKeys))]
+[JsonSerializable(typeof(IReadOnlyList<ReceivingKey>))]
 [JsonSerializable(typeof(StartReceiving))]
 [JsonSerializable(typeof(ChooseGroups))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;

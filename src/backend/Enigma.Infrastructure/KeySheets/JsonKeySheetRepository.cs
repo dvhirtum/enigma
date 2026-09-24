@@ -62,13 +62,17 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
             }
 
             var links = ReadHistoricalLinks();
-            links[sheet.Id] = new SheetLinks(sheet.KenngruppenbuchId, sheet.TauschtafelSetId);
+            var link = new SheetLinks(
+                sheet.KenngruppenbuchId,
+                sheet.TauschtafelSetId,
+                sheet.DailyKeys.Where(k => k.Grundstellung is not null).ToDictionary(k => k.Day, k => k.Grundstellung!.ToString()));
+            links[sheet.Id] = link;
             Directory.CreateDirectory(Path.GetDirectoryName(HistoricalLinksFile)!);
             File.WriteAllText(HistoricalLinksFile, JsonSerializer.Serialize(links, KeySheetJsonContext.Default.DictionaryStringSheetLinks));
             var cached = Historical().FirstOrDefault(s => s.Id == sheet.Id);
-            if (cached is not null && sheet.IsLinked)
+            if (cached is not null && cached != sheet)
             {
-                cached.Link(sheet.KenngruppenbuchId!, sheet.TauschtafelSetId!);
+                Apply(link, cached);
             }
         }
     }
@@ -106,14 +110,35 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
                         document,
                         "historical-" + Path.GetFileNameWithoutExtension(file),
                         Provenance.Historical(document.Source ?? string.Empty));
-                    if (links.TryGetValue(sheet.Id, out var link) && link is { KenngruppenbuchId: { } book, TauschtafelSetId: { } tables })
+                    if (links.TryGetValue(sheet.Id, out var link))
                     {
-                        sheet.Link(book, tables);
+                        Apply(link, sheet);
                     }
 
                     return sheet;
                 }),
         ];
+    }
+
+    /// <summary>Applies the stored links and Grundstellungen to a historical sheet. Entries that no longer fit are skipped.</summary>
+    private static void Apply(SheetLinks link, KeySheet sheet)
+    {
+        if (link is { KenngruppenbuchId: { } book, TauschtafelSetId: { } tables })
+        {
+            sheet.Link(book, tables);
+        }
+
+        foreach (var (day, grundstellung) in link.Grundstellungen ?? [])
+        {
+            try
+            {
+                sheet.SetGrundstellung(day, RotorPositions.Parse(grundstellung));
+            }
+            catch (DomainException)
+            {
+                // The stored Grundstellung does not fit the day; the linker fills a new one.
+            }
+        }
     }
 
     private string HistoricalLinksFile => Path.Combine(userPath, "procedure", "historical-links.json");
@@ -177,8 +202,8 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
         !string.IsNullOrEmpty(id) && id.All(c => char.IsAsciiLetterOrDigit(c) || c == '-');
 }
 
-/// <summary>The Kenngruppenbuch and Tauschtafel set linked to a historical sheet.</summary>
-internal sealed record SheetLinks(string? KenngruppenbuchId, string? TauschtafelSetId);
+/// <summary>The Kenngruppenbuch, Tauschtafel set and filled-in Grundstellungen (by day) of a historical sheet.</summary>
+internal sealed record SheetLinks(string? KenngruppenbuchId, string? TauschtafelSetId, Dictionary<int, string>? Grundstellungen = null);
 
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, WriteIndented = true)]
 [JsonSerializable(typeof(KeySheetDocument))]
