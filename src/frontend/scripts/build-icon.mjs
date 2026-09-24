@@ -2,7 +2,7 @@
 // Run with `npm run icon` after changing either SVG.
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 
 const assets = path.resolve(import.meta.dirname, '../assets');
 /** @param {string} name */
