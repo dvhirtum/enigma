@@ -1,7 +1,21 @@
 import type { KeyboardEvent, PointerEvent } from 'react';
 
-export const socketRadius = 16;
-export const plugHeight = 28;
+/** Vertical distance from the letter to the upper hole, and between the two holes. */
+export const holeTop = 22;
+export const holeGap = 26;
+export const plugWidth = 24;
+export const plugHeight = 44;
+
+/** A bakelite plug over both holes of a socket, centred on (x, y). */
+export function Plug({ x, y }: { x: number; y: number }) {
+  return (
+    <g className="plug" transform={`translate(${x} ${y})`}>
+      <rect className="plug-body" x={-plugWidth / 2} y={-plugHeight / 2} width={plugWidth} height={plugHeight} rx={9} />
+      <circle className="plug-screw" r={4.5} />
+      <line className="plug-screw-slot" x1={-3.5} y1={-1} x2={3.5} y2={1} />
+    </g>
+  );
+}
 
 interface PlugSocketProps {
   letter: string;
@@ -16,7 +30,10 @@ interface PlugSocketProps {
   onGrab: (letter: string, event: PointerEvent<SVGGElement>) => void;
 }
 
-/** A plugboard socket. Enter or Space picks it as a cable end, or removes the cable plugged into it. */
+/**
+ * A plugboard socket: the letter above two holes. Enter or Space picks it as a cable end,
+ * or removes the cable plugged into it.
+ */
 export function PlugSocket({ letter, partner, plugged, selected, x, y, onActivate, onGrab }: PlugSocketProps) {
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -37,13 +54,17 @@ export function PlugSocket({ letter, partner, plugged, selected, x, y, onActivat
       onKeyDown={onKeyDown}
       onPointerDown={(event) => onGrab(letter, event)}
     >
-      <text className="socket-letter" y={-socketRadius - 10}>
+      <rect className="socket-area" x={-15} y={-12} width={30} height={holeTop + holeGap + 24} />
+      <text className="socket-letter" dy="0.35em">
         {letter}
       </text>
-      <circle className="socket-plate" r={socketRadius} />
-      <circle className="socket-hole" cx={-5} r={3} />
-      <circle className="socket-hole" cx={5} r={4.5} />
-      {plugged && <rect className="plug" x={-10} y={-plugHeight / 2} width={20} height={plugHeight} rx={4} />}
+      {[holeTop, holeTop + holeGap].map((holeY) => (
+        <g key={holeY} transform={`translate(0 ${holeY})`}>
+          <circle className="socket-ring" r={9} />
+          <circle className="socket-hole" r={5} />
+        </g>
+      ))}
+      {plugged && <Plug x={0} y={holeTop + holeGap / 2} />}
     </g>
   );
 }

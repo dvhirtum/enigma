@@ -1,14 +1,23 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
-import { plugHeight, PlugSocket } from '../components/PlugSocket';
+import { holeGap, holeTop, Plug, plugHeight, PlugSocket } from '../components/PlugSocket';
 import { usePlugDrag, type Point } from '../components/usePlugDrag';
 import { keyboardRows } from '../machine';
 import { useMachine } from '../store';
 
 const maxCables = 13;
 const width = 640;
-const height = 420;
+const height = 320;
 const pitch = 62;
-const rowsY = [70, 160, 250];
+const rowsY = [54, 106, 158];
+const panel = { x: 14, y: 12, width: width - 28, height: height - 24 };
+const screws: [number, number, number][] = [
+  [panel.x + 14, panel.y + 14, 20],
+  [panel.x + panel.width - 14, panel.y + 14, -35],
+  [width / 2 - 31, panel.y + 14, 70],
+  [panel.x + 14, panel.y + panel.height - 14, -60],
+  [panel.x + panel.width - 14, panel.y + panel.height - 14, 10],
+  [width / 2 + 31, panel.y + panel.height - 14, 45],
+];
 
 const sockets = new Map<string, Point>(
   keyboardRows.flatMap((row, rowIndex) =>
@@ -16,19 +25,41 @@ const sockets = new Map<string, Point>(
   ),
 );
 
+/** The centre of the plug in the socket of `letter`. */
+function plugAt(letter: string): Point {
+  const { x, y } = sockets.get(letter)!;
+  return { x, y: y + holeTop + holeGap / 2 };
+}
+
 /** The partner of each plugged letter. */
 function partners(plugs: string[]): Map<string, string> {
   return new Map(plugs.flatMap(([a, b]) => [[a, b], [b, a]] as const));
 }
 
-/** A cable hanging between the bottoms of two plugs. */
+/** A slotted screw head. */
+function Screw({ x, y, angle }: { x: number; y: number; angle: number }) {
+  return (
+    <g className="screw" transform={`translate(${x} ${y}) rotate(${angle})`}>
+      <circle r={6} />
+      <line x1={-5} x2={5} />
+    </g>
+  );
+}
+
+/** A braided cable hanging between the bottoms of two plugs, given their centres. */
 function Cable({ from, to }: { from: Point; to: Point }) {
   const x1 = from.x;
   const y1 = from.y + plugHeight / 2;
   const x2 = to.x;
   const y2 = to.y + plugHeight / 2;
-  const sag = Math.max(y1, y2) + 30 + Math.abs(x2 - x1) * 0.2;
-  return <path className="cable" d={`M ${x1} ${y1} C ${x1} ${sag} ${x2} ${sag} ${x2} ${y2}`} />;
+  const sag = Math.max(y1, y2) + 20 + Math.abs(x2 - x1) * 0.12;
+  const d = `M ${x1} ${y1} C ${x1} ${sag} ${x2} ${sag} ${x2} ${y2}`;
+  return (
+    <>
+      <path className="cable" d={d} />
+      <path className="cable-braid" d={d} />
+    </>
+  );
 }
 
 export function PlugboardView() {
@@ -92,8 +123,11 @@ export function PlugboardView() {
   return (
     <section className="plugboard" aria-label="Plugboard">
       <svg ref={svg} className="machine" viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Sockets" onKeyDown={onKeyDown}>
-        <rect className="case" width={width} height={height} rx={18} />
-        <rect className="plugboard-panel" x={16} y={16} width={width - 32} height={284} rx={10} />
+        <rect className="wood" width={width} height={height} rx={10} />
+        <rect className="plugboard-panel" {...panel} rx={4} />
+        {screws.map(([x, y, angle]) => (
+          <Screw key={`${x} ${y}`} x={x} y={y} angle={angle} />
+        ))}
         {[...sockets].map(([letter, { x, y }]) => (
           <PlugSocket
             key={letter}
@@ -111,12 +145,12 @@ export function PlugboardView() {
           {plugs
             .filter((pair) => !dragged || !pair.includes(dragged))
             .map(([a, b]) => (
-              <Cable key={a + b} from={sockets.get(a)!} to={sockets.get(b)!} />
+              <Cable key={a + b} from={plugAt(a)} to={plugAt(b)} />
             ))}
           {loose && loosePlug && (
             <>
-              <Cable from={sockets.get(loosePlug)!} to={loose} />
-              <rect className="plug" x={loose.x - 10} y={loose.y - plugHeight / 2} width={20} height={plugHeight} rx={4} />
+              <Cable from={plugAt(loosePlug)} to={loose} />
+              <Plug x={loose.x} y={loose.y} />
             </>
           )}
         </g>
