@@ -407,3 +407,78 @@ button {
   height: 100%;
   min-height: 360px;
 }
+
+/* Plugboard */
+
+.plugboard {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+}
+
+.plugboard .hint {
+  max-width: 40rem;
+  text-align: center;
+}
+
+.cable-list {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.plugboard-panel {
+  fill: #2a2926;
+  stroke: #3b3934;
+}
+
+.socket {
+  cursor: pointer;
+}
+
+.socket:focus {
+  outline: none;
+}
+
+.socket-letter {
+  fill: #b9b2a2;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.socket-plate {
+  fill: #9a968c;
+  stroke: #4b4944;
+  stroke-width: 2;
+}
+
+.socket:focus-visible .socket-plate,
+.socket.selected .socket-plate {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.socket.selected .socket-letter {
+  fill: var(--accent);
+}
+
+.socket-hole {
+  fill: #0b0b0a;
+}
+
+.plug {
+  fill: #0d0d0c;
+  stroke: #6d6a63;
+  stroke-width: 1.5;
+}
+
+.cables {
+  pointer-events: none;
+}
+
+.cable {
+  fill: none;
+  stroke: #7b4f33;
+  stroke-width: 5;
+  stroke-linecap: round;
+}

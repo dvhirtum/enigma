@@ -134,7 +134,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
     - the lampboard (QWERTZUIO / ASDFGHJK / PYXCVBNML), lit while a key is held down
     - the keyboard, used with the mouse or the physical keyboard
   - **Open lid:** remove the rotors, set the rings of the rotors in the box, pick a rotor for each slot and insert them, and choose the reflector.
-  - **Plugboard:** drag cables between sockets.
+  - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
 - Panels:
   - message pad (4-letter groups)
   - key-sheet browser and editor, with "Apply daily key"

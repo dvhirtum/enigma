@@ -81,7 +81,7 @@ describe('MachineFrame', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Plugboard' }));
 
     expect(screen.getByRole('tab', { name: 'Plugboard' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('heading', { name: 'Plugboard' })).toBeInTheDocument();
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Plugboard');
   });
 
   it('moves between tabs with the arrow keys', () => {

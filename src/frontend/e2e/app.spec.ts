@@ -66,6 +66,17 @@ test('sets a ring with the rotors out and puts them back', async () => {
   await expect(page.getByRole('img', { name: 'Left slot: rotor I, ring 02 B, position A' })).toBeVisible();
 });
 
+test('plugs a cable on the plugboard and removes it', async () => {
+  await page.getByRole('tab', { name: 'Plugboard' }).click();
+
+  await page.getByRole('button', { name: 'Socket A', exact: true }).dragTo(page.getByRole('button', { name: 'Socket T', exact: true }));
+  await expect(page.getByRole('button', { name: 'Socket A, plugged to T' })).toBeVisible();
+  await expect(page.getByLabel('Cables')).toHaveText('AT · 1 of 13');
+
+  await page.getByRole('button', { name: 'Socket T, plugged to A' }).click();
+  await expect(page.getByLabel('Cables')).toHaveText('No cables · 0 of 13');
+});
+
 test('switches to the M4 and back', async () => {
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
   await page.getByRole('button', { name: 'Switch' }).click();
