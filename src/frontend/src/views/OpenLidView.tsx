@@ -153,12 +153,12 @@ function OpenLid() {
     );
   };
 
-  // The boxes: rotor box on the left, reflector box on the right.
+  // The boxes: reflector box on the left, below the reflector, and rotor box on the right.
   const modelReflectors = reflectors[machine.model] ?? [];
   const rotorBoxWidth = compartments.length * cell + boxPadding * 2;
   const reflectorBoxWidth = modelReflectors.length * cell + boxPadding * 2;
-  const rotorBoxX = (width - rotorBoxWidth - boxGap - reflectorBoxWidth) / 2;
-  const reflectorBoxX = rotorBoxX + rotorBoxWidth + boxGap;
+  const reflectorBoxX = (width - reflectorBoxWidth - boxGap - rotorBoxWidth) / 2;
+  const rotorBoxX = reflectorBoxX + reflectorBoxWidth + boxGap;
   const boxHeight = height - boxTop - 8;
   const cellX = (boxX: number, index: number) => boxX + boxPadding + index * cell;
 
@@ -253,11 +253,6 @@ function OpenLid() {
 
   return (
     <section className="open-lid" aria-label="Open lid" onKeyDown={onKeyDown}>
-      <p className="hint" role="status">
-        {pick
-          ? `Rotor ${pick} is picked. Click a highlighted slot to put it in, or press Escape.`
-          : 'Click a rotor in the box, then a slot. Click a rotor in the machine to put it back. Scroll over a rotor to turn it.'}
-      </p>
       <svg className="machine" viewBox={`0 0 ${width} ${height}`}>
         <defs>
           <linearGradient id="drum-metal" x1="0" y1="0" x2="0" y2="1">
@@ -292,16 +287,21 @@ function OpenLid() {
           <Caption x={etwX + 18} y={drumY + drumRadius + 30} title="ETW" detail="" />
         </g>
 
-        <g role="group" aria-label="Rotor box">
-          {box(rotorBoxX, rotorBoxWidth, 'Walzen', compartments.length)}
-          {compartments.map(compartment)}
-        </g>
-
         <g role="group" aria-label="Reflector box">
           {box(reflectorBoxX, reflectorBoxWidth, 'UKW', modelReflectors.length)}
           {modelReflectors.map(reflectorCompartment)}
         </g>
+
+        <g role="group" aria-label="Rotor box">
+          {box(rotorBoxX, rotorBoxWidth, 'Walzen', compartments.length)}
+          {compartments.map(compartment)}
+        </g>
       </svg>
+      <p className="hint" role="status">
+        {pick
+          ? `Rotor ${pick} is picked. Click a highlighted slot to put it in, or press Escape.`
+          : 'Click a rotor in the box, then a slot. Click a rotor in the machine to put it back. Scroll over a rotor to turn it.'}
+      </p>
     </section>
   );
 }
