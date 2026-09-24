@@ -34,6 +34,7 @@ describe('OperatorPanel', () => {
     expect(await screen.findByText(/Apply a daily key to send/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Send a message' })).not.toBeInTheDocument();
     expect(screen.getByRole('form', { name: 'Receive a message' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Receive with applied key' })).not.toBeInTheDocument();
   });
 
   it('warns when the setup differs from the daily key', async () => {
@@ -69,6 +70,18 @@ describe('OperatorPanel', () => {
 
     expect(api.procedure.findReceivingKeys).toHaveBeenCalledWith(message, '1944-06-01');
     expect(api.machine.startReceiving).toHaveBeenCalledWith(message, 'g2', 1);
+  });
+
+  it('receives with the applied key without looking it up', async () => {
+    const api = renderOperator(null);
+
+    const form = await screen.findByRole('form', { name: 'Receive a message' });
+    expect(within(form).getByRole('button', { name: 'Receive with applied key' })).toBeDisabled();
+    fireEvent.change(within(form).getByRole('textbox', { name: 'Received message' }), { target: { value: 'QWER TZUI ABCD QWER TZUI' } });
+    fireEvent.click(within(form).getByRole('button', { name: 'Receive with applied key' }));
+
+    expect(api.machine.startReceiving).toHaveBeenCalledWith('QWER TZUI ABCD QWER TZUI', undefined, undefined);
+    expect(api.procedure.findReceivingKeys).not.toHaveBeenCalled();
   });
 
   it('says when no key sheet fits the received message', async () => {

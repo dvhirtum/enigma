@@ -355,6 +355,11 @@ function Receive() {
         <button type="submit" disabled={message.trim() === '' || date === ''}>
           Find key
         </button>
+        {appliedKey && (
+          <button type="button" disabled={message.trim() === ''} onClick={() => void startReceiving(message)}>
+            Receive with applied key
+          </button>
+        )}
       </div>
       {keys && keys.length === 0 && (
         <p className="operator-hint" role="status">

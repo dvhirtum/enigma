@@ -146,8 +146,8 @@ export interface MachineApi {
   releaseKey: MachineCall<[]>;
   applyDailyKey: MachineCall<[sheetId: string, day: number]>;
   startSending: MachineCall<[]>;
-  /** Applies the day of the sheet and starts receiving. */
-  startReceiving: MachineCall<[message: string, sheetId: string, day: number]>;
+  /** Starts receiving; with a sheet and day, applies that key first, otherwise uses the applied key as it is. */
+  startReceiving: MachineCall<[message: string, sheetId?: string, day?: number]>;
   chooseGroups: MachineCall<[schluesselkenngruppe: string, verfahrenkenngruppe: string, fillers: string]>;
   finishMessage: MachineCall<[]>;
   cancelOperator: MachineCall<[]>;

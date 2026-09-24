@@ -101,7 +101,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ### Application
 - Machine commands: `CreateMachine`, `InsertRotor`, `RemoveRotor`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
 - Key-sheet commands: `ApplyDailyKey` (replaces the machine, switching model if needed), `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
-- Operator commands: `StartSending`, `StartReceiving` (applies the chosen sheet's day first), `ChooseGroups`, `FinishMessage`, `CancelOperator`. Each returns the `MachineState`.
+- Operator commands: `StartSending`, `StartReceiving` (applies the chosen sheet's day first, or uses the applied key as it is), `ChooseGroups`, `FinishMessage`, `CancelOperator`. Each returns the `MachineState`.
 - `FindReceivingKeys`: for a received message and a date, the sheets of that month whose network the Schlüsselkenngruppe (decrypted with each sheet's table for the date) is allotted to.
 - Queries: `GetMachineState`, `ListKeySheets`, `GetKeySheet`, `GetKenngruppenbuch`, `GetTauschtafelSet`.
 - Ports: `IMachineSessionStore` (the machine, the daily key applied to it and the operator procedure), `IKeySheetRepository`, `IKenngruppenbuchRepository`, `ITauschtafelSetRepository`.
@@ -150,7 +150,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 | GET | `/api/tauschtafeln/{id}` | |
 | POST | `/api/operator/send` | |
 | POST | `/api/operator/receiving-keys` | `{ message, date }` |
-| POST | `/api/operator/receive` | `{ message, sheetId, day }` |
+| POST | `/api/operator/receive` | `{ message, sheetId?, day? }` |
 | PUT | `/api/operator/groups` | `{ schluesselkenngruppe, verfahrenkenngruppe, fillers }` |
 | POST | `/api/operator/finish` | |
 | DELETE | `/api/operator` | |
@@ -169,7 +169,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
 - Panels:
   - key sheets: a side panel opened from the header. Choose, create, generate, import, export, edit (as text rows) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first. The applied day is marked. A read-only viewer shows the sheet's Kenngruppenbuch (Zuteilungsliste and columns) and the Tauschtafel in force for a day.
-  - operator mode: a side panel that walks through sending or receiving while the operator works the machine. Sending starts with picking the Schlüsselkenngruppe from the network's columns and the Verfahrenkenngruppe from theirs (or "Random"), and ends with the radio message and a Copy button. Receiving starts from a pasted radio message and a date (prefilled from the applied key, or today), lists the matching key sheet days to receive with, and highlights the next cipher letter. Sending needs an applied daily key; the panel warns when the setup is modified. Its message pad shows the lamps in 4-letter groups.
+  - operator mode: a side panel that walks through sending or receiving while the operator works the machine. Sending starts with picking the Schlüsselkenngruppe from the network's columns and the Verfahrenkenngruppe from theirs (or "Random"), and ends with the radio message and a Copy button. Receiving starts from a pasted radio message and a date (prefilled from the applied key, or today), lists the matching key sheet days to receive with (or receives with the applied key at once), and highlights the next cipher letter. Sending needs an applied daily key; the panel warns when the setup is modified. Its message pad shows the lamps in 4-letter groups.
 
 ## Testing
 

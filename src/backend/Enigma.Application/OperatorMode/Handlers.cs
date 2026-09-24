@@ -73,7 +73,12 @@ public sealed class StartReceivingHandler(IMachineSessionStore store, ApplyDaily
         ArgumentNullException.ThrowIfNull(command);
 
         var message = RadioMessage.Parse(command.Message ?? string.Empty);
-        apply.Handle(new ApplyDailyKey(command.SheetId, command.Day));
+        if (command.SheetId is not null)
+        {
+            var day = command.Day ?? throw new DomainException("Receiving with a key sheet needs a day.");
+            apply.Handle(new ApplyDailyKey(command.SheetId, day));
+        }
+
         return store.Begin(OperatorProcedure.StartReceiving(contexts.ForAppliedKey(), message));
     }
 }

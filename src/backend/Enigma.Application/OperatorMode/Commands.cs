@@ -10,10 +10,11 @@ public sealed record StartSending;
 public sealed record FindReceivingKeys(string Message, string Date);
 
 /// <summary>
-/// Applies the key for <see cref="Day"/> of sheet <see cref="SheetId"/> and starts receiving <see cref="Message"/>, a
-/// radio message with or without its preamble.
+/// Starts receiving <see cref="Message"/>, a radio message with or without its preamble. With a
+/// <see cref="SheetId"/>, the key for <see cref="Day"/> of that sheet is applied first; without one, the applied key
+/// and the machine as it is are used.
 /// </summary>
-public sealed record StartReceiving(string Message, string SheetId, int Day);
+public sealed record StartReceiving(string Message, string? SheetId = null, int? Day = null);
 
 /// <summary>Chooses the groups of the indicator to send. <see cref="Fillers"/> is the filler before and after, such as "QX".</summary>
 public sealed record ChooseGroups(string Schluesselkenngruppe, string Verfahrenkenngruppe, string Fillers);

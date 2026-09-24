@@ -169,6 +169,39 @@ public sealed class OperatorHandlerTests
     }
 
     [Fact]
+    public void Should_keep_the_machine_as_it_is_When_a_message_is_received_with_the_applied_key()
+    {
+        // Arrange
+        Apply(1);
+        new ConnectPlugHandler(_store).Handle(new ConnectPlug("CD"));
+        var machine = _store.Machine;
+        var handler = new StartReceivingHandler(_store, new ApplyDailyKeyHandler(_linker, _store), _contexts);
+
+        // Act
+        var state = handler.Handle(new StartReceiving("QWER TZUI ABCD QWER TZUI"));
+
+        // Assert
+        Assert.Same(machine, _store.Machine);
+        Assert.True(state.AppliedKey!.Modified);
+        Assert.Equal("Receive", state.Operator!.Direction);
+        Assert.Equal("SetGrundstellung", state.Operator.Step);
+    }
+
+    [Fact]
+    public void Should_refuse_to_receive_with_the_applied_key_When_none_is_applied()
+    {
+        // Arrange
+        var handler = new StartReceivingHandler(_store, new ApplyDailyKeyHandler(_linker, _store), _contexts);
+
+        // Act
+        void Act() => handler.Handle(new StartReceiving("QWER TZUI ABCD QWER TZUI"));
+
+        // Assert
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Equal("Apply a daily key first.", exception.Message);
+    }
+
+    [Fact]
     public void Should_end_the_procedure_When_a_daily_key_is_applied()
     {
         // Arrange
