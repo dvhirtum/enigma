@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, searchForWorkspaceRoot, type Plugin } from 'vite';
 
 const contentSecurityPolicy = [
   "default-src 'none'",
@@ -22,4 +22,6 @@ const csp: Plugin = {
 
 export default defineConfig({
   plugins: [react(), csp],
+  // The Instructions view reads the user guide from docs/user.
+  server: { fs: { allow: [searchForWorkspaceRoot(process.cwd()), '../../docs/user'] } },
 });

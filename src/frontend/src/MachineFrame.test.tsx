@@ -102,8 +102,16 @@ describe('MachineFrame', () => {
 
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Top-down' }), { key: 'ArrowUp' });
 
-    expect(screen.getByRole('tab', { name: 'Plugboard' })).toHaveFocus();
-    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Plugboard');
+    expect(screen.getByRole('tab', { name: 'Instructions' })).toHaveFocus();
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Instructions');
+  });
+
+  it('shows the user guide in the instructions tab', () => {
+    renderFrame();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Instructions' }));
+
+    expect(screen.getByRole('article', { name: 'Instructions' })).toHaveTextContent('Enigma user guide');
   });
 
   it('shows no daily key until one is applied', async () => {

@@ -167,6 +167,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
     - the keyboard, used with the mouse or the physical keyboard
   - **Open lid:** the machine seen from the front (reflector, rotors with their alphabet rings, entry wheel), above a rotor box with a compartment per rotor and a reflector box. Click a rotor in the box, then a slot, to insert or swap it. Click a rotor in the machine to return it to the box. The mouse wheel or Arrow Up/Down turns a machine rotor's position or a box rotor's ring. Click the spare reflector to fit it.
   - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
+  - **Instructions:** the user guide from `docs/user` (Markdown, rendered with react-markdown). Links between its pages open them in the tab.
 - Panels:
   - key sheets: a side panel opened from the header. Choose, create, generate, import, export, edit (as text rows) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first. The applied day is marked. A read-only viewer shows the sheet's Kenngruppenbuch (Zuteilungsliste and columns) and the Tauschtafel in force for a day.
   - operator mode: a side panel that walks through sending or receiving while the operator works the machine. Sending starts with picking the Schlüsselkenngruppe from the network's columns and the Verfahrenkenngruppe from theirs (or "Random"), and ends with the radio message and a Copy button. Receiving starts from a pasted radio message and a date (prefilled from the applied key, or today), lists the matching key sheet days to receive with (or receives with the applied key at once), and highlights the next cipher letter. Sending needs an applied daily key; the panel warns when the setup is modified. Its message pad shows the lamps in 4-letter groups.
@@ -196,7 +197,7 @@ src/backend/{Enigma.Domain, Enigma.Application, Enigma.Infrastructure, Enigma.Ap
 src/frontend/
 tests/{Enigma.Domain.Tests, Enigma.Application.Tests, Enigma.Api.Tests}
 data/keysheets/
-docs/
+docs/{design.md, user/}
 .github/workflows/
 ```
 

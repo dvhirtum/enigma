@@ -3,6 +3,7 @@ import { models, slots } from './machine';
 import { KeySheetPanel } from './panels/KeySheetPanel';
 import { OperatorPanel } from './panels/OperatorPanel';
 import { useMachine } from './store';
+import { InstructionsView } from './views/InstructionsView';
 import { OpenLidView } from './views/OpenLidView';
 import { PlugboardView } from './views/PlugboardView';
 import { TopDownView } from './views/TopDownView';
@@ -11,6 +12,7 @@ const views = [
   { id: 'top-down', label: 'Top-down', View: TopDownView },
   { id: 'open-lid', label: 'Open lid', View: OpenLidView },
   { id: 'plugboard', label: 'Plugboard', View: PlugboardView },
+  { id: 'instructions', label: 'Instructions', View: InstructionsView },
 ] as const;
 
 function MachineSummary() {
