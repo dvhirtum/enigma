@@ -31,7 +31,7 @@ const run = () => {
   registerIpc(backend);
 
   void app.whenReady().then(() => {
-    harden();
+    harden(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     Menu.setApplicationMenu(null);
     createWindow();
   });
