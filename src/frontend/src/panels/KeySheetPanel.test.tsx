@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { defaultM3, historicalSheet, summaryOf } from '../test/fakeApi';
 import { renderMachine } from '../test/renderMachine';
@@ -70,6 +70,16 @@ describe('KeySheetPanel', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Print to PDF' })).toBeInTheDocument();
+  });
+
+  it('prints the open sheet to a PDF', async () => {
+    const api = renderMachine(<KeySheetPanel />, undefined, showHistorical);
+    await openSheet('historical-hydra');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Print to PDF' }));
+
+    await waitFor(() => expect(api.files.printKeySheet).toHaveBeenCalledWith('Hydra-1944-06.pdf', expect.stringContaining('Schlüsseltafel für das Schlüsselnetz')));
   });
 
   it('generates a sheet for the chosen model, network and month', async () => {

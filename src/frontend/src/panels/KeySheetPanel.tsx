@@ -155,6 +155,7 @@ function DayRow({ sheet, dailyKey }: { sheet: KeySheet; dailyKey: DailyKey }) {
 
 function SheetView({ sheet, onEdit }: { sheet: KeySheet; onEdit: () => void }) {
   const exportKeySheet = useMachine((store) => store.exportKeySheet);
+  const printKeySheet = useMachine((store) => store.printKeySheet);
   const deleteKeySheet = useMachine((store) => store.deleteKeySheet);
   const [deleting, setDeleting] = useState(false);
 
@@ -172,6 +173,9 @@ function SheetView({ sheet, onEdit }: { sheet: KeySheet; onEdit: () => void }) {
         )}
         <button type="button" onClick={() => void exportKeySheet()}>
           Export
+        </button>
+        <button type="button" onClick={() => void printKeySheet()}>
+          Print to PDF
         </button>
         {!sheet.readOnly && (
           <button type="button" onClick={() => setDeleting(true)}>

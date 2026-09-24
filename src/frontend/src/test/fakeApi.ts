@@ -163,6 +163,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     files: {
       openKeySheet: vi.fn().mockResolvedValue(null),
       saveKeySheet: vi.fn().mockResolvedValue(null),
+      printKeySheet: vi.fn().mockResolvedValue(null),
     },
     backend: {
       status: vi.fn().mockResolvedValue(status),

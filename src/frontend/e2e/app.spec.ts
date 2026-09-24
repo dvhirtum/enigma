@@ -170,6 +170,32 @@ test('exports a key sheet with its Kenngruppenbuch and Tauschtafeln', async () =
   await page.getByRole('button', { name: 'Key sheets' }).click();
 });
 
+test('prints a key sheet with its Kenngruppenbuch and Tauschtafeln to a PDF', async () => {
+  const generated = await page.evaluate(() => window.enigma.keySheets.generate('M4', 'Print', '1944-06'));
+  if (!generated.ok) {
+    throw new Error(generated.problem.title);
+  }
+  const file = path.join(userData, 'print.pdf');
+  await app.evaluate(({ dialog }, filePath) => {
+    dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath });
+  }, file);
+
+  await page.getByRole('button', { name: 'Key sheets' }).click();
+  const panel = page.getByRole('complementary', { name: 'Key sheets' });
+  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Print 1944-06 · M4 (generated)' });
+  await panel.getByRole('button', { name: 'Print to PDF' }).click();
+
+  await expect.poll(() => existsSync(file) && readFileSync(file, 'latin1').trimEnd().endsWith('%%EOF'), { timeout: 30_000 }).toBe(true);
+  const pdf = readFileSync(file, 'latin1');
+  expect(pdf.startsWith('%PDF-')).toBe(true);
+  expect(pdf).toContain('SpecialElite');
+  expect(pdf).toContain('CourierPrime');
+  expect(pdf.match(/\/Type\s*\/Page\b/g)?.length).toBeGreaterThan(40);
+
+  await page.evaluate((id) => window.enigma.keySheets.remove(id), generated.value.id);
+  await page.getByRole('button', { name: 'Key sheets' }).click();
+});
+
 test('forwards machine operations to the backend', async () => {
   const pressed = await page.evaluate(async () => {
     const result = await window.enigma.machine.pressKey('A');

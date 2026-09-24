@@ -26,6 +26,19 @@ Choose a sheet from the list to see its days.
 - **Edit** changes the rows, **Export** saves the sheet as a file and **Delete** removes it. Historical sheets are read-only.
 - **Kenngruppenbuch** shows the Zuteilungsliste (which columns belong to which network) and the columns.
 - **Tauschtafeln** shows the bigram table in force on a chosen day. Each half month uses a different table.
+- **Print to PDF** saves the sheet as a PDF, typed as on a period typewriter, for working the procedure on paper. See below.
+
+## Printing a sheet
+
+**Print to PDF** asks where to save the PDF (about 40 A4 pages) and writes it with German headings, as on the originals:
+
+1. **Schlüsseltafel**: the daily keys, with the last day at the top, as on the real sheets. Operators cut off and destroyed the days they had used.
+2. **Kenngruppenbuch**: the Zuteilungsliste, with your network marked `<===`, then two parts:
+   - **Teil A, Spaltentafel**: all 676 columns, in bands of 20. Each band is labelled with its use, so your network's columns are one band. Pick the Schlüsselkenngruppe there, and the Verfahrenkenngruppe from the bands for columns 1–100.
+   - **Teil B, Suchtafel**: the column of every trigram. Find the block of its first letter, the row of its first two letters and the column of its third. The receiver uses it to check which network a Schlüsselkenngruppe belongs to.
+3. **Doppelbuchstabentauschtafeln**: the calendar of which table applies to each half month (your month is marked), then the 9 tables. To swap a pair such as `SW`, find row `S`, column `W`: the cell holds its partner. The tables work both ways.
+
+With the PDF and the machine, you can [send](sending-by-hand.md) and [receive](receiving-by-hand.md) by hand without the viewers in the panel.
 
 ## Sharing a sheet
 

@@ -47,6 +47,7 @@ const api: EnigmaApi = {
   files: {
     openKeySheet: () => invoke('files:openKeySheet'),
     saveKeySheet: (name, content) => invoke('files:saveKeySheet', name, content),
+    printKeySheet: (name, html) => invoke('files:printKeySheet', name, html),
   },
   backend: {
     status: () => invoke('backend:status'),

@@ -119,6 +119,49 @@ describe('key sheet store', () => {
     expect(store.getState().error).toMatchObject({ title: 'Not found' });
   });
 
+  it('prints the open sheet with its book and tables to a PDF', async () => {
+    const { api } = createFakeApi();
+    api.files.printKeySheet.mockResolvedValue('C:\\sheets\\Triton-1944-06.pdf');
+    const store = createMachineStore(api);
+    await store.getState().openKeySheet('g1');
+
+    const printed = await store.getState().printKeySheet();
+
+    expect(printed).toBe(true);
+    expect(api.keySheets.export).toHaveBeenCalledWith('g1');
+    const [name, html] = api.files.printKeySheet.mock.calls[0] as [string, string];
+    expect(name).toBe('Triton-1944-06.pdf');
+    expect(html).toContain('Schlüsseltafel für das Schlüsselnetz <b>TRITON</b>');
+    expect(html).toContain('Spalten 101–120 · Triton');
+    expect(html).toContain('Kenngruppen Z..');
+    expect(html).toContain('Gültig 1.–15. Mai');
+  });
+
+  it('prints nothing when the export fails', async () => {
+    const { api } = createFakeApi();
+    api.keySheets.export.mockResolvedValue({ ok: false, problem: { status: 404, title: 'Not found' } });
+    const store = createMachineStore(api);
+    await store.getState().openKeySheet('g1');
+
+    const printed = await store.getState().printKeySheet();
+
+    expect(printed).toBe(false);
+    expect(api.files.printKeySheet).not.toHaveBeenCalled();
+    expect(store.getState().error).toMatchObject({ title: 'Not found' });
+  });
+
+  it('records the problem when the PDF cannot be saved', async () => {
+    const { api } = createFakeApi();
+    api.files.printKeySheet.mockRejectedValue(new Error('Disk full'));
+    const store = createMachineStore(api);
+    await store.getState().openKeySheet('g1');
+
+    const printed = await store.getState().printKeySheet();
+
+    expect(printed).toBe(false);
+    expect(store.getState().error).toMatchObject({ title: 'The PDF could not be saved.' });
+  });
+
   it('replaces the machine state when a daily key is applied', async () => {
     const { api } = createFakeApi();
     api.machine.applyDailyKey.mockResolvedValue({ ok: true, value: { ...defaultM3, model: 'M4', reflector: 'B-thin' } });

@@ -14,6 +14,7 @@ import type {
   TauschtafelSet,
 } from './api';
 import { shiftLetter, shiftRing } from './machine';
+import { keySheetDocument } from './printSheet';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -34,6 +35,8 @@ export interface KeySheetSlice {
   importKeySheet: () => Promise<boolean>;
   /** Saves the open sheet to a file the user picks. */
   exportKeySheet: () => Promise<boolean>;
+  /** Prints the open sheet with its Kenngruppenbuch and Tauschtafeln to a PDF the user picks. */
+  printKeySheet: () => Promise<boolean>;
 }
 
 /** Kenngruppenbücher and Tauschtafel sets by id, loaded once when first needed. */
@@ -202,6 +205,21 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           return (await files.saveKeySheet(`${sheet.network}-${sheet.month}.json`, `${JSON.stringify(file, null, 2)}\n`)) !== null;
         } catch (error) {
           return fail({ status: 0, title: 'The file could not be saved.', detail: String(error) });
+        }
+      },
+      printKeySheet: async () => {
+        const sheet = get().keySheet;
+        if (!sheet) {
+          return false;
+        }
+        const result = await check(sheets.export(sheet.id));
+        if (!result.ok) {
+          return false;
+        }
+        try {
+          return (await files.printKeySheet(`${sheet.network}-${sheet.month}.pdf`, keySheetDocument(result.value, sheet.model))) !== null;
+        } catch (error) {
+          return fail({ status: 0, title: 'The PDF could not be saved.', detail: String(error) });
         }
       },
       load: async () => {

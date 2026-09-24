@@ -195,6 +195,8 @@ export interface FilesApi {
   openKeySheet: () => Promise<string | null>;
   /** Returns the path the file was saved to. */
   saveKeySheet: (name: string, content: string) => Promise<string | null>;
+  /** Prints the HTML document to a PDF file; returns the path it was saved to. */
+  printKeySheet: (name: string, html: string) => Promise<string | null>;
 }
 
 /** The system clipboard, written by the main process. */

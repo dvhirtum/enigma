@@ -2,7 +2,7 @@
 
 [Back to the contents](README.md)
 
-This page walks through the Navy procedure the way an operator worked it. It uses only the machine and the key sheet panel, not [operator mode](operator-mode.md). You need paper and a pencil to write down the lamps. If operator mode is running, click **Cancel** first, because it rejects keys it doesn't expect.
+This page walks through the Navy procedure the way an operator worked it. It uses only the machine and the key sheet panel, not [operator mode](operator-mode.md). Instead of the panel's viewers, you can also use a [printed sheet](key-sheets.md#printing-a-sheet). You need paper and a pencil to write down the lamps. If operator mode is running, click **Cancel** first, because it rejects keys it doesn't expect.
 
 The worked example runs through every step with values you can check on your own machine.
 
