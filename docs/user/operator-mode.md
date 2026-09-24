@@ -6,6 +6,8 @@ Operator mode walks through the Navy indicator procedure while you work the mach
 
 Keys other than the expected one are rejected. **Cancel** stops the procedure at any time.
 
+To work through the same steps without guidance, see [Sending by hand](sending-by-hand.md) and [Receiving by hand](receiving-by-hand.md). [The Enigma in the Kriegsmarine](history.md) explains why the procedure works this way.
+
 ## Sending
 
 Sending needs an applied daily key (see [Key sheets](key-sheets.md)). The panel warns when the setup differs from the key.

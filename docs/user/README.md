@@ -4,10 +4,13 @@ This application simulates the Enigma M3 and M4 used by the Kriegsmarine. It cov
 
 ## Contents
 
-1. [The machine](machine.md): the header, the three views, and setting up rotors, reflector and plugs.
-2. [Key sheets](key-sheets.md): generating, writing, importing and applying daily keys.
-3. [Operator mode](operator-mode.md): sending and receiving a message step by step.
-4. [Glossary](glossary.md): the German terms used in the application.
+1. [The Enigma in the Kriegsmarine](history.md): how the machine and the Navy's procedures were used, and how they were broken.
+2. [The machine](machine.md): the header, the three views, and setting up rotors, reflector and plugs.
+3. [Key sheets](key-sheets.md): generating, writing, importing and applying daily keys.
+4. [Sending by hand](sending-by-hand.md): encrypting a message yourself, step by step, with a worked example.
+5. [Receiving by hand](receiving-by-hand.md): decrypting a message yourself, plus two historical messages to try.
+6. [Operator mode](operator-mode.md): the same procedures with the application guiding each step.
+7. [Glossary](glossary.md): the German terms used in the application.
 
 ## Quick start
 
@@ -15,3 +18,5 @@ This application simulates the Enigma M3 and M4 used by the Kriegsmarine. It cov
 2. Click **Apply** on a day. The machine is set up with that day's key.
 3. Open **Operator mode** (the message pad button) and click **Send a message**. Follow the steps.
 4. Copy the radio message, click **New message**, paste it under **Received message** and receive it again.
+
+When you know the steps, try them without operator mode: see [Sending by hand](sending-by-hand.md).
