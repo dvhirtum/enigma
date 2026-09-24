@@ -125,6 +125,37 @@ public sealed class Kenngruppenbuch
         Add(new Allotment(network.Trim(), free));
     }
 
+    /// <summary>
+    /// Adds the allotments of <paramref name="copy"/>, another copy of this book, that this one lacks. Throws when
+    /// the columns differ or an allotment clashes with one here. Returns true when any were added.
+    /// </summary>
+    public bool Merge(Kenngruppenbuch copy)
+    {
+        ArgumentNullException.ThrowIfNull(copy);
+
+        if (copy.Id != Id || !_columns.Zip(copy._columns).All(pair => pair.First.SequenceEqual(pair.Second)))
+        {
+            throw new DomainException($"The Kenngruppenbuch {copy.Id} differs from the one with the same id here.");
+        }
+
+        var missing = copy.Allotments.Where(a => !Covers(a.Network)).ToList();
+        foreach (var allotment in copy.Allotments)
+        {
+            var clash = AllotmentOf(allotment.Network) is { } local
+                ? (local.Columns == allotment.Columns ? null : local)
+                : _allotments.FirstOrDefault(a => a.Columns.First <= allotment.Columns.Last && allotment.Columns.First <= a.Columns.Last);
+            if (clash is not null)
+            {
+                throw new DomainException(
+                    $"Network {allotment.Network} has columns {allotment.Columns.First}–{allotment.Columns.Last} in the imported Kenngruppenbuch, " +
+                    $"but here {clash.Network} has columns {clash.Columns.First}–{clash.Columns.Last}.");
+            }
+        }
+
+        missing.ForEach(Add);
+        return missing.Count > 0;
+    }
+
     public bool IsVerfahrenkenngruppe(Kenngruppe kenngruppe) => Verfahrenkenngruppen.Contains(Locate(kenngruppe).Column);
 
     public bool IsSchluesselkenngruppe(string network, Kenngruppe kenngruppe) =>

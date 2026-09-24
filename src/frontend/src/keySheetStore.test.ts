@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createMachineStore } from './store';
-import { createFakeApi, defaultM3, generatedSheet, historicalSheet, summaryOf } from './test/fakeApi';
+import { createFakeApi, defaultM3, fakeBook, fakeTables, generatedSheet, historicalSheet, summaryOf } from './test/fakeApi';
 
 describe('key sheet store', () => {
   it('loads the list of key sheets', async () => {
@@ -83,7 +83,7 @@ describe('key sheet store', () => {
     expect(store.getState().error).toMatchObject({ title: 'The file is not a key sheet.' });
   });
 
-  it('exports the open sheet without its id and provenance', async () => {
+  it('exports the open sheet with its book and tables, without its id and provenance', async () => {
     const { api } = createFakeApi();
     api.files.saveKeySheet.mockResolvedValue('C:\\sheets\\Triton-1944-06.json');
     const store = createMachineStore(api);
@@ -92,9 +92,31 @@ describe('key sheet store', () => {
     const exported = await store.getState().exportKeySheet();
 
     expect(exported).toBe(true);
+    expect(api.keySheets.export).toHaveBeenCalledWith('g1');
     const [name, content] = api.files.saveKeySheet.mock.calls[0] as [string, string];
     expect(name).toBe('Triton-1944-06.json');
-    expect(JSON.parse(content)).toEqual({ network: 'Triton', month: '1944-06', days: generatedSheet.days });
+    expect(JSON.parse(content)).toEqual({
+      network: 'Triton',
+      month: '1944-06',
+      days: generatedSheet.days,
+      kenngruppenbuchId: 'book',
+      tauschtafelSetId: 'tables',
+      kenngruppenbuch: fakeBook,
+      tauschtafeln: fakeTables,
+    });
+  });
+
+  it('saves no file when the export fails', async () => {
+    const { api } = createFakeApi();
+    api.keySheets.export.mockResolvedValue({ ok: false, problem: { status: 404, title: 'Not found' } });
+    const store = createMachineStore(api);
+    await store.getState().openKeySheet('g1');
+
+    const exported = await store.getState().exportKeySheet();
+
+    expect(exported).toBe(false);
+    expect(api.files.saveKeySheet).not.toHaveBeenCalled();
+    expect(store.getState().error).toMatchObject({ title: 'Not found' });
   });
 
   it('replaces the machine state when a daily key is applied', async () => {

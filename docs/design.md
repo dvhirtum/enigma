@@ -100,7 +100,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 
 ### Application
 - Machine commands: `CreateMachine`, `InsertRotor`, `RemoveRotor`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
-- Key-sheet commands: `ApplyDailyKey` (replaces the machine, switching model if needed), `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
+- Key-sheet commands: `ApplyDailyKey` (replaces the machine, switching model if needed), `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`, `ExportKeySheet`.
 - Operator commands: `StartSending`, `StartReceiving` (applies the chosen sheet's day first, or uses the applied key as it is), `ChooseGroups`, `FinishMessage`, `CancelOperator`. Each returns the `MachineState`.
 - `FindReceivingKeys`: for a received message and a date, the sheets of that month whose network the Schlüsselkenngruppe (decrypted with each sheet's table for the date) is allotted to.
 - Queries: `GetMachineState`, `ListKeySheets`, `GetKeySheet`, `GetKenngruppenbuch`, `GetTauschtafelSet`.
@@ -109,7 +109,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - `MachineState.operator`: the procedure's direction, step, groups, indicator, Grundstellung, Spruchschlüssel, the pad (lamps lit while typing the message), the radio message and warnings. Applying a key or creating a machine ends the procedure. Sending needs an applied daily key.
 - `MachineState.appliedKey`: the sheet, month and day last applied, `modified` once the reflector, rotor order, rings or plugs differ from it (turning rotors does not count). Switching model clears it.
 - `KeySheetText`: daily keys as text, one row per day in Navy column order: day, reflector, rotors, rings (01–26), plugs, Grundstellung. Create and update take this text; errors name the line.
-- Key sheet files (JSON): `{ network, month, days: [{ day, reflector, rotors, rings, plugs, grundstellung }] }`. Imports become user-defined.
+- Key sheet files (JSON): `{ network, month, days: [{ day, reflector, rotors, rings, plugs, grundstellung }], kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln }`. Exports include the linked book and table set, so another installation receives with the same Kenngruppen and Tauschtafeln. Imports become user-defined; they store the book and set, adding allotments to a book that is already there. A clashing allotment, a book with other columns or a table set with other tables under the same id rejects the import. Files without a book or set are linked locally.
 - Commands and queries use plain handlers, without a mediator library.
 - There is one machine. It starts as a default M3; `CreateMachine` replaces it.
 
@@ -146,6 +146,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 | DELETE | `/api/keysheets/{id}` | |
 | POST | `/api/keysheets/generate` | `{ model, network, month }` |
 | POST | `/api/keysheets/import` | key sheet file |
+| GET | `/api/keysheets/{id}/export` | |
 | GET | `/api/kenngruppenbuecher/{id}` | |
 | GET | `/api/tauschtafeln/{id}` | |
 | POST | `/api/operator/send` | |

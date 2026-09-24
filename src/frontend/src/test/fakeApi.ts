@@ -97,6 +97,20 @@ export const historicalSheet: KeySheet = {
   text: '26 B III VI VIII 01 08 13 AN EZ\n',
 };
 
+/** The export of the generated sheet as the backend returns it, with its id and provenance cleared. */
+export const exportedFile = {
+  id: null,
+  network: generatedSheet.network,
+  month: generatedSheet.month,
+  provenance: null,
+  source: null,
+  days: generatedSheet.days,
+  kenngruppenbuchId: 'book',
+  tauschtafelSetId: 'tables',
+  kenngruppenbuch: fakeBook,
+  tauschtafeln: fakeTables,
+};
+
 export function summaryOf({ id, network, month, model, provenance, source, readOnly }: KeySheet): KeySheetSummary {
   return { id, network, month, model, provenance, source, readOnly };
 }
@@ -136,6 +150,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       remove: vi.fn().mockResolvedValue({ ok: true, value: null }),
       generate: sheet(),
       import: sheet(),
+      export: vi.fn().mockResolvedValue({ ok: true, value: exportedFile }),
     },
     procedure: {
       getBook: vi.fn().mockResolvedValue({ ok: true, value: fakeBook }),

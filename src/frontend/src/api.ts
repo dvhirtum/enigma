@@ -111,11 +111,15 @@ export interface KeySheet extends KeySheetSummary {
   tauschtafelSetId: string | null;
 }
 
-/** The contents of a key sheet file, as exported and imported. */
+/** The contents of a key sheet file, as exported and imported. Exports also hold the linked Kenngruppenbuch and Tauschtafel set. */
 export interface KeySheetFile {
   network: string;
   month: string;
   days: DailyKey[];
+  kenngruppenbuchId?: string | null;
+  tauschtafelSetId?: string | null;
+  kenngruppenbuch?: Kenngruppenbuch;
+  tauschtafeln?: TauschtafelSet;
 }
 
 export interface Problem {
@@ -165,6 +169,7 @@ export interface KeySheetApi {
   remove: Call<[id: string], null>;
   generate: Call<[model: string, network: string, month: string], KeySheet>;
   import: Call<[file: KeySheetFile], KeySheet>;
+  export: Call<[id: string], KeySheetFile>;
 }
 
 /** A key sheet day whose network the Schlüsselkenngruppe of a received message is allotted to. */

@@ -40,6 +40,7 @@ internal static class KeySheetEndpoints
             .AddSingleton<DeleteKeySheetHandler>()
             .AddSingleton<GenerateKeySheetHandler>()
             .AddSingleton<ImportKeySheetHandler>()
+            .AddSingleton<ExportKeySheetHandler>()
             .AddSingleton<ApplyDailyKeyHandler>();
     }
 
@@ -70,6 +71,9 @@ internal static class KeySheetEndpoints
 
         sheets.MapPost("/import", (KeySheetDocument document, ImportKeySheetHandler handler) =>
             handler.Handle(new ImportKeySheet(document)));
+
+        sheets.MapGet("/{id}/export", (string id, ExportKeySheetHandler handler) =>
+            handler.Handle(new ExportKeySheet(id)));
 
         app.MapGet("/api/kenngruppenbuecher/{id}", (string id, GetKenngruppenbuchHandler handler) =>
             handler.Handle(new GetKenngruppenbuch(id)));

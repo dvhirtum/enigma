@@ -1,4 +1,6 @@
+using System.Text.Json.Serialization;
 using Enigma.Application.Machine;
+using Enigma.Application.Procedure;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
@@ -18,7 +20,8 @@ public sealed record DailyKeyDocument(
 
 /// <summary>
 /// A key sheet file. <see cref="Provenance"/> is Historical, Generated or UserDefined; <see cref="Source"/> names the
-/// document a historical sheet was transcribed from. Imports ignore the id and provenance.
+/// document a historical sheet was transcribed from. Imports ignore the id and provenance. An exported file also holds
+/// the linked <see cref="Kenngruppenbuch"/> and <see cref="Tauschtafeln"/>, so another installation can use them.
 /// </summary>
 public sealed record KeySheetDocument(
     string? Id,
@@ -28,7 +31,9 @@ public sealed record KeySheetDocument(
     string? Source,
     IReadOnlyList<DailyKeyDocument> Days,
     string? KenngruppenbuchId = null,
-    string? TauschtafelSetId = null);
+    string? TauschtafelSetId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] KenngruppenbuchDocument? Kenngruppenbuch = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] TauschtafelSetDocument? Tauschtafeln = null);
 
 public sealed record KeySheetSummary(
     string Id,

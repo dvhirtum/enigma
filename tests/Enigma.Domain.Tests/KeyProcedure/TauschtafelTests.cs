@@ -83,4 +83,21 @@ public sealed class TauschtafelTests
         var exception = Assert.Throws<DomainException>(Act);
         Assert.Equal("The Tauschtafel set for 1944 does not cover 1945-01.", exception.Message);
     }
+
+    [Fact]
+    public void Should_tell_whether_two_sets_are_the_same_When_they_are_compared()
+    {
+        // Arrange
+        var set = TauschtafelSet.Generate("set", 1944, new Random(8));
+        var same = TauschtafelSet.Generate("set", 1944, new Random(8));
+        var other = TauschtafelSet.Generate("set", 1944, new Random(9));
+
+        // Act
+        var sameResult = set.IsSameAs(same);
+        var otherResult = set.IsSameAs(other);
+
+        // Assert
+        Assert.True(sameResult);
+        Assert.False(otherResult);
+    }
 }

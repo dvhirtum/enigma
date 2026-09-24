@@ -26,3 +26,9 @@ Choose a sheet from the list to see its days.
 - **Edit** changes the rows, **Export** saves the sheet as a file and **Delete** removes it. Historical sheets are read-only.
 - **Kenngruppenbuch** shows the Zuteilungsliste (which columns belong to which network) and the columns.
 - **Tauschtafeln** shows the bigram table in force on a chosen day. Each half month uses a different table.
+
+## Sharing a sheet
+
+To exchange messages with someone who has the application on another computer, **Export** a sheet and give them the file. They **Import** it. The file holds the daily keys, the Kenngruppenbuch and the Tauschtafeln, so both of you use the same key, Kenngruppen and bigram tables. Messages sent by one can then be received by the other, in operator mode or [by hand](receiving-by-hand.md).
+
+Share further sheets the same way. When the Kenngruppenbuch is already there, importing adds the networks it lacks. The import is rejected if the file's Kenngruppenbuch or Tauschtafeln clash with the ones on the computer, for example when both sides gave the same columns to different networks. To avoid that, let one person create the sheets for everyone.

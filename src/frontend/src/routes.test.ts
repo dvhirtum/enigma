@@ -35,7 +35,7 @@ describe('machine routes', () => {
     expect(machineRoutes.setRingSetting('../x', 1).path).toBe('/api/machine/rotor-box/..%2Fx/ring');
   });
 });
-
+
 describe('key sheet routes', () => {
   const file = { network: 'Hydra', month: '1943-12', days: [] };
 
@@ -47,6 +47,7 @@ describe('key sheet routes', () => {
     ['remove', keySheetRoutes.remove('g1'), 'DELETE', '/api/keysheets/g1', undefined],
     ['generate', keySheetRoutes.generate('M4', 'Triton', '1944-06'), 'POST', '/api/keysheets/generate', { model: 'M4', network: 'Triton', month: '1944-06' }],
     ['import', keySheetRoutes.import(file), 'POST', '/api/keysheets/import', file],
+    ['export', keySheetRoutes.export('g1'), 'GET', '/api/keysheets/g1/export', undefined],
   ])('maps %s to its endpoint', (_name, route, method, path, body) => {
     expect(route).toEqual({ method, path, ...(body && { body }) });
   });

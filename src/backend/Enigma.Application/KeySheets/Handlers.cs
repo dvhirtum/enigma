@@ -93,10 +93,35 @@ public sealed class ImportKeySheetHandler(IKeySheetRepository repository, KeyShe
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var sheet = KeySheetMapper.FromDocument(command.Document, KeySheetIds.New(), Provenance.UserDefined);
+        var document = command.Document;
+        var book = document.Kenngruppenbuch is { } bookDocument ? ProcedureMapper.FromDocument(bookDocument) : null;
+        var set = document.Tauschtafeln is { } setDocument ? ProcedureMapper.FromDocument(setDocument) : null;
+        var sheet = KeySheetMapper.FromDocument(
+            document with { KenngruppenbuchId = book?.Id ?? document.KenngruppenbuchId, TauschtafelSetId = set?.Id ?? document.TauschtafelSetId },
+            KeySheetIds.New(),
+            Provenance.UserDefined);
+        linker.Import(book, set);
         linker.Link(sheet);
         repository.Save(sheet);
         return KeySheetMapper.ToDetails(sheet);
+    }
+}
+
+public sealed class ExportKeySheetHandler(KeySheetLinker linker)
+{
+    public KeySheetDocument Handle(ExportKeySheet command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var sheet = linker.Load(command.Id);
+        return KeySheetMapper.ToDocument(sheet) with
+        {
+            Id = null,
+            Provenance = null,
+            Source = null,
+            Kenngruppenbuch = ProcedureMapper.ToDocument(linker.Book(sheet.KenngruppenbuchId!)),
+            Tauschtafeln = ProcedureMapper.ToDocument(linker.Tables(sheet.TauschtafelSetId!)),
+        };
     }
 }
 

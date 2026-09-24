@@ -98,4 +98,66 @@ public sealed class KenngruppenbuchTests
         var exception = Assert.Throws<DomainException>(Act);
         Assert.Equal("Trigram AAA appears more than once in the Kenngruppenbuch.", exception.Message);
     }
+
+    [Fact]
+    public void Should_add_the_allotments_it_lacks_When_a_copy_of_the_book_is_merged()
+    {
+        // Arrange
+        var here = Procedures.Book("Triton");
+        var copy = Procedures.Book("Triton", "Hydra");
+
+        // Act
+        var changed = here.Merge(copy);
+
+        // Assert
+        Assert.True(changed);
+        Assert.Equal(["Triton", "Hydra"], here.Allotments.Select(a => a.Network));
+        Assert.Equal(new ColumnRange(121, 140), here.AllotmentOf("Hydra")!.Columns);
+    }
+
+    [Fact]
+    public void Should_report_no_change_When_the_copy_has_no_new_allotments()
+    {
+        // Arrange
+        var here = Procedures.Book("Triton", "Hydra");
+        var copy = Procedures.Book("TRITON");
+
+        // Act
+        var changed = here.Merge(copy);
+
+        // Assert
+        Assert.False(changed);
+        Assert.Equal(2, here.Allotments.Count);
+    }
+
+    [Fact]
+    public void Should_keep_the_book_unchanged_When_an_allotment_of_the_copy_clashes()
+    {
+        // Arrange
+        var here = Procedures.Book("Triton", "Shark");
+        var copy = Procedures.Book("Triton", "Hydra", "Medusa");
+
+        // Act
+        void Act() => here.Merge(copy);
+
+        // Assert
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Equal("Network Hydra has columns 121–140 in the imported Kenngruppenbuch, but here Shark has columns 121–140.", exception.Message);
+        Assert.Equal(["Triton", "Shark"], here.Allotments.Select(a => a.Network));
+    }
+
+    [Fact]
+    public void Should_reject_the_copy_When_its_columns_differ()
+    {
+        // Arrange
+        var here = Procedures.Book("Triton");
+        var other = Kenngruppenbuch.Generate("book", Procedures.Created, ["Triton"], new Random(3));
+
+        // Act
+        void Act() => here.Merge(other);
+
+        // Assert
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Equal("The Kenngruppenbuch book differs from the one with the same id here.", exception.Message);
+    }
 }

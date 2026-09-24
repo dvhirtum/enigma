@@ -192,7 +192,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         if (!sheet) {
           return false;
         }
-        const file: KeySheetFile = { network: sheet.network, month: sheet.month, days: sheet.days };
+        const result = await check(sheets.export(sheet.id));
+        if (!result.ok) {
+          return false;
+        }
+        const { network, month, days, kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln } = result.value;
+        const file: KeySheetFile = { network, month, days, kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln };
         try {
           return (await files.saveKeySheet(`${sheet.network}-${sheet.month}.json`, `${JSON.stringify(file, null, 2)}\n`)) !== null;
         } catch (error) {

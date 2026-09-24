@@ -234,6 +234,33 @@ public sealed class KeySheetEndpointTests : IDisposable
     private static string WithGrundstellung(string grundstellung) =>
         HistoricalJson.Replace("\"plugs\"", $"\"grundstellung\": {grundstellung}, \"plugs\"", StringComparison.Ordinal);
 
+    [Fact]
+    public async Task Should_share_the_book_and_the_tables_When_a_sheet_is_exported_to_another_installation()
+    {
+        // Arrange
+        var sender = CreateClient();
+        var receiver = CreateClient(Path.Combine(_root, "other-user"));
+        var created = await SendAsync<KeySheetDetails>(
+            sender, HttpMethod.Post, "/api/keysheets", new { network = "Triton", month = "1942-11", text = U264Row });
+        var file = await sender.GetStringAsync(Url($"/api/keysheets/{created.Id}/export"), Token);
+
+        // Act
+        using var content = new StringContent(file, System.Text.Encoding.UTF8, "application/json");
+        using var response = await receiver.PostAsync(Url("/api/keysheets/import"), content, Token);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var imported = (await response.Content.ReadFromJsonAsync<KeySheetDetails>(Token))!;
+        Assert.Equal(created.KenngruppenbuchId, imported.KenngruppenbuchId);
+        Assert.Equal(created.TauschtafelSetId, imported.TauschtafelSetId);
+        Assert.Equal(
+            await sender.GetStringAsync(Url($"/api/kenngruppenbuecher/{created.KenngruppenbuchId}"), Token),
+            await receiver.GetStringAsync(Url($"/api/kenngruppenbuecher/{imported.KenngruppenbuchId}"), Token));
+        Assert.Equal(
+            await sender.GetStringAsync(Url($"/api/tauschtafeln/{created.TauschtafelSetId}"), Token),
+            await receiver.GetStringAsync(Url($"/api/tauschtafeln/{imported.TauschtafelSetId}"), Token));
+    }
+
     private static Uri Url(string path) => new(path, UriKind.Relative);
 
     private static async Task<T> SendAsync<T>(HttpClient client, HttpMethod method, string url, object body)
@@ -245,12 +272,12 @@ public sealed class KeySheetEndpointTests : IDisposable
             ?? throw new InvalidOperationException("Empty response.");
     }
 
-    private HttpClient CreateClient()
+    private HttpClient CreateClient(string? userPath = null)
     {
         var root = new WebApplicationFactory<Program>();
         var factory = root.WithWebHostBuilder(builder => builder
             .UseSetting("KeySheets:HistoricalPath", HistoricalPath)
-            .UseSetting("KeySheets:UserPath", UserPath));
+            .UseSetting("KeySheets:UserPath", userPath ?? UserPath));
         var client = factory.CreateClient();
         _disposables.AddRange([client, factory, root]);
         return client;

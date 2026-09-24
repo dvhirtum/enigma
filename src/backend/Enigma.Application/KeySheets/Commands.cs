@@ -11,8 +11,13 @@ public sealed record DeleteKeySheet(string Id);
 /// <summary>Generates a sheet for <see cref="Model"/> (M3 or M4) covering every day of <see cref="Month"/>.</summary>
 public sealed record GenerateKeySheet(string Model, string Network, string Month);
 
-/// <summary>Stores a sheet read from a key sheet file as user-defined.</summary>
+/// <summary>
+/// Stores a sheet read from a key sheet file as user-defined, with the Kenngruppenbuch and Tauschtafel set in the file.
+/// </summary>
 public sealed record ImportKeySheet(KeySheetDocument Document);
+
+/// <summary>The sheet as a key sheet file, with its Kenngruppenbuch and Tauschtafel set.</summary>
+public sealed record ExportKeySheet(string Id);
 
 /// <summary>Replaces the machine with one set up with the key for <see cref="Day"/>. All rotors show A.</summary>
 public sealed record ApplyDailyKey(string SheetId, int Day);

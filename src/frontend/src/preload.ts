@@ -34,6 +34,7 @@ const api: EnigmaApi = {
     remove: (id) => invoke('keySheets:remove', id),
     generate: (model, network, month) => invoke('keySheets:generate', model, network, month),
     import: (file) => invoke('keySheets:import', file),
+    export: (id) => invoke('keySheets:export', id),
   },
   procedure: {
     getBook: (id) => invoke('procedure:getBook', id),

@@ -58,6 +58,17 @@ public sealed class TauschtafelSet
         return new TauschtafelSet(id, year, tables, Enumerable.Range(0, HalfMonths).Select(i => order[i % TableCount]));
     }
 
+    /// <summary>True when <paramref name="other"/> has the same id, year, tables and calendar.</summary>
+    public bool IsSameAs(TauschtafelSet other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        return other.Id == Id
+            && other.Year == Year
+            && other.Calendar.SequenceEqual(Calendar)
+            && other.Tables.Zip(Tables).All(pair => pair.First.Swaps.SequenceEqual(pair.Second.Swaps));
+    }
+
     /// <summary>The table in force on <paramref name="day"/> of <paramref name="month"/>.</summary>
     public Doppelbuchstabentauschtafel TableFor(KeyMonth month, int day)
     {

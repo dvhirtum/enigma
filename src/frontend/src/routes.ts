@@ -54,4 +54,5 @@ export const keySheetRoutes: Routes<KeySheetApi> = {
   remove: (id) => ({ method: 'DELETE', path: `${keySheets}/${segment(id)}` }),
   generate: (model, network, month) => ({ method: 'POST', path: `${keySheets}/generate`, body: { model, network, month } }),
   import: (file) => ({ method: 'POST', path: `${keySheets}/import`, body: file }),
+  export: (id) => ({ method: 'GET', path: `${keySheets}/${segment(id)}/export` }),
 };

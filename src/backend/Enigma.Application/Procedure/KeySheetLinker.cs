@@ -1,5 +1,6 @@
 using Enigma.Application.KeySheets;
 using Enigma.Domain.KeyProcedure;
+using Enigma.Domain.Machine;
 
 namespace Enigma.Application.Procedure;
 
@@ -58,6 +59,37 @@ public sealed class KeySheetLinker(
         }
 
         return all;
+    }
+
+    /// <summary>
+    /// Stores a book and a table set that came with an imported sheet. A book already here gets the allotments it
+    /// lacks; a table set already here must be the same. Nothing is stored when either conflicts.
+    /// </summary>
+    public void Import(Kenngruppenbuch? book, TauschtafelSet? set)
+    {
+        var existingSet = set is null ? null : tables.Find(set.Id);
+        if (set is not null && existingSet is not null && !existingSet.IsSameAs(set))
+        {
+            throw new DomainException($"The Tauschtafel set {set.Id} differs from the one with the same id here.");
+        }
+
+        if (book is not null)
+        {
+            var existingBook = books.Find(book.Id);
+            if (existingBook is null)
+            {
+                books.Save(book);
+            }
+            else if (existingBook.Merge(book))
+            {
+                books.Save(existingBook);
+            }
+        }
+
+        if (set is not null && existingSet is null)
+        {
+            tables.Save(set);
+        }
     }
 
     public Kenngruppenbuch Book(string id) =>

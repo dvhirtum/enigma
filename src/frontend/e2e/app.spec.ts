@@ -1,8 +1,9 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
+import type { KeySheetFile } from '../src/api';
 
 // Runs the Vite build in `.vite/build`; run `npm run package` first.
 // Uses a temporary user data folder, so key sheets and settings stay out of the real one.
@@ -141,6 +142,32 @@ test('generates a key sheet, applies a daily key and deletes the sheet', async (
   await page.getByRole('button', { name: 'Switch' }).click();
   await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
   await expect(page.getByLabel('Daily key', { exact: true })).toHaveCount(0);
+});
+
+test('exports a key sheet with its Kenngruppenbuch and Tauschtafeln', async () => {
+  const generated = await page.evaluate(() => window.enigma.keySheets.generate('M3', 'Export', '1944-03'));
+  if (!generated.ok) {
+    throw new Error(generated.problem.title);
+  }
+  const file = path.join(userData, 'export.json');
+  await app.evaluate(({ dialog }, filePath) => {
+    dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath });
+  }, file);
+
+  await page.getByRole('button', { name: 'Key sheets' }).click();
+  const panel = page.getByRole('complementary', { name: 'Key sheets' });
+  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Export 1944-03 · M3 (generated)' });
+  await panel.getByRole('button', { name: 'Export' }).click();
+
+  await expect.poll(() => existsSync(file)).toBe(true);
+  const exported = JSON.parse(readFileSync(file, 'utf8')) as KeySheetFile;
+  expect(exported.kenngruppenbuch?.id).toBe(generated.value.kenngruppenbuchId);
+  expect(exported.kenngruppenbuch?.columns).toHaveLength(676);
+  expect(exported.tauschtafeln?.id).toBe(generated.value.tauschtafelSetId);
+  expect(exported.tauschtafeln?.tables).toHaveLength(9);
+
+  await page.evaluate((id) => window.enigma.keySheets.remove(id), generated.value.id);
+  await page.getByRole('button', { name: 'Key sheets' }).click();
 });
 
 test('forwards machine operations to the backend', async () => {

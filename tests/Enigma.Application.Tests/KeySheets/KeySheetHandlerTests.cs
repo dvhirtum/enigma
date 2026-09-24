@@ -1,5 +1,6 @@
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
+using Enigma.Application.Procedure;
 using Enigma.Application.Tests.Procedure;
 using Enigma.Application.Tests.Machine;
 using Enigma.Domain.KeyProcedure;
@@ -267,5 +268,90 @@ public sealed class KeySheetHandlerTests
         // Assert
         Assert.Throws<DomainException>(Act);
         Assert.Same(original, store.Machine);
+    }
+
+    [Fact]
+    public void Should_include_the_book_and_the_table_set_When_a_sheet_is_exported()
+    {
+        // Arrange
+        var repository = new FakeKeySheetRepository(Sheet("t", "Triton", "1944-06", Provenance.Generated, M4Row));
+        var handler = new ExportKeySheetHandler(Linking.For(repository));
+
+        // Act
+        var document = handler.Handle(new ExportKeySheet("t"));
+
+        // Assert
+        Assert.Null(document.Id);
+        Assert.Null(document.Provenance);
+        Assert.Equal(document.KenngruppenbuchId, document.Kenngruppenbuch!.Id);
+        Assert.Equal(document.TauschtafelSetId, document.Tauschtafeln!.Id);
+        Assert.Contains(document.Kenngruppenbuch.Allotments, a => a.Network == "Triton");
+        Assert.Equal(1944, document.Tauschtafeln.Year);
+    }
+
+    [Fact]
+    public void Should_link_the_sheet_to_the_same_book_and_tables_When_an_exported_sheet_is_imported_elsewhere()
+    {
+        // Arrange
+        var sender = new FakeKeySheetRepository(Sheet("t", "Triton", "1944-06", Provenance.Generated, M4Row));
+        var exported = new ExportKeySheetHandler(Linking.For(sender)).Handle(new ExportKeySheet("t"));
+        var receiver = new FakeKeySheetRepository();
+        var books = new FakeKenngruppenbuchRepository();
+        var tables = new FakeTauschtafelSetRepository();
+        var handler = new ImportKeySheetHandler(receiver, Linking.For(receiver, books, tables));
+
+        // Act
+        var details = handler.Handle(new ImportKeySheet(exported));
+
+        // Assert
+        Assert.Equal(exported.KenngruppenbuchId, details.KenngruppenbuchId);
+        Assert.Equal(exported.TauschtafelSetId, details.TauschtafelSetId);
+        Assert.Equal(exported.Kenngruppenbuch!.Columns, ProcedureMapper.ToDocument(books.Books[details.KenngruppenbuchId!]).Columns);
+        Assert.True(tables.Sets[details.TauschtafelSetId!].IsSameAs(ProcedureMapper.FromDocument(exported.Tauschtafeln!)));
+    }
+
+    [Fact]
+    public void Should_add_the_new_allotments_When_the_imported_book_is_already_here()
+    {
+        // Arrange
+        var sender = new FakeKeySheetRepository(Sheet("t", "Triton", "1944-06", Provenance.Generated, M4Row));
+        var senderBooks = new FakeKenngruppenbuchRepository();
+        var senderLinker = Linking.For(sender, senderBooks);
+        var first = new ExportKeySheetHandler(senderLinker).Handle(new ExportKeySheet("t"));
+        var receiver = new FakeKeySheetRepository();
+        var books = new FakeKenngruppenbuchRepository();
+        var import = new ImportKeySheetHandler(receiver, Linking.For(receiver, books));
+        import.Handle(new ImportKeySheet(first));
+        sender.Save(Sheet("n", "Neptun", "1944-06", Provenance.Generated, M4Row));
+        var second = new ExportKeySheetHandler(senderLinker).Handle(new ExportKeySheet("n"));
+
+        // Act
+        import.Handle(new ImportKeySheet(second));
+
+        // Assert
+        var book = Assert.Single(books.Books.Values);
+        Assert.Equal(senderBooks.Books[book.Id].Allotments, book.Allotments);
+        Assert.Equal(2, receiver.Sheets.Count);
+    }
+
+    [Fact]
+    public void Should_store_nothing_When_the_imported_table_set_differs_from_the_one_here()
+    {
+        // Arrange
+        var sender = new FakeKeySheetRepository(Sheet("t", "Triton", "1944-06", Provenance.Generated, M4Row));
+        var exported = new ExportKeySheetHandler(Linking.For(sender)).Handle(new ExportKeySheet("t"));
+        var clash = TauschtafelSet.Generate(exported.TauschtafelSetId!, 1944, new Random(99));
+        var receiver = new FakeKeySheetRepository();
+        var books = new FakeKenngruppenbuchRepository();
+        var handler = new ImportKeySheetHandler(receiver, Linking.For(receiver, books, new FakeTauschtafelSetRepository(clash)));
+
+        // Act
+        void Act() => handler.Handle(new ImportKeySheet(exported));
+
+        // Assert
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Equal($"The Tauschtafel set {clash.Id} differs from the one with the same id here.", exception.Message);
+        Assert.Empty(receiver.Sheets);
+        Assert.Empty(books.Books);
     }
 }
