@@ -3,11 +3,11 @@ namespace Enigma.Application.Machine;
 /// <summary>Replaces the machine with a new M3 or M4.</summary>
 public sealed record CreateMachine(string Model);
 
-/// <summary>Inserts rotors from the box, listed from left to right.</summary>
-public sealed record InsertRotors(IReadOnlyList<string> Rotors);
+/// <summary>Puts <see cref="Rotor"/> from the box into <see cref="Slot"/>. A rotor already there goes back to the box.</summary>
+public sealed record InsertRotor(string Slot, string Rotor);
 
-/// <summary>Lifts all rotors out of the machine into the box.</summary>
-public sealed record RemoveRotors;
+/// <summary>Lifts the rotor in <see cref="Slot"/> out of the machine into the box.</summary>
+public sealed record RemoveRotor(string Slot);
 
 /// <summary>Sets the ring (1–26) of a rotor in the box.</summary>
 public sealed record SetRingSetting(string Rotor, int RingSetting);

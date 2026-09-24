@@ -67,9 +67,12 @@ public sealed class MachineEndpointTests : IDisposable
     public async Task Should_configure_the_machine_When_each_endpoint_is_called()
     {
         // Arrange
-        await SendAsync(HttpMethod.Delete, "/api/machine/rotors");
+        await SendAsync(HttpMethod.Delete, "/api/machine/rotors/left");
+        await SendAsync(HttpMethod.Delete, "/api/machine/rotors/middle");
         await SendAsync(HttpMethod.Put, "/api/machine/rotor-box/IV/ring", new { ringSetting = 21 });
-        await SendAsync(HttpMethod.Put, "/api/machine/rotors", new { rotors = "II IV V".Split(' ') });
+        await SendAsync(HttpMethod.Put, "/api/machine/rotors/left", new { rotor = "II" });
+        await SendAsync(HttpMethod.Put, "/api/machine/rotors/middle", new { rotor = "IV" });
+        await SendAsync(HttpMethod.Put, "/api/machine/rotors/right", new { rotor = "V" });
         await SendAsync(HttpMethod.Put, "/api/machine/reflector", new { reflector = "C" });
         await SendAsync(HttpMethod.Post, "/api/machine/plugs", new { pair = "AV" });
         await SendAsync(HttpMethod.Post, "/api/machine/plugs", new { pair = "BS" });
@@ -132,9 +135,12 @@ public sealed class MachineEndpointTests : IDisposable
         // Arrange
         // U-264, 19 November 1942.
         await SendAsync(HttpMethod.Post, "/api/machine", new { model = "M4" });
-        await SendAsync(HttpMethod.Delete, "/api/machine/rotors");
+        await SendAsync(HttpMethod.Delete, "/api/machine/rotors/left");
+        await SendAsync(HttpMethod.Delete, "/api/machine/rotors/middle");
         await SendAsync(HttpMethod.Put, "/api/machine/rotor-box/I/ring", new { ringSetting = 22 });
-        await SendAsync(HttpMethod.Put, "/api/machine/rotors", new { rotors = "Beta II IV I".Split(' ') });
+        await SendAsync(HttpMethod.Put, "/api/machine/rotors/left", new { rotor = "II" });
+        await SendAsync(HttpMethod.Put, "/api/machine/rotors/middle", new { rotor = "IV" });
+        await SendAsync(HttpMethod.Put, "/api/machine/rotors/right", new { rotor = "I" });
         foreach (var pair in "AT BL DF GJ HM NW OP QY RZ VX".Split(' '))
         {
             await SendAsync(HttpMethod.Post, "/api/machine/plugs", new { pair });
@@ -162,7 +168,8 @@ public sealed class MachineEndpointTests : IDisposable
 
     [Theory]
     [InlineData("POST", "/api/machine", "{\"model\":\"M5\"}")]
-    [InlineData("PUT", "/api/machine/rotors", "{\"rotors\":[\"I\",\"I\",\"II\"]}")]
+    [InlineData("PUT", "/api/machine/rotors/left", "{\"rotor\":\"II\"}")]
+    [InlineData("DELETE", "/api/machine/rotors/greek", null)]
     [InlineData("PUT", "/api/machine/rotor-box/I/ring", "{\"ringSetting\":2}")]
     [InlineData("PUT", "/api/machine/reflector", "{\"reflector\":\"B-thin\"}")]
     [InlineData("POST", "/api/machine/plugs", "{\"pair\":\"AA\"}")]

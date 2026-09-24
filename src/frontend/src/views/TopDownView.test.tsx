@@ -213,7 +213,7 @@ describe('TopDownView', () => {
   it('shows empty windows when the rotors are out', async () => {
     renderMachine(<TopDownView />, { ...defaultM3, rotors: [], rotorBox: defaultM3.rotors.map((rotor) => ({ ...rotor, slot: null })) });
 
-    expect(await screen.findByText('The rotors are out. Insert them in the open-lid view.')).toBeInTheDocument();
+    expect(await screen.findByText('A rotor slot is empty. Fill it in the open-lid view.')).toBeInTheDocument();
     expect(screen.getByRole('spinbutton', { name: 'Left rotor' })).toHaveAttribute('aria-valuetext', 'empty');
   });
 });

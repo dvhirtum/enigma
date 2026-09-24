@@ -76,11 +76,23 @@ describe('machine store', () => {
     expect(api.machine.turnRotor).not.toHaveBeenCalled();
   });
 
+  it('steps the ring of a rotor in the box, wrapping from 26 to 1', async () => {
+    const { api } = createFakeApi();
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, rotorBox: [{ rotor: 'IV', ringSetting: 26, position: 'A', slot: null }] } });
+    const store = createMachineStore(api);
+    await store.getState().load();
+
+    const accepted = await store.getState().stepRing('IV', 2);
+
+    expect(accepted).toBe(true);
+    expect(api.machine.setRingSetting).toHaveBeenCalledWith('IV', 2);
+  });
+
   it('clears the problem when dismissed', async () => {
     const { api } = createFakeApi();
-    api.machine.removeRotors.mockResolvedValue({ ok: false, problem: { status: 400, title: 'Rejected.' } });
+    api.machine.removeRotor.mockResolvedValue({ ok: false, problem: { status: 400, title: 'Rejected.' } });
     const store = createMachineStore(api);
-    await store.getState().removeRotors();
+    await store.getState().removeRotor('Left');
 
     store.getState().dismissError();
 

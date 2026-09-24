@@ -66,9 +66,9 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - Catalog: `RotorType`, `ReflectorType`.
 - Entities: `Rotor`, `Reflector`, `Plugboard`.
 - Aggregate root `EnigmaMachine`:
-  - Operations: `Create(model)`, `InsertRotors`, `RemoveRotors`, `SetReflector`, `SetRingSetting`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey → Letter`, `ReleaseKey`.
+  - Operations: `Create(model)`, `InsertRotor`, `RemoveRotor`, `SetReflector`, `SetRingSetting`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey → Letter`, `ReleaseKey`.
   - Invariants:
-    - The rotor count matches the model.
+    - Each slot holds at most one rotor. Typing needs every slot filled.
     - Each rotor type is used at most once.
     - Beta and Gamma go only in the Greek slot, and only on the M4.
     - The M4 takes a thin reflector; the M3 takes B or C.
@@ -77,7 +77,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - Events: `RotorsStepped`, `LampLit`.
   - `Create(model)` fits I-II-III + B (M3) or Beta-I-II-III + B-thin (M4), rings and positions at A, no plugs.
   - Rotor box: I–VIII, plus Beta and Gamma on the M4. Each rotor keeps its own ring and position in or out of the machine.
-  - `InsertRotors` takes all rotors from the box; `RemoveRotors` lifts them all out. `SetRingSetting` works only on rotors in the box.
+  - `InsertRotor` puts a rotor from the box into a slot; a rotor already there goes back to the box. `RemoveRotor` lifts one rotor out. `SetRingSetting` works only on rotors in the box.
   - `TurnRotor` sets a rotor to a given window letter.
   - `MovePlug` moves one end of a cable to a free socket.
   - Switching model creates a new machine.
@@ -93,7 +93,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - encrypting and decrypting the indicator
 
 ### Application
-- Machine commands: `CreateMachine`, `InsertRotors`, `RemoveRotors`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
+- Machine commands: `CreateMachine`, `InsertRotor`, `RemoveRotor`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
 - Key-sheet commands (milestone 7): `ApplyDailyKey`, `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
 - Queries: `GetMachineState`; `ListKeySheets`, `GetKeySheet` (milestone 7).
 - Ports: `IMachineSessionStore`; `IKeySheetRepository` (milestone 7).
@@ -114,8 +114,8 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 |---|---|---|
 | GET | `/api/machine` | |
 | POST | `/api/machine` | `{ model }` |
-| PUT | `/api/machine/rotors` | `{ rotors: [...] }` (left to right) |
-| DELETE | `/api/machine/rotors` | |
+| PUT | `/api/machine/rotors/{slot}` | `{ rotor }` |
+| DELETE | `/api/machine/rotors/{slot}` | |
 | PUT | `/api/machine/rotors/{slot}/position` | `{ position }` |
 | PUT | `/api/machine/rotor-box/{rotor}/ring` | `{ ringSetting }` |
 | PUT | `/api/machine/reflector` | `{ reflector }` |
@@ -130,13 +130,13 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 
 - Electron Forge (Vite + TypeScript) with React. The machine state lives in a Zustand store.
 - App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, an error banner for rejected operations, and the backend version.
-- SVG components: `RotorWindow`, `Thumbwheel`, `Lamp`, `Key`, `PlugSocket`.
+- SVG components: `RotorWindow`, `Thumbwheel`, `RotorDrum`, `Lamp`, `Key`, `PlugSocket`.
 - Views:
   - **Top-down:**
     - rotor windows with thumbwheels (3 on the M3, 4 on the M4), turned with the thumbwheel, the mouse wheel or Arrow Up/Down
     - the lampboard (QWERTZUIO / ASDFGHJK / PYXCVBNML), lit while a key is held down
     - the keyboard, used with the mouse or the physical keyboard
-  - **Open lid:** remove the rotors, set the rings of the rotors in the box, pick a rotor for each slot and insert them, and choose the reflector.
+  - **Open lid:** the machine seen from the front (reflector, rotors with their alphabet rings, entry wheel), above a rotor box with a compartment per rotor and a reflector box. Click a rotor in the box, then a slot, to insert or swap it. Click a rotor in the machine to return it to the box. The mouse wheel or Arrow Up/Down turns a machine rotor's position or a box rotor's ring. Click the spare reflector to fit it.
   - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
 - Panels:
   - message pad (4-letter groups)

@@ -37,49 +37,34 @@ public sealed class EnigmaMachineTests
     }
 
     [Theory]
-    [InlineData("M3", "I II")]
-    [InlineData("M3", "I II III IV")]
-    [InlineData("M4", "I II III")]
-    public void Should_reject_rotors_When_count_does_not_match_model(string model, string rotors)
+    [InlineData("M3", "Greek", "Beta")]
+    [InlineData("M3", "Left", "Beta")]
+    [InlineData("M4", "Greek", "IV")]
+    [InlineData("M4", "Left", "Gamma")]
+    public void Should_reject_rotor_When_it_does_not_fit_the_slot(string model, string slot, string rotor)
     {
         // Arrange
         var machine = EnigmaMachine.Create(MachineModel.FromName(model));
 
         // Act
-        void Act() => machine.InsertRotors([.. rotors.Split(' ').Select(RotorType.FromName)]);
+        void Act() => machine.InsertRotor(Enum.Parse<RotorSlot>(slot), RotorType.FromName(rotor));
 
         // Assert
         Assert.Throws<DomainException>(Act);
     }
 
     [Fact]
-    public void Should_reject_rotors_When_a_rotor_is_used_twice()
+    public void Should_reject_rotor_When_it_is_already_in_another_slot()
     {
         // Arrange
         var machine = EnigmaMachine.Create(MachineModel.M3);
 
         // Act
-        void Act() => machine.InsertRotors([RotorType.I, RotorType.I, RotorType.II]);
+        var exception = Assert.Throws<DomainException>(() => machine.InsertRotor(RotorSlot.Right, RotorType.I));
 
         // Assert
-        Assert.Throws<DomainException>(Act);
-    }
-
-    [Theory]
-    [InlineData("M3", "Beta I II")]
-    [InlineData("M4", "I Beta II III")]
-    [InlineData("M4", "IV I II III")]
-    [InlineData("M4", "Beta Gamma II III")]
-    public void Should_reject_rotors_When_Greek_rotor_is_misplaced(string model, string rotors)
-    {
-        // Arrange
-        var machine = EnigmaMachine.Create(MachineModel.FromName(model));
-
-        // Act
-        void Act() => machine.InsertRotors([.. rotors.Split(' ').Select(RotorType.FromName)]);
-
-        // Assert
-        Assert.Throws<DomainException>(Act);
+        Assert.Equal("Rotor I is already in the Left slot.", exception.Message);
+        Assert.Equal([RotorType.I, RotorType.II, RotorType.III], machine.Rotors.Select(r => r.Type));
     }
 
     [Theory]
@@ -98,17 +83,17 @@ public sealed class EnigmaMachineTests
     }
 
     [Fact]
-    public void Should_return_rotors_to_box_When_other_rotors_are_inserted()
+    public void Should_return_the_rotor_in_the_slot_to_the_box_When_another_rotor_is_inserted()
     {
         // Arrange
         var machine = EnigmaMachine.Create(MachineModel.M3);
 
         // Act
-        machine.InsertRotors([RotorType.VIII, RotorType.V, RotorType.IV]);
+        machine.InsertRotor(RotorSlot.Middle, RotorType.VIII);
 
         // Assert
-        Assert.Equal([RotorType.VIII, RotorType.V, RotorType.IV], machine.Rotors.Select(r => r.Type));
-        Assert.Equal("I II III VI VII", string.Join(' ', machine.RotorBox.Select(r => r.Type.Name)));
+        Assert.Equal([RotorType.I, RotorType.VIII, RotorType.III], machine.Rotors.Select(r => r.Type));
+        Assert.Equal("II IV V VI VII", string.Join(' ', machine.RotorBox.Select(r => r.Type.Name)));
     }
 
     [Fact]
@@ -116,10 +101,12 @@ public sealed class EnigmaMachineTests
     {
         // Arrange
         var machine = MachineBuilder.Build(MachineModel.M3, "B", "I II III", "05 06 07", "", "XYZ");
-        machine.RemoveRotors();
+        machine.RemoveRotor(RotorSlot.Left);
+        machine.RemoveRotor(RotorSlot.Right);
 
         // Act
-        machine.InsertRotors([RotorType.III, RotorType.II, RotorType.I]);
+        machine.InsertRotor(RotorSlot.Left, RotorType.III);
+        machine.InsertRotor(RotorSlot.Right, RotorType.I);
 
         // Assert
         Assert.Equal("07 06 05", string.Join(' ', machine.Rotors.Select(r => r.RingSetting)));
@@ -127,25 +114,55 @@ public sealed class EnigmaMachineTests
     }
 
     [Fact]
-    public void Should_empty_all_slots_When_rotors_are_removed()
+    public void Should_empty_only_that_slot_When_a_rotor_is_removed()
     {
         // Arrange
         var machine = EnigmaMachine.Create(MachineModel.M4);
 
         // Act
-        machine.RemoveRotors();
+        machine.RemoveRotor(RotorSlot.Middle);
 
         // Assert
-        Assert.Empty(machine.Rotors);
-        Assert.Equal(RotorType.All.Count, machine.RotorBox.Count);
+        Assert.Null(machine.RotorIn(RotorSlot.Middle));
+        Assert.Equal([RotorType.Beta, RotorType.I, RotorType.III], machine.Rotors.Select(r => r.Type));
+        Assert.Contains(machine.RotorBox, r => r.Type == RotorType.II);
+        Assert.False(machine.IsComplete);
     }
 
     [Fact]
-    public void Should_reject_key_When_rotors_are_removed()
+    public void Should_reject_removal_When_the_slot_is_empty()
     {
         // Arrange
         var machine = EnigmaMachine.Create(MachineModel.M3);
-        machine.RemoveRotors();
+        machine.RemoveRotor(RotorSlot.Right);
+
+        // Act
+        void Act() => machine.RemoveRotor(RotorSlot.Right);
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+    }
+
+    [Fact]
+    public void Should_reject_turning_When_the_slot_is_empty()
+    {
+        // Arrange
+        var machine = EnigmaMachine.Create(MachineModel.M3);
+        machine.RemoveRotor(RotorSlot.Right);
+
+        // Act
+        void Act() => machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q'));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+    }
+
+    [Fact]
+    public void Should_reject_key_When_a_slot_is_empty()
+    {
+        // Arrange
+        var machine = EnigmaMachine.Create(MachineModel.M3);
+        machine.RemoveRotor(RotorSlot.Middle);
 
         // Act
         void Act() => machine.PressKey(Letter.A);
@@ -268,8 +285,8 @@ public sealed class EnigmaMachineTests
     }
 
     [Theory]
-    [InlineData("InsertRotors")]
-    [InlineData("RemoveRotors")]
+    [InlineData("InsertRotor")]
+    [InlineData("RemoveRotor")]
     [InlineData("SetReflector")]
     [InlineData("SetRingSetting")]
     [InlineData("TurnRotor")]
@@ -284,8 +301,8 @@ public sealed class EnigmaMachineTests
         machine.PressKey(Letter.A);
         Action act = operation switch
         {
-            "InsertRotors" => () => machine.InsertRotors([RotorType.IV, RotorType.V, RotorType.VI]),
-            "RemoveRotors" => machine.RemoveRotors,
+            "InsertRotor" => () => machine.InsertRotor(RotorSlot.Left, RotorType.V),
+            "RemoveRotor" => () => machine.RemoveRotor(RotorSlot.Left),
             "SetReflector" => () => machine.SetReflector(ReflectorType.C),
             "SetRingSetting" => () => machine.SetRingSetting(RotorType.IV, RingSetting.FromNumber(5)),
             "TurnRotor" => () => machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q')),

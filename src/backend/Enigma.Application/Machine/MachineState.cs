@@ -5,7 +5,7 @@ namespace Enigma.Application.Machine;
 /// <summary>A rotor with its ring setting (1–26) and window letter. <see cref="Slot"/> is null in the rotor box.</summary>
 public sealed record RotorState(string Rotor, int RingSetting, string Position, string? Slot);
 
-/// <summary>A snapshot of the machine. Inserted rotors are listed from left to right.</summary>
+/// <summary>A snapshot of the machine. Inserted rotors are listed from left to right; empty slots are left out.</summary>
 public sealed record MachineState(
     string Model,
     string Reflector,
@@ -22,7 +22,10 @@ public sealed record MachineState(
         return new MachineState(
             machine.Model.Name,
             machine.Reflector.Type.Name,
-            [.. machine.Rotors.Select((r, i) => ToState(r, machine.Model.Slots[i].ToString()))],
+            [.. machine.Model.Slots
+                .Select(s => (Slot: s, Rotor: machine.RotorIn(s)))
+                .Where(x => x.Rotor is not null)
+                .Select(x => ToState(x.Rotor!, x.Slot.ToString()))],
             [.. machine.RotorBox.Select(r => ToState(r, null))],
             [.. machine.Plugboard.Pairs.Select(p => p.ToString())],
             machine.HeldKey?.ToString(),

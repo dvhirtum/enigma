@@ -23,6 +23,11 @@ export function shiftLetter(letter: string, steps: number): string {
   return alphabet[(((index + steps) % 26) + 26) % 26];
 }
 
+/** The ring setting `steps` places after `ringSetting`, wrapping from 26 to 1. */
+export function shiftRing(ringSetting: number, steps: number): number {
+  return ((((ringSetting - 1 + steps) % 26) + 26) % 26) + 1;
+}
+
 /** The letter of the ring setting 1–26. */
 export function ringLetter(ringSetting: number): string {
   return alphabet[ringSetting - 1];

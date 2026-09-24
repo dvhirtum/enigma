@@ -4,6 +4,8 @@ namespace Enigma.Api;
 
 internal sealed record RingSettingRequest(int RingSetting);
 
+internal sealed record RotorRequest(string Rotor);
+
 internal sealed record PositionRequest(string Position);
 
 internal sealed record PlugMoveRequest(string To);
@@ -12,8 +14,8 @@ internal static class MachineEndpoints
 {
     public static IServiceCollection AddMachineHandlers(this IServiceCollection services) => services
         .AddSingleton<CreateMachineHandler>()
-        .AddSingleton<InsertRotorsHandler>()
-        .AddSingleton<RemoveRotorsHandler>()
+        .AddSingleton<InsertRotorHandler>()
+        .AddSingleton<RemoveRotorHandler>()
         .AddSingleton<SetRingSettingHandler>()
         .AddSingleton<SetReflectorHandler>()
         .AddSingleton<ConnectPlugHandler>()
@@ -34,11 +36,11 @@ internal static class MachineEndpoints
         machine.MapPost("/", (CreateMachine command, CreateMachineHandler handler) =>
             handler.Handle(command));
 
-        machine.MapPut("/rotors", (InsertRotors command, InsertRotorsHandler handler) =>
-            handler.Handle(command));
+        machine.MapPut("/rotors/{slot}", (string slot, RotorRequest request, InsertRotorHandler handler) =>
+            handler.Handle(new InsertRotor(slot, request.Rotor)));
 
-        machine.MapDelete("/rotors", (RemoveRotorsHandler handler) =>
-            handler.Handle(new RemoveRotors()));
+        machine.MapDelete("/rotors/{slot}", (string slot, RemoveRotorHandler handler) =>
+            handler.Handle(new RemoveRotor(slot)));
 
         machine.MapPut("/rotors/{slot}/position", (string slot, PositionRequest request, TurnRotorHandler handler) =>
             handler.Handle(new TurnRotor(slot, request.Position)));

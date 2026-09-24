@@ -62,33 +62,49 @@ public sealed class HandlerTests
     }
 
     [Fact]
-    public void Should_move_rotors_to_the_box_When_rotors_are_removed()
+    public void Should_move_the_rotor_to_the_box_When_a_rotor_is_removed()
     {
         // Arrange
-        var handler = new RemoveRotorsHandler(new FakeMachineSessionStore());
+        var handler = new RemoveRotorHandler(new FakeMachineSessionStore());
 
         // Act
-        var state = handler.Handle(new RemoveRotors());
+        var state = handler.Handle(new RemoveRotor("Middle"));
 
         // Assert
-        Assert.Empty(state.Rotors);
-        Assert.Equal(8, state.RotorBox.Count);
+        Assert.Equal(["Left", "Right"], state.Rotors.Select(r => r.Slot));
+        Assert.Contains(state.RotorBox, r => r.Rotor == "II");
     }
 
     [Fact]
-    public void Should_insert_rotors_with_their_rings_When_rings_were_set_in_the_box()
+    public void Should_insert_the_rotor_with_its_ring_When_the_ring_was_set_in_the_box()
     {
         // Arrange
         var store = new FakeMachineSessionStore();
-        new RemoveRotorsHandler(store).Handle(new RemoveRotors());
         new SetRingSettingHandler(store).Handle(new SetRingSetting("VIII", 13));
 
         // Act
-        var state = new InsertRotorsHandler(store).Handle(new InsertRotors(["III", "VI", "VIII"]));
+        var state = new InsertRotorHandler(store).Handle(new InsertRotor("Right", "VIII"));
 
         // Assert
-        Assert.Equal(["III", "VI", "VIII"], state.Rotors.Select(r => r.Rotor));
+        Assert.Equal(["I", "II", "VIII"], state.Rotors.Select(r => r.Rotor));
         Assert.Equal([1, 1, 13], state.Rotors.Select(r => r.RingSetting));
+        Assert.Contains(state.RotorBox, r => r.Rotor == "III");
+    }
+
+    [Theory]
+    [InlineData("Upper", "IV")]
+    [InlineData("Left", "IX")]
+    [InlineData("Greek", "Beta")]
+    public void Should_reject_the_rotor_When_slot_or_rotor_is_invalid(string slot, string rotor)
+    {
+        // Arrange
+        var handler = new InsertRotorHandler(new FakeMachineSessionStore());
+
+        // Act
+        void Act() => handler.Handle(new InsertRotor(slot, rotor));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
     }
 
     [Theory]
@@ -234,10 +250,12 @@ public sealed class HandlerTests
         // Arrange
         // Schlachtschiff Scharnhorst, 26 December 1943.
         var store = new FakeMachineSessionStore();
-        new RemoveRotorsHandler(store).Handle(new RemoveRotors());
+        new RemoveRotorHandler(store).Handle(new RemoveRotor("Right"));
         new SetRingSettingHandler(store).Handle(new SetRingSetting("VI", 8));
         new SetRingSettingHandler(store).Handle(new SetRingSetting("VIII", 13));
-        new InsertRotorsHandler(store).Handle(new InsertRotors(["III", "VI", "VIII"]));
+        new InsertRotorHandler(store).Handle(new InsertRotor("Left", "III"));
+        new InsertRotorHandler(store).Handle(new InsertRotor("Middle", "VI"));
+        new InsertRotorHandler(store).Handle(new InsertRotor("Right", "VIII"));
         foreach (var pair in "AN EZ HK IJ LR MQ OT PV SW UX".Split(' '))
         {
             new ConnectPlugHandler(store).Handle(new ConnectPlug(pair));

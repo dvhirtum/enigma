@@ -10,7 +10,10 @@ internal static class MachineBuilder
     {
         var machine = EnigmaMachine.Create(model);
         machine.SetReflector(ReflectorType.FromName(reflector));
-        machine.RemoveRotors();
+        foreach (var slot in model.Slots)
+        {
+            machine.RemoveRotor(slot);
+        }
 
         RotorType[] rotorTypes = [.. Split(rotors).Select(RotorType.FromName)];
         var ringNumbers = Split(rings).Select(r => int.Parse(r, System.Globalization.CultureInfo.InvariantCulture));
@@ -19,7 +22,10 @@ internal static class MachineBuilder
             machine.SetRingSetting(type, RingSetting.FromNumber(ring));
         }
 
-        machine.InsertRotors(rotorTypes);
+        foreach (var (slot, type) in model.Slots.Zip(rotorTypes))
+        {
+            machine.InsertRotor(slot, type);
+        }
 
         foreach (var pair in Split(plugs))
         {
