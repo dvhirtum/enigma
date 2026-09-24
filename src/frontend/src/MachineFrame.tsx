@@ -29,6 +29,18 @@ function MachineSummary() {
   );
 }
 
+/** A window with a side panel on the right. The arrow points left (open it) or right (close it). */
+function PanelIcon({ open }: { open: boolean }) {
+  return (
+    <svg className="panel-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" data-testid={open ? 'panel-icon-close' : 'panel-icon-open'}>
+      <rect x="2.5" y="4" width="19" height="16" rx="2" />
+      <path className="panel-icon-strip" d="M15 4.5h4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H15z" />
+      <line x1="15" y1="4" x2="15" y2="20" />
+      <path d={open ? 'M5.5 12h6M9 9l3 3-3 3' : 'M12 12H6M8.5 9l-3 3 3 3'} />
+    </svg>
+  );
+}
+
 function AppliedKeyLabel() {
   const key = useMachine((store) => store.machine?.appliedKey);
   if (!key) {
@@ -134,8 +146,16 @@ export function MachineFrame() {
         <ModelSwitch />
         <MachineSummary />
         <AppliedKeyLabel />
-        <button type="button" className="panel-toggle" aria-expanded={panelOpen} aria-controls="key-sheet-panel" onClick={() => setPanelOpen(!panelOpen)}>
-          Key sheets
+        <button
+          type="button"
+          className="panel-toggle"
+          aria-label="Key sheets"
+          title="Key sheets"
+          aria-expanded={panelOpen}
+          aria-controls="key-sheet-panel"
+          onClick={() => setPanelOpen(!panelOpen)}
+        >
+          <PanelIcon open={panelOpen} />
         </button>
       </header>
       <nav role="tablist" aria-label="Views" aria-orientation="vertical" onKeyDown={onTabKeyDown}>

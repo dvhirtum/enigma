@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MachineFrame } from './MachineFrame';
 import { MachineStoreProvider } from './store';
@@ -134,10 +134,13 @@ describe('MachineFrame', () => {
     renderFrame();
     const toggle = screen.getByRole('button', { name: 'Key sheets' });
     expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(within(toggle).getByTestId('panel-icon-open')).toBeInTheDocument();
 
     fireEvent.click(toggle);
 
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(within(toggle).getByTestId('panel-icon-close')).toBeInTheDocument();
     expect(await screen.findByRole('complementary', { name: 'Key sheets' })).toBeInTheDocument();
     expect(screen.getByRole('tabpanel')).toBeInTheDocument();
 
