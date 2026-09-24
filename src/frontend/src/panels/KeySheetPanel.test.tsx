@@ -32,7 +32,7 @@ describe('KeySheetPanel', () => {
   });
 
   it('marks the day applied to the machine', async () => {
-    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 2, modified: true };
+    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 2, modified: true, grundstellung: null };
     renderMachine(<KeySheetPanel />, { ...defaultM3, appliedKey });
     await openSheet();
 

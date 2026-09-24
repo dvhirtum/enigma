@@ -76,6 +76,8 @@ export interface AppliedKey {
   month: string;
   day: number;
   modified: boolean;
+  /** Null when the day gives none. */
+  grundstellung: string | null;
 }
 
 export interface DailyKey {

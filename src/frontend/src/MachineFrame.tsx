@@ -65,6 +65,7 @@ function AppliedKeyLabel() {
   return (
     <p className="summary" aria-label="Daily key">
       Key: {key.network} {key.month}, day {key.day}
+      {key.grundstellung && ` · Grundstellung ${key.grundstellung}`}
       {key.modified && ' (modified)'}
     </p>
   );

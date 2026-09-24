@@ -124,7 +124,8 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(["III", "VI", "VIII"], state.Rotors.Select(r => r.Rotor));
         Assert.Equal([1, 8, 13], state.Rotors.Select(r => r.RingSetting));
         Assert.Equal(10, state.Plugs.Count);
-        Assert.Equal(new AppliedKeyState("historical-hydra-1943-12", "Hydra", "1943-12", 26, false), state.AppliedKey);
+        Assert.Equal(new AppliedKeyState("historical-hydra-1943-12", "Hydra", "1943-12", 26, false, null), state.AppliedKey! with { Grundstellung = null });
+        Assert.Matches("^[A-Z]{3}$", state.AppliedKey.Grundstellung);
     }
 
     [Fact]
@@ -140,10 +141,9 @@ public sealed class KeySheetEndpointTests : IDisposable
         var json = await client.GetStringAsync(Url("/api/machine"), Token);
 
         // Assert
-        Assert.Contains(
-            "\"appliedKey\":{\"sheetId\":\"historical-hydra-1943-12\",\"network\":\"Hydra\",\"month\":\"1943-12\",\"day\":26,\"modified\":true}",
-            json,
-            StringComparison.Ordinal);
+        Assert.Matches(
+            "\"appliedKey\":\\{\"sheetId\":\"historical-hydra-1943-12\",\"network\":\"Hydra\",\"month\":\"1943-12\",\"day\":26,\"modified\":true,\"grundstellung\":\"[A-Z]{3}\"\\}",
+            json);
     }
 
     [Fact]

@@ -115,11 +115,13 @@ describe('MachineFrame', () => {
   });
 
   it.each([
-    [false, 'Key: Triton 1944-06, day 19'],
-    [true, 'Key: Triton 1944-06, day 19 (modified)'],
-  ])('shows the applied sheet and day in the header (modified: %s)', async (modified, label) => {
+    [false, null, 'Key: Triton 1944-06, day 19'],
+    [true, null, 'Key: Triton 1944-06, day 19 (modified)'],
+    [false, 'QRSA', 'Key: Triton 1944-06, day 19 · Grundstellung QRSA'],
+    [true, 'QRSA', 'Key: Triton 1944-06, day 19 · Grundstellung QRSA (modified)'],
+  ])('shows the applied sheet, day and Grundstellung in the header (modified: %s, Grundstellung: %s)', async (modified, grundstellung, label) => {
     const { api } = createFakeApi();
-    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 19, modified };
+    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 19, modified, grundstellung };
     api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, appliedKey } });
     render(
       <MachineStoreProvider api={api}>

@@ -160,7 +160,7 @@ public sealed class OperatorHandlerTests
         var state = new GetMachineStateHandler(_store).Handle(new GetMachineState());
 
         // Assert
-        Assert.Equal(new AppliedKeyState("t", "Triton", "1944-06", 1, false), received.AppliedKey);
+        Assert.Equal(new AppliedKeyState("t", "Triton", "1944-06", 1, false, "QRS"), received.AppliedKey);
         Assert.Equal(verfahren, received.Operator.Verfahrenkenngruppe);
         Assert.Equal(schluessel, received.Operator.Schluesselkenngruppe);
         Assert.Empty(received.Operator.Warnings);

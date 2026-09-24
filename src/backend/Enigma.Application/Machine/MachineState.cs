@@ -7,8 +7,11 @@ namespace Enigma.Application.Machine;
 /// <summary>A rotor with its ring setting (1–26) and window letter. <see cref="Slot"/> is null in the rotor box.</summary>
 public sealed record RotorState(string Rotor, int RingSetting, string Position, string? Slot);
 
-/// <summary>The daily key the machine was set up with. <see cref="Modified"/> is true once its setup no longer matches.</summary>
-public sealed record AppliedKeyState(string SheetId, string Network, string Month, int Day, bool Modified);
+/// <summary>
+/// The daily key the machine was set up with. <see cref="Modified"/> is true once its setup no longer matches.
+/// <see cref="Grundstellung"/> is null when the day gives none.
+/// </summary>
+public sealed record AppliedKeyState(string SheetId, string Network, string Month, int Day, bool Modified, string? Grundstellung);
 
 /// <summary>A snapshot of the machine. Inserted rotors are listed from left to right; empty slots are left out.</summary>
 public sealed record MachineState(
@@ -40,7 +43,8 @@ public sealed record MachineState(
             appliedKey is null
                 ? null
                 : new AppliedKeyState(
-                    appliedKey.SheetId, appliedKey.Network, appliedKey.Month, appliedKey.Key.Day, !appliedKey.Key.IsSetUpOn(machine)),
+                    appliedKey.SheetId, appliedKey.Network, appliedKey.Month, appliedKey.Key.Day, !appliedKey.Key.IsSetUpOn(machine),
+                    appliedKey.Key.Grundstellung?.ToString()),
             procedure is null ? null : OperatorState.From(procedure));
     }
 

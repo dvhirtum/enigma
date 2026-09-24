@@ -215,7 +215,7 @@ public sealed class KeySheetHandlerTests
         var state = handler.Handle(new ApplyDailyKey("t", 19));
 
         // Assert
-        Assert.Equal(new AppliedKeyState("t", "Triton", "1942-11", 19, false), state.AppliedKey);
+        Assert.Equal(new AppliedKeyState("t", "Triton", "1942-11", 19, false, "QRSA"), state.AppliedKey);
     }
 
     [Fact]

@@ -5,7 +5,7 @@ import { defaultM3, sending } from '../test/fakeApi';
 import { renderMachine } from '../test/renderMachine';
 import { OperatorPanel } from './OperatorPanel';
 
-const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 1, modified: false };
+const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 1, modified: false, grundstellung: 'QRSA' };
 
 function renderOperator(operator: Partial<OperatorState> | null, modified = false) {
   return renderMachine(<OperatorPanel />, {

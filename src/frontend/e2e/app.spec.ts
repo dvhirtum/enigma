@@ -119,7 +119,7 @@ test('generates a key sheet, applies a daily key and deletes the sheet', async (
   await day.getByRole('button', { name: 'Apply' }).click();
   await day.getByRole('button', { name: 'Switch' }).click();
   await expect(page.getByLabel('Machine')).toHaveText(/^M4 · UKW (B|C)-thin · (Beta|Gamma) /);
-  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText('Key: E2E 1944-02, day 29');
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: E2E 1944-02, day 29 · Grundstellung [A-Z]{4}$/);
   await expect(day).toContainText('Applied');
 
   await panel.getByRole('button', { name: 'Delete' }).click();
@@ -203,7 +203,7 @@ test('sends a message with the indicator procedure and receives it again', async
   await form.getByLabel('Month').fill('1944-03');
   await form.getByRole('button', { name: 'Generate' }).click();
   await sheets.getByRole('listitem', { name: 'Day 1', exact: true }).getByRole('button', { name: 'Apply' }).click();
-  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText('Key: Triton 1944-03, day 1');
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1944-03, day 1 · Grundstellung [A-Z]{3}$/);
 
   await page.getByRole('button', { name: 'Operator mode' }).click();
   const panel = page.getByRole('complementary', { name: 'Operator mode' });
@@ -239,7 +239,7 @@ test('sends a message with the indicator procedure and receives it again', async
   await panel.getByLabel('Date').fill('1944-03-01');
   await panel.getByRole('button', { name: 'Find key' }).click();
   await panel.getByRole('list', { name: 'Matching keys' }).getByRole('button', { name: 'Receive with this key' }).click();
-  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText('Key: Triton 1944-03, day 1');
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1944-03, day 1 · Grundstellung [A-Z]{3}$/);
   await runMessageKey();
   const cipher = message.split(' = ')[2].split(' ').slice(2, 4).join('');
   await typeLetters(cipher);
