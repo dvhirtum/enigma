@@ -58,10 +58,13 @@ export function PlugSocket({ letter, partner, plugged, selected, x, y, onActivat
       <text className="socket-letter" dy="0.35em">
         {letter}
       </text>
-      {[holeTop, holeTop + holeGap].map((holeY) => (
+      {[
+        { holeY: holeTop, ring: 9, hole: 5 },
+        { holeY: holeTop + holeGap, ring: 8, hole: 4 },
+      ].map(({ holeY, ring, hole }) => (
         <g key={holeY} transform={`translate(0 ${holeY})`}>
-          <circle className="socket-ring" r={9} />
-          <circle className="socket-hole" r={5} />
+          <circle className="socket-ring" r={ring} />
+          <circle className="socket-hole" r={hole} />
         </g>
       ))}
       {plugged && <Plug x={0} y={holeTop + holeGap / 2} />}
