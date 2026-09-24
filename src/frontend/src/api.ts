@@ -18,6 +18,52 @@ export interface MachineState {
   plugs: string[];
   heldKey: string | null;
   litLamp: string | null;
+  appliedKey: AppliedKey | null;
+}
+
+/** The daily key the machine was set up with; `modified` once the setup no longer matches it. */
+export interface AppliedKey {
+  sheetId: string;
+  network: string;
+  month: string;
+  day: number;
+  modified: boolean;
+}
+
+export interface DailyKey {
+  day: number;
+  reflector: string;
+  /** Left to right; on the M4 the Greek rotor comes first. */
+  rotors: string[];
+  rings: number[];
+  plugs: string[];
+  kenngruppen: string[] | null;
+}
+
+export type Provenance = 'Historical' | 'Generated' | 'UserDefined';
+
+export interface KeySheetSummary {
+  id: string;
+  network: string;
+  /** yyyy-MM */
+  month: string;
+  model: string;
+  provenance: Provenance;
+  source: string | null;
+  readOnly: boolean;
+}
+
+/** A key sheet with its daily keys, and the same keys as text rows for the editor. */
+export interface KeySheet extends KeySheetSummary {
+  days: DailyKey[];
+  text: string;
+}
+
+/** The contents of a key sheet file, as exported and imported. */
+export interface KeySheetFile {
+  network: string;
+  month: string;
+  days: DailyKey[];
 }
 
 export interface Problem {
@@ -48,6 +94,27 @@ export interface MachineApi {
   movePlug: MachineCall<[from: string, to: string]>;
   pressKey: MachineCall<[key: string]>;
   releaseKey: MachineCall<[]>;
+  applyDailyKey: MachineCall<[sheetId: string, day: number]>;
+}
+
+type Call<Args extends unknown[], T> = (...args: Args) => Promise<ApiResult<T>>;
+
+export interface KeySheetApi {
+  list: Call<[], KeySheetSummary[]>;
+  get: Call<[id: string], KeySheet>;
+  create: Call<[network: string, month: string, text: string], KeySheet>;
+  update: Call<[id: string, network: string, month: string, text: string], KeySheet>;
+  remove: Call<[id: string], null>;
+  generate: Call<[model: string, network: string, month: string], KeySheet>;
+  import: Call<[file: KeySheetFile], KeySheet>;
+}
+
+/** Native file dialogs. Each resolves to null when the user cancels. */
+export interface FilesApi {
+  /** Returns the contents of the chosen file. */
+  openKeySheet: () => Promise<string | null>;
+  /** Returns the path the file was saved to. */
+  saveKeySheet: (name: string, content: string) => Promise<string | null>;
 }
 
 export interface BackendApi {
@@ -59,5 +126,7 @@ export interface BackendApi {
 export interface EnigmaApi {
   health: () => Promise<ApiResult<Health>>;
   machine: MachineApi;
+  keySheets: KeySheetApi;
+  files: FilesApi;
   backend: BackendApi;
 }

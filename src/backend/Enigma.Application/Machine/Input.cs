@@ -1,3 +1,4 @@
+using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
 namespace Enigma.Application.Machine;
@@ -30,4 +31,6 @@ internal static class Input
     public static ReflectorType Reflector(string? value) => ReflectorType.FromName(value ?? string.Empty);
 
     public static PlugPair PlugPair(string? value) => Domain.Machine.PlugPair.Parse(value ?? string.Empty);
+
+    public static Kenngruppe Kenngruppe(string? value) => Domain.KeyProcedure.Kenngruppe.Parse(value ?? string.Empty);
 }

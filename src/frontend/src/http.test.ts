@@ -44,6 +44,14 @@ describe('send', () => {
     expect(result).toEqual({ ok: false, problem: { status: 500, title: 'The backend returned status 500.' } });
   });
 
+  it('returns null for a response without content', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
+
+    const result = await send(baseUrl, { method: 'DELETE', path: '/api/keysheets/g1' });
+
+    expect(result).toEqual({ ok: true, value: null });
+  });
+
   it('reports an unreachable backend', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
 

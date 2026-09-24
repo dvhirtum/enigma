@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MachineFrame } from './MachineFrame';
 import { MachineStoreProvider } from './store';
@@ -104,5 +104,48 @@ describe('MachineFrame', () => {
 
     expect(screen.getByRole('tab', { name: 'Plugboard' })).toHaveFocus();
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Plugboard');
+  });
+
+  it('shows no daily key until one is applied', async () => {
+    renderFrame();
+
+    await screen.findByLabelText('Machine');
+
+    expect(screen.queryByLabelText('Daily key')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [false, 'Key: Triton 1944-06, day 19'],
+    [true, 'Key: Triton 1944-06, day 19 (modified)'],
+  ])('shows the applied sheet and day in the header (modified: %s)', async (modified, label) => {
+    const { api } = createFakeApi();
+    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 19, modified };
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, appliedKey } });
+    render(
+      <MachineStoreProvider api={api}>
+        <MachineFrame />
+      </MachineStoreProvider>,
+    );
+
+    expect(await screen.findByLabelText('Daily key')).toHaveTextContent(new RegExp(`^${label.replace(/[()]/g, '\\$&')}$`));
+  });
+
+  it('opens and closes the key sheet panel beside the view', async () => {
+    renderFrame();
+    const toggle = screen.getByRole('button', { name: 'Key sheets' });
+    expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(within(toggle).getByTestId('panel-icon-open')).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(within(toggle).getByTestId('panel-icon-close')).toBeInTheDocument();
+    expect(await screen.findByRole('complementary', { name: 'Key sheets' })).toBeInTheDocument();
+    expect(screen.getByRole('tabpanel')).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+
+    expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
   });
 });

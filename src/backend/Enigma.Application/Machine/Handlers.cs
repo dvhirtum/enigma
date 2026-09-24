@@ -9,7 +9,7 @@ public sealed class CreateMachineHandler(IMachineSessionStore store)
         ArgumentNullException.ThrowIfNull(command);
 
         var machine = EnigmaMachine.Create(Input.Model(command.Model));
-        var state = MachineState.From(machine);
+        var state = MachineState.From(machine, null);
         store.Replace(machine);
         return state;
     }
@@ -126,7 +126,7 @@ public sealed class ReleaseKeyHandler(IMachineSessionStore store)
 
 public sealed class GetMachineStateHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(GetMachineState query) => store.Use(MachineState.From);
+    public MachineState Handle(GetMachineState query) => store.Use(machine => MachineState.From(machine, store.AppliedKey));
 }
 
 internal static class MachineSessionStoreExtensions
@@ -137,6 +137,6 @@ internal static class MachineSessionStoreExtensions
         {
             action(machine);
             machine.ClearDomainEvents();
-            return MachineState.From(machine);
+            return MachineState.From(machine, store.AppliedKey);
         });
 }

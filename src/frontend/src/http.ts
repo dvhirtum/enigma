@@ -28,5 +28,8 @@ export async function send<T>(baseUrl: string, route: Route): Promise<ApiResult<
   if (!response.ok) {
     return { ok: false, problem: await readProblem(response) };
   }
+  if (response.status === 204) {
+    return { ok: true, value: null as T };
+  }
   return { ok: true, value: (await response.json()) as T };
 }

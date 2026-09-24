@@ -17,14 +17,19 @@ export interface Backend {
 
 function spawnApi(): ChildProcess {
   const options: SpawnOptions = { stdio: ['ignore', 'pipe', 'inherit'], windowsHide: true };
+  const keySheets = (historicalPath: string) => [
+    `--KeySheets:HistoricalPath=${historicalPath}`,
+    `--KeySheets:UserPath=${path.join(app.getPath('userData'), 'keysheets')}`,
+  ];
 
   if (app.isPackaged) {
     const exe = process.platform === 'win32' ? 'Enigma.Api.exe' : 'Enigma.Api';
-    return spawn(path.join(process.resourcesPath, 'backend', exe), [], options);
+    return spawn(path.join(process.resourcesPath, 'backend', exe), keySheets(path.join(process.resourcesPath, 'keysheets')), options);
   }
 
   const project = path.resolve(app.getAppPath(), '../backend/Enigma.Api');
-  return spawn('dotnet', ['run', '--project', project, '--no-launch-profile'], options);
+  const historical = path.resolve(app.getAppPath(), '../../data/keysheets');
+  return spawn('dotnet', ['run', '--project', project, '--no-launch-profile', '--', ...keySheets(historical)], options);
 }
 
 function kill(child: ChildProcess): void {

@@ -83,9 +83,9 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - Switching model creates a new machine.
 
 ### Domain: Key Procedure
-- `KeySheet`: id, network, month, `Provenance` (`Historical(source)` | `Generated` | `UserDefined`), and `DailyKey`s.
-- `DailyKey`: date, Walzenlage (rotor order), Ringstellung (ring settings), Steckerverbindungen (plug pairs), and optionally Kenngruppen (key identification groups).
-- `KeySheetGenerator`: generates sheets in Navy format.
+- `KeySheet`: id, network, month, `Provenance` (`Historical(source)` | `Generated` | `UserDefined`), and `DailyKey`s. The model follows from the keys; all keys are for the same model. Historical sheets are read-only.
+- `DailyKey`: day, reflector, Walzenlage (rotor order, Greek rotor first on the M4), Ringstellung (ring settings), Steckerverbindungen (plug pairs), and optionally Kenngruppen (key identification groups). `SetUp()` creates a machine of its model with the key and all rotors at A.
+- `KeySheetGenerator`: generates a full month. The inner setting (reflector, Walzenlage, rings) changes every other day, the plugs daily. Every Walzenlage includes one of VI–VIII. Each day has 10 plug pairs and 4 Kenngruppen, unique within the sheet.
 - Milestone 8:
   - `Kenngruppenbuch` (indicator book)
   - `Doppelbuchstabentauschtafel` (bigram tables)
@@ -94,19 +94,22 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 
 ### Application
 - Machine commands: `CreateMachine`, `InsertRotor`, `RemoveRotor`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
-- Key-sheet commands (milestone 7): `ApplyDailyKey`, `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
-- Queries: `GetMachineState`; `ListKeySheets`, `GetKeySheet` (milestone 7).
-- Ports: `IMachineSessionStore`; `IKeySheetRepository` (milestone 7).
+- Key-sheet commands: `ApplyDailyKey` (replaces the machine, switching model if needed), `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`.
+- Queries: `GetMachineState`, `ListKeySheets`, `GetKeySheet`.
+- Ports: `IMachineSessionStore` (the machine and the daily key applied to it), `IKeySheetRepository`.
+- `MachineState.appliedKey`: the sheet, month and day last applied, `modified` once the reflector, rotor order, rings or plugs differ from it (turning rotors does not count). Switching model clears it.
+- `KeySheetText`: daily keys as text, one row per day in Navy column order: day, reflector, rotors, rings (01–26), plugs, Kenngruppen. Create and update take this text; errors name the line.
+- Key sheet files (JSON): `{ network, month, days: [{ day, reflector, rotors, rings, plugs, kenngruppen }] }`. Imports become user-defined.
 - Commands and queries use plain handlers, without a mediator library.
 - There is one machine. It starts as a default M3; `CreateMachine` replaces it.
 
 ### Infrastructure
-- `JsonKeySheetRepository`: historical sheets are read-only in `data/keysheets/`. Generated and user-defined sheets are stored in app data.
+- `JsonKeySheetRepository`: historical sheets are read-only in `data/keysheets/` (`KeySheets:HistoricalPath`; none are included yet). Generated and user-defined sheets are stored as one file each in app data (`KeySheets:UserPath`). Electron passes both paths.
 - `InMemoryMachineSessionStore`: runs operations on the machine one at a time.
 
 ### Api
 - ASP.NET Core minimal API. This is the composition root.
-- Invariant violations are returned as 400 `ProblemDetails`.
+- Invariant violations are returned as 400 `ProblemDetails`, unknown key sheets as 404.
 - Published with Native AOT. JSON uses source generation (`ApiJsonContext`).
 - Ring settings are numbers 1–26. Positions, keys and lamps are letters.
 
@@ -122,14 +125,21 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 | POST | `/api/machine/plugs` | `{ pair }` |
 | DELETE | `/api/machine/plugs/{letter}` | |
 | PUT | `/api/machine/plugs/{letter}` | `{ to }` |
-| PUT | `/api/machine/plugs/{letter}` | `{ to }` |
 | POST | `/api/machine/keyboard/press` | `{ key }` |
 | POST | `/api/machine/keyboard/release` | |
+| POST | `/api/machine/daily-key` | `{ sheetId, day }` |
+| GET | `/api/keysheets` | |
+| GET | `/api/keysheets/{id}` | |
+| POST | `/api/keysheets` | `{ network, month, text }` |
+| PUT | `/api/keysheets/{id}` | `{ network, month, text }` |
+| DELETE | `/api/keysheets/{id}` | |
+| POST | `/api/keysheets/generate` | `{ model, network, month }` |
+| POST | `/api/keysheets/import` | key sheet file |
 
 ## Frontend
 
 - Electron Forge (Vite + TypeScript) with React. The machine state lives in a Zustand store.
-- App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, an error banner for rejected operations, and the backend version.
+- App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, the applied daily key ("Key: Triton 1944-06, day 19", with "(modified)" after a setup change), a side panel button (an icon whose arrow points left to open the key sheet panel and right to close it), an error banner for rejected operations, and the backend version.
 - SVG components: `RotorWindow`, `Thumbwheel`, `RotorDrum`, `Lamp`, `Key`, `PlugSocket`.
 - Views:
   - **Top-down:**
@@ -140,7 +150,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
 - Panels:
   - message pad (4-letter groups)
-  - key-sheet browser and editor, with "Apply daily key"
+  - key sheets: a side panel opened from the header. Choose, create, generate, import, export, edit (as text rows) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first. The applied day is marked.
   - operator mode (milestone 8)
 
 ## Testing

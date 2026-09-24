@@ -5,6 +5,9 @@ namespace Enigma.Application.Machine;
 /// <summary>A rotor with its ring setting (1–26) and window letter. <see cref="Slot"/> is null in the rotor box.</summary>
 public sealed record RotorState(string Rotor, int RingSetting, string Position, string? Slot);
 
+/// <summary>The daily key the machine was set up with. <see cref="Modified"/> is true once its setup no longer matches.</summary>
+public sealed record AppliedKeyState(string SheetId, string Network, string Month, int Day, bool Modified);
+
 /// <summary>A snapshot of the machine. Inserted rotors are listed from left to right; empty slots are left out.</summary>
 public sealed record MachineState(
     string Model,
@@ -13,9 +16,10 @@ public sealed record MachineState(
     IReadOnlyList<RotorState> RotorBox,
     IReadOnlyList<string> Plugs,
     string? HeldKey,
-    string? LitLamp)
+    string? LitLamp,
+    AppliedKeyState? AppliedKey)
 {
-    public static MachineState From(EnigmaMachine machine)
+    public static MachineState From(EnigmaMachine machine, AppliedKey? appliedKey)
     {
         ArgumentNullException.ThrowIfNull(machine);
 
@@ -29,7 +33,11 @@ public sealed record MachineState(
             [.. machine.RotorBox.Select(r => ToState(r, null))],
             [.. machine.Plugboard.Pairs.Select(p => p.ToString())],
             machine.HeldKey?.ToString(),
-            machine.LitLamp?.ToString());
+            machine.LitLamp?.ToString(),
+            appliedKey is null
+                ? null
+                : new AppliedKeyState(
+                    appliedKey.SheetId, appliedKey.Network, appliedKey.Month, appliedKey.Key.Day, !appliedKey.Key.IsSetUpOn(machine)));
     }
 
     private static RotorState ToState(Rotor rotor, string? slot) =>

@@ -12,12 +12,15 @@ function Loaded({ children }: { children: ReactNode }) {
   return children;
 }
 
-/** Renders `ui` with a store that loads `state` from a fake API. */
-export function renderMachine(ui: ReactNode, state?: MachineState) {
+type FakeApi = ReturnType<typeof createFakeApi>['api'];
+
+/** Renders `ui` with a store that loads `state` from a fake API. `setup` adjusts the fake API before rendering. */
+export function renderMachine(ui: ReactNode, state?: MachineState, setup?: (api: FakeApi) => void) {
   const { api } = createFakeApi();
   if (state) {
     api.machine.getState.mockResolvedValue({ ok: true, value: state });
   }
+  setup?.(api);
   render(
     <MachineStoreProvider api={api}>
       <Loaded>{ui}</Loaded>

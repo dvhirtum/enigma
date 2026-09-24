@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { models, slots } from './machine';
+import { KeySheetPanel } from './panels/KeySheetPanel';
 import { useMachine } from './store';
 import { OpenLidView } from './views/OpenLidView';
 import { PlugboardView } from './views/PlugboardView';
@@ -24,6 +25,32 @@ function MachineSummary() {
   return (
     <p className="summary" aria-label="Machine">
       {machine.model} · UKW {machine.reflector} · {rotors || 'rotors out'}
+    </p>
+  );
+}
+
+/** A window with a side panel on the right. The arrow points left (open it) or right (close it). */
+function PanelIcon({ open }: { open: boolean }) {
+  return (
+    <svg className="panel-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" data-testid={open ? 'panel-icon-close' : 'panel-icon-open'}>
+      <rect x="2.5" y="4" width="19" height="16" rx="2" />
+      <path className="panel-icon-strip" d="M15 4.5h4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H15z" />
+      <line x1="15" y1="4" x2="15" y2="20" />
+      <path d={open ? 'M5.5 12h6M9 9l3 3-3 3' : 'M12 12H6M8.5 9l-3 3 3 3'} />
+    </svg>
+  );
+}
+
+function AppliedKeyLabel() {
+  const key = useMachine((store) => store.machine?.appliedKey);
+  if (!key) {
+    return null;
+  }
+
+  return (
+    <p className="summary" aria-label="Daily key">
+      Key: {key.network} {key.month}, day {key.day}
+      {key.modified && ' (modified)'}
     </p>
   );
 }
@@ -92,6 +119,7 @@ export function MachineFrame() {
   const load = useMachine((store) => store.load);
   const version = useMachine((store) => store.version);
   const [selected, setSelected] = useState(0);
+  const [panelOpen, setPanelOpen] = useState(false);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
@@ -117,6 +145,18 @@ export function MachineFrame() {
         <h1>Enigma</h1>
         <ModelSwitch />
         <MachineSummary />
+        <AppliedKeyLabel />
+        <button
+          type="button"
+          className="panel-toggle"
+          aria-label="Key sheets"
+          title="Key sheets"
+          aria-expanded={panelOpen}
+          aria-controls="key-sheet-panel"
+          onClick={() => setPanelOpen(!panelOpen)}
+        >
+          <PanelIcon open={panelOpen} />
+        </button>
       </header>
       <nav role="tablist" aria-label="Views" aria-orientation="vertical" onKeyDown={onTabKeyDown}>
         {views.map((view, index) => (
@@ -141,6 +181,9 @@ export function MachineFrame() {
       <main role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`}>
         <View />
       </main>
+      <aside id="key-sheet-panel" aria-label="Key sheets" hidden={!panelOpen}>
+        {panelOpen && <KeySheetPanel />}
+      </aside>
       <footer>{version && `Backend v${version}`}</footer>
     </div>
   );
