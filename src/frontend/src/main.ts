@@ -1,6 +1,7 @@
 import path from 'node:path';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu, nativeImage } from 'electron';
 import started from 'electron-squirrel-startup';
+import icon from '../assets/icon.png?inline';
 import { createBackend } from './backend';
 import { registerIpc } from './ipc';
 import { harden } from './security';
@@ -9,6 +10,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    icon: nativeImage.createFromDataURL(icon),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -30,6 +32,7 @@ const run = () => {
 
   void app.whenReady().then(() => {
     harden();
+    Menu.setApplicationMenu(null);
     createWindow();
   });
 
