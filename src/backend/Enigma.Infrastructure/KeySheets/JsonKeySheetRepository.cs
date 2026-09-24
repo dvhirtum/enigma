@@ -93,6 +93,7 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
         }
 
         return Directory.EnumerateFiles(userPath, "*.json")
+            .Where(file => IsValidId(Path.GetFileNameWithoutExtension(file)))
             .Select(Read)
             .OfType<KeySheet>();
     }
@@ -112,7 +113,7 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
                 ? null
                 : KeySheetMapper.FromDocument(document, Path.GetFileNameWithoutExtension(file), provenance);
         }
-        catch (Exception exception) when (exception is JsonException or DomainException or IOException)
+        catch (Exception exception) when (exception is JsonException or DomainException or IOException or UnauthorizedAccessException)
         {
             return null;
         }

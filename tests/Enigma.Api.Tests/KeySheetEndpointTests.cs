@@ -195,11 +195,33 @@ public sealed class KeySheetEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task Should_skip_the_file_When_a_user_sheet_cannot_be_read()
+    public async Task Should_return_bad_request_When_an_imported_sheet_has_an_empty_kenngruppe()
+    {
+        // Arrange
+        var client = CreateClient();
+        var body = JsonSerializer.Deserialize<JsonElement>(WithKenngruppen("[\"ABC\", null]"));
+
+        // Act
+        using var response = await client.PostAsJsonAsync(Url("/api/keysheets/import"), body, Token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    public static TheoryData<string, string> UnreadableUserFiles => new()
+    {
+        { "broken.json", "{ not json" },
+        { "null-kenngruppe.json", WithKenngruppen("[null]") },
+        { ".json", HistoricalJson },
+    };
+
+    [Theory]
+    [MemberData(nameof(UnreadableUserFiles))]
+    public async Task Should_skip_the_file_When_a_user_sheet_cannot_be_read(string fileName, string json)
     {
         // Arrange
         Directory.CreateDirectory(UserPath);
-        await File.WriteAllTextAsync(Path.Combine(UserPath, "broken.json"), "{ not json", Token);
+        await File.WriteAllTextAsync(Path.Combine(UserPath, fileName), json, Token);
         var client = CreateClient();
 
         // Act
@@ -208,6 +230,9 @@ public sealed class KeySheetEndpointTests : IDisposable
         // Assert
         Assert.Equal(["historical-hydra-1943-12"], sheets!.Select(s => s.Id));
     }
+
+    private static string WithKenngruppen(string kenngruppen) =>
+        HistoricalJson.Replace("\"plugs\"", $"\"kenngruppen\": {kenngruppen}, \"plugs\"", StringComparison.Ordinal);
 
     private static Uri Url(string path) => new(path, UriKind.Relative);
 

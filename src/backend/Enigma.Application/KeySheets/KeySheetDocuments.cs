@@ -128,7 +128,7 @@ public static class KeySheetMapper
                 [.. day.Rotors.Select(Input.Rotor)],
                 [.. day.Rings.Select(RingSetting.FromNumber)],
                 [.. day.Plugs.Select(Input.PlugPair)],
-                [.. (day.Kenngruppen ?? []).Select(Kenngruppe.Parse)]);
+                [.. (day.Kenngruppen ?? []).Select(Input.Kenngruppe)]);
         }
         catch (DomainException exception) when (!exception.Message.StartsWith("Day ", StringComparison.Ordinal))
         {
