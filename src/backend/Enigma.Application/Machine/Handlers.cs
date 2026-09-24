@@ -107,7 +107,10 @@ public sealed class TurnRotorHandler(IMachineSessionStore store)
     }
 }
 
-/// <summary>Steps the rotors and lights a lamp. The returned state holds the lit lamp and the new positions.</summary>
+/// <summary>
+/// Steps the rotors and lights a lamp. The returned state holds the lit lamp and the new positions. A running operator
+/// procedure rejects keys it does not expect and records the lamp.
+/// </summary>
 public sealed class PressKeyHandler(IMachineSessionStore store)
 {
     public MachineState Handle(PressKey command)
@@ -115,7 +118,15 @@ public sealed class PressKeyHandler(IMachineSessionStore store)
         ArgumentNullException.ThrowIfNull(command);
 
         var key = Input.Letter(command.Key);
-        return store.Update(m => m.PressKey(key));
+        return store.Use(machine =>
+        {
+            var procedure = store.Procedure;
+            procedure?.CheckKey(key);
+            var lamp = machine.PressKey(key);
+            machine.ClearDomainEvents();
+            procedure?.Record(machine, key, lamp);
+            return MachineState.From(machine, store.AppliedKey, procedure);
+        });
     }
 }
 
@@ -126,17 +137,22 @@ public sealed class ReleaseKeyHandler(IMachineSessionStore store)
 
 public sealed class GetMachineStateHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(GetMachineState query) => store.Use(machine => MachineState.From(machine, store.AppliedKey));
+    public MachineState Handle(GetMachineState query) =>
+        store.Use(machine => MachineState.From(machine, store.AppliedKey, store.Procedure));
 }
 
 internal static class MachineSessionStoreExtensions
 {
-    /// <summary>Applies <paramref name="action"/> to the current machine and returns its new state.</summary>
+    /// <summary>
+    /// Applies <paramref name="action"/> to the current machine, lets the operator procedure follow the change, and
+    /// returns the new state.
+    /// </summary>
     public static MachineState Update(this IMachineSessionStore store, Action<EnigmaMachine> action) =>
         store.Use(machine =>
         {
             action(machine);
             machine.ClearDomainEvents();
-            return MachineState.From(machine, store.AppliedKey);
+            store.Procedure?.Observe(machine);
+            return MachineState.From(machine, store.AppliedKey, store.Procedure);
         });
 }

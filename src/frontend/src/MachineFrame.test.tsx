@@ -148,4 +148,15 @@ describe('MachineFrame', () => {
 
     expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
   });
+
+  it('shows one side panel at a time', async () => {
+    renderFrame();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Key sheets' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Operator mode' }));
+
+    expect(await screen.findByRole('complementary', { name: 'Operator mode' })).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Key sheets' })).toHaveAttribute('aria-expanded', 'false');
+  });
 });

@@ -98,4 +98,15 @@ describe('machine store', () => {
 
     expect(store.getState().error).toBeNull();
   });
+
+  it('loads a Kenngruppenbuch once and keeps it', async () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+
+    await store.getState().loadBook('book');
+    await store.getState().loadBook('book');
+
+    expect(api.procedure.getBook).toHaveBeenCalledTimes(1);
+    expect(store.getState().books.book.allotments[0].network).toBe('Triton');
+  });
 });

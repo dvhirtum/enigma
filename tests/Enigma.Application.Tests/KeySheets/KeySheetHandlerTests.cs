@@ -1,5 +1,6 @@
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
+using Enigma.Application.Tests.Procedure;
 using Enigma.Application.Tests.Machine;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
@@ -9,7 +10,7 @@ namespace Enigma.Application.Tests.KeySheets;
 public sealed class KeySheetHandlerTests
 {
     private const string M3Row = "1 B I II III 01 01 01 AT\n";
-    private const string M4Row = "1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX ABC\n";
+    private const string M4Row = "1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX QRSA\n";
 
     private static KeySheet Sheet(string id, string network, string month, Provenance provenance, string text = M3Row) =>
         new(id, network, KeyMonth.Parse(month), provenance, KeySheetText.Parse(text));
@@ -19,7 +20,7 @@ public sealed class KeySheetHandlerTests
     {
         // Arrange
         var repository = new FakeKeySheetRepository();
-        var handler = new CreateKeySheetHandler(repository);
+        var handler = new CreateKeySheetHandler(repository, Linking.For(repository));
 
         // Act
         var details = handler.Handle(new CreateKeySheet("Triton", "1944-06", M4Row));
@@ -39,7 +40,7 @@ public sealed class KeySheetHandlerTests
     {
         // Arrange
         var repository = new FakeKeySheetRepository();
-        var handler = new CreateKeySheetHandler(repository);
+        var handler = new CreateKeySheetHandler(repository, Linking.For(repository));
 
         // Act
         void Act() => handler.Handle(new CreateKeySheet("Triton", "1944-06", "1 B I II"));
@@ -54,7 +55,7 @@ public sealed class KeySheetHandlerTests
     {
         // Arrange
         var repository = new FakeKeySheetRepository(Sheet("g", "Hydra", "1944-06", Provenance.Generated));
-        var handler = new UpdateKeySheetHandler(repository);
+        var handler = new UpdateKeySheetHandler(repository, Linking.For(repository));
 
         // Act
         var details = handler.Handle(new UpdateKeySheet("g", "Triton", "1944-07", M4Row));
@@ -71,7 +72,7 @@ public sealed class KeySheetHandlerTests
     {
         // Arrange
         var repository = new FakeKeySheetRepository(Sheet("h", "Hydra", "1944-06", Provenance.Historical("source")));
-        var update = new UpdateKeySheetHandler(repository);
+        var update = new UpdateKeySheetHandler(repository, Linking.For(repository));
         var delete = new DeleteKeySheetHandler(repository);
 
         // Act
@@ -102,7 +103,7 @@ public sealed class KeySheetHandlerTests
     public void Should_throw_not_found_When_the_sheet_does_not_exist()
     {
         // Arrange
-        var handler = new GetKeySheetHandler(new FakeKeySheetRepository());
+        var handler = new GetKeySheetHandler(Linking.For(new FakeKeySheetRepository()));
 
         // Act
         void Act() => handler.Handle(new GetKeySheet("missing"));
@@ -119,7 +120,7 @@ public sealed class KeySheetHandlerTests
             Sheet("b", "Triton", "1944-07", Provenance.Generated),
             Sheet("a", "Hydra", "1944-06", Provenance.UserDefined),
             Sheet("h", "Hydra", "1945-04", Provenance.Historical("source")));
-        var handler = new ListKeySheetsHandler(repository);
+        var handler = new ListKeySheetsHandler(Linking.For(repository));
 
         // Act
         var sheets = handler.Handle(new ListKeySheets());
@@ -135,7 +136,7 @@ public sealed class KeySheetHandlerTests
     {
         // Arrange
         var repository = new FakeKeySheetRepository();
-        var handler = new GenerateKeySheetHandler(repository, new Random(1));
+        var handler = new GenerateKeySheetHandler(repository, Linking.For(repository), new Random(1));
 
         // Act
         var details = handler.Handle(new GenerateKeySheet("M4", "Triton", "1944-06"));
@@ -151,7 +152,7 @@ public sealed class KeySheetHandlerTests
     {
         // Arrange
         var repository = new FakeKeySheetRepository();
-        var handler = new ImportKeySheetHandler(repository);
+        var handler = new ImportKeySheetHandler(repository, Linking.For(repository));
         var document = new KeySheetDocument(
             "historical-x", "Hydra", "1943-12", "Historical", "made up",
             [new DailyKeyDocument(26, "B", ["III", "VI", "VIII"], [1, 8, 13], ["AN", "EZ"], null)]);
@@ -170,7 +171,7 @@ public sealed class KeySheetHandlerTests
     public void Should_name_the_day_When_an_imported_day_is_invalid()
     {
         // Arrange
-        var handler = new ImportKeySheetHandler(new FakeKeySheetRepository());
+        var handler = new ImportKeySheetHandler(new FakeKeySheetRepository(), Linking.For(new FakeKeySheetRepository()));
         var document = new KeySheetDocument(
             null, "Hydra", "1943-12", null, null,
             [new DailyKeyDocument(26, "B", ["III", "VI", "IX"], [1, 8, 13], [], null)]);
@@ -189,7 +190,7 @@ public sealed class KeySheetHandlerTests
         // Arrange
         var repository = new FakeKeySheetRepository(Sheet("t", "Triton", "1942-11", Provenance.UserDefined, "19" + M4Row[1..]));
         var store = new FakeMachineSessionStore();
-        var handler = new ApplyDailyKeyHandler(repository, store);
+        var handler = new ApplyDailyKeyHandler(Linking.For(repository), store);
 
         // Act
         var state = handler.Handle(new ApplyDailyKey("t", 19));
@@ -208,7 +209,7 @@ public sealed class KeySheetHandlerTests
     {
         // Arrange
         var repository = new FakeKeySheetRepository(Sheet("t", "Triton", "1942-11", Provenance.UserDefined, "19" + M4Row[1..]));
-        var handler = new ApplyDailyKeyHandler(repository, new FakeMachineSessionStore());
+        var handler = new ApplyDailyKeyHandler(Linking.For(repository), new FakeMachineSessionStore());
 
         // Act
         var state = handler.Handle(new ApplyDailyKey("t", 19));
@@ -223,7 +224,7 @@ public sealed class KeySheetHandlerTests
         // Arrange
         var repository = new FakeKeySheetRepository(Sheet("t", "Hydra", "1944-06", Provenance.UserDefined));
         var store = new FakeMachineSessionStore();
-        new ApplyDailyKeyHandler(repository, store).Handle(new ApplyDailyKey("t", 1));
+        new ApplyDailyKeyHandler(Linking.For(repository), store).Handle(new ApplyDailyKey("t", 1));
 
         // Act
         var turned = new TurnRotorHandler(store).Handle(new TurnRotor("Right", "Q"));
@@ -241,7 +242,7 @@ public sealed class KeySheetHandlerTests
         // Arrange
         var repository = new FakeKeySheetRepository(Sheet("t", "Hydra", "1944-06", Provenance.UserDefined));
         var store = new FakeMachineSessionStore();
-        new ApplyDailyKeyHandler(repository, store).Handle(new ApplyDailyKey("t", 1));
+        new ApplyDailyKeyHandler(Linking.For(repository), store).Handle(new ApplyDailyKey("t", 1));
 
         // Act
         var state = new CreateMachineHandler(store).Handle(new CreateMachine("M4"));
@@ -258,7 +259,7 @@ public sealed class KeySheetHandlerTests
         var repository = new FakeKeySheetRepository(Sheet("t", "Hydra", "1944-06", Provenance.UserDefined));
         var store = new FakeMachineSessionStore();
         var original = store.Machine;
-        var handler = new ApplyDailyKeyHandler(repository, store);
+        var handler = new ApplyDailyKeyHandler(Linking.For(repository), store);
 
         // Act
         void Act() => handler.Handle(new ApplyDailyKey("t", 2));

@@ -1,4 +1,4 @@
-import type { KeySheetApi, MachineApi } from './api';
+import type { KeySheetApi, MachineApi, ProcedureApi } from './api';
 
 export interface Route {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -10,6 +10,7 @@ type Routes<Api> = { [K in keyof Api]: Api[K] extends (...args: infer Args) => u
 
 const machine = '/api/machine';
 const keySheets = '/api/keysheets';
+const operator = '/api/operator';
 const segment = encodeURIComponent;
 
 export const healthRoute: Route = { method: 'GET', path: '/api/health' };
@@ -28,6 +29,20 @@ export const machineRoutes: Routes<MachineApi> = {
   pressKey: (key) => ({ method: 'POST', path: `${machine}/keyboard/press`, body: { key } }),
   releaseKey: () => ({ method: 'POST', path: `${machine}/keyboard/release` }),
   applyDailyKey: (sheetId, day) => ({ method: 'POST', path: `${machine}/daily-key`, body: { sheetId, day } }),
+  startSending: () => ({ method: 'POST', path: `${operator}/send` }),
+  startReceiving: (message) => ({ method: 'POST', path: `${operator}/receive`, body: { message } }),
+  chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) => ({
+    method: 'PUT',
+    path: `${operator}/groups`,
+    body: { schluesselkenngruppe, verfahrenkenngruppe, fillers },
+  }),
+  finishMessage: () => ({ method: 'POST', path: `${operator}/finish` }),
+  cancelOperator: () => ({ method: 'DELETE', path: operator }),
+};
+
+export const procedureRoutes: Routes<ProcedureApi> = {
+  getBook: (id) => ({ method: 'GET', path: `/api/kenngruppenbuecher/${segment(id)}` }),
+  getTables: (id) => ({ method: 'GET', path: `/api/tauschtafeln/${segment(id)}` }),
 };
 
 export const keySheetRoutes: Routes<KeySheetApi> = {

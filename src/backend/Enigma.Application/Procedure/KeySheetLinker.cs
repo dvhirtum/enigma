@@ -1,0 +1,112 @@
+using Enigma.Application.KeySheets;
+using Enigma.Domain.KeyProcedure;
+
+namespace Enigma.Application.Procedure;
+
+/// <summary>
+/// Links key sheets to a Kenngruppenbuch and a Tauschtafel set. A sheet keeps a linked book that covers its network;
+/// otherwise it gets the newest book, which allots columns to a new network. When no book has free columns, or none
+/// exists, a new one is generated. The Tauschtafel set is the one for the sheet's year, generated when missing.
+/// </summary>
+public sealed class KeySheetLinker(
+    IKeySheetRepository sheets,
+    IKenngruppenbuchRepository books,
+    ITauschtafelSetRepository tables,
+    Random random,
+    TimeProvider time)
+{
+    /// <summary>Links <paramref name="sheet"/> without saving it. Returns true when its links changed.</summary>
+    public bool Link(KeySheet sheet)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+
+        var book = BookFor(sheet);
+        var set = SetFor(sheet);
+        if (sheet.KenngruppenbuchId == book.Id && sheet.TauschtafelSetId == set.Id)
+        {
+            return false;
+        }
+
+        sheet.Link(book.Id, set.Id);
+        return true;
+    }
+
+    /// <summary>Loads a sheet, linking it (and storing the links) first if needed.</summary>
+    public KeySheet Load(string id)
+    {
+        var sheet = sheets.Get(id);
+        if (Link(sheet))
+        {
+            sheets.SaveLinks(sheet);
+        }
+
+        return sheet;
+    }
+
+    /// <summary>Lists all sheets, linking those without links.</summary>
+    public IReadOnlyList<KeySheet> List()
+    {
+        var all = sheets.List();
+        foreach (var sheet in all.Where(s => !s.IsLinked))
+        {
+            Link(sheet);
+            sheets.SaveLinks(sheet);
+        }
+
+        return all;
+    }
+
+    public Kenngruppenbuch Book(string id) =>
+        books.Find(id) ?? throw new NotFoundException($"No Kenngruppenbuch has id '{id}'.");
+
+    public TauschtafelSet Tables(string id) =>
+        tables.Find(id) ?? throw new NotFoundException($"No Tauschtafel set has id '{id}'.");
+
+    private Kenngruppenbuch BookFor(KeySheet sheet)
+    {
+        var linked = sheet.KenngruppenbuchId is { } id ? books.Find(id) : null;
+        if (linked is not null && linked.Covers(sheet.Network))
+        {
+            return linked;
+        }
+
+        var newest = books.List().MaxBy(b => b.Created);
+        if (newest is not null && newest.Covers(sheet.Network))
+        {
+            return newest;
+        }
+
+        if (newest is not null && newest.HasFreeColumns)
+        {
+            newest.Allot(sheet.Network);
+            books.Save(newest);
+            return newest;
+        }
+
+        var book = Kenngruppenbuch.Generate(NewId(), time.GetUtcNow(), [.. Kenngruppenbuch.HistoricalNetworks, sheet.Network], random);
+        books.Save(book);
+        return book;
+    }
+
+    private TauschtafelSet SetFor(KeySheet sheet)
+    {
+        var year = sheet.Month.Year;
+        var linked = sheet.TauschtafelSetId is { } id ? tables.Find(id) : null;
+        if (linked is not null && linked.Year == year)
+        {
+            return linked;
+        }
+
+        var existing = tables.List().FirstOrDefault(s => s.Year == year);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var set = TauschtafelSet.Generate(NewId(), year, random);
+        tables.Save(set);
+        return set;
+    }
+
+    private static string NewId() => Guid.NewGuid().ToString("N");
+}

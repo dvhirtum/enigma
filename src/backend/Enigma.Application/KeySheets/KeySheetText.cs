@@ -7,8 +7,8 @@ namespace Enigma.Application.KeySheets;
 
 /// <summary>
 /// Daily keys as text, one row per day in Navy column order:
-/// day, reflector, Walzenlage, rings (01–26), plugs, Kenngruppen.
-/// For example <c>1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX ABC DEF</c>.
+/// day, reflector, Walzenlage, rings (01–26), plugs, Grundstellung (optional).
+/// For example <c>1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX QRSA</c>.
 /// Blank lines and lines starting with # are skipped.
 /// </summary>
 public static class KeySheetText
@@ -54,7 +54,7 @@ public static class KeySheetText
                 .. key.Rotors.Select(r => r.Name),
                 .. key.Rings.Select(r => r.ToString()),
                 .. key.Plugs.Select(p => p.ToString()),
-                .. key.Kenngruppen.Select(k => k.ToString()),
+                .. key.Grundstellung is null ? [] : new[] { key.Grundstellung.ToString() },
             ];
             text.Append(string.Join(' ', fields)).Append('\n');
         }
@@ -94,13 +94,13 @@ public static class KeySheetText
             plugs.Add(PlugPair.Parse(tokens.Dequeue()));
         }
 
-        var kenngruppen = new List<Kenngruppe>();
-        while (tokens.Count > 0)
+        var grundstellung = tokens.Count > 0 ? RotorPositions.Parse(tokens.Dequeue()) : null;
+        if (tokens.Count > 0)
         {
-            kenngruppen.Add(Kenngruppe.Parse(tokens.Dequeue()));
+            throw new DomainException($"Unexpected '{tokens.Peek()}' after the Grundstellung.");
         }
 
-        return new DailyKey(day, reflector, rotors, rings, plugs, kenngruppen);
+        return new DailyKey(day, reflector, rotors, rings, plugs, grundstellung);
     }
 
     private static bool IsNumber(string token) => token.Length is 1 or 2 && token.All(char.IsAsciiDigit);

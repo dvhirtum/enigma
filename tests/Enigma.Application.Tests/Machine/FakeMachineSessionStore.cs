@@ -1,4 +1,5 @@
 using Enigma.Application.Machine;
+using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
 namespace Enigma.Application.Tests.Machine;
@@ -14,11 +15,14 @@ internal sealed class FakeMachineSessionStore(EnigmaMachine machine) : IMachineS
 
     public AppliedKey? AppliedKey { get; private set; }
 
+    public OperatorProcedure? Procedure { get; set; }
+
     public T Use<T>(Func<EnigmaMachine, T> action) => action(Machine);
 
     public void Replace(EnigmaMachine machine, AppliedKey? appliedKey = null)
     {
         Machine = machine;
         AppliedKey = appliedKey;
+        Procedure = null;
     }
 }

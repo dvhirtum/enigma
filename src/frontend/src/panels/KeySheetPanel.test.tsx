@@ -28,7 +28,7 @@ describe('KeySheetPanel', () => {
     const day = await screen.findByRole('listitem', { name: 'Day 1' });
     expect(day).toHaveTextContent('UKW B-thin · Beta II IV I · 01 01 01 22');
     expect(day).toHaveTextContent('AT BL DF');
-    expect(day).toHaveTextContent('Kenngruppen ABC DEF');
+    expect(day).toHaveTextContent('Grundstellung QRSA');
   });
 
   it('marks the day applied to the machine', async () => {
@@ -94,7 +94,7 @@ describe('KeySheetPanel', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit key sheet' });
     const text = within(form).getByRole('textbox', { name: 'Daily keys' });
-    expect(text).toHaveValue('1 B-thin Beta II IV I 01 01 01 22 AT BL DF ABC DEF\n2 B-thin Beta II IV I 01 01 01 22 CO\n');
+    expect(text).toHaveValue('1 B-thin Beta II IV I 01 01 01 22 AT BL DF QRSA\n2 B-thin Beta II IV I 01 01 01 22 CO\n');
     fireEvent.change(text, { target: { value: '3 B I II VI 01 02 03' } });
     fireEvent.click(within(form).getByRole('button', { name: 'Save' }));
 
@@ -122,5 +122,23 @@ describe('KeySheetPanel', () => {
     fireEvent.click(within(screen.getByRole('group', { name: 'Confirm delete' })).getByRole('button', { name: 'Delete' }));
 
     expect(api.keySheets.remove).toHaveBeenCalledWith('g1');
+  });
+
+  it('shows the linked Kenngruppenbuch and the Tauschtafel in force for a day', async () => {
+    renderMachine(<KeySheetPanel />);
+    await openSheet();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Kenngruppenbuch' }));
+    const book = await screen.findByRole('region', { name: 'Kenngruppenbuch' });
+    expect(within(book).getByRole('row', { name: 'Triton 101–120' })).toBeInTheDocument();
+    fireEvent.change(within(book).getByRole('spinbutton', { name: 'Column' }), { target: { value: '101' } });
+    expect(within(book).getByLabelText('Column 101')).toHaveTextContent(/^DWA DWB/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tauschtafeln' }));
+    const tables = await screen.findByRole('region', { name: 'Tauschtafeln' });
+    expect(within(tables).getByRole('heading')).toHaveTextContent('Tauschtafel 2 (1944)');
+    expect(within(tables).getByLabelText('Tauschtafel 2')).toHaveTextContent('AA=ZZ AB=ZY AC=BQ');
+    fireEvent.change(within(tables).getByRole('combobox', { name: 'Day' }), { target: { value: '2' } });
+    expect(within(tables).getByRole('heading')).toHaveTextContent('Tauschtafel 2 (1944)');
   });
 });

@@ -1,15 +1,16 @@
 using Enigma.Application.Machine;
+using Enigma.Application.Procedure;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
 namespace Enigma.Application.KeySheets;
 
-public sealed class ListKeySheetsHandler(IKeySheetRepository repository)
+public sealed class ListKeySheetsHandler(KeySheetLinker linker)
 {
     /// <summary>Historical sheets first, then the others; each group by month and network.</summary>
     public IReadOnlyList<KeySheetSummary> Handle(ListKeySheets query) =>
     [
-        .. repository.List()
+        .. linker.List()
             .OrderBy(s => s.IsReadOnly ? 0 : 1)
             .ThenBy(s => s.Month.ToString(), StringComparer.Ordinal)
             .ThenBy(s => s.Network, StringComparer.OrdinalIgnoreCase)
@@ -17,17 +18,17 @@ public sealed class ListKeySheetsHandler(IKeySheetRepository repository)
     ];
 }
 
-public sealed class GetKeySheetHandler(IKeySheetRepository repository)
+public sealed class GetKeySheetHandler(KeySheetLinker linker)
 {
     public KeySheetDetails Handle(GetKeySheet query)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        return KeySheetMapper.ToDetails(repository.Get(query.Id));
+        return KeySheetMapper.ToDetails(linker.Load(query.Id));
     }
 }
 
-public sealed class CreateKeySheetHandler(IKeySheetRepository repository)
+public sealed class CreateKeySheetHandler(IKeySheetRepository repository, KeySheetLinker linker)
 {
     public KeySheetDetails Handle(CreateKeySheet command)
     {
@@ -36,12 +37,13 @@ public sealed class CreateKeySheetHandler(IKeySheetRepository repository)
         var sheet = new KeySheet(
             KeySheetIds.New(), command.Network, KeyMonth.Parse(command.Month ?? string.Empty), Provenance.UserDefined,
             KeySheetText.Parse(command.Text ?? string.Empty));
+        linker.Link(sheet);
         repository.Save(sheet);
         return KeySheetMapper.ToDetails(sheet);
     }
 }
 
-public sealed class UpdateKeySheetHandler(IKeySheetRepository repository)
+public sealed class UpdateKeySheetHandler(IKeySheetRepository repository, KeySheetLinker linker)
 {
     public KeySheetDetails Handle(UpdateKeySheet command)
     {
@@ -49,6 +51,7 @@ public sealed class UpdateKeySheetHandler(IKeySheetRepository repository)
 
         var sheet = repository.Get(command.Id);
         sheet.Update(command.Network, KeyMonth.Parse(command.Month ?? string.Empty), KeySheetText.Parse(command.Text ?? string.Empty));
+        linker.Link(sheet);
         repository.Save(sheet);
         return KeySheetMapper.ToDetails(sheet);
     }
@@ -70,7 +73,7 @@ public sealed class DeleteKeySheetHandler(IKeySheetRepository repository)
     }
 }
 
-public sealed class GenerateKeySheetHandler(IKeySheetRepository repository, Random random)
+public sealed class GenerateKeySheetHandler(IKeySheetRepository repository, KeySheetLinker linker, Random random)
 {
     public KeySheetDetails Handle(GenerateKeySheet command)
     {
@@ -78,30 +81,32 @@ public sealed class GenerateKeySheetHandler(IKeySheetRepository repository, Rand
 
         var sheet = KeySheetGenerator.Generate(
             KeySheetIds.New(), Input.Model(command.Model), command.Network, KeyMonth.Parse(command.Month ?? string.Empty), random);
+        linker.Link(sheet);
         repository.Save(sheet);
         return KeySheetMapper.ToDetails(sheet);
     }
 }
 
-public sealed class ImportKeySheetHandler(IKeySheetRepository repository)
+public sealed class ImportKeySheetHandler(IKeySheetRepository repository, KeySheetLinker linker)
 {
     public KeySheetDetails Handle(ImportKeySheet command)
     {
         ArgumentNullException.ThrowIfNull(command);
 
         var sheet = KeySheetMapper.FromDocument(command.Document, KeySheetIds.New(), Provenance.UserDefined);
+        linker.Link(sheet);
         repository.Save(sheet);
         return KeySheetMapper.ToDetails(sheet);
     }
 }
 
-public sealed class ApplyDailyKeyHandler(IKeySheetRepository repository, IMachineSessionStore store)
+public sealed class ApplyDailyKeyHandler(KeySheetLinker linker, IMachineSessionStore store)
 {
     public MachineState Handle(ApplyDailyKey command)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var sheet = repository.Get(command.SheetId);
+        var sheet = linker.Load(command.SheetId);
         var key = sheet.KeyFor(command.Day);
         var machine = key.SetUp();
         var appliedKey = new AppliedKey(sheet.Id, sheet.Network, sheet.Month.ToString(), key);

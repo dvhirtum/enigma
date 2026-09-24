@@ -173,6 +173,78 @@ test('blocks new windows', async () => {
   expect(app.windows()).toHaveLength(1);
 });
 
+/** Turns the rotors in the top-down view until the windows show `letters`, left to right. */
+async function setRotors(letters: string): Promise<void> {
+  for (const [index, slot] of ['Left', 'Middle', 'Right'].entries()) {
+    const rotor = page.getByRole('spinbutton', { name: `${slot} rotor` });
+    let current = await rotor.getAttribute('aria-valuetext');
+    for (let turns = 0; current !== letters[index] && turns < 26; turns++) {
+      await rotor.press('ArrowUp');
+      await expect(rotor).not.toHaveAttribute('aria-valuetext', current!);
+      current = await rotor.getAttribute('aria-valuetext');
+    }
+    await expect(rotor).toHaveAttribute('aria-valuetext', letters[index]);
+  }
+}
+
+async function typeLetters(letters: string): Promise<void> {
+  for (const letter of letters.toLowerCase()) {
+    await page.keyboard.press(letter);
+  }
+}
+
+test('sends a message with the indicator procedure and receives it again', async () => {
+  await page.getByRole('button', { name: 'Key sheets' }).click();
+  const sheets = page.getByRole('complementary', { name: 'Key sheets' });
+  await sheets.getByRole('button', { name: 'Generate' }).click();
+  const form = sheets.getByRole('form', { name: 'Generate key sheet' });
+  await form.getByRole('combobox', { name: 'Model' }).selectOption('M3');
+  await form.getByRole('textbox', { name: 'Network' }).fill('Triton');
+  await form.getByLabel('Month').fill('1944-03');
+  await form.getByRole('button', { name: 'Generate' }).click();
+  await sheets.getByRole('listitem', { name: 'Day 1', exact: true }).getByRole('button', { name: 'Apply' }).click();
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText('Key: Triton 1944-03, day 1');
+
+  await page.getByRole('button', { name: 'Operator mode' }).click();
+  const panel = page.getByRole('complementary', { name: 'Operator mode' });
+  await page.getByRole('tab', { name: 'Top-down' }).click();
+
+  const runMessageKey = async () => {
+    const meta = await panel.getByText(/· Grundstellung [A-Z]{3}$/).textContent();
+    await setRotors(meta!.slice(-3));
+    const verfahren = (await panel.getByRole('region', { name: 'Indicator' }).locator('.indicator-rows span').nth(1).textContent())!.replace(/ /g, '');
+    await typeLetters(verfahren.slice(0, 3));
+    const spruchschluessel = (await panel.getByText(/^Spruchschlüssel [A-Z]{3}$/).textContent())!.slice(-3);
+    await setRotors(spruchschluessel);
+    await expect(panel.locator('[aria-current="step"]')).toHaveText('Type the message');
+  };
+
+  await panel.getByRole('button', { name: 'Send a message' }).click();
+  await panel.getByRole('button', { name: 'Random' }).click();
+  await panel.getByRole('button', { name: 'Encrypt indicator' }).click();
+  await runMessageKey();
+  await typeLetters('WETTERXX');
+  await panel.getByRole('button', { name: 'Finish' }).click();
+  const message = (await panel.getByRole('status', { name: 'Radio message' }).textContent())!;
+  expect(message).toMatch(/^\d{4} = 24 = ([A-Z]{4} ){5}[A-Z]{4}$/);
+
+  await panel.getByRole('button', { name: 'New message' }).click();
+  await panel.getByRole('textbox', { name: 'Received message' }).fill(message);
+  await panel.getByRole('button', { name: 'Receive' }).click();
+  await runMessageKey();
+  const cipher = message.split(' = ')[2].split(' ').slice(2, 4).join('');
+  await typeLetters(cipher);
+
+  await expect(panel.getByRole('region', { name: 'Message pad' })).toContainText('WETT ERXX');
+  await panel.getByRole('button', { name: 'New message' }).click();
+  await page.getByRole('button', { name: 'Operator mode' }).click();
+  await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
+  await page.getByRole('button', { name: 'Switch' }).click();
+  await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');
+  await page.getByRole('button', { name: 'Switch' }).click();
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
+});
+
 test('restarts the backend after it stops', async () => {
   test.skip(process.platform !== 'win32', 'Finds the backend process with PowerShell.');
 

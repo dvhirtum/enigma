@@ -19,6 +19,54 @@ export interface MachineState {
   heldKey: string | null;
   litLamp: string | null;
   appliedKey: AppliedKey | null;
+  /** The running operator procedure, or null. */
+  operator: OperatorState | null;
+}
+
+export type OperatorStep = 'ChooseGroups' | 'SetGrundstellung' | 'TypeVerfahrenkenngruppe' | 'SetSpruchschluessel' | 'TypeMessage' | 'Done';
+
+/** The guided send or receive procedure. `pad` holds the lamps lit while typing the message. */
+export interface OperatorState {
+  direction: 'Send' | 'Receive';
+  step: OperatorStep;
+  network: string;
+  kenngruppenbuchId: string;
+  table: number;
+  grundstellung: string;
+  schluesselkenngruppe: string | null;
+  verfahrenkenngruppe: string | null;
+  /** The filler letters before and after, such as "QX". */
+  fillers: string;
+  /** The vertical bigrams of the indicator and their swaps. */
+  bigrams: { from: string; to: string }[];
+  /** The two indicator groups, such as "QWER TZUI". */
+  indicator: string | null;
+  spruchschluesselLamps: string;
+  spruchschluessel: string | null;
+  pad: string;
+  expectedKey: string | null;
+  fillersNeeded: number;
+  cipherText: string | null;
+  /** The radio message received, or sent once done. */
+  message: string | null;
+  warnings: string[];
+}
+
+/** A Kenngruppenbuch. Each column is 26 trigrams separated by spaces; columns are numbered from 1. */
+export interface Kenngruppenbuch {
+  id: string;
+  created: string;
+  verfahrenkenngruppen: { first: number; last: number };
+  allotments: { network: string; first: number; last: number }[];
+  columns: string[];
+}
+
+/** Bigram tables for one year. Each swap is 4 letters: "ABCD" swaps AB and CD. `calendar` gives the table per half month. */
+export interface TauschtafelSet {
+  id: string;
+  year: number;
+  tables: { number: number; swaps: string[] }[];
+  calendar: number[];
 }
 
 /** The daily key the machine was set up with; `modified` once the setup no longer matches it. */
@@ -37,7 +85,7 @@ export interface DailyKey {
   rotors: string[];
   rings: number[];
   plugs: string[];
-  kenngruppen: string[] | null;
+  grundstellung: string | null;
 }
 
 export type Provenance = 'Historical' | 'Generated' | 'UserDefined';
@@ -57,6 +105,8 @@ export interface KeySheetSummary {
 export interface KeySheet extends KeySheetSummary {
   days: DailyKey[];
   text: string;
+  kenngruppenbuchId: string | null;
+  tauschtafelSetId: string | null;
 }
 
 /** The contents of a key sheet file, as exported and imported. */
@@ -95,6 +145,11 @@ export interface MachineApi {
   pressKey: MachineCall<[key: string]>;
   releaseKey: MachineCall<[]>;
   applyDailyKey: MachineCall<[sheetId: string, day: number]>;
+  startSending: MachineCall<[]>;
+  startReceiving: MachineCall<[message: string]>;
+  chooseGroups: MachineCall<[schluesselkenngruppe: string, verfahrenkenngruppe: string, fillers: string]>;
+  finishMessage: MachineCall<[]>;
+  cancelOperator: MachineCall<[]>;
 }
 
 type Call<Args extends unknown[], T> = (...args: Args) => Promise<ApiResult<T>>;
@@ -107,6 +162,11 @@ export interface KeySheetApi {
   remove: Call<[id: string], null>;
   generate: Call<[model: string, network: string, month: string], KeySheet>;
   import: Call<[file: KeySheetFile], KeySheet>;
+}
+
+export interface ProcedureApi {
+  getBook: Call<[id: string], Kenngruppenbuch>;
+  getTables: Call<[id: string], TauschtafelSet>;
 }
 
 /** Native file dialogs. Each resolves to null when the user cancels. */
@@ -127,6 +187,7 @@ export interface EnigmaApi {
   health: () => Promise<ApiResult<Health>>;
   machine: MachineApi;
   keySheets: KeySheetApi;
+  procedure: ProcedureApi;
   files: FilesApi;
   backend: BackendApi;
 }

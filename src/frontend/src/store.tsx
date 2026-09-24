@@ -1,6 +1,17 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { createStore, useStore, type StoreApi } from 'zustand';
-import type { ApiResult, EnigmaApi, KeySheet, KeySheetFile, KeySheetSummary, MachineApi, MachineState, Problem } from './api';
+import type {
+  ApiResult,
+  EnigmaApi,
+  Kenngruppenbuch,
+  KeySheet,
+  KeySheetFile,
+  KeySheetSummary,
+  MachineApi,
+  MachineState,
+  Problem,
+  TauschtafelSet,
+} from './api';
 import { shiftLetter, shiftRing } from './machine';
 import { createQueue } from './queue';
 
@@ -24,7 +35,15 @@ export interface KeySheetSlice {
   exportKeySheet: () => Promise<boolean>;
 }
 
-export interface MachineStore extends Actions, KeySheetSlice {
+/** Kenngruppenbücher and Tauschtafel sets by id, loaded once when first needed. */
+export interface ProcedureSlice {
+  books: Record<string, Kenngruppenbuch>;
+  tables: Record<string, TauschtafelSet>;
+  loadBook: (id: string) => Promise<boolean>;
+  loadTables: (id: string) => Promise<boolean>;
+}
+
+export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
   machine: MachineState | null;
   version: string | null;
   error: Problem | null;
@@ -46,7 +65,7 @@ async function settle<T>(call: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
   }
 }
 
-export function createMachineStore({ machine: api, keySheets: sheets, files, health }: EnigmaApi): StoreApi<MachineStore> {
+export function createMachineStore({ machine: api, keySheets: sheets, procedure, files, health }: EnigmaApi): StoreApi<MachineStore> {
   return createStore<MachineStore>()((set, get) => {
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
@@ -87,6 +106,28 @@ export function createMachineStore({ machine: api, keySheets: sheets, files, hea
       error: null,
       keySheets: [],
       keySheet: null,
+      books: {},
+      tables: {},
+      loadBook: async (id) => {
+        if (get().books[id]) {
+          return true;
+        }
+        const result = await check(procedure.getBook(id));
+        if (result.ok) {
+          set((state) => ({ books: { ...state.books, [id]: result.value } }));
+        }
+        return result.ok;
+      },
+      loadTables: async (id) => {
+        if (get().tables[id]) {
+          return true;
+        }
+        const result = await check(procedure.getTables(id));
+        if (result.ok) {
+          set((state) => ({ tables: { ...state.tables, [id]: result.value } }));
+        }
+        return result.ok;
+      },
       loadKeySheets,
       openKeySheet: async (id) => {
         if (id === null) {
@@ -173,6 +214,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, files, hea
       pressKey: (key) => apply(api.pressKey(key)),
       releaseKey: () => apply(api.releaseKey()),
       applyDailyKey: (sheetId, day) => apply(api.applyDailyKey(sheetId, day)),
+      startSending: () => apply(api.startSending()),
+      startReceiving: (message) => apply(api.startReceiving(message)),
+      chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
+        apply(api.chooseGroups(schluesselkenngruppe, verfahrenkenngruppe, fillers)),
+      finishMessage: () => apply(api.finishMessage()),
+      cancelOperator: () => apply(api.cancelOperator()),
     };
   });
 }

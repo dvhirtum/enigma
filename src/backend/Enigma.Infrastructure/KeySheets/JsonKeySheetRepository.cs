@@ -49,6 +49,30 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
         }
     }
 
+    public void SaveLinks(KeySheet sheet)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+
+        lock (_lock)
+        {
+            if (!sheet.IsReadOnly)
+            {
+                Save(sheet);
+                return;
+            }
+
+            var links = ReadHistoricalLinks();
+            links[sheet.Id] = new SheetLinks(sheet.KenngruppenbuchId, sheet.TauschtafelSetId);
+            Directory.CreateDirectory(Path.GetDirectoryName(HistoricalLinksFile)!);
+            File.WriteAllText(HistoricalLinksFile, JsonSerializer.Serialize(links, KeySheetJsonContext.Default.DictionaryStringSheetLinks));
+            var cached = Historical().FirstOrDefault(s => s.Id == sheet.Id);
+            if (cached is not null && sheet.IsLinked)
+            {
+                cached.Link(sheet.KenngruppenbuchId!, sheet.TauschtafelSetId!);
+            }
+        }
+    }
+
     public void Delete(string id)
     {
         lock (_lock)
@@ -69,6 +93,7 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
             return [];
         }
 
+        var links = ReadHistoricalLinks();
         return
         [
             .. Directory.EnumerateFiles(historicalPath, "*.json")
@@ -77,12 +102,35 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
                 {
                     var document = Deserialize(file)
                         ?? throw new InvalidDataException($"Historical key sheet {file} is empty.");
-                    return KeySheetMapper.FromDocument(
+                    var sheet = KeySheetMapper.FromDocument(
                         document,
                         "historical-" + Path.GetFileNameWithoutExtension(file),
                         Provenance.Historical(document.Source ?? string.Empty));
+                    if (links.TryGetValue(sheet.Id, out var link) && link is { KenngruppenbuchId: { } book, TauschtafelSetId: { } tables })
+                    {
+                        sheet.Link(book, tables);
+                    }
+
+                    return sheet;
                 }),
         ];
+    }
+
+    private string HistoricalLinksFile => Path.Combine(userPath, "procedure", "historical-links.json");
+
+    /// <summary>The links of historical sheets by sheet id. An unreadable file counts as empty.</summary>
+    private Dictionary<string, SheetLinks> ReadHistoricalLinks()
+    {
+        try
+        {
+            return File.Exists(HistoricalLinksFile)
+                ? JsonSerializer.Deserialize(File.ReadAllText(HistoricalLinksFile), KeySheetJsonContext.Default.DictionaryStringSheetLinks) ?? []
+                : [];
+        }
+        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
     }
 
     private IEnumerable<KeySheet> UserSheets()
@@ -129,6 +177,10 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
         !string.IsNullOrEmpty(id) && id.All(c => char.IsAsciiLetterOrDigit(c) || c == '-');
 }
 
+/// <summary>The Kenngruppenbuch and Tauschtafel set linked to a historical sheet.</summary>
+internal sealed record SheetLinks(string? KenngruppenbuchId, string? TauschtafelSetId);
+
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, WriteIndented = true)]
 [JsonSerializable(typeof(KeySheetDocument))]
+[JsonSerializable(typeof(Dictionary<string, SheetLinks>))]
 internal sealed partial class KeySheetJsonContext : JsonSerializerContext;

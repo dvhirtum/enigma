@@ -1,3 +1,5 @@
+using Enigma.Application.OperatorMode;
+using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
 namespace Enigma.Application.Machine;
@@ -17,9 +19,10 @@ public sealed record MachineState(
     IReadOnlyList<string> Plugs,
     string? HeldKey,
     string? LitLamp,
-    AppliedKeyState? AppliedKey)
+    AppliedKeyState? AppliedKey,
+    OperatorState? Operator = null)
 {
-    public static MachineState From(EnigmaMachine machine, AppliedKey? appliedKey)
+    public static MachineState From(EnigmaMachine machine, AppliedKey? appliedKey, OperatorProcedure? procedure = null)
     {
         ArgumentNullException.ThrowIfNull(machine);
 
@@ -37,7 +40,8 @@ public sealed record MachineState(
             appliedKey is null
                 ? null
                 : new AppliedKeyState(
-                    appliedKey.SheetId, appliedKey.Network, appliedKey.Month, appliedKey.Key.Day, !appliedKey.Key.IsSetUpOn(machine)));
+                    appliedKey.SheetId, appliedKey.Network, appliedKey.Month, appliedKey.Key.Day, !appliedKey.Key.IsSetUpOn(machine)),
+            procedure is null ? null : OperatorState.From(procedure));
     }
 
     private static RotorState ToState(Rotor rotor, string? slot) =>

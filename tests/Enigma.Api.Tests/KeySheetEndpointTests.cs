@@ -11,7 +11,7 @@ namespace Enigma.Api.Tests;
 
 public sealed class KeySheetEndpointTests : IDisposable
 {
-    private const string U264Row = "19 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX ABC\n";
+    private const string U264Row = "19 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX VJNA\n";
 
     private const string HistoricalJson = """
         {
@@ -195,11 +195,11 @@ public sealed class KeySheetEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task Should_return_bad_request_When_an_imported_sheet_has_an_empty_kenngruppe()
+    public async Task Should_return_bad_request_When_an_imported_sheet_has_a_bad_Grundstellung()
     {
         // Arrange
         var client = CreateClient();
-        var body = JsonSerializer.Deserialize<JsonElement>(WithKenngruppen("[\"ABC\", null]"));
+        var body = JsonSerializer.Deserialize<JsonElement>(WithGrundstellung("\"AB\""));
 
         // Act
         using var response = await client.PostAsJsonAsync(Url("/api/keysheets/import"), body, Token);
@@ -211,7 +211,7 @@ public sealed class KeySheetEndpointTests : IDisposable
     public static TheoryData<string, string> UnreadableUserFiles => new()
     {
         { "broken.json", "{ not json" },
-        { "null-kenngruppe.json", WithKenngruppen("[null]") },
+        { "bad-grundstellung.json", WithGrundstellung("\"A1B\"") },
         { ".json", HistoricalJson },
     };
 
@@ -231,8 +231,8 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(["historical-hydra-1943-12"], sheets!.Select(s => s.Id));
     }
 
-    private static string WithKenngruppen(string kenngruppen) =>
-        HistoricalJson.Replace("\"plugs\"", $"\"kenngruppen\": {kenngruppen}, \"plugs\"", StringComparison.Ordinal);
+    private static string WithGrundstellung(string grundstellung) =>
+        HistoricalJson.Replace("\"plugs\"", $"\"grundstellung\": {grundstellung}, \"plugs\"", StringComparison.Ordinal);
 
     private static Uri Url(string path) => new(path, UriKind.Relative);
 

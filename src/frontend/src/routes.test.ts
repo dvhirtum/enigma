@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keySheetRoutes, machineRoutes } from './routes';
+import { keySheetRoutes, machineRoutes, procedureRoutes } from './routes';
 
 describe('machine routes', () => {
   it.each([
@@ -16,6 +16,17 @@ describe('machine routes', () => {
     ['pressKey', machineRoutes.pressKey('Q'), 'POST', '/api/machine/keyboard/press', { key: 'Q' }],
     ['releaseKey', machineRoutes.releaseKey(), 'POST', '/api/machine/keyboard/release', undefined],
     ['applyDailyKey', machineRoutes.applyDailyKey('g1', 19), 'POST', '/api/machine/daily-key', { sheetId: 'g1', day: 19 }],
+    ['startSending', machineRoutes.startSending(), 'POST', '/api/operator/send', undefined],
+    ['startReceiving', machineRoutes.startReceiving('QWER'), 'POST', '/api/operator/receive', { message: 'QWER' }],
+    [
+      'chooseGroups',
+      machineRoutes.chooseGroups('DWA', 'AAB', 'QX'),
+      'PUT',
+      '/api/operator/groups',
+      { schluesselkenngruppe: 'DWA', verfahrenkenngruppe: 'AAB', fillers: 'QX' },
+    ],
+    ['finishMessage', machineRoutes.finishMessage(), 'POST', '/api/operator/finish', undefined],
+    ['cancelOperator', machineRoutes.cancelOperator(), 'DELETE', '/api/operator', undefined],
   ])('maps %s to its endpoint', (_name, route, method, path, body) => {
     expect(route).toEqual({ method, path, ...(body && { body }) });
   });
@@ -42,5 +53,12 @@ describe('key sheet routes', () => {
 
   it('encodes the sheet id', () => {
     expect(keySheetRoutes.get('../x').path).toBe('/api/keysheets/..%2Fx');
+  });
+});
+
+describe('procedure routes', () => {
+  it('maps the book and tables to their endpoints', () => {
+    expect(procedureRoutes.getBook('b/1')).toEqual({ method: 'GET', path: '/api/kenngruppenbuecher/b%2F1' });
+    expect(procedureRoutes.getTables('t1')).toEqual({ method: 'GET', path: '/api/tauschtafeln/t1' });
   });
 });

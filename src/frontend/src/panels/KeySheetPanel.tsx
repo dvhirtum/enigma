@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type FormEvent } from 'react';
 import type { DailyKey, KeySheet, KeySheetSummary } from '../api';
 import { models } from '../machine';
 import { useMachine } from '../store';
+import { ProcedureViewer } from './ProcedureViewer';
 
 const provenanceLabels: Record<string, string> = {
   Historical: 'historical',
@@ -9,8 +10,8 @@ const provenanceLabels: Record<string, string> = {
   UserDefined: 'user-defined',
 };
 
-const textFormat = 'One row per day: day, reflector, rotors, rings (01–26), plugs, Kenngruppen.';
-const textExample = '1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX ABC DEF';
+const textFormat = 'One row per day: day, reflector, rotors, rings (01–26), plugs, Grundstellung.';
+const textExample = '1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX QRSA';
 
 function currentMonth(): string {
   const now = new Date();
@@ -135,7 +136,7 @@ function DayRow({ sheet, dailyKey }: { sheet: KeySheet; dailyKey: DailyKey }) {
         Apply
       </button>
       <span className="day-plugs">{dailyKey.plugs.join(' ') || 'no plugs'}</span>
-      {dailyKey.kenngruppen && dailyKey.kenngruppen.length > 0 && <span className="day-groups">Kenngruppen {dailyKey.kenngruppen.join(' ')}</span>}
+      {dailyKey.grundstellung && <span className="day-groups">Grundstellung {dailyKey.grundstellung}</span>}
       {applied && <span className="day-applied">{applied.modified ? 'Applied, since modified' : 'Applied'}</span>}
       {confirming && (
         <p className="day-confirm" role="group" aria-label="Confirm model switch">
@@ -189,6 +190,7 @@ function SheetView({ sheet, onEdit }: { sheet: KeySheet; onEdit: () => void }) {
           </button>
         </p>
       )}
+      <ProcedureViewer sheet={sheet} />
       <ol className="days" aria-label="Daily keys">
         {sheet.days.map((dailyKey) => (
           <DayRow key={dailyKey.day} sheet={sheet} dailyKey={dailyKey} />
