@@ -347,6 +347,11 @@ button {
   font-weight: 600;
 }
 
+.ring-mark {
+  fill: #c8321e;
+  stroke: #5a1409;
+}
+
 .drum-core-name.greek {
   font-size: 13px;
 }

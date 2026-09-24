@@ -35,7 +35,7 @@ describe('OpenLidView', () => {
       rotors: defaultM3.rotors.map((rotor) => (rotor.slot === 'Left' ? { ...rotor, ringSetting: 12, position: 'Q' } : rotor)),
     });
 
-    const left = await screen.findByRole('spinbutton', { name: 'Left slot: rotor I, ring 12 L' });
+    const left = await screen.findByRole('spinbutton', { name: 'Left slot: rotor I, ring 12 (L)' });
     expect(left).toHaveAttribute('aria-valuetext', 'Q');
     expect(screen.getByRole('img', { name: 'Reflector B' })).toBeInTheDocument();
   });
@@ -43,7 +43,7 @@ describe('OpenLidView', () => {
   it('shows the ring of each rotor in the box and where the others are', async () => {
     renderMachine(<OpenLidView />, { ...defaultM3, rotorBox: [inBox('IV', 5), ...standard.rotorBox.slice(1)] });
 
-    expect(await screen.findByRole('spinbutton', { name: 'Rotor IV in the box, ring' })).toHaveAttribute('aria-valuetext', '05 E');
+    expect(await screen.findByRole('spinbutton', { name: 'Rotor IV in the box, ring' })).toHaveAttribute('aria-valuetext', '05 (E)');
     expect(screen.getByRole('img', { name: 'Rotor II is in the Middle slot' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Reflector B is in the machine' })).toBeInTheDocument();
   });

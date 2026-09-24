@@ -61,11 +61,11 @@ test('moves a rotor to the box, sets its ring and puts it back', async () => {
 
   await page.getByRole('spinbutton', { name: /^Left slot/ }).click();
   await page.getByRole('spinbutton', { name: 'Rotor I in the box, ring' }).press('ArrowUp');
-  await expect(page.getByRole('spinbutton', { name: 'Rotor I in the box, ring' })).toHaveAttribute('aria-valuetext', '02 B');
+  await expect(page.getByRole('spinbutton', { name: 'Rotor I in the box, ring' })).toHaveAttribute('aria-valuetext', '02 (B)');
   await page.getByRole('spinbutton', { name: 'Rotor I in the box, ring' }).click();
   await page.getByRole('button', { name: 'Left slot: empty' }).click();
 
-  await expect(page.getByRole('spinbutton', { name: 'Left slot: rotor I, ring 02 B' })).toBeVisible();
+  await expect(page.getByRole('spinbutton', { name: 'Left slot: rotor I, ring 02 (B)' })).toBeVisible();
 });
 
 test('plugs a cable on the plugboard, moves it and removes it', async () => {

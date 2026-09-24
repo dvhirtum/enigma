@@ -22,7 +22,7 @@ const boxGap = 16;
 const rotorOrder = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', ...greekRotors];
 
 function ringLabel(ringSetting: number): string {
-  return `${String(ringSetting).padStart(2, '0')} ${ringLetter(ringSetting)}`;
+  return `${String(ringSetting).padStart(2, '0')} (${ringLetter(ringSetting)})`;
 }
 
 function fits(slot: string, rotor: string): boolean {
@@ -194,6 +194,7 @@ function OpenLid() {
             x={centre - (drumWidth * boxScale) / 2}
             y={boxDrumY - (isPicked ? 8 : 0)}
             scale={boxScale}
+            ringMark
             onTurn={(steps) => void stepRing(rotorName, steps)}
             onActivate={() => setPicked(isPicked ? null : rotorName)}
           />
@@ -208,7 +209,7 @@ function OpenLid() {
           x={centre}
           y={boxTop + boxHeight - 32}
           title={rotorName}
-          detail={boxed ? ringLabel(boxed.ringSetting) : 'in machine'}
+          detail={boxed ? `ring ${ringLabel(boxed.ringSetting)}` : 'in machine'}
           muted={!boxed}
         />
       </g>

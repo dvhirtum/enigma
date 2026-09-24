@@ -26,6 +26,8 @@ interface RotorDrumProps {
   label: string;
   valueText: string;
   className?: string;
+  /** Draws the fixed mark on the core that the ring setting is read against. */
+  ringMark?: boolean;
   x: number;
   y: number;
   scale?: number;
@@ -37,7 +39,7 @@ interface RotorDrumProps {
  * A rotor seen from the front: ratchet, alphabet ring and wiring core. The framed letter is the one at the front.
  * The mouse wheel and Arrow Up/Down turn it; a click, Enter or Space activates it.
  */
-export function RotorDrum({ letter, name, label, valueText, className, x, y, scale = 1, onTurn, onActivate }: RotorDrumProps) {
+export function RotorDrum({ letter, name, label, valueText, className, ringMark, x, y, scale = 1, onTurn, onActivate }: RotorDrumProps) {
   const wheel = useWheelTurn<SVGGElement>(onTurn, false);
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -71,9 +73,12 @@ export function RotorDrum({ letter, name, label, valueText, className, x, y, sca
     >
       <rect className="drum-outline" x={-8} y={-drumRadius - 6} width={drumWidth + 16} height={drumRadius * 2 + 12} rx={10} />
       <rect className="drum-core" x={coreX - 4} y={-drumRadius + 6} width={drumWidth - coreX + 4} height={drumRadius * 2 - 12} rx={6} />
-      <text className={greekRotors.includes(name) ? 'drum-core-name greek' : 'drum-core-name'} x={coreX + (drumWidth - coreX) / 2} dy="0.35em">
+      <text className={greekRotors.includes(name) ? 'drum-core-name greek' : 'drum-core-name'} x={coreX + (drumWidth - coreX) / 2} y={ringMark ? 36 : 0} dy="0.35em">
         {name}
       </text>
+      {ringMark && (
+        <path className="ring-mark" d={`M ${coreX} 0 L ${coreX + 18} -11 L ${coreX + 18} 11 Z`} />
+      )}
       <path className="drum-ratchet" d={ratchetPath} />
       <rect className="drum-alphabet" x={ringX} y={-drumRadius} width={ringWidth} height={drumRadius * 2} rx={3} />
       <rect className="drum-front" x={ringX + 3} y={-12} width={ringWidth - 6} height={24} rx={3} />
