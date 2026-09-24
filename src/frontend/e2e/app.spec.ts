@@ -1,8 +1,13 @@
 import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
 
 // Runs the Vite build in `.vite/build`; run `npm run package` first.
+// Uses a temporary user data folder, so key sheets and settings stay out of the real one.
 let app: ElectronApplication;
+let userData: string;
 let page: Page;
 
 // Kills the Enigma.Api process started by this Electron instance.
@@ -19,13 +24,19 @@ function killBackend(electronPid: number): void {
 }
 
 test.beforeAll(async () => {
-  app = await electron.launch({ args: ['.'] });
+  userData = mkdtempSync(path.join(os.tmpdir(), 'enigma-e2e-'));
+  app = await electron.launch({ args: ['.', `--user-data-dir=${userData}`] });
   page = await app.firstWindow();
   await expect(page.getByRole('tablist', { name: 'Views' })).toBeVisible({ timeout: 90_000 });
 });
 
 test.afterAll(async () => {
   await app.close();
+  rmSync(userData, { recursive: true, force: true, maxRetries: 5 });
+});
+
+test('keeps its data in the temporary user data folder', async () => {
+  expect(await app.evaluate(({ app }) => app.getPath('userData'))).toBe(userData);
 });
 
 test('shows the default machine and the backend version', async () => {
