@@ -130,8 +130,6 @@ describe('OperatorPanel', () => {
   });
 
   it('shows the radio message to copy when sending is done', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     const message = '1840 = 24 = JWDZ ZZYC ABCD EFGH JWDZ ZZYC';
     const api = renderOperator({ ...indicatorChosen, step: 'Done', pad: 'ABCDEFGH', message });
 
@@ -140,7 +138,7 @@ describe('OperatorPanel', () => {
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'New message' }));
 
-    expect(writeText).toHaveBeenCalledWith(message);
+    expect(api.clipboard.writeText).toHaveBeenCalledWith(message);
     expect(api.machine.cancelOperator).toHaveBeenCalled();
   });
 

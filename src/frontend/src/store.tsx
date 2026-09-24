@@ -44,6 +44,8 @@ export interface ProcedureSlice {
   loadTables: (id: string) => Promise<boolean>;
   /** The key sheet days that fit a received message on Thu Sep 24 21:20:27 WEDT 2026 (yyyy-MM-dd), or null when the lookup failed. */
   findReceivingKeys: (message: string, date: string) => Promise<ReceivingKey[] | null>;
+  /** Copies text to the clipboard; resolves to true when it worked. */
+  copyText: (text: string) => Promise<boolean>;
 }
 
 export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
@@ -68,7 +70,7 @@ async function settle<T>(call: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
   }
 }
 
-export function createMachineStore({ machine: api, keySheets: sheets, procedure, files, health }: EnigmaApi): StoreApi<MachineStore> {
+export function createMachineStore({ machine: api, keySheets: sheets, procedure, files, clipboard, health }: EnigmaApi): StoreApi<MachineStore> {
   return createStore<MachineStore>()((set, get) => {
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
@@ -134,6 +136,14 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       findReceivingKeys: async (message, date) => {
         const result = await check(procedure.findReceivingKeys(message, date));
         return result.ok ? result.value : null;
+      },
+      copyText: async (text) => {
+        try {
+          await clipboard.writeText(text);
+          return true;
+        } catch (error) {
+          return fail({ status: 0, title: 'The text could not be copied.', detail: String(error) });
+        }
       },
       loadKeySheets,
       openKeySheet: async (id) => {

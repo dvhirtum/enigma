@@ -190,6 +190,11 @@ export interface FilesApi {
   saveKeySheet: (name: string, content: string) => Promise<string | null>;
 }
 
+/** The system clipboard, written by the main process. */
+export interface ClipboardApi {
+  writeText: (text: string) => Promise<void>;
+}
+
 export interface BackendApi {
   status: () => Promise<BackendStatus>;
   onStatus: (listener: (status: BackendStatus) => void) => () => void;
@@ -202,5 +207,6 @@ export interface EnigmaApi {
   keySheets: KeySheetApi;
   procedure: ProcedureApi;
   files: FilesApi;
+  clipboard: ClipboardApi;
   backend: BackendApi;
 }

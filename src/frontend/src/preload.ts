@@ -40,6 +40,9 @@ const api: EnigmaApi = {
     getTables: (id) => invoke('procedure:getTables', id),
     findReceivingKeys: (message, date) => invoke('procedure:findReceivingKeys', message, date),
   },
+  clipboard: {
+    writeText: (text) => invoke('clipboard:writeText', text),
+  },
   files: {
     openKeySheet: () => invoke('files:openKeySheet'),
     saveKeySheet: (name, content) => invoke('files:saveKeySheet', name, content),

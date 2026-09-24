@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow, clipboard, ipcMain } from 'electron';
 import type { ApiResult } from './api';
 import type { Backend } from './backend';
 import { send } from './http';
@@ -37,6 +37,13 @@ export function registerIpc(backend: Backend): void {
   }
 
   registerFiles();
+
+  ipcMain.handle('clipboard:writeText', (_event, text: unknown) => {
+    if (typeof text !== 'string') {
+      throw new Error('Only text can be copied.');
+    }
+    return clipboard.writeText(text);
+  });
 
   ipcMain.handle('backend:status', () => backend.status());
   ipcMain.handle('backend:restart', () => backend.restart());

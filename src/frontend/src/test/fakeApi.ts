@@ -142,6 +142,9 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       getTables: vi.fn().mockResolvedValue({ ok: true, value: fakeTables }),
       findReceivingKeys: vi.fn().mockResolvedValue({ ok: true, value: [] }),
     },
+    clipboard: {
+      writeText: vi.fn().mockResolvedValue(undefined),
+    },
     files: {
       openKeySheet: vi.fn().mockResolvedValue(null),
       saveKeySheet: vi.fn().mockResolvedValue(null),

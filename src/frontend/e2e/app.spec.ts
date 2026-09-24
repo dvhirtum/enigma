@@ -227,6 +227,9 @@ test('sends a message with the indicator procedure and receives it again', async
   await panel.getByRole('button', { name: 'Finish' }).click();
   const message = (await panel.getByRole('status', { name: 'Radio message' }).textContent())!;
   expect(message).toMatch(/^\d{4} = 24 = ([A-Z]{4} ){5}[A-Z]{4}$/);
+  await panel.getByRole('button', { name: 'Copy' }).click();
+  await expect(panel.getByRole('button', { name: 'Copied' })).toBeVisible();
+  expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(message);
 
   await panel.getByRole('button', { name: 'New message' }).click();
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');

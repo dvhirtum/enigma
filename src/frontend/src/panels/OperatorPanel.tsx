@@ -185,15 +185,9 @@ function CipherText({ operator }: { operator: OperatorState }) {
 }
 
 function CopyButton({ text }: { text: string }) {
+  const copyText = useMachine((store) => store.copyText);
   const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  };
+  const copy = async () => setCopied(await copyText(text));
   return (
     <button type="button" onClick={() => void copy()}>
       {copied ? 'Copied' : 'Copy'}
