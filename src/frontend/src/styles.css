@@ -161,6 +161,12 @@ button {
   text-anchor: middle;
 }
 
+.wood {
+  fill: #6e4526;
+  stroke: #3d2412;
+  stroke-width: 2;
+}
+
 .machine .case {
   fill: #1f1e1c;
   stroke: #0b0b0a;
@@ -425,12 +431,6 @@ button {
   margin: 0;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
-}
-
-.wood {
-  fill: #6e4526;
-  stroke: #3d2412;
-  stroke-width: 2;
 }
 
 .plugboard-panel {

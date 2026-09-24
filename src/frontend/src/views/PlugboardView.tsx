@@ -6,7 +6,7 @@ import { useMachine } from '../store';
 
 const maxCables = 13;
 const width = 640;
-const height = 320;
+const height = 300;
 const pitch = 62;
 const rowsY = [54, 106, 158];
 const panel = { x: 14, y: 12, width: width - 28, height: height - 24 };
