@@ -46,20 +46,72 @@ function Screw({ x, y, angle }: { x: number; y: number; angle: number }) {
   );
 }
 
-/** A braided cable hanging between the bottoms of two plugs, given their centres. */
-function Cable({ from, to }: { from: Point; to: Point }) {
-  const x1 = from.x;
-  const y1 = from.y + plugHeight / 2;
-  const x2 = to.x;
-  const y2 = to.y + plugHeight / 2;
-  const sag = Math.max(y1, y2) + 8 + Math.abs(x2 - x1) * 0.06;
-  const d = `M ${x1} ${y1} C ${x1} ${sag} ${x2} ${sag} ${x2} ${y2}`;
+/** The top and depth of the band along the bottom of the panel where the cables bunch up. */
+const bundleTop = 232;
+const bundleDepth = 16;
+
+function Braid({ d }: { d: string }) {
   return (
     <>
       <path className="cable" d={d} />
       <path className="cable-braid" d={d} />
     </>
   );
+}
+
+/** A smooth path through `points` (Catmull-Rom). */
+function smoothPath(points: Point[]): string {
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const [before, from, to, after] = [points[i - 1] ?? points[i], points[i], points[i + 1], points[i + 2] ?? points[i + 1]];
+    const c1 = { x: from.x + (to.x - before.x) / 6, y: from.y + (to.y - before.y) / 6 };
+    const c2 = { x: to.x - (after.x - from.x) / 6, y: to.y - (after.y - from.y) / 6 };
+    d += ` C ${c1.x} ${c1.y} ${c2.x} ${c2.y} ${to.x} ${to.y}`;
+  }
+  return d;
+}
+
+/** A fixed pseudo-random number in [-1, 1] for a cable, so each cable keeps its shape. */
+function wobble(pair: string, seed: number): number {
+  const hash = (pair.charCodeAt(0) * 31 + pair.charCodeAt(1) * 17 + seed * 53) % 101;
+  return (hash / 100) * 2 - 1;
+}
+
+/**
+ * A plugged cable, given the centres of its plugs. It drops from both plugs and lies bunched up
+ * along the bottom of the panel, with some slack.
+ */
+function PluggedCable({ pair, from, to }: { pair: string; from: Point; to: Point }) {
+  const y1 = from.y + plugHeight / 2;
+  const y2 = to.y + plugHeight / 2;
+  const bottom = bundleTop + ((wobble(pair, 1) + 1) / 2) * bundleDepth;
+  const direction = Math.sign(to.x - from.x) || 1;
+  const slack = Math.max(0, (70 - Math.abs(to.x - from.x)) / 2);
+  const left = from.x - direction * slack;
+  const right = to.x + direction * slack;
+  const along = (t: number, seed: number): Point => ({ x: left + (right - left) * t, y: bottom + wobble(pair, seed) * 7 });
+
+  return (
+    <Braid
+      d={smoothPath([
+        { x: from.x, y: y1 },
+        { x: from.x + wobble(pair, 2) * 6, y: (y1 + bottom) / 2 },
+        along(0.1, 3),
+        along(0.5, 4),
+        along(0.9, 5),
+        { x: to.x + wobble(pair, 6) * 6, y: (y2 + bottom) / 2 },
+        { x: to.x, y: y2 },
+      ])}
+    />
+  );
+}
+
+/** A cable from a plug to the plug held at `to`. */
+function HeldCable({ from, to }: { from: Point; to: Point }) {
+  const y1 = from.y + plugHeight / 2;
+  const y2 = to.y + plugHeight / 2;
+  const sag = Math.max(y1, y2) + 20 + Math.abs(to.x - from.x) * 0.1;
+  return <Braid d={`M ${from.x} ${y1} C ${from.x} ${sag} ${to.x} ${sag} ${to.x} ${y2}`} />;
 }
 
 export function PlugboardView() {
@@ -128,6 +180,13 @@ export function PlugboardView() {
         {screws.map(([x, y, angle]) => (
           <Screw key={`${x} ${y}`} x={x} y={y} angle={angle} />
         ))}
+        <g className="cables" aria-hidden="true">
+          {plugs
+            .filter((pair) => !dragged || !pair.includes(dragged))
+            .map((pair) => (
+              <PluggedCable key={pair} pair={pair} from={plugAt(pair[0])} to={plugAt(pair[1])} />
+            ))}
+        </g>
         {[...sockets].map(([letter, { x, y }]) => (
           <PlugSocket
             key={letter}
@@ -141,19 +200,12 @@ export function PlugboardView() {
             onGrab={grab}
           />
         ))}
-        <g className="cables" aria-hidden="true">
-          {plugs
-            .filter((pair) => !dragged || !pair.includes(dragged))
-            .map(([a, b]) => (
-              <Cable key={a + b} from={plugAt(a)} to={plugAt(b)} />
-            ))}
-          {loose && loosePlug && (
-            <>
-              <Cable from={plugAt(loosePlug)} to={loose} />
-              <Plug x={loose.x} y={loose.y} />
-            </>
-          )}
-        </g>
+        {loose && loosePlug && (
+          <g className="cables" aria-hidden="true">
+            <HeldCable from={plugAt(loosePlug)} to={loose} />
+            <Plug x={loose.x} y={loose.y} />
+          </g>
+        )}
       </svg>
       <p className="cable-list" aria-label="Cables">
         {plugs.length > 0 ? plugs.join(' ') : 'No cables'} · {plugs.length} of {maxCables}
