@@ -15,6 +15,7 @@ const api: EnigmaApi = {
     setReflector: (reflector) => invoke('machine:setReflector', reflector),
     connectPlug: (pair) => invoke('machine:connectPlug', pair),
     disconnectPlug: (letter) => invoke('machine:disconnectPlug', letter),
+    movePlug: (from, to) => invoke('machine:movePlug', from, to),
     pressKey: (key) => invoke('machine:pressKey', key),
     releaseKey: () => invoke('machine:releaseKey'),
   },

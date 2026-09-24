@@ -275,6 +275,7 @@ public sealed class EnigmaMachineTests
     [InlineData("TurnRotor")]
     [InlineData("ConnectPlug")]
     [InlineData("DisconnectPlug")]
+    [InlineData("MovePlug")]
     public void Should_reject_the_change_and_keep_the_machine_When_a_key_is_held_down(string operation)
     {
         // Arrange
@@ -289,7 +290,8 @@ public sealed class EnigmaMachineTests
             "SetRingSetting" => () => machine.SetRingSetting(RotorType.IV, RingSetting.FromNumber(5)),
             "TurnRotor" => () => machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q')),
             "ConnectPlug" => () => machine.ConnectPlug(PlugPair.Parse("AT")),
-            _ => () => machine.DisconnectPlug(Letter.FromChar('Q')),
+            "DisconnectPlug" => () => machine.DisconnectPlug(Letter.FromChar('Q')),
+            _ => () => machine.MovePlug(Letter.FromChar('Q'), Letter.FromChar('T')),
         };
 
         // Act

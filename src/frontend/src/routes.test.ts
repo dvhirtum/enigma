@@ -12,6 +12,7 @@ describe('machine routes', () => {
     ['setReflector', machineRoutes.setReflector('C'), 'PUT', '/api/machine/reflector', { reflector: 'C' }],
     ['connectPlug', machineRoutes.connectPlug('AV'), 'POST', '/api/machine/plugs', { pair: 'AV' }],
     ['disconnectPlug', machineRoutes.disconnectPlug('A'), 'DELETE', '/api/machine/plugs/A', undefined],
+    ['movePlug', machineRoutes.movePlug('A', 'C'), 'PUT', '/api/machine/plugs/A', { to: 'C' }],
     ['pressKey', machineRoutes.pressKey('Q'), 'POST', '/api/machine/keyboard/press', { key: 'Q' }],
     ['releaseKey', machineRoutes.releaseKey(), 'POST', '/api/machine/keyboard/release', undefined],
   ])('maps %s to its endpoint', (_name, route, method, path, body) => {

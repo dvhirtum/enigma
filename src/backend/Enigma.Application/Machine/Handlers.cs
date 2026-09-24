@@ -76,6 +76,18 @@ public sealed class DisconnectPlugHandler(IMachineSessionStore store)
     }
 }
 
+public sealed class MovePlugHandler(IMachineSessionStore store)
+{
+    public MachineState Handle(MovePlug command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var from = Input.Letter(command.From);
+        var to = Input.Letter(command.To);
+        return store.Update(m => m.MovePlug(from, to));
+    }
+}
+
 public sealed class TurnRotorHandler(IMachineSessionStore store)
 {
     public MachineState Handle(TurnRotor command)

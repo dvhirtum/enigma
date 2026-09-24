@@ -42,6 +42,24 @@ public sealed class Plugboard
         _pairs.RemoveAt(index);
     }
 
+    /// <summary>Moves the cable end plugged into <paramref name="from"/> to the free socket <paramref name="to"/>.</summary>
+    public void Move(Letter from, Letter to)
+    {
+        var index = _pairs.FindIndex(p => p.Contains(from));
+        if (index < 0)
+        {
+            throw new DomainException($"No cable is plugged into {from}.");
+        }
+
+        var taken = _pairs.FindIndex(p => p.Contains(to));
+        if (taken >= 0)
+        {
+            throw new DomainException($"Cannot move the plug to {to}: {_pairs[taken]} is already plugged in.");
+        }
+
+        _pairs[index] = PlugPair.Create(_pairs[index].Other(from), to);
+    }
+
     public Letter Swap(Letter input)
     {
         foreach (var pair in _pairs)

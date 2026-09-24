@@ -99,6 +99,19 @@ public sealed class MachineEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_join_the_other_end_to_the_new_socket_When_a_plug_is_moved()
+    {
+        // Arrange
+        await SendAsync(HttpMethod.Post, "/api/machine/plugs", new { pair = "AT" });
+
+        // Act
+        var state = await SendAsync(HttpMethod.Put, "/api/machine/plugs/A", new { to = "C" });
+
+        // Assert
+        Assert.Equal(["CT"], state.Plugs);
+    }
+
+    [Fact]
     public async Task Should_light_the_lamp_and_step_When_a_key_is_pressed_and_released()
     {
         // Arrange

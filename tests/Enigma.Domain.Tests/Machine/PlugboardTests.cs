@@ -91,6 +91,54 @@ public sealed class PlugboardTests
     }
 
     [Fact]
+    public void Should_join_the_other_end_to_the_new_socket_When_a_plug_is_moved()
+    {
+        // Arrange
+        var plugboard = new Plugboard();
+        plugboard.Connect(PlugPair.Parse("AT"));
+        plugboard.Connect(PlugPair.Parse("BL"));
+
+        // Act
+        plugboard.Move(Letter.A, Letter.FromChar('C'));
+
+        // Assert
+        Assert.Equal([PlugPair.Parse("CT"), PlugPair.Parse("BL")], plugboard.Pairs);
+    }
+
+    [Fact]
+    public void Should_reject_move_When_letter_is_not_plugged()
+    {
+        // Arrange
+        var plugboard = new Plugboard();
+
+        // Act
+        void Act() => plugboard.Move(Letter.A, Letter.FromChar('C'));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+        Assert.Empty(plugboard.Pairs);
+    }
+
+    [Theory]
+    [InlineData('A')]
+    [InlineData('T')]
+    [InlineData('B')]
+    public void Should_reject_move_and_keep_the_cables_When_target_socket_is_plugged(char target)
+    {
+        // Arrange
+        var plugboard = new Plugboard();
+        plugboard.Connect(PlugPair.Parse("AT"));
+        plugboard.Connect(PlugPair.Parse("BL"));
+
+        // Act
+        void Act() => plugboard.Move(Letter.A, Letter.FromChar(target));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+        Assert.Equal([PlugPair.Parse("AT"), PlugPair.Parse("BL")], plugboard.Pairs);
+    }
+
+    [Fact]
     public void Should_order_letters_When_pair_is_created()
     {
         // Arrange

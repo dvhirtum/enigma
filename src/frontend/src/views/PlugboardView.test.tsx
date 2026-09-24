@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { MachineState } from '../api';
 import { defaultM3 } from '../test/fakeApi';
@@ -92,8 +92,9 @@ describe('PlugboardView', () => {
 
     dragTo(await socket('A'), await socket('C'));
 
-    await waitFor(() => expect(api.machine.connectPlug).toHaveBeenCalledWith('TC'));
-    expect(api.machine.disconnectPlug).toHaveBeenCalledWith('A');
+    expect(api.machine.movePlug).toHaveBeenCalledWith('A', 'C');
+    expect(api.machine.disconnectPlug).not.toHaveBeenCalled();
+    expect(api.machine.connectPlug).not.toHaveBeenCalled();
   });
 
   it('keeps a cable whose plug is dropped on a plugged socket', async () => {
@@ -101,6 +102,7 @@ describe('PlugboardView', () => {
 
     dragTo(await socket('A'), await socket('B'));
 
+    expect(api.machine.movePlug).not.toHaveBeenCalled();
     expect(api.machine.disconnectPlug).not.toHaveBeenCalled();
     expect(api.machine.connectPlug).not.toHaveBeenCalled();
   });

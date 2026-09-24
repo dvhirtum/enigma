@@ -63,6 +63,7 @@ export function createMachineStore({ machine: api, health }: EnigmaApi): StoreAp
       setReflector: (reflector) => apply(api.setReflector(reflector)),
       connectPlug: (pair) => apply(api.connectPlug(pair)),
       disconnectPlug: (letter) => apply(api.disconnectPlug(letter)),
+      movePlug: (from, to) => apply(api.movePlug(from, to)),
       pressKey: (key) => apply(api.pressKey(key)),
       releaseKey: () => apply(api.releaseKey()),
     };

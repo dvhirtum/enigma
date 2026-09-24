@@ -118,6 +118,7 @@ export function PlugboardView() {
   const machine = useMachine((store) => store.machine);
   const connectPlug = useMachine((store) => store.connectPlug);
   const disconnectPlug = useMachine((store) => store.disconnectPlug);
+  const movePlug = useMachine((store) => store.movePlug);
   const [selected, setSelected] = useState<string | null>(null);
   const svg = useRef<SVGSVGElement>(null);
 
@@ -139,23 +140,22 @@ export function PlugboardView() {
   };
 
   /** Connects a free socket, moves a plug end to a free socket, or removes a cable dropped off the sockets. */
-  const drop = async (from: string, to: string | null) => {
-    const other = partner.get(from);
+  const drop = (from: string, to: string | null) => {
     const free = to !== null && to !== from && !partner.has(to);
-    if (!other) {
+    if (!partner.has(from)) {
       if (free) {
-        await connectPlug(from + to);
+        void connectPlug(from + to);
       }
     } else if (to === null) {
-      await disconnectPlug(from);
-    } else if (free && (await disconnectPlug(from))) {
-      await connectPlug(other + to);
+      void disconnectPlug(from);
+    } else if (free) {
+      void movePlug(from, to);
     }
   };
 
   const { drag, grab } = usePlugDrag(svg, activate, (from, to) => {
     setSelected(null);
-    void drop(from, to);
+    drop(from, to);
   });
 
   if (!machine) {

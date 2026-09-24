@@ -49,4 +49,5 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(PressKey))]
 [JsonSerializable(typeof(RingSettingRequest))]
 [JsonSerializable(typeof(PositionRequest))]
+[JsonSerializable(typeof(PlugMoveRequest))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;

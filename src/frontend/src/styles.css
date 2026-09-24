@@ -451,6 +451,7 @@ button {
 
 .socket {
   cursor: pointer;
+  touch-action: none;
 }
 
 .socket:focus {

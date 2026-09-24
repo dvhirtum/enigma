@@ -20,6 +20,9 @@ public sealed record ConnectPlug(string Pair);
 /// <summary>Removes the cable plugged into <see cref="Letter"/>.</summary>
 public sealed record DisconnectPlug(string Letter);
 
+/// <summary>Moves the cable end plugged into <see cref="From"/> to the free socket <see cref="To"/>.</summary>
+public sealed record MovePlug(string From, string To);
+
 /// <summary>Turns the rotor in <see cref="Slot"/> until its window shows <see cref="Position"/>.</summary>
 public sealed record TurnRotor(string Slot, string Position);
 

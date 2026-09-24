@@ -31,6 +31,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       setReflector: ok(),
       connectPlug: ok(),
       disconnectPlug: ok(),
+      movePlug: ok(),
       pressKey: ok(),
       releaseKey: ok(),
     },

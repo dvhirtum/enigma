@@ -45,6 +45,7 @@ export interface MachineApi {
   setReflector: MachineCall<[reflector: string]>;
   connectPlug: MachineCall<[pair: string]>;
   disconnectPlug: MachineCall<[letter: string]>;
+  movePlug: MachineCall<[from: string, to: string]>;
   pressKey: MachineCall<[key: string]>;
   releaseKey: MachineCall<[]>;
 }
