@@ -114,28 +114,35 @@ test('switches to the M4 and back', async () => {
   await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
 });
 
-test('generates a key sheet, applies a daily key and deletes the sheet', async () => {
+test('generates a year of key sheets, applies a daily key and deletes a sheet', async () => {
   await page.getByRole('button', { name: 'Key sheets' }).click();
   const panel = page.getByRole('complementary', { name: 'Key sheets' });
 
   await panel.getByRole('button', { name: 'Generate' }).click();
-  const form = panel.getByRole('form', { name: 'Generate key sheet' });
+  const form = panel.getByRole('form', { name: 'Generate key sheets' });
   await form.getByRole('combobox', { name: 'Model' }).selectOption('M4');
-  await form.getByRole('textbox', { name: 'Network' }).fill('E2E');
-  await form.getByLabel('Month').fill('1944-02');
+  await form.getByRole('spinbutton', { name: 'Year' }).fill('1944');
   await form.getByRole('button', { name: 'Generate' }).click();
+  await expect(form).toHaveCount(0);
+  const months = panel.getByRole('combobox', { name: 'Month' });
+  for (let month = 1; month <= 12; month++) {
+    await expect(months.locator(`option[value="1944-${String(month).padStart(2, '0')}"]`)).toHaveCount(1);
+  }
 
+  await months.selectOption('1944-02');
+  await expect(panel.getByRole('combobox', { name: 'Key sheet' }).locator('optgroup[label="M4"] option')).toHaveCount(10);
+  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Aegir (generated)' });
   const day = panel.getByRole('listitem', { name: 'Day 29' });
   await expect(day).toContainText(/UKW (B|C)-thin/);
   await day.getByRole('button', { name: 'Apply' }).click();
   await day.getByRole('button', { name: 'Switch' }).click();
   await expect(page.getByLabel('Machine')).toHaveText(/^M4 · UKW (B|C)-thin · (Beta|Gamma) /);
-  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: E2E 1944-02, day 29 · Grundstellung [A-Z]{4}$/);
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Aegir 1944-02, day 29 · Grundstellung [A-Z]{4}$/);
   await expect(day).toContainText('Applied');
 
   await panel.getByRole('button', { name: 'Delete' }).click();
   await panel.getByRole('group', { name: 'Confirm delete' }).getByRole('button', { name: 'Delete' }).click();
-  await expect(panel.getByRole('option', { name: /^E2E 1944-02/ })).toHaveCount(0);
+  await expect(panel.getByRole('combobox', { name: 'Key sheet' }).getByRole('option', { name: 'Aegir (generated)' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Key sheets' }).click();
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');
@@ -145,9 +152,13 @@ test('generates a key sheet, applies a daily key and deletes the sheet', async (
 });
 
 test('exports a key sheet with its Kenngruppenbuch and Tauschtafeln', async () => {
-  const generated = await page.evaluate(() => window.enigma.keySheets.generate('M3', 'Export', '1944-03'));
+  const generated = await page.evaluate(() => window.enigma.keySheets.generate('M3', 1943));
   if (!generated.ok) {
     throw new Error(generated.problem.title);
+  }
+  const sheet = await page.evaluate((id) => window.enigma.keySheets.get(id), generated.value.find((s) => s.network === 'Neptun' && s.month === '1943-03')!.id);
+  if (!sheet.ok) {
+    throw new Error(sheet.problem.title);
   }
   const file = path.join(userData, 'export.json');
   await app.evaluate(({ dialog }, filePath) => {
@@ -156,50 +167,69 @@ test('exports a key sheet with its Kenngruppenbuch and Tauschtafeln', async () =
 
   await page.getByRole('button', { name: 'Key sheets' }).click();
   const panel = page.getByRole('complementary', { name: 'Key sheets' });
-  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Export 1944-03 · M3 (generated)' });
+  await panel.getByRole('combobox', { name: 'Month' }).selectOption('1943-03');
+  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Neptun (generated)' });
   await panel.getByRole('button', { name: 'Export' }).click();
 
   const readExport = () => {
     try {
-      return JSON.parse(readFileSync(file, 'utf8')) as KeySheetFile;
+      return readFileSync(file, 'utf8');
     } catch {
       return null;
     }
   };
-  await expect.poll(readExport).not.toBeNull();
-  const exported = readExport()!;
-  expect(exported.kenngruppenbuch?.id).toBe(generated.value.kenngruppenbuchId);
+  const complete = () => {
+    try {
+      return JSON.parse(readExport() ?? '') !== null;
+    } catch {
+      return false;
+    }
+  };
+  await expect.poll(complete).toBe(true);
+  const content = readExport()!;
+  const exported = JSON.parse(content) as KeySheetFile;
+  expect(content).toBe(JSON.stringify(exported));
+  expect(exported.network).toBe('Neptun');
+  expect(exported.kenngruppenbuch?.id).toBe(sheet.value.kenngruppenbuchId);
   expect(exported.kenngruppenbuch?.columns).toHaveLength(676);
-  expect(exported.tauschtafeln?.id).toBe(generated.value.tauschtafelSetId);
+  expect(exported.tauschtafeln?.id).toBe(sheet.value.tauschtafelSetId);
   expect(exported.tauschtafeln?.tables).toHaveLength(9);
 
-  await page.evaluate((id) => window.enigma.keySheets.remove(id), generated.value.id);
   await page.getByRole('button', { name: 'Key sheets' }).click();
 });
 
-test('prints a key sheet with its Kenngruppenbuch and Tauschtafeln to a PDF', async () => {
-  const generated = await page.evaluate(() => window.enigma.keySheets.generate('M4', 'Print', '1944-06'));
+test('prints a key sheet and its Kenngruppenbuch and Tauschtafeln to two PDFs', async () => {
+  const generated = await page.evaluate(() => window.enigma.keySheets.generate('M4', 1942));
   if (!generated.ok) {
     throw new Error(generated.problem.title);
   }
-  const file = path.join(userData, 'print.pdf');
+  const folder = mkdtempSync(path.join(userData, 'print-'));
   await app.evaluate(({ dialog }, filePath) => {
-    dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath });
-  }, file);
+    dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [filePath] });
+  }, folder);
 
   await page.getByRole('button', { name: 'Key sheets' }).click();
   const panel = page.getByRole('complementary', { name: 'Key sheets' });
-  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Print 1944-06 · M4 (generated)' });
+  await panel.getByRole('combobox', { name: 'Month' }).selectOption('1942-06');
+  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Hydra (generated)' });
+  await expect(panel.getByRole('checkbox', { name: 'Also print the Kenngruppenbuch and Tauschtafeln' })).toBeChecked();
   await panel.getByRole('button', { name: 'Print to PDF' }).click();
 
-  await expect.poll(() => existsSync(file) && readFileSync(file, 'latin1').trimEnd().endsWith('%%EOF'), { timeout: 30_000 }).toBe(true);
-  const pdf = readFileSync(file, 'latin1');
-  expect(pdf.startsWith('%PDF-')).toBe(true);
-  expect(pdf).toContain('SpecialElite');
-  expect(pdf).toContain('CourierPrime');
-  expect(pdf.match(/\/Type\s*\/Page\b/g)?.length).toBeGreaterThan(40);
+  const read = (name: string) => {
+    const file = path.join(folder, name);
+    return existsSync(file) ? readFileSync(file, 'latin1') : '';
+  };
+  const done = (name: string) => read(name).trimEnd().endsWith('%%EOF');
+  await expect.poll(() => done('Hydra-1942-06.pdf') && done('Kenngruppenbuch-Tauschtafeln-1942.pdf'), { timeout: 30_000 }).toBe(true);
+  const pages = (pdf: string) => pdf.match(/\/Type\s*\/Page\b/g)?.length ?? 0;
+  const sheet = read('Hydra-1942-06.pdf');
+  const book = read('Kenngruppenbuch-Tauschtafeln-1942.pdf');
+  expect(sheet.startsWith('%PDF-')).toBe(true);
+  expect(sheet).toContain('SpecialElite');
+  expect(sheet).toContain('CourierPrime');
+  expect(pages(sheet)).toBeLessThan(3);
+  expect(pages(book)).toBeGreaterThan(40);
 
-  await page.evaluate((id) => window.enigma.keySheets.remove(id), generated.value.id);
   await page.getByRole('button', { name: 'Key sheets' }).click();
 });
 
@@ -267,13 +297,15 @@ test('sends a message with the indicator procedure and receives it again', async
   await page.getByRole('button', { name: 'Key sheets' }).click();
   const sheets = page.getByRole('complementary', { name: 'Key sheets' });
   await sheets.getByRole('button', { name: 'Generate' }).click();
-  const form = sheets.getByRole('form', { name: 'Generate key sheet' });
+  const form = sheets.getByRole('form', { name: 'Generate key sheets' });
   await form.getByRole('combobox', { name: 'Model' }).selectOption('M3');
-  await form.getByRole('textbox', { name: 'Network' }).fill('Triton');
-  await form.getByLabel('Month').fill('1944-03');
+  await form.getByRole('spinbutton', { name: 'Year' }).fill('1945');
   await form.getByRole('button', { name: 'Generate' }).click();
+  await expect(form).toHaveCount(0);
+  await sheets.getByRole('combobox', { name: 'Month' }).selectOption('1945-03');
+  await sheets.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Triton (generated)' });
   await sheets.getByRole('listitem', { name: 'Day 1', exact: true }).getByRole('button', { name: 'Apply' }).click();
-  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1944-03, day 1 · Grundstellung [A-Z]{3}$/);
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1945-03, day 1 · Grundstellung [A-Z]{3}$/);
 
   await page.getByRole('button', { name: 'Operator mode' }).click();
   const panel = page.getByRole('complementary', { name: 'Operator mode' });
@@ -306,10 +338,10 @@ test('sends a message with the indicator procedure and receives it again', async
   await page.getByRole('button', { name: 'Switch' }).click();
   await expect(page.getByLabel('Daily key', { exact: true })).toHaveCount(0);
   await panel.getByRole('textbox', { name: 'Received message' }).fill(message);
-  await panel.getByLabel('Date').fill('1944-03-01');
+  await panel.getByLabel('Date').fill('1945-03-01');
   await panel.getByRole('button', { name: 'Find key' }).click();
   await panel.getByRole('list', { name: 'Matching keys' }).getByRole('button', { name: 'Receive with this key' }).click();
-  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1944-03, day 1 · Grundstellung [A-Z]{3}$/);
+  await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1945-03, day 1 · Grundstellung [A-Z]{3}$/);
   await runMessageKey();
   const cipher = message.split(' = ')[2].split(' ').slice(2, 4).join('');
   await typeLetters(cipher);

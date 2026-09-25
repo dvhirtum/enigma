@@ -44,7 +44,7 @@ public sealed record KeySheetSummary(
     string? Source,
     bool ReadOnly);
 
-/// <summary>A key sheet with its daily keys, and the same keys as editable text rows.</summary>
+/// <summary>A key sheet with its daily keys.</summary>
 public sealed record KeySheetDetails(
     string Id,
     string Network,
@@ -54,7 +54,6 @@ public sealed record KeySheetDetails(
     string? Source,
     bool ReadOnly,
     IReadOnlyList<DailyKeyDocument> Days,
-    string Text,
     string? KenngruppenbuchId,
     string? TauschtafelSetId);
 
@@ -76,7 +75,7 @@ public static class KeySheetMapper
         return new KeySheetDetails(
             sheet.Id, sheet.Network, sheet.Month.ToString(), sheet.Model.Name,
             ProvenanceName(sheet.Provenance), Source(sheet.Provenance), sheet.IsReadOnly,
-            [.. sheet.DailyKeys.Select(ToDocument)], KeySheetText.Format(sheet.DailyKeys),
+            [.. sheet.DailyKeys.Select(ToDocument)],
             sheet.KenngruppenbuchId, sheet.TauschtafelSetId);
     }
 

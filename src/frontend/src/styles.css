@@ -180,8 +180,7 @@ body {
 .sheet,
 .sheet-form,
 .operator,
-.operator-form,
-.viewer {
+.operator-form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -189,8 +188,7 @@ body {
 
 .key-sheets label,
 .sheet-form label,
-.operator label,
-.viewer label {
+.operator label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -199,7 +197,6 @@ body {
 }
 
 .key-sheets input,
-.key-sheets textarea,
 .operator input,
 .operator textarea {
   font: inherit;
@@ -209,11 +206,10 @@ body {
   padding: 0.25rem 0.4rem;
 }
 
-.sheet-text textarea {
-  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-  font-size: 0.8rem;
-  white-space: pre;
-  resize: vertical;
+.key-sheets .sheet-option {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .sheet-hint,
@@ -282,8 +278,7 @@ body {
   font-family: system-ui, sans-serif;
 }
 
-.operator h3,
-.viewer h3 {
+.operator h3 {
   margin: 0;
   font-size: 0.85rem;
   color: var(--muted);
@@ -388,8 +383,7 @@ body {
 .indicator-swaps,
 .pad-groups,
 .cipher,
-.radio-message,
-.viewer-grid {
+.radio-message {
   margin: 0;
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
   font-size: 0.85rem;
@@ -411,21 +405,6 @@ body {
 .cipher-next {
   outline: 2px solid var(--accent);
   font-weight: 600;
-}
-
-.viewer-table {
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.viewer-table th {
-  padding-right: 1rem;
-  text-align: left;
-  font-weight: normal;
-}
-
-.viewer-table td {
-  font-variant-numeric: tabular-nums;
 }
 
 .frame footer {

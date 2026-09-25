@@ -80,7 +80,6 @@ export const generatedSheet: KeySheet = {
     },
     { day: 2, reflector: 'B-thin', rotors: ['Beta', 'II', 'IV', 'I'], rings: [1, 1, 1, 22], plugs: ['CO'], grundstellung: null },
   ],
-  text: '1 B-thin Beta II IV I 01 01 01 22 AT BL DF QRSA\n2 B-thin Beta II IV I 01 01 01 22 CO\n',
   kenngruppenbuchId: 'book',
   tauschtafelSetId: 'tables',
 };
@@ -94,7 +93,6 @@ export const historicalSheet: KeySheet = {
   source: 'Test transcription',
   readOnly: true,
   days: [{ day: 26, reflector: 'B', rotors: ['III', 'VI', 'VIII'], rings: [1, 8, 13], plugs: ['AN', 'EZ'], grundstellung: null }],
-  text: '26 B III VI VIII 01 08 13 AN EZ\n',
 };
 
 /** The export of the generated sheet as the backend returns it, with its id and provenance cleared. */
@@ -145,16 +143,13 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     keySheets: {
       list: vi.fn().mockResolvedValue({ ok: true, value: [summaryOf(generatedSheet)] }),
       get: sheet(),
-      create: sheet(),
-      update: sheet(),
       remove: vi.fn().mockResolvedValue({ ok: true, value: null }),
-      generate: sheet(),
+      generate: vi.fn().mockResolvedValue({ ok: true, value: [summaryOf(generatedSheet)] }),
       import: sheet(),
       export: vi.fn().mockResolvedValue({ ok: true, value: exportedFile }),
     },
     procedure: {
       getBook: vi.fn().mockResolvedValue({ ok: true, value: fakeBook }),
-      getTables: vi.fn().mockResolvedValue({ ok: true, value: fakeTables }),
       findReceivingKeys: vi.fn().mockResolvedValue({ ok: true, value: [] }),
     },
     clipboard: {
@@ -164,6 +159,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       openKeySheet: vi.fn().mockResolvedValue(null),
       saveKeySheet: vi.fn().mockResolvedValue(null),
       printKeySheet: vi.fn().mockResolvedValue(null),
+      printToFolder: vi.fn().mockResolvedValue(null),
     },
     backend: {
       status: vi.fn().mockResolvedValue(status),

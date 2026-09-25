@@ -6,8 +6,6 @@ using Enigma.Infrastructure.Procedure;
 
 namespace Enigma.Api;
 
-internal sealed record KeySheetRequest(string Network, string Month, string Text);
-
 internal sealed record DailyKeyRequest(string SheetId, int Day);
 
 internal static class KeySheetEndpoints
@@ -35,10 +33,8 @@ internal static class KeySheetEndpoints
             .AddSingleton<GetTauschtafelSetHandler>()
             .AddSingleton<ListKeySheetsHandler>()
             .AddSingleton<GetKeySheetHandler>()
-            .AddSingleton<CreateKeySheetHandler>()
-            .AddSingleton<UpdateKeySheetHandler>()
             .AddSingleton<DeleteKeySheetHandler>()
-            .AddSingleton<GenerateKeySheetHandler>()
+            .AddSingleton<GenerateKeySheetsHandler>()
             .AddSingleton<ImportKeySheetHandler>()
             .AddSingleton<ExportKeySheetHandler>()
             .AddSingleton<ApplyDailyKeyHandler>();
@@ -54,19 +50,13 @@ internal static class KeySheetEndpoints
         sheets.MapGet("/{id}", (string id, GetKeySheetHandler handler) =>
             handler.Handle(new GetKeySheet(id)));
 
-        sheets.MapPost("/", (KeySheetRequest request, CreateKeySheetHandler handler) =>
-            handler.Handle(new CreateKeySheet(request.Network, request.Month, request.Text)));
-
-        sheets.MapPut("/{id}", (string id, KeySheetRequest request, UpdateKeySheetHandler handler) =>
-            handler.Handle(new UpdateKeySheet(id, request.Network, request.Month, request.Text)));
-
         sheets.MapDelete("/{id}", (string id, DeleteKeySheetHandler handler) =>
         {
             handler.Handle(new DeleteKeySheet(id));
             return Results.NoContent();
         });
 
-        sheets.MapPost("/generate", (GenerateKeySheet command, GenerateKeySheetHandler handler) =>
+        sheets.MapPost("/generate", (GenerateKeySheets command, GenerateKeySheetsHandler handler) =>
             handler.Handle(command));
 
         sheets.MapPost("/import", (KeySheetDocument document, ImportKeySheetHandler handler) =>

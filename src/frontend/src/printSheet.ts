@@ -57,18 +57,15 @@ function keyTable(file: KeySheetFile, model: string): string {
 </section>`;
 }
 
-function allotments(book: Kenngruppenbuch, network: string): string {
-  const rows = [
-    { name: 'Verfahrenkenngruppen', ...book.verfahrenkenngruppen, own: false },
-    ...book.allotments.map((a) => ({ name: a.network, first: a.first, last: a.last, own: a.network === network })),
-  ];
+function allotments(book: Kenngruppenbuch): string {
+  const rows = [{ name: 'Verfahrenkenngruppen', ...book.verfahrenkenngruppen }, ...book.allotments.map((a) => ({ name: a.network, first: a.first, last: a.last }))];
   return `<section class="page">
   ${heading(1, 'Kenngruppenbuch')}
   <p class="lead">Ausgabe ${escape(book.created.slice(0, 10))}</p>
   ${heading(2, 'Zuteilungsliste')}
   <table class="allot">
     <thead><tr><th>Verwendung</th><th>Spalten</th></tr></thead>
-    <tbody>${rows.map((r) => `<tr${r.own ? ' class="own"' : ''}><td>${escape(r.name)}</td><td>${r.first}–${r.last}</td></tr>`).join('')}</tbody>
+    <tbody>${rows.map((r) => `<tr><td>${escape(r.name)}</td><td>${r.first}–${r.last}</td></tr>`).join('')}</tbody>
   </table>
   <p class="note">Teil A, die Spaltentafel, gibt die Kenngruppen jeder Spalte. Teil B, die Suchtafel, gibt zu jeder Kenngruppe ihre Spalte:
   im Block des ersten Buchstabens, in der Zeile des zweiten und der Spalte des dritten.</p>
@@ -117,11 +114,10 @@ function searchTables(book: Kenngruppenbuch): string {
   return `<section class="page">${heading(2, 'Teil B · Suchtafel')}${blocks.join('')}</section>`;
 }
 
-function calendar(tables: TauschtafelSet, month: string): string {
-  const own = month.startsWith(String(tables.year)) ? Number(month.slice(5, 7)) - 1 : -1;
+function calendar(tables: TauschtafelSet): string {
   const rows = months.map((name, m) => {
     const cells = [tables.calendar[m * 2], tables.calendar[m * 2 + 1]].map((n) => `<td>${n ?? ''}</td>`).join('');
-    return `<tr${m === own ? ' class="own"' : ''}><td>${name}</td>${cells}</tr>`;
+    return `<tr><td>${name}</td>${cells}</tr>`;
   });
   return `<section class="page">
   ${heading(1, `Doppelbuchstabentauschtafeln ${tables.year}`)}
@@ -191,8 +187,6 @@ th { font-weight: bold; text-align: left; }
 .keys td { padding: 1.05mm 2mm; border-bottom: 0.2mm dotted var(--faint); white-space: nowrap; }
 .allot { font-size: 10pt; min-width: 110mm; }
 .allot th, .allot td { padding: 0.8mm 4mm 0.8mm 0; border-bottom: 0.2mm dotted var(--faint); }
-.own td { font-weight: bold; }
-.own td:first-child::after { content: '  <==='; }
 .band { break-inside: avoid; margin-bottom: 6mm; }
 .band-title { margin: 0 0 1mm; font-weight: bold; }
 .grid { width: 100%; table-layout: fixed; font-size: 8pt; line-height: 1.2; }
@@ -207,25 +201,13 @@ th { font-weight: bold; text-align: left; }
 .swaps th { font-size: 8.5pt; }
 `;
 
-/**
- * The printable key sheet: the Schlüsseltafel with the last day first, the Kenngruppenbuch with its Spaltentafel and
- * Suchtafel, and the Doppelbuchstabentauschtafeln with their calendar. Text looks typed on a period typewriter.
- */
-export function keySheetDocument(file: KeySheetFile, model: string): string {
-  const parts = [keyTable(file, model)];
-  if (file.kenngruppenbuch) {
-    parts.push(allotments(file.kenngruppenbuch, file.network), columnTables(file.kenngruppenbuch), searchTables(file.kenngruppenbuch));
-  }
-  if (file.tauschtafeln) {
-    const tables = file.tauschtafeln;
-    parts.push(calendar(tables, file.month), ...[...tables.tables].sort((a, b) => a.number - b.number).map((table) => swapTable(tables, table)));
-  }
+function page(title: string, parts: string[]): string {
   return `<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:">
-<title>${escape(`${file.network} ${file.month}`)}</title>
+<title>${escape(title)}</title>
 <style>${styles}</style>
 </head>
 <body>
@@ -233,4 +215,30 @@ ${parts.join('\n')}
 </body>
 </html>
 `;
+}
+
+/** The printable Schlüsseltafel, with the last day first. Text looks typed on a period typewriter. */
+export function keySheetDocument(file: KeySheetFile, model: string): string {
+  return page(`${file.network} ${file.month}`, [keyTable(file, model)]);
+}
+
+/**
+ * The printable Kenngruppenbuch with its Spaltentafel and Suchtafel, and the Doppelbuchstabentauschtafeln with their
+ * calendar. Null when the file has neither.
+ */
+export function procedureDocument(file: KeySheetFile): string | null {
+  const parts: string[] = [];
+  if (file.kenngruppenbuch) {
+    parts.push(allotments(file.kenngruppenbuch), columnTables(file.kenngruppenbuch), searchTables(file.kenngruppenbuch));
+  }
+  if (file.tauschtafeln) {
+    const tables = file.tauschtafeln;
+    parts.push(calendar(tables), ...[...tables.tables].sort((a, b) => a.number - b.number).map((table) => swapTable(tables, table)));
+  }
+  return parts.length > 0 ? page(procedureName(file), parts) : null;
+}
+
+/** The name of the procedure document, such as Kenngruppenbuch-Tauschtafeln-1944. */
+export function procedureName(file: KeySheetFile): string {
+  return `Kenngruppenbuch-Tauschtafeln-${file.tauschtafeln?.year ?? file.month.slice(0, 4)}`;
 }

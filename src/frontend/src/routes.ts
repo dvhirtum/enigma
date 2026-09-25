@@ -42,17 +42,14 @@ export const machineRoutes: Routes<MachineApi> = {
 
 export const procedureRoutes: Routes<ProcedureApi> = {
   getBook: (id) => ({ method: 'GET', path: `/api/kenngruppenbuecher/${segment(id)}` }),
-  getTables: (id) => ({ method: 'GET', path: `/api/tauschtafeln/${segment(id)}` }),
   findReceivingKeys: (message, date) => ({ method: 'POST', path: `${operator}/receiving-keys`, body: { message, date } }),
 };
 
 export const keySheetRoutes: Routes<KeySheetApi> = {
   list: () => ({ method: 'GET', path: keySheets }),
   get: (id) => ({ method: 'GET', path: `${keySheets}/${segment(id)}` }),
-  create: (network, month, text) => ({ method: 'POST', path: keySheets, body: { network, month, text } }),
-  update: (id, network, month, text) => ({ method: 'PUT', path: `${keySheets}/${segment(id)}`, body: { network, month, text } }),
   remove: (id) => ({ method: 'DELETE', path: `${keySheets}/${segment(id)}` }),
-  generate: (model, network, month) => ({ method: 'POST', path: `${keySheets}/generate`, body: { model, network, month } }),
+  generate: (model, year) => ({ method: 'POST', path: `${keySheets}/generate`, body: { model, year } }),
   import: (file) => ({ method: 'POST', path: `${keySheets}/import`, body: file }),
   export: (id) => ({ method: 'GET', path: `${keySheets}/${segment(id)}/export` }),
 };

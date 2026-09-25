@@ -6,39 +6,61 @@ A key sheet (Schlüsseltafel) holds one month of daily keys for one network. Ope
 
 ## Getting a sheet
 
-- **Generate** creates a full month for a model, network and month. The rotor order, reflector and rings change every other day; the plugs (10 pairs) and the Grundstellung change daily.
-- **New** writes a sheet by hand, one row per day:
-
-  ```
-  1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX QRSA
-  ```
-
-  The columns are: day, reflector, rotors (Greek rotor first on the M4), rings (01–26), plugs and Grundstellung (3 letters on the M3, 4 on the M4). An error names the line to fix.
-- **Import** reads a key sheet file (JSON), such as one saved with **Export**.
+- **Generate** creates a whole year for a model: one sheet per month for each network of the Kenngruppenbuch (Aegir, Hydra, Medusa, Neptun, Niobe, Sleipnir, Süd, Thetis, Tibet and Triton). The rotor order, reflector and rings change every other day; the plugs (10 pairs) and the Grundstellung change daily. A year can be generated once per model; delete its generated sheets to generate it again.
+- **Import** reads a key sheet file (JSON), such as one saved with **Export**. To make your own sheet, edit an exported file and import it.
 
 Each sheet is linked to a Kenngruppenbuch and a set of Tauschtafeln, which [operator mode](operator-mode.md) uses. A network gets its own columns in the Kenngruppenbuch the first time it is used.
 
 ## Working with a sheet
 
-Choose a sheet from the list to see its days.
+Choose a **Month**, then a **Key sheet** of that month, to see its days. The month list holds only months with sheets, grouped by year with the newest year first and named like "June 1944"; it starts at the current month when that has sheets. The sheet list groups the month's sheets by machine (M3, M4), with historical sheets first.
 
-- **Apply** sets up the machine with that day's key and all rotors at A. For a sheet of the other model the application asks first, as the machine is replaced. The applied day is marked; "Applied, since modified" means the setup has changed since.
-- **Edit** changes the rows, **Export** saves the sheet as a file and **Delete** removes it. Historical sheets are read-only.
-- **Kenngruppenbuch** shows the Zuteilungsliste (which columns belong to which network) and the columns.
-- **Tauschtafeln** shows the bigram table in force on a chosen day. Each half month uses a different table.
-- **Print to PDF** saves the sheet as a PDF, typed as on a period typewriter, for working the procedure on paper. See below.
+- **Apply** sets up the machine with that day's key and all rotors at A. For a sheet of the other model the application asks first, as the machine is replaced. The applied day is marked; "Applied, since modified" means the setup has changed since. To set up the machine yourself instead, see [Setting up the machine by hand](#setting-up-the-machine-by-hand).
+- **Export** saves the sheet as a file and **Delete** removes it. Historical sheets are read-only.
+- **Print to PDF** saves the sheet, and optionally the Kenngruppenbuch and Tauschtafeln, as PDFs typed as on a period typewriter. See below.
+
+## Setting up the machine by hand
+
+Operators set up the machine from the key sheet themselves each day. You can do the same instead of clicking **Apply**. Take the day's row from the panel or the printed Schlüsseltafel, whose columns are:
+
+| Column | Meaning | Example (M4) |
+|---|---|---|
+| Umkehrwalze | Reflector | B dünn (B-thin) |
+| Walzenlage | Rotors, left to right; on the M4 the Greek rotor first | Beta V VI VIII |
+| Ringstellung | Ring of each rotor, left to right, 01–26 | 13 02 20 05 |
+| Steckerverbindungen | Plug pairs | AE BF CM DQ HU IN JX KR LS OY |
+| Grundstellung | Start position for the indicator, one letter per rotor | KDRW |
+
+Set up the machine in this order:
+
+1. **Model.** If the sheet is for the other model, choose it under **Model** in the header. A row with four rotors and a thin reflector is for the M4, three rotors for the M3.
+2. **Rotors out.** In the [open-lid view](machine.md#open-lid), click each rotor in the machine to put it back in the box. Rings can only be set outside the machine.
+3. **Rings.** In the box, turn each rotor of the Walzenlage to its Ringstellung with the mouse wheel or Arrow Up/Down. The box shows the ring as a number and a letter: `13 (M)` is ring 13, the letter M. The Greek rotor has a ring too.
+4. **Rotors in.** Click a rotor in the box, then its slot, from left to right. On the M4, Beta or Gamma goes in the Greek slot at the left.
+5. **Reflector.** If the Umkehrwalze differs, click the spare reflector in the reflector box.
+6. **Plugs.** In the [plugboard view](machine.md#plugboard), remove any cables not on the sheet and connect each pair.
+7. **Check.** The header shows the model, reflector and rotors. The list below the plugboard shows the cables. The rings show in the open-lid view.
+
+The rotor positions are not part of the setup: the [indicator procedure](sending-by-hand.md) turns them to the Grundstellung and then to the message key. The **Key** label in the header only follows keys set up with **Apply**. If you applied a key earlier, it now says "(modified)"; switching the model clears it.
 
 ## Printing a sheet
 
-**Print to PDF** asks where to save the PDF (about 40 A4 pages) and writes it with German headings, as on the originals:
+**Print to PDF** writes the sheet with German headings, as on the originals. With **Also print the Kenngruppenbuch and Tauschtafeln** ticked, it asks for a folder and writes two PDFs there:
+
+- `<network>-<month>.pdf`, such as `Triton-1944-06.pdf`: the key sheet.
+- `Kenngruppenbuch-Tauschtafeln-<year>.pdf` (about 40 A4 pages): the Kenngruppenbuch and the Tauschtafeln. They are the same for every network and month of the year, so one copy serves all your sheets.
+
+If the folder already has files with these names, it asks before replacing them.
+
+Untick the box when you already have the Kenngruppenbuch and Tauschtafeln; it then asks where to save the key sheet only. The documents hold:
 
 1. **Schlüsseltafel**: the daily keys, with the last day at the top, as on the real sheets. Operators cut off and destroyed the days they had used.
-2. **Kenngruppenbuch**: the Zuteilungsliste, with your network marked `<===`, then two parts:
+2. **Kenngruppenbuch**: the Zuteilungsliste, then two parts:
    - **Teil A, Spaltentafel**: all 676 columns, in bands of 20. Each band is labelled with its use, so your network's columns are one band. Pick the Schlüsselkenngruppe there, and the Verfahrenkenngruppe from the bands for columns 1–100.
    - **Teil B, Suchtafel**: the column number of every trigram, so the receiver can find out which network a Schlüsselkenngruppe belongs to. See "Using the Suchtafel" below.
-3. **Doppelbuchstabentauschtafeln**: the calendar of which table applies to each half month (your month is marked), then the 9 tables. To swap a pair such as `SW`, find row `S`, column `W`: the cell holds its partner. The tables work both ways.
+3. **Doppelbuchstabentauschtafeln**: the calendar of which table applies to each half month, then the 9 tables. To swap a pair such as `SW`, find row `S`, column `W`: the cell holds its partner. The tables work both ways.
 
-With the PDF and the machine, you can [send](sending-by-hand.md) and [receive](receiving-by-hand.md) by hand without the viewers in the panel.
+To [send](sending-by-hand.md) or [receive](receiving-by-hand.md) by hand, you need the Kenngruppenbuch and the Tauschtafeln from these PDFs. The application does not show them on screen.
 
 ### Using the Suchtafel
 
@@ -70,6 +92,6 @@ Check the Verfahrenkenngruppe the same way. Its column number must be 100 or low
 
 ## Sharing a sheet
 
-To exchange messages with someone who has the application on another computer, **Export** a sheet and give them the file. They **Import** it. The file holds the daily keys, the Kenngruppenbuch and the Tauschtafeln, so both of you use the same key, Kenngruppen and bigram tables. Messages sent by one can then be received by the other, in operator mode or [by hand](receiving-by-hand.md).
+To exchange messages with someone who has the application on another computer, **Export** a sheet and give them the file (compact JSON, without whitespace). They **Import** it. The file holds the daily keys, the Kenngruppenbuch and the Tauschtafeln, so both of you use the same key, Kenngruppen and bigram tables. Messages sent by one can then be received by the other, in operator mode or [by hand](receiving-by-hand.md).
 
 Share further sheets the same way. When the Kenngruppenbuch is already there, importing adds the networks it lacks. The import is rejected if the file's Kenngruppenbuch or Tauschtafeln clash with the ones on the computer, for example when both sides gave the same columns to different networks. To avoid that, let one person create the sheets for everyone.

@@ -103,10 +103,9 @@ export interface KeySheetSummary {
   readOnly: boolean;
 }
 
-/** A key sheet with its daily keys, and the same keys as text rows for the editor. */
+/** A key sheet with its daily keys. */
 export interface KeySheet extends KeySheetSummary {
   days: DailyKey[];
-  text: string;
   kenngruppenbuchId: string | null;
   tauschtafelSetId: string | null;
 }
@@ -164,10 +163,9 @@ type Call<Args extends unknown[], T> = (...args: Args) => Promise<ApiResult<T>>;
 export interface KeySheetApi {
   list: Call<[], KeySheetSummary[]>;
   get: Call<[id: string], KeySheet>;
-  create: Call<[network: string, month: string, text: string], KeySheet>;
-  update: Call<[id: string, network: string, month: string, text: string], KeySheet>;
   remove: Call<[id: string], null>;
-  generate: Call<[model: string, network: string, month: string], KeySheet>;
+  /** Generates every month of the year for every network of the Kenngruppenbuch. */
+  generate: Call<[model: string, year: number], KeySheetSummary[]>;
   import: Call<[file: KeySheetFile], KeySheet>;
   export: Call<[id: string], KeySheetFile>;
 }
@@ -184,9 +182,14 @@ export interface ReceivingKey {
 
 export interface ProcedureApi {
   getBook: Call<[id: string], Kenngruppenbuch>;
-  getTables: Call<[id: string], TauschtafelSet>;
   /** Thu Sep 24 21:20:27 WEDT 2026 is yyyy-MM-dd. */
   findReceivingKeys: Call<[message: string, date: string], ReceivingKey[]>;
+}
+
+/** An HTML document to print to the PDF file `name`. */
+export interface PrintDocument {
+  name: string;
+  html: string;
 }
 
 /** Native file dialogs. Each resolves to null when the user cancels. */
@@ -197,6 +200,8 @@ export interface FilesApi {
   saveKeySheet: (name: string, content: string) => Promise<string | null>;
   /** Prints the HTML document to a PDF file; returns the path it was saved to. */
   printKeySheet: (name: string, html: string) => Promise<string | null>;
+  /** Prints each HTML document to a PDF file with its name in a folder the user picks; returns the folder. */
+  printToFolder: (documents: PrintDocument[]) => Promise<string | null>;
 }
 
 /** The system clipboard, written by the main process. */
