@@ -49,8 +49,24 @@ public sealed class KeySheetLinkerTests
 
         // Assert
         Assert.Equal("newer", sheet.KenngruppenbuchId);
-        Assert.True(newer.Covers("Seehund"));
-        Assert.False(older.Covers("Seehund"));
+        Assert.True(books.Books["newer"].Covers("Seehund"));
+        Assert.False(books.Books["older"].Covers("Seehund"));
+    }
+
+    [Fact]
+    public void Should_leave_a_book_handed_out_earlier_unchanged_When_a_new_network_gets_columns()
+    {
+        // Arrange
+        var books = new FakeKenngruppenbuchRepository(Book("b", new DateTimeOffset(1944, 1, 1, 0, 0, 0, TimeSpan.Zero), "Triton"));
+        var linker = Linking.For(new FakeKeySheetRepository(), books);
+        var handedOut = linker.Book("b");
+
+        // Act
+        linker.Link(Sheet("s", "Seehund"));
+
+        // Assert
+        Assert.False(handedOut.Covers("Seehund"));
+        Assert.True(linker.Book("b").Covers("Seehund"));
     }
 
     [Fact]

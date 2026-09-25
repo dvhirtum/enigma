@@ -8,7 +8,8 @@ namespace Enigma.Application.Procedure;
 /// Links key sheets to a Kenngruppenbuch and a Tauschtafel set. A sheet keeps a linked book that covers its network;
 /// otherwise it gets the newest book, which allots columns to a new network. When no book has free columns, or none
 /// exists, a new one is generated. The Tauschtafel set is the one for the sheet's year, generated when missing.
-/// Days without a Grundstellung get a random one.
+/// Days without a Grundstellung get a random one. Linking and importing run one at a time, and a stored book is
+/// replaced by a changed copy, never changed in place.
 /// </summary>
 public sealed class KeySheetLinker(
     IKeySheetRepository sheets,
@@ -17,6 +18,8 @@ public sealed class KeySheetLinker(
     Random random,
     TimeProvider time)
 {
+    private readonly Lock _lock = new();
+
     /// <summary>
     /// Links <paramref name="sheet"/> and fills missing Grundstellungen, without saving it. Returns true when it changed.
     /// </summary>
@@ -24,16 +27,19 @@ public sealed class KeySheetLinker(
     {
         ArgumentNullException.ThrowIfNull(sheet);
 
-        var filled = sheet.FillMissingGrundstellungen(random);
-        var book = BookFor(sheet);
-        var set = SetFor(sheet);
-        if (sheet.KenngruppenbuchId == book.Id && sheet.TauschtafelSetId == set.Id)
+        lock (_lock)
         {
-            return filled;
-        }
+            var filled = sheet.FillMissingGrundstellungen(random);
+            var book = BookFor(sheet);
+            var set = SetFor(sheet);
+            if (sheet.KenngruppenbuchId == book.Id && sheet.TauschtafelSetId == set.Id)
+            {
+                return filled;
+            }
 
-        sheet.Link(book.Id, set.Id);
-        return true;
+            sheet.Link(book.Id, set.Id);
+            return true;
+        }
     }
 
     /// <summary>Loads a sheet, linking and completing it (and storing that) first if needed.</summary>
@@ -67,28 +73,31 @@ public sealed class KeySheetLinker(
     /// </summary>
     public void Import(Kenngruppenbuch? book, TauschtafelSet? set)
     {
-        var existingSet = set is null ? null : tables.Find(set.Id);
-        if (set is not null && existingSet is not null && !existingSet.IsSameAs(set))
+        lock (_lock)
         {
-            throw new DomainException($"The Tauschtafel set {set.Id} differs from the one with the same id here.");
-        }
-
-        if (book is not null)
-        {
-            var existingBook = books.Find(book.Id);
-            if (existingBook is null)
+            var existingSet = set is null ? null : tables.Find(set.Id);
+            if (set is not null && existingSet is not null && !existingSet.IsSameAs(set))
             {
-                books.Save(book);
+                throw new DomainException($"The Tauschtafel set {set.Id} differs from the one with the same id here.");
             }
-            else if (existingBook.Merge(book))
-            {
-                books.Save(existingBook);
-            }
-        }
 
-        if (set is not null && existingSet is null)
-        {
-            tables.Save(set);
+            if (book is not null)
+            {
+                var existingBook = books.Find(book.Id);
+                if (existingBook is null)
+                {
+                    books.Save(book);
+                }
+                else if (Copy(existingBook) is var merged && merged.Merge(book))
+                {
+                    books.Save(merged);
+                }
+            }
+
+            if (set is not null && existingSet is null)
+            {
+                tables.Save(set);
+            }
         }
     }
 
@@ -114,9 +123,10 @@ public sealed class KeySheetLinker(
 
         if (newest is not null && newest.HasFreeColumns)
         {
-            newest.Allot(sheet.Network);
-            books.Save(newest);
-            return newest;
+            var allotted = Copy(newest);
+            allotted.Allot(sheet.Network);
+            books.Save(allotted);
+            return allotted;
         }
 
         var book = Kenngruppenbuch.Generate(NewId(), time.GetUtcNow(), [.. Kenngruppenbuch.HistoricalNetworks, sheet.Network], random);
@@ -143,6 +153,8 @@ public sealed class KeySheetLinker(
         tables.Save(set);
         return set;
     }
+
+    private static Kenngruppenbuch Copy(Kenngruppenbuch book) => ProcedureMapper.FromDocument(ProcedureMapper.ToDocument(book));
 
     private static string NewId() => Guid.NewGuid().ToString("N");
 }

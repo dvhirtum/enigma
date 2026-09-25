@@ -60,7 +60,7 @@ export function registerFiles(): void {
       throw new Error('Invalid key sheet print.');
     }
     const window = windowOf(event);
-    const options = { title: 'Print key sheet to PDF', defaultPath: name.replace(/[^w.-]+/g, '-'), filters: pdfFilters };
+    const options = { title: 'Print key sheet to PDF', defaultPath: name.replace(/[^\w.-]+/g, '-'), filters: pdfFilters };
     const result = window ? await dialog.showSaveDialog(window, options) : await dialog.showSaveDialog(options);
     if (result.canceled || !result.filePath) {
       return null;

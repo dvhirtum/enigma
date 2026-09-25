@@ -24,6 +24,18 @@ describe('key sheet store', () => {
     expect(api.keySheets.list).toHaveBeenCalled();
   });
 
+  it('reloads a Kenngruppenbuch after a sheet is generated, since the book may have allotted columns to it', async () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+    await store.getState().loadBook(fakeBook.id);
+
+    await store.getState().generateKeySheet('M4', 'Seehund', '1944-06');
+    await store.getState().loadBook(fakeBook.id);
+
+    expect(store.getState().books[fakeBook.id]).toEqual(fakeBook);
+    expect(api.procedure.getBook).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps the open sheet and records the problem when a save is rejected', async () => {
     const { api } = createFakeApi();
     const problem = { status: 400, title: 'The operation was rejected.', detail: "Line 1: Unknown rotor 'IX'." };

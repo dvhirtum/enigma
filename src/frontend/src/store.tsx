@@ -39,7 +39,7 @@ export interface KeySheetSlice {
   printKeySheet: () => Promise<boolean>;
 }
 
-/** Kenngruppenbücher and Tauschtafel sets by id, loaded once when first needed. */
+/** Kenngruppenbücher and Tauschtafel sets by id, loaded when first needed. Books are cleared after a sheet is created, updated, generated or imported. */
 export interface ProcedureSlice {
   books: Record<string, Kenngruppenbuch>;
   tables: Record<string, TauschtafelSet>;
@@ -103,7 +103,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       if (!result.ok) {
         return false;
       }
-      set({ keySheet: result.value });
+      set({ keySheet: result.value, books: {} });
       await loadKeySheets();
       return true;
     };

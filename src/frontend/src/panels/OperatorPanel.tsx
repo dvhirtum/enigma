@@ -91,7 +91,7 @@ function ChooseGroups({ operator }: { operator: OperatorState }) {
 
   useEffect(() => {
     void loadBook(operator.kenngruppenbuchId);
-  }, [loadBook, operator.kenngruppenbuchId]);
+  }, [loadBook, operator.kenngruppenbuchId, book]);
 
   const allotment = book?.allotments.find((a) => a.network.toLowerCase() === operator.network.toLowerCase());
   if (!book || !allotment) {

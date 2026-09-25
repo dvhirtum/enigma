@@ -10,7 +10,7 @@ function BookView({ id }: { id: string }) {
 
   useEffect(() => {
     void loadBook(id);
-  }, [loadBook, id]);
+  }, [loadBook, id, book]);
 
   if (!book) {
     return <p role="status">Opening the Kenngruppenbuch...</p>;
