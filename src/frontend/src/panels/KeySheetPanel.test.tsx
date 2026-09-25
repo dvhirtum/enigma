@@ -103,8 +103,8 @@ describe('KeySheetPanel', () => {
       [...screen.getByRole('combobox', { name }).querySelectorAll('optgroup')].map((group) => [group.label, [...group.querySelectorAll('option')].map((option) => option.textContent)]);
 
     expect(groupsOf('Month')).toEqual([
-      ['1944', ['June', 'July']],
-      ['1943', ['December']],
+      ['1944', ['June 1944', 'July 1944']],
+      ['1943', ['December 1943']],
     ]);
     expect(groupsOf('Key sheet')).toEqual([['M4', ['Triton (generated)']]]);
     fireEvent.change(month, { target: { value: '1944-06' } });

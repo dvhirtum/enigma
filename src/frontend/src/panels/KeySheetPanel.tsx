@@ -20,7 +20,7 @@ function currentMonth(): string {
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const monthName = (month: string) => monthNames[Number(month.slice(5, 7)) - 1];
+const monthName = (month: string) => `${monthNames[Number(month.slice(5, 7)) - 1]} ${month.slice(0, 4)}`;
 
 function sheetLabel(sheet: KeySheetSummary): string {
   return `${sheet.network} (${provenanceLabels[sheet.provenance] ?? sheet.provenance})`;
