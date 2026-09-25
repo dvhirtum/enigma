@@ -29,16 +29,13 @@ const api: EnigmaApi = {
   keySheets: {
     list: () => invoke('keySheets:list'),
     get: (id) => invoke('keySheets:get', id),
-    create: (network, month, text) => invoke('keySheets:create', network, month, text),
-    update: (id, network, month, text) => invoke('keySheets:update', id, network, month, text),
     remove: (id) => invoke('keySheets:remove', id),
-    generate: (model, network, month) => invoke('keySheets:generate', model, network, month),
+    generate: (model, year) => invoke('keySheets:generate', model, year),
     import: (file) => invoke('keySheets:import', file),
     export: (id) => invoke('keySheets:export', id),
   },
   procedure: {
     getBook: (id) => invoke('procedure:getBook', id),
-    getTables: (id) => invoke('procedure:getTables', id),
     findReceivingKeys: (message, date) => invoke('procedure:findReceivingKeys', message, date),
   },
   clipboard: {
@@ -48,6 +45,7 @@ const api: EnigmaApi = {
     openKeySheet: () => invoke('files:openKeySheet'),
     saveKeySheet: (name, content) => invoke('files:saveKeySheet', name, content),
     printKeySheet: (name, html) => invoke('files:printKeySheet', name, html),
+    printToFolder: (documents) => invoke('files:printToFolder', documents),
   },
   backend: {
     status: () => invoke('backend:status'),

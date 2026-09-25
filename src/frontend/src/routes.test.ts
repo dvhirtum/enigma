@@ -42,10 +42,8 @@ describe('key sheet routes', () => {
   it.each([
     ['list', keySheetRoutes.list(), 'GET', '/api/keysheets', undefined],
     ['get', keySheetRoutes.get('g1'), 'GET', '/api/keysheets/g1', undefined],
-    ['create', keySheetRoutes.create('Triton', '1944-06', '1 B I II III'), 'POST', '/api/keysheets', { network: 'Triton', month: '1944-06', text: '1 B I II III' }],
-    ['update', keySheetRoutes.update('g1', 'Triton', '1944-06', ''), 'PUT', '/api/keysheets/g1', { network: 'Triton', month: '1944-06', text: '' }],
     ['remove', keySheetRoutes.remove('g1'), 'DELETE', '/api/keysheets/g1', undefined],
-    ['generate', keySheetRoutes.generate('M4', 'Triton', '1944-06'), 'POST', '/api/keysheets/generate', { model: 'M4', network: 'Triton', month: '1944-06' }],
+    ['generate', keySheetRoutes.generate('M4', 1944), 'POST', '/api/keysheets/generate', { model: 'M4', year: 1944 }],
     ['import', keySheetRoutes.import(file), 'POST', '/api/keysheets/import', file],
     ['export', keySheetRoutes.export('g1'), 'GET', '/api/keysheets/g1/export', undefined],
   ])('maps %s to its endpoint', (_name, route, method, path, body) => {
@@ -58,9 +56,8 @@ describe('key sheet routes', () => {
 });
 
 describe('procedure routes', () => {
-  it('maps the book and tables to their endpoints', () => {
+  it('maps the book and the receiving keys to their endpoints', () => {
     expect(procedureRoutes.getBook('b/1')).toEqual({ method: 'GET', path: '/api/kenngruppenbuecher/b%2F1' });
-    expect(procedureRoutes.getTables('t1')).toEqual({ method: 'GET', path: '/api/tauschtafeln/t1' });
     expect(procedureRoutes.findReceivingKeys('QWER', '1944-06-19')).toEqual({
       method: 'POST',
       path: '/api/operator/receiving-keys',

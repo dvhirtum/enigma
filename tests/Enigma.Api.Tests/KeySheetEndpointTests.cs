@@ -11,8 +11,6 @@ namespace Enigma.Api.Tests;
 
 public sealed class KeySheetEndpointTests : IDisposable
 {
-    private const string U264Row = "19 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX VJNA\n";
-
     private const string HistoricalJson = """
         {
           "network": "Hydra",
@@ -69,44 +67,42 @@ public sealed class KeySheetEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task Should_keep_created_sheets_in_the_user_folder_When_the_api_restarts()
+    public async Task Should_keep_imported_sheets_in_the_user_folder_When_the_api_restarts()
     {
         // Arrange
-        var created = await SendAsync<KeySheetDetails>(
-            CreateClient(), HttpMethod.Post, "/api/keysheets", new { network = "Triton", month = "1942-11", text = U264Row });
+        var imported = await SendAsync<KeySheetDetails>(
+            CreateClient(), HttpMethod.Post, "/api/keysheets/import", JsonSerializer.Deserialize<JsonElement>(HistoricalJson));
 
         // Act
-        var reloaded = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url($"/api/keysheets/{created.Id}"), Token);
+        var reloaded = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url($"/api/keysheets/{imported.Id}"), Token);
 
         // Assert
-        Assert.True(File.Exists(Path.Combine(UserPath, created.Id + ".json")));
-        Assert.Equal("Triton", reloaded!.Network);
-        Assert.Equal(U264Row, reloaded.Text);
+        Assert.True(File.Exists(Path.Combine(UserPath, imported.Id + ".json")));
+        Assert.Equal("Hydra", reloaded!.Network);
+        Assert.Equal([26], reloaded.Days.Select(d => d.Day));
     }
 
     [Fact]
-    public async Task Should_update_generate_import_and_delete_sheets_When_each_endpoint_is_called()
+    public async Task Should_generate_import_and_delete_sheets_When_each_endpoint_is_called()
     {
         // Arrange
         var client = CreateClient();
-        var generated = await SendAsync<KeySheetDetails>(
-            client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M4", network = "Triton", month = "1944-06" });
         var imported = await SendAsync<KeySheetDetails>(
             client, HttpMethod.Post, "/api/keysheets/import", JsonSerializer.Deserialize<JsonElement>(HistoricalJson));
 
         // Act
-        var updated = await SendAsync<KeySheetDetails>(
-            client, HttpMethod.Put, $"/api/keysheets/{generated.Id}", new { network = "Shark", month = "1942-11", text = U264Row });
+        var generated = await SendAsync<List<KeySheetSummary>>(
+            client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M4", year = 1944 });
         using var deleted = await client.DeleteAsync(Url($"/api/keysheets/{imported.Id}"), Token);
         var sheets = await client.GetFromJsonAsync<List<KeySheetSummary>>(Url("/api/keysheets"), Token);
 
         // Assert
-        Assert.Equal(30, generated.Days.Count);
+        Assert.Equal(120, generated.Count);
+        Assert.All(generated, s => Assert.Equal("Generated", s.Provenance));
         Assert.Equal("UserDefined", imported.Provenance);
-        Assert.Equal("Shark", updated.Network);
-        Assert.Equal("Generated", updated.Provenance);
         Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
-        Assert.Equal(["historical-hydra-1943-12", generated.Id], sheets!.Select(s => s.Id));
+        Assert.Equal("historical-hydra-1943-12", sheets![0].Id);
+        Assert.Equal(generated.Select(s => s.Id).Order(), sheets.Skip(1).Select(s => s.Id).Order());
     }
 
     [Fact]
@@ -147,20 +143,20 @@ public sealed class KeySheetEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task Should_return_problem_details_naming_the_line_When_the_text_is_invalid()
+    public async Task Should_return_problem_details_When_the_year_is_generated_again()
     {
         // Arrange
         var client = CreateClient();
+        await SendAsync<List<KeySheetSummary>>(client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M3", year = 1944 });
 
         // Act
-        using var response = await client.PostAsJsonAsync(
-            Url("/api/keysheets"), new { network = "Triton", month = "1944-06", text = "1 B I II IX 01 01 01" }, Token);
+        using var response = await client.PostAsJsonAsync(Url("/api/keysheets/generate"), new { model = "M3", year = 1944 }, Token);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(Token);
         Assert.Equal("The operation was rejected.", problem!.Title);
-        Assert.Equal("Line 1: Unknown rotor 'IX'.", problem.Detail);
+        Assert.Equal("Generated M3 key sheets for 1944 already exist.", problem.Detail);
     }
 
     [Fact]
@@ -240,8 +236,8 @@ public sealed class KeySheetEndpointTests : IDisposable
         // Arrange
         var sender = CreateClient();
         var receiver = CreateClient(Path.Combine(_root, "other-user"));
-        var created = await SendAsync<KeySheetDetails>(
-            sender, HttpMethod.Post, "/api/keysheets", new { network = "Triton", month = "1942-11", text = U264Row });
+        var generated = await SendAsync<List<KeySheetSummary>>(sender, HttpMethod.Post, "/api/keysheets/generate", new { model = "M4", year = 1942 });
+        var created = (await sender.GetFromJsonAsync<KeySheetDetails>(Url($"/api/keysheets/{generated[0].Id}"), Token))!;
         var file = await sender.GetStringAsync(Url($"/api/keysheets/{created.Id}/export"), Token);
 
         // Act

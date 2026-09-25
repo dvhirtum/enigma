@@ -1,17 +1,16 @@
 using System.Globalization;
-using System.Text;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
-namespace Enigma.Application.KeySheets;
+namespace Enigma.Application.Tests.KeySheets;
 
 /// <summary>
-/// Daily keys as text, one row per day in Navy column order:
+/// Builds test daily keys from text, one row per day in Navy column order:
 /// day, reflector, Walzenlage, rings (01–26), plugs, Grundstellung (optional).
 /// For example <c>1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX QRSA</c>.
 /// Blank lines and lines starting with # are skipped.
 /// </summary>
-public static class KeySheetText
+internal static class KeySheetText
 {
     public static IReadOnlyList<DailyKey> Parse(string text)
     {
@@ -38,28 +37,6 @@ public static class KeySheetText
         }
 
         return keys;
-    }
-
-    public static string Format(IEnumerable<DailyKey> keys)
-    {
-        ArgumentNullException.ThrowIfNull(keys);
-
-        var text = new StringBuilder();
-        foreach (var key in keys)
-        {
-            IEnumerable<string> fields =
-            [
-                key.Day.ToString(CultureInfo.InvariantCulture),
-                key.Reflector.Name,
-                .. key.Rotors.Select(r => r.Name),
-                .. key.Rings.Select(r => r.ToString()),
-                .. key.Plugs.Select(p => p.ToString()),
-                .. key.Grundstellung is null ? [] : new[] { key.Grundstellung.ToString() },
-            ];
-            text.Append(string.Join(' ', fields)).Append('\n');
-        }
-
-        return text.ToString();
     }
 
     private static DailyKey ParseRow(string line)

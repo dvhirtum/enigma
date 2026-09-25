@@ -28,35 +28,6 @@ public sealed class GetKeySheetHandler(KeySheetLinker linker)
     }
 }
 
-public sealed class CreateKeySheetHandler(IKeySheetRepository repository, KeySheetLinker linker)
-{
-    public KeySheetDetails Handle(CreateKeySheet command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-
-        var sheet = new KeySheet(
-            KeySheetIds.New(), command.Network, KeyMonth.Parse(command.Month ?? string.Empty), Provenance.UserDefined,
-            KeySheetText.Parse(command.Text ?? string.Empty));
-        linker.Link(sheet);
-        repository.Save(sheet);
-        return KeySheetMapper.ToDetails(sheet);
-    }
-}
-
-public sealed class UpdateKeySheetHandler(IKeySheetRepository repository, KeySheetLinker linker)
-{
-    public KeySheetDetails Handle(UpdateKeySheet command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-
-        var sheet = repository.Get(command.Id);
-        sheet.Update(command.Network, KeyMonth.Parse(command.Month ?? string.Empty), KeySheetText.Parse(command.Text ?? string.Empty));
-        linker.Link(sheet);
-        repository.Save(sheet);
-        return KeySheetMapper.ToDetails(sheet);
-    }
-}
-
 public sealed class DeleteKeySheetHandler(IKeySheetRepository repository)
 {
     public void Handle(DeleteKeySheet command)
@@ -73,17 +44,30 @@ public sealed class DeleteKeySheetHandler(IKeySheetRepository repository)
     }
 }
 
-public sealed class GenerateKeySheetHandler(IKeySheetRepository repository, KeySheetLinker linker, Random random)
+public sealed class GenerateKeySheetsHandler(IKeySheetRepository repository, KeySheetLinker linker, Random random)
 {
-    public KeySheetDetails Handle(GenerateKeySheet command)
+    /// <summary>Refuses when generated sheets for the model already cover any month of the year.</summary>
+    public IReadOnlyList<KeySheetSummary> Handle(GenerateKeySheets command)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var sheet = KeySheetGenerator.Generate(
-            KeySheetIds.New(), Input.Model(command.Model), command.Network, KeyMonth.Parse(command.Month ?? string.Empty), random);
-        linker.Link(sheet);
-        repository.Save(sheet);
-        return KeySheetMapper.ToDetails(sheet);
+        var model = Input.Model(command.Model);
+        var months = Enumerable.Range(1, 12).Select(month => new KeyMonth(command.Year, month)).ToList();
+        if (repository.List().Any(s => s.Provenance is GeneratedProvenance && s.Model == model && s.Month.Year == command.Year))
+        {
+            throw new DomainException($"Generated {model.Name} key sheets for {command.Year} already exist.");
+        }
+
+        var sheets = Kenngruppenbuch.HistoricalNetworks
+            .SelectMany(network => months.Select(month => KeySheetGenerator.Generate(KeySheetIds.New(), model, network, month, random)))
+            .ToList();
+        foreach (var sheet in sheets)
+        {
+            linker.Link(sheet);
+            repository.Save(sheet);
+        }
+
+        return [.. sheets.Select(KeySheetMapper.ToSummary)];
     }
 }
 

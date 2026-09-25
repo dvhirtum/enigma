@@ -2,7 +2,7 @@
 
 [Back to the contents](README.md)
 
-The receiver undoes the sender's steps in reverse. As on the [sending page](sending-by-hand.md), use the key sheet panel and the top-down view, with operator mode not running. The example receives the message from the sending page:
+The receiver undoes the sender's steps in reverse. As on the [sending page](sending-by-hand.md), use the key sheet panel, the top-down view and the [printed Kenngruppenbuch and Tauschtafeln](key-sheets.md#printing-a-sheet), with operator mode not running. The example receives the message from the sending page:
 
 ```
 0915 = 60 = GEAQ LZBC IIYO GSLL WNVO EGSP CHZV PVOF RPJP ZRVD YQWS MOQX GJNC GEAQ LZBC
@@ -24,7 +24,7 @@ G E A Q
 L Z B C
 ```
 
-Swap each vertical pair with the Tauschtafel for the day. The table works both ways, so the same lookup undoes the sender's swap.
+Swap each vertical pair with the Tauschtafel for the day: the Tafelkalender in the PDF gives the table for the half month. The table works both ways, so the same lookup undoes the sender's swap.
 
 **Example:** `GL`, `EZ`, `AB` and `QC` become `SW`, `OJ`, `FM` and `PN`:
 
@@ -40,15 +40,13 @@ Drop the filler at the front of the top row and at the end of the bottom row:
 
 ## 3. Find the key
 
-The Schlüsselkenngruppe names the network, and so the key sheet. In the **Kenngruppenbuch** viewer, it appears in a column allotted to the network in the Zuteilungsliste. Use that sheet's key for the day the message was sent. The Verfahrenkenngruppe must come from the Verfahrenkenngruppen columns.
-
-On a [printed sheet](key-sheets.md#using-the-suchtafel), look the Schlüsselkenngruppe up in the Suchtafel: block `Kenngruppen O..`, row `OF`, column `P` gives the column of `OFP`. Then find that column's range in the Zuteilungsliste.
+The Schlüsselkenngruppe names the network, and so the key sheet. Look it up in the [Suchtafel](key-sheets.md#using-the-suchtafel) of the Kenngruppenbuch PDF: block `Kenngruppen O..`, row `OF`, column `P` gives the column of `OFP`. Then find that column's range in the Zuteilungsliste. Use that network's sheet for the day the message was sent. The Verfahrenkenngruppe must come from the Verfahrenkenngruppen columns (1–100).
 
 If you don't know which sheet to use, paste the message into operator mode and click **Find key**. It only lists the matching sheets and starts nothing until you choose one.
 
 ## 4. Find the Spruchschlüssel
 
-Apply the daily key, turn the rotors to the Grundstellung, and type the Verfahrenkenngruppe. The three lamps are the Spruchschlüssel, just as for the sender.
+Apply the daily key, or [set it up by hand](key-sheets.md#setting-up-the-machine-by-hand). Turn the rotors to the Grundstellung and type the Verfahrenkenngruppe. The three lamps are the Spruchschlüssel, just as for the sender.
 
 **Example:** at `K D R W`, typing `W J M` lights `Y O K`.
 
@@ -66,14 +64,21 @@ That reads "ZWO ZERSTOERER X KURS NULL NEUN NULL X FAHRT ZWO NULL", followed by 
 
 ## Exercises: real messages
 
-The published texts of these messages don't include their indicators. For each one, the key row already holds the message's start position in the Grundstellung column. Create the sheet with **New**, **Apply** the day, turn the rotors to that position, and type the cipher text.
+The published texts of these messages don't include their indicators. For each one, the key row already holds the message's start position in the Grundstellung column. Save the sheet as a `.json` file and **Import** it, **Apply** the day (or set it up by hand from the row), turn the rotors to that position, and type the cipher text.
 
 ### Scharnhorst, 26 December 1943 (M3)
 
-Sent by the battleship Scharnhorst on the day of the Battle of the North Cape. Network `Hydra` (any name works), month `1943-12`:
+Sent by the battleship Scharnhorst on the day of the Battle of the North Cape. Network `Hydra`, month `1943-12`:
 
-```
-26 B III VI VIII 01 08 13 AN EZ HK IJ LR MQ OT PV SW UX UZV
+```json
+{
+  "network": "Hydra",
+  "month": "1943-12",
+  "days": [
+    { "day": 26, "reflector": "B", "rotors": ["III", "VI", "VIII"], "rings": [1, 8, 13],
+      "plugs": ["AN", "EZ", "HK", "IJ", "LR", "MQ", "OT", "PV", "SW", "UX"], "grundstellung": "UZV" }
+  ]
+}
 ```
 
 Rotors at `U Z V`:
@@ -88,8 +93,15 @@ The plaintext starts `STEUEREJTANAFJORDJAN`: "steuere Tanafjord an" (head for th
 
 Sent by U-264 under Kapitänleutnant Hartwig Looks. It was broken in 2006 by the M4 Project, a distributed computing effort. Network `Triton`, month `1942-11`:
 
-```
-19 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX VJNA
+```json
+{
+  "network": "Triton",
+  "month": "1942-11",
+  "days": [
+    { "day": 19, "reflector": "B-thin", "rotors": ["Beta", "II", "IV", "I"], "rings": [1, 1, 1, 22],
+      "plugs": ["AT", "BL", "DF", "GJ", "HM", "NW", "OP", "QY", "RZ", "VX"], "grundstellung": "VJNA" }
+  ]
+}
 ```
 
 Rotors at `V J N A`:

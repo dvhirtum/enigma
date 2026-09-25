@@ -110,38 +110,6 @@ public sealed class KeySheetTests
     }
 
     [Fact]
-    public void Should_replace_the_keys_When_a_generated_sheet_is_updated()
-    {
-        // Arrange
-        var sheet = new KeySheet("id", "Hydra", June1944, Provenance.Generated, [Keys.M3(1)]);
-
-        // Act
-        sheet.Update("Triton", new KeyMonth(1944, 7), [Keys.M4(31)]);
-
-        // Assert
-        Assert.Equal("Triton", sheet.Network);
-        Assert.Equal("1944-07", sheet.Month.ToString());
-        Assert.Equal(MachineModel.M4, sheet.Model);
-        Assert.Equal([31], sheet.DailyKeys.Select(k => k.Day));
-        Assert.Equal(Provenance.Generated, sheet.Provenance);
-    }
-
-    [Fact]
-    public void Should_reject_the_update_When_the_sheet_is_historical()
-    {
-        // Arrange
-        var sheet = new KeySheet("id", "Hydra", June1944, Provenance.Historical("source"), [Keys.M3(1)]);
-
-        // Act
-        void Act() => sheet.Update("Triton", June1944, [Keys.M3(2)]);
-
-        // Assert
-        Assert.True(sheet.IsReadOnly);
-        Assert.Throws<DomainException>(Act);
-        Assert.Equal("Hydra", sheet.Network);
-    }
-
-    [Fact]
     public void Should_return_the_key_of_a_day_When_the_sheet_has_it()
     {
         // Arrange

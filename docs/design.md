@@ -85,7 +85,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ### Domain: Key Procedure
 - `KeySheet`: id, network, month, `Provenance` (`Historical(source)` | `Generated` | `UserDefined`), the linked Kenngruppenbuch and Tauschtafel set, and `DailyKey`s. The model follows from the keys; all keys are for the same model. Historical sheets are read-only.
 - `DailyKey`: day, reflector, Walzenlage (rotor order, Greek rotor first on the M4), Ringstellung (ring settings), Steckerverbindungen (plug pairs), and optionally the Grundstellung (3 letters on the M3, 4 on the M4). `SetUp()` creates a machine of its model with the key and all rotors at A.
-- `KeySheetGenerator`: generates a full month. The inner setting (reflector, Walzenlage, rings) changes every other day, the plugs and Grundstellung daily. Every Walzenlage includes one of VI–VIII. Each day has 10 plug pairs.
+- `KeySheetGenerator`: generates a full month for one network. The inner setting (reflector, Walzenlage, rings) changes every other day, the plugs and Grundstellung daily. Every Walzenlage includes one of VI–VIII. Each day has 10 plug pairs.
 - `Kenngruppenbuch` (indicator book): all 17,576 trigrams, shuffled into 676 numbered columns of 26. The Zuteilungsliste allots columns 1–100 to the Verfahrenkenngruppen and 20 columns to each network: the historical Navy nets plus any added later. `Allot(network)` gives a new network the next 20 free columns.
 - `Doppelbuchstabentauschtafel` (bigram table): a reciprocal swap of all 676 bigrams, without fixed points.
 - `TauschtafelSet`: 9 tables for one year, with a calendar that gives each half month (days 1–15, 16–end) a table, cycling through the 9.
@@ -100,7 +100,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 
 ### Application
 - Machine commands: `CreateMachine`, `InsertRotor`, `RemoveRotor`, `SetRingSetting`, `SetReflector`, `ConnectPlug`, `DisconnectPlug`, `TurnRotor`, `PressKey`, `ReleaseKey`. Each returns the `MachineState`.
-- Key-sheet commands: `ApplyDailyKey` (replaces the machine, switching model if needed), `CreateKeySheet`, `UpdateKeySheet`, `DeleteKeySheet`, `GenerateKeySheet`, `ImportKeySheet`, `ExportKeySheet`.
+- Key-sheet commands: `ApplyDailyKey` (replaces the machine, switching model if needed), `DeleteKeySheet`, `GenerateKeySheets` (every month of a year for each network of the Kenngruppenbuch; refused when generated sheets for that model and year exist), `ImportKeySheet`, `ExportKeySheet`.
 - Operator commands: `StartSending`, `StartReceiving` (applies the chosen sheet's day first, or uses the applied key as it is), `ChooseGroups`, `FinishMessage`, `CancelOperator`. Each returns the `MachineState`.
 - `FindReceivingKeys`: for a received message and a date, the sheets of that month whose network the Schlüsselkenngruppe (decrypted with each sheet's table for the date) is allotted to.
 - Queries: `GetMachineState`, `ListKeySheets`, `GetKeySheet`, `GetKenngruppenbuch`, `GetTauschtafelSet`.
@@ -108,7 +108,6 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - `KeySheetLinker`: links every sheet when it is saved or loaded. It links the newest Kenngruppenbuch, allotting columns to a new network (or generating a new book when none are free), and the Tauschtafel set for the sheet's year. Missing books and sets are generated. Days without a Grundstellung get a random one.
 - `MachineState.operator`: the procedure's direction, step, groups, indicator, Grundstellung, Spruchschlüssel, the pad (lamps lit while typing the message), the radio message and warnings. Applying a key or creating a machine ends the procedure. Sending needs an applied daily key.
 - `MachineState.appliedKey`: the sheet, month and day last applied, `modified` once the reflector, rotor order, rings or plugs differ from it (turning rotors does not count). Switching model clears it.
-- `KeySheetText`: daily keys as text, one row per day in Navy column order: day, reflector, rotors, rings (01–26), plugs, Grundstellung. Create and update take this text; errors name the line.
 - Key sheet files (JSON): `{ network, month, days: [{ day, reflector, rotors, rings, plugs, grundstellung }], kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln }`. Exports include the linked book and table set, so another installation receives with the same Kenngruppen and Tauschtafeln. Imports become user-defined; they store the book and set, adding allotments to a book that is already there. A clashing allotment, a book with other columns or a table set with other tables under the same id rejects the import. Files without a book or set are linked locally.
 - Commands and queries use plain handlers, without a mediator library.
 - There is one machine. It starts as a default M3; `CreateMachine` replaces it.
@@ -141,10 +140,8 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 | POST | `/api/machine/daily-key` | `{ sheetId, day }` |
 | GET | `/api/keysheets` | |
 | GET | `/api/keysheets/{id}` | |
-| POST | `/api/keysheets` | `{ network, month, text }` |
-| PUT | `/api/keysheets/{id}` | `{ network, month, text }` |
 | DELETE | `/api/keysheets/{id}` | |
-| POST | `/api/keysheets/generate` | `{ model, network, month }` |
+| POST | `/api/keysheets/generate` | `{ model, year }` |
 | POST | `/api/keysheets/import` | key sheet file |
 | GET | `/api/keysheets/{id}/export` | |
 | GET | `/api/kenngruppenbuecher/{id}` | |
@@ -170,7 +167,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - **Plugboard:** sockets in keyboard order. Drag a cable between two sockets, or pick two sockets in turn (mouse or Enter/Space). Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
   - **Instructions:** the user guide from `docs/user` (Markdown, rendered with react-markdown). Links between its pages open them in the tab.
 - Panels:
-  - key sheets: a side panel opened from the header. Choose, create, generate, import, export, edit (as text rows) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first. The applied day is marked. A read-only viewer shows the sheet's Kenngruppenbuch (Zuteilungsliste and columns) and the Tauschtafel in force for a day. "Print to PDF" renders the export as a typewritten A4 document (`printSheet.ts`, with the Special Elite and Courier Prime fonts in `assets/fonts`): the Schlüsseltafel with the last day first, the Zuteilungsliste, all columns (Spaltentafel), a trigram-to-column index (Suchtafel), the Tauschtafel calendar and the 9 tables as 26 × 26 grids. The main process prints it in a hidden window with scripts disabled.
+  - key sheets: a side panel opened from the header. Choose (grouped by network, historical first), generate a year, import, export (compact JSON) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first. The applied day is marked. "Print to PDF" renders the export as typewritten A4 documents (`printSheet.ts`, with the Special Elite and Courier Prime fonts in `assets/fonts`): the Schlüsseltafel with the last day first, and optionally a second document, the same for every network, with the Zuteilungsliste, all columns (Spaltentafel), a trigram-to-column index (Suchtafel), the Tauschtafel calendar and the 9 tables as 26 × 26 grids. With both, the user picks a folder for the two PDFs. The main process prints them in a hidden window with scripts disabled.
   - operator mode: a side panel that walks through sending or receiving while the operator works the machine. Sending starts with picking the Schlüsselkenngruppe from the network's columns and the Verfahrenkenngruppe from theirs (or "Random"), and ends with the radio message and a Copy button. Receiving starts from a pasted radio message and a date (prefilled from the applied key, or today), lists the matching key sheet days to receive with (or receives with the applied key at once), and highlights the next cipher letter. Sending needs an applied daily key; the panel warns when the setup is modified. Its message pad shows the lamps in 4-letter groups.
 
 ## Testing
@@ -210,7 +207,7 @@ docs/{design.md, user/}
 4. Electron shell
 5. Top-down and open-lid views
 6. Plugboard view
-7. Key sheets: historical, generated, editor, apply daily key
+7. Key sheets: historical, generated, apply daily key
 8. Navy indicator procedure and operator mode
 
 ## Future work

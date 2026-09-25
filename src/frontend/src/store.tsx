@@ -11,10 +11,9 @@ import type {
   MachineState,
   Problem,
   ReceivingKey,
-  TauschtafelSet,
 } from './api';
 import { shiftLetter, shiftRing } from './machine';
-import { keySheetDocument } from './printSheet';
+import { keySheetDocument, procedureDocument, procedureName } from './printSheet';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -27,24 +26,24 @@ export interface KeySheetSlice {
   keySheet: KeySheet | null;
   loadKeySheets: () => Promise<boolean>;
   openKeySheet: (id: string | null) => Promise<boolean>;
-  createKeySheet: (network: string, month: string, text: string) => Promise<boolean>;
-  updateKeySheet: (id: string, network: string, month: string, text: string) => Promise<boolean>;
   deleteKeySheet: (id: string) => Promise<boolean>;
-  generateKeySheet: (model: string, network: string, month: string) => Promise<boolean>;
+  /** Generates every month of the year for every network of the Kenngruppenbuch. */
+  generateKeySheets: (model: string, year: number) => Promise<boolean>;
   /** Asks for a key sheet file and imports it. */
   importKeySheet: () => Promise<boolean>;
   /** Saves the open sheet to a file the user picks. */
   exportKeySheet: () => Promise<boolean>;
-  /** Prints the open sheet with its Kenngruppenbuch and Tauschtafeln to a PDF the user picks. */
-  printKeySheet: () => Promise<boolean>;
+  /**
+   * Prints the open sheet to a PDF the user picks. With `withProcedure` it also prints its Kenngruppenbuch and
+   * Tauschtafeln to a second PDF, both in a folder the user picks.
+   */
+  printKeySheet: (withProcedure?: boolean) => Promise<boolean>;
 }
 
-/** Kenngruppenbücher and Tauschtafel sets by id, loaded when first needed. Books are cleared after a sheet is created, updated, generated or imported. */
+/** Kenngruppenbücher by id, loaded when first needed. Books are cleared after sheets are generated or imported. */
 export interface ProcedureSlice {
   books: Record<string, Kenngruppenbuch>;
-  tables: Record<string, TauschtafelSet>;
   loadBook: (id: string) => Promise<boolean>;
-  loadTables: (id: string) => Promise<boolean>;
   /** The key sheet days that fit a received message on Thu Sep 24 21:20:27 WEDT 2026 (yyyy-MM-dd), or null when the lookup failed. */
   findReceivingKeys: (message: string, date: string) => Promise<ReceivingKey[] | null>;
   /** Copies text to the clipboard; resolves to true when it worked. */
@@ -115,7 +114,6 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       keySheets: [],
       keySheet: null,
       books: {},
-      tables: {},
       loadBook: async (id) => {
         if (get().books[id]) {
           return true;
@@ -123,16 +121,6 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         const result = await check(procedure.getBook(id));
         if (result.ok) {
           set((state) => ({ books: { ...state.books, [id]: result.value } }));
-        }
-        return result.ok;
-      },
-      loadTables: async (id) => {
-        if (get().tables[id]) {
-          return true;
-        }
-        const result = await check(procedure.getTables(id));
-        if (result.ok) {
-          set((state) => ({ tables: { ...state.tables, [id]: result.value } }));
         }
         return result.ok;
       },
@@ -160,9 +148,15 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         }
         return result.ok;
       },
-      createKeySheet: (network, month, text) => show(sheets.create(network, month, text)),
-      updateKeySheet: (id, network, month, text) => show(sheets.update(id, network, month, text)),
-      generateKeySheet: (model, network, month) => show(sheets.generate(model, network, month)),
+      generateKeySheets: async (model, year) => {
+        const result = await check(sheets.generate(model, year));
+        if (!result.ok) {
+          return false;
+        }
+        set({ books: {} });
+        await loadKeySheets();
+        return true;
+      },
       deleteKeySheet: async (id) => {
         const result = await check(sheets.remove(id));
         if (!result.ok) {
@@ -202,12 +196,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         const { network, month, days, kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln } = result.value;
         const file: KeySheetFile = { network, month, days, kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln };
         try {
-          return (await files.saveKeySheet(`${sheet.network}-${sheet.month}.json`, `${JSON.stringify(file, null, 2)}\n`)) !== null;
+          return (await files.saveKeySheet(`${sheet.network}-${sheet.month}.json`, JSON.stringify(file))) !== null;
         } catch (error) {
           return fail({ status: 0, title: 'The file could not be saved.', detail: String(error) });
         }
       },
-      printKeySheet: async () => {
+      printKeySheet: async (withProcedure = false) => {
         const sheet = get().keySheet;
         if (!sheet) {
           return false;
@@ -216,8 +210,14 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         if (!result.ok) {
           return false;
         }
+        const name = `${sheet.network}-${sheet.month}.pdf`;
+        const html = keySheetDocument(result.value, sheet.model);
+        const bookHtml = withProcedure ? procedureDocument(result.value) : null;
         try {
-          return (await files.printKeySheet(`${sheet.network}-${sheet.month}.pdf`, keySheetDocument(result.value, sheet.model))) !== null;
+          if (bookHtml === null) {
+            return (await files.printKeySheet(name, html)) !== null;
+          }
+          return (await files.printToFolder([{ name, html }, { name: `${procedureName(result.value)}.pdf`, html: bookHtml }])) !== null;
         } catch (error) {
           return fail({ status: 0, title: 'The PDF could not be saved.', detail: String(error) });
         }

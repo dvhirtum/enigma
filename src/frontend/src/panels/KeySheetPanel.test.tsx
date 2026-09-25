@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { defaultM3, historicalSheet, summaryOf } from '../test/fakeApi';
+import { defaultM3, generatedSheet, historicalSheet, summaryOf } from '../test/fakeApi';
 import { renderMachine } from '../test/renderMachine';
 import { KeySheetPanel } from './KeySheetPanel';
 
@@ -62,66 +62,91 @@ describe('KeySheetPanel', () => {
     expect(api.machine.applyDailyKey).toHaveBeenCalledWith('historical-hydra', 26);
   });
 
-  it('offers no edit or delete for a historical sheet', async () => {
+  it('offers no delete for a historical sheet', async () => {
     renderMachine(<KeySheetPanel />, undefined, showHistorical);
     await openSheet('historical-hydra');
 
     expect(await screen.findByText('M3 · historical · Test transcription')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Print to PDF' })).toBeInTheDocument();
   });
 
-  it('prints the open sheet to a PDF', async () => {
+  it('offers no way to create or edit a sheet by hand', async () => {
+    renderMachine(<KeySheetPanel />);
+    await openSheet();
+
+    await screen.findByRole('listitem', { name: 'Day 1' });
+
+    expect(screen.queryByRole('button', { name: 'New' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+  });
+
+  it('groups the sheets by network, with the historical ones first', async () => {
+    renderMachine(<KeySheetPanel />, undefined, (fake) =>
+      fake.keySheets.list.mockResolvedValue({
+        ok: true,
+        value: [
+          summaryOf({ ...generatedSheet, id: 't2', month: '1944-07' }),
+          summaryOf({ ...generatedSheet, id: 'a1', network: 'Aegir' }),
+          summaryOf(generatedSheet),
+          summaryOf(historicalSheet),
+        ],
+      }),
+    );
+
+    await screen.findByRole('option', { name: 'Aegir 1944-06 · M4 (generated)' });
+
+    const groups = screen.getAllByRole('group').map((group) => [group.getAttribute('label'), within(group).getAllByRole('option').map((option) => option.getAttribute('value'))]);
+    expect(groups).toEqual([
+      ['Historical', ['historical-hydra']],
+      ['Aegir', ['a1']],
+      ['Triton', ['g1', 't2']],
+    ]);
+  });
+
+  it('prints the open sheet with its Kenngruppenbuch and Tauschtafeln to a folder', async () => {
     const api = renderMachine(<KeySheetPanel />, undefined, showHistorical);
     await openSheet('historical-hydra');
 
     fireEvent.click(await screen.findByRole('button', { name: 'Print to PDF' }));
 
-    await waitFor(() => expect(api.files.printKeySheet).toHaveBeenCalledWith('Hydra-1944-06.pdf', expect.stringContaining('Schlüsseltafel für das Schlüsselnetz')));
+    await waitFor(() => expect(api.files.printToFolder).toHaveBeenCalledWith([expect.objectContaining({ name: 'Hydra-1944-06.pdf' }), expect.objectContaining({ name: 'Kenngruppenbuch-Tauschtafeln-1944.pdf' })]));
   });
 
-  it('generates a sheet for the chosen model, network and month', async () => {
+  it('prints only the open sheet when the Kenngruppenbuch is left out', async () => {
+    const api = renderMachine(<KeySheetPanel />, undefined, showHistorical);
+    await openSheet('historical-hydra');
+
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Also print the Kenngruppenbuch and Tauschtafeln' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Print to PDF' }));
+
+    await waitFor(() => expect(api.files.printKeySheet).toHaveBeenCalledWith('Hydra-1944-06.pdf', expect.stringContaining('Schlüsseltafel für das Schlüsselnetz')));
+    expect(api.files.printToFolder).not.toHaveBeenCalled();
+  });
+
+  it('generates a year of sheets for the chosen model', async () => {
     const api = renderMachine(<KeySheetPanel />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Generate' }));
-    const form = screen.getByRole('form', { name: 'Generate key sheet' });
+    const form = screen.getByRole('form', { name: 'Generate key sheets' });
     fireEvent.change(within(form).getByRole('combobox', { name: 'Model' }), { target: { value: 'M4' } });
-    fireEvent.change(within(form).getByRole('textbox', { name: 'Network' }), { target: { value: 'Triton' } });
-    fireEvent.change(within(form).getByLabelText('Month'), { target: { value: '1944-06' } });
+    fireEvent.change(within(form).getByRole('spinbutton', { name: 'Year' }), { target: { value: '1944' } });
     fireEvent.click(within(form).getByRole('button', { name: 'Generate' }));
 
-    expect(api.keySheets.generate).toHaveBeenCalledWith('M4', 'Triton', '1944-06');
-    expect(await screen.findByRole('listitem', { name: 'Day 1' })).toBeInTheDocument();
-    expect(screen.queryByRole('form')).not.toBeInTheDocument();
+    expect(api.keySheets.generate).toHaveBeenCalledWith('M4', 1944);
+    await waitFor(() => expect(screen.queryByRole('form')).not.toBeInTheDocument());
+    expect(screen.queryByRole('textbox', { name: 'Network' })).not.toBeInTheDocument();
   });
 
-  it('edits a sheet as text rows', async () => {
-    const api = renderMachine(<KeySheetPanel />);
-    await openSheet();
+  it('keeps the form open when generating is refused', async () => {
+    const problem = { status: 400, title: 'The operation was rejected.', detail: 'Generated M3 key sheets for 1944 already exist.' };
+    renderMachine(<KeySheetPanel />, undefined, (fake) => fake.keySheets.generate.mockResolvedValue({ ok: false, problem }));
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
-    const form = screen.getByRole('form', { name: 'Edit key sheet' });
-    const text = within(form).getByRole('textbox', { name: 'Daily keys' });
-    expect(text).toHaveValue('1 B-thin Beta II IV I 01 01 01 22 AT BL DF QRSA\n2 B-thin Beta II IV I 01 01 01 22 CO\n');
-    fireEvent.change(text, { target: { value: '3 B I II VI 01 02 03' } });
-    fireEvent.click(within(form).getByRole('button', { name: 'Save' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Generate' }));
+    fireEvent.click(within(screen.getByRole('form', { name: 'Generate key sheets' })).getByRole('button', { name: 'Generate' }));
 
-    expect(api.keySheets.update).toHaveBeenCalledWith('g1', 'Triton', '1944-06', '3 B I II VI 01 02 03');
-  });
-
-  it('keeps the editor open when the backend rejects the rows', async () => {
-    const api = renderMachine(<KeySheetPanel />, undefined, (fake) => fake.keySheets.create.mockResolvedValue({ ok: false, problem: { status: 400, title: 'The operation was rejected.', detail: 'Line 1: Unknown rotor.' } }));
-
-    fireEvent.click(await screen.findByRole('button', { name: 'New' }));
-    const form = screen.getByRole('form', { name: 'New key sheet' });
-    fireEvent.change(within(form).getByRole('textbox', { name: 'Network' }), { target: { value: 'Hydra' } });
-    fireEvent.change(within(form).getByRole('textbox', { name: 'Daily keys' }), { target: { value: '1 B I II IX' } });
-    fireEvent.click(within(form).getByRole('button', { name: 'Save' }));
-
-    expect(await screen.findByRole('form', { name: 'New key sheet' })).toBeInTheDocument();
-    expect(api.keySheets.create).toHaveBeenCalledWith('Hydra', expect.stringMatching(/^\d{4}-\d{2}$/), '1 B I II IX');
+    expect(await screen.findByRole('form', { name: 'Generate key sheets' })).toBeInTheDocument();
   });
 
   it('deletes a sheet once confirmed', async () => {
@@ -134,21 +159,14 @@ describe('KeySheetPanel', () => {
     expect(api.keySheets.remove).toHaveBeenCalledWith('g1');
   });
 
-  it('shows the linked Kenngruppenbuch and the Tauschtafel in force for a day', async () => {
+  it('offers no viewers for the Kenngruppenbuch and Tauschtafeln', async () => {
     renderMachine(<KeySheetPanel />);
     await openSheet();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Kenngruppenbuch' }));
-    const book = await screen.findByRole('region', { name: 'Kenngruppenbuch' });
-    expect(within(book).getByRole('row', { name: 'Triton 101–120' })).toBeInTheDocument();
-    fireEvent.change(within(book).getByRole('spinbutton', { name: 'Column' }), { target: { value: '101' } });
-    expect(within(book).getByLabelText('Column 101')).toHaveTextContent(/^DWA DWB/);
+    await screen.findByRole('listitem', { name: 'Day 1' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tauschtafeln' }));
-    const tables = await screen.findByRole('region', { name: 'Tauschtafeln' });
-    expect(within(tables).getByRole('heading')).toHaveTextContent('Tauschtafel 2 (1944)');
-    expect(within(tables).getByLabelText('Tauschtafel 2')).toHaveTextContent('AA=ZZ AB=ZY AC=BQ');
-    fireEvent.change(within(tables).getByRole('combobox', { name: 'Day' }), { target: { value: '2' } });
-    expect(within(tables).getByRole('heading')).toHaveTextContent('Tauschtafel 2 (1944)');
+    expect(screen.queryByRole('button', { name: 'Kenngruppenbuch' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tauschtafeln' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Kenngruppenbuch' })).not.toBeInTheDocument();
   });
 });

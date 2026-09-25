@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { KeySheetFile } from './api';
-import { keySheetDocument } from './printSheet';
+import { keySheetDocument, procedureDocument } from './printSheet';
 import { fakeBook, fakeTables, generatedSheet } from './test/fakeApi';
 
 const file: KeySheetFile = { network: 'Triton', month: '1944-06', days: generatedSheet.days, kenngruppenbuch: fakeBook, tauschtafeln: fakeTables };
 
-function render(sheet: KeySheetFile = file, model = 'M4'): Document {
-  return new DOMParser().parseFromString(keySheetDocument(sheet, model), 'text/html');
-}
+const parse = (html: string) => new DOMParser().parseFromString(html, 'text/html');
+const render = (sheet: KeySheetFile = file, model = 'M4') => parse(keySheetDocument(sheet, model));
+const renderProcedure = (sheet: KeySheetFile = file) => parse(procedureDocument(sheet)!);
 
 const rows = (table: Element) => [...table.querySelectorAll('tbody tr')].map((row) => [...row.children].map((cell) => cell.textContent));
 const band = (doc: Document, title: string) => [...doc.querySelectorAll('.band')].find((b) => b.querySelector('.band-title')?.textContent === title);
@@ -26,22 +26,42 @@ describe('key sheet document', () => {
     ]);
   });
 
-  it('marks the network of the sheet in the Zuteilungsliste', () => {
+  it('holds only the Schlüsseltafel', () => {
     const doc = render();
 
+    const sections = doc.querySelectorAll('section');
+
+    expect(sections).toHaveLength(1);
+    expect(doc.querySelector('table.allot')).toBeNull();
+  });
+
+  it('escapes text from the sheet', () => {
+    const doc = render({ ...file, network: '<b>Nord</b>' });
+
+    const lead = doc.querySelector('.lead');
+
+    expect(lead?.textContent).toContain('<B>NORD</B>');
+    expect(doc.querySelector('.lead b b')).toBeNull();
+  });
+});
+
+describe('Kenngruppenbuch and Tauschtafeln document', () => {
+  it('lists every allotment in the Zuteilungsliste without marking a network', () => {
+    const doc = renderProcedure();
+
     const allotments = rows(doc.querySelector('table.allot')!);
-    const own = doc.querySelector('table.allot tr.own td')?.textContent;
 
     expect(allotments).toEqual([
       ['Verfahrenkenngruppen', '1–100'],
       ['Triton', '101–120'],
       ['Hydra', '121–140'],
     ]);
-    expect(own).toBe('Triton');
+    expect(doc.querySelector('.own')).toBeNull();
+    expect(doc.body.textContent).not.toContain('Schlüsseltafel');
   });
 
   it('prints every column of the book in bands of 20, labelled with their use', () => {
-    const doc = render();
+    const doc = renderProcedure();
 
     const triton = band(doc, 'Spalten 101–120 · Triton');
     const last = band(doc, 'Spalten 661–676 · frei');
@@ -53,7 +73,7 @@ describe('key sheet document', () => {
   });
 
   it('gives the column of every Kenngruppe in the Suchtafel', () => {
-    const doc = render();
+    const doc = renderProcedure();
 
     const block = band(doc, 'Kenngruppen D..');
     const dw = rows(block!.querySelector('table')!).find(([label]) => label === 'DW');
@@ -63,7 +83,7 @@ describe('key sheet document', () => {
   });
 
   it('prints the calendar and every Tauschtafel as a grid of partners', () => {
-    const doc = render();
+    const doc = renderProcedure();
 
     const calendar = rows(doc.querySelectorAll('table.allot')[1]);
     const first = doc.querySelector('table.swaps')!;
@@ -76,20 +96,17 @@ describe('key sheet document', () => {
     expect(doc.body.textContent).toContain('Gültig 1.–15. Januar, 16.–Ende Mai, 1.–15. Oktober');
   });
 
-  it('leaves out the book and tables when the file has none', () => {
-    const doc = render({ network: 'Triton', month: '1944-06', days: generatedSheet.days });
+  it('is the same for every network and month', () => {
+    const triton = procedureDocument(file);
 
-    const sections = doc.querySelectorAll('section');
+    const hydra = procedureDocument({ ...file, network: 'Hydra', month: '1944-11' });
 
-    expect(sections).toHaveLength(1);
+    expect(hydra).toBe(triton);
   });
 
-  it('escapes text from the sheet', () => {
-    const doc = render({ ...file, network: '<b>Nord</b>' });
+  it('is null when the file has no book and no tables', () => {
+    const html = procedureDocument({ network: 'Triton', month: '1944-06', days: generatedSheet.days });
 
-    const lead = doc.querySelector('.lead');
-
-    expect(lead?.textContent).toContain('<B>NORD</B>');
-    expect(doc.querySelector('.lead b b')).toBeNull();
+    expect(html).toBeNull();
   });
 });

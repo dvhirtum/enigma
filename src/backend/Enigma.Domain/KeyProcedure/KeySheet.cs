@@ -17,11 +17,11 @@ public sealed class KeySheet
 
     public string Id { get; }
 
-    public string Network { get; private set; }
+    public string Network { get; }
 
-    public KeyMonth Month { get; private set; }
+    public KeyMonth Month { get; }
 
-    public MachineModel Model { get; private set; }
+    public MachineModel Model { get; }
 
     public Provenance Provenance { get; }
 
@@ -81,17 +81,6 @@ public sealed class KeySheet
     {
         var key = KeyFor(day);
         DailyKeys = [.. DailyKeys.Select(k => k == key ? k.WithGrundstellung(grundstellung) : k)];
-    }
-
-    /// <summary>Replaces the network, month and daily keys.</summary>
-    public void Update(string network, KeyMonth month, IReadOnlyList<DailyKey> dailyKeys)
-    {
-        if (IsReadOnly)
-        {
-            throw new DomainException($"Historical key sheet {Network} {Month} is read-only.");
-        }
-
-        (Network, Month, Model, DailyKeys) = Validate(network, month, dailyKeys);
     }
 
     private static (string, KeyMonth, MachineModel, IReadOnlyList<DailyKey>) Validate(

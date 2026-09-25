@@ -2,7 +2,7 @@
 
 [Back to the contents](README.md)
 
-This page walks through the Navy procedure the way an operator worked it. It uses only the machine and the key sheet panel, not [operator mode](operator-mode.md). Instead of the panel's viewers, you can also use a [printed sheet](key-sheets.md#printing-a-sheet). You need paper and a pencil to write down the lamps. If operator mode is running, click **Cancel** first, because it rejects keys it doesn't expect.
+This page walks through the Navy procedure the way an operator worked it. It uses only the machine, the key sheet panel and the [printed PDFs](key-sheets.md#printing-a-sheet), not [operator mode](operator-mode.md). Print the key sheet with **Also print the Kenngruppenbuch and Tauschtafeln** ticked: you need the Kenngruppenbuch and the Tauschtafeln from the second PDF. You also need paper and a pencil to write down the lamps. If operator mode is running, click **Cancel** first, because it rejects keys it doesn't expect.
 
 The worked example runs through every step with values you can check on your own machine.
 
@@ -28,22 +28,29 @@ That is 43 letters. Messages are sent in groups of 4, so add an X to fill the la
 
 ## 2. Set up the daily key
 
-Open **Key sheets** and click **Apply** on the day. The machine gets the reflector, rotors, rings and plugs, with all rotors at A.
+Open **Key sheets** and click **Apply** on the day. The machine gets the reflector, rotors, rings and plugs, with all rotors at A. To do it the way operators did, set up the rotors, rings, reflector and plugs yourself from the sheet: see [Setting up the machine by hand](key-sheets.md#setting-up-the-machine-by-hand).
 
-**Example:** click **New**, enter the network `Triton`, the month `1943-03` and this row, click **Save**, then **Apply** day 7:
+**Example:** save this as `triton-1943-03.json`, click **Import** and choose the file, then **Apply** day 7:
 
+```json
+{
+  "network": "Triton",
+  "month": "1943-03",
+  "days": [
+    { "day": 7, "reflector": "B-thin", "rotors": ["Beta", "V", "VI", "VIII"], "rings": [13, 2, 20, 5],
+      "plugs": ["AE", "BF", "CM", "DQ", "HU", "IN", "JX", "KR", "LS", "OY"], "grundstellung": "KDRW" }
+  ]
+}
 ```
-7 B-thin Beta V VI VIII 13 02 20 05 AE BF CM DQ HU IN JX KR LS OY KDRW
-```
 
-This is an M4: reflector B-thin, rotors Beta V VI VIII, rings 13 02 20 05, ten plug pairs and the Grundstellung KDRW.
+This is an M4: reflector B-thin, rotors Beta V VI VIII, rings 13 02 20 05, ten plug pairs and the Grundstellung KDRW. By hand: rings `13 (M)` on Beta, `02 (B)` on V, `20 (T)` on VI and `05 (E)` on VIII, then Beta, V, VI and VIII into the slots from left to right. Print it to PDF with the Kenngruppenbuch and Tauschtafeln for the next steps.
 
 ## 3. Choose the Kenngruppen
 
-The sheet's **Kenngruppenbuch** viewer shows the Zuteilungsliste. Pick:
+Open the Kenngruppenbuch PDF. The Zuteilungsliste gives the columns of each network. In the Spaltentafel, pick:
 
-- a **Schlüsselkenngruppe** from a column allotted to your network. It tells the receiver which key to use.
-- a **Verfahrenkenngruppe** from the Verfahrenkenngruppen columns. Choose any one, and a different one for each message.
+- a **Schlüsselkenngruppe** from the band of columns allotted to your network. It tells the receiver which key to use.
+- a **Verfahrenkenngruppe** from the Verfahrenkenngruppen bands (columns 1–100). Choose any one, and a different one for each message.
 - two **filler letters**, chosen at random.
 
 **Example:** Schlüsselkenngruppe `OFP`, Verfahrenkenngruppe `WJM`, fillers `S` and `N`. On your own sheet, pick trigrams from your own book instead.
@@ -76,7 +83,7 @@ S O F P
 W J M N
 ```
 
-Read the four vertical pairs: `SW`, `OJ`, `FM` and `PN`. Look up each pair in the **Tauschtafeln** viewer for the day. Each line such as `AB=CD` swaps AB and CD both ways, so look for the pair on either side of the `=`. Replace each pair with its partner.
+Read the four vertical pairs: `SW`, `OJ`, `FM` and `PN`. In the Tauschtafeln PDF, the Tafelkalender gives the table for the day's half month. In that table, find the row of the pair's first letter and the column of its second: the cell holds its partner. Replace each pair with its partner.
 
 **Example:** suppose the table swaps `SW=GL`, `OJ=EZ`, `FM=AB` and `PN=QC` (your own table will differ). The pairs become:
 

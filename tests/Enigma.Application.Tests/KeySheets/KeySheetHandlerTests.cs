@@ -17,73 +17,18 @@ public sealed class KeySheetHandlerTests
         new(id, network, KeyMonth.Parse(month), provenance, KeySheetText.Parse(text));
 
     [Fact]
-    public void Should_store_a_user_defined_sheet_When_a_sheet_is_created_from_text()
-    {
-        // Arrange
-        var repository = new FakeKeySheetRepository();
-        var handler = new CreateKeySheetHandler(repository, Linking.For(repository));
-
-        // Act
-        var details = handler.Handle(new CreateKeySheet("Triton", "1944-06", M4Row));
-
-        // Assert
-        var stored = Assert.Single(repository.Sheets.Values);
-        Assert.Equal(stored.Id, details.Id);
-        Assert.Equal("M4", details.Model);
-        Assert.Equal("UserDefined", details.Provenance);
-        Assert.False(details.ReadOnly);
-        Assert.Equal(M4Row, details.Text);
-        Assert.Equal(["Beta", "II", "IV", "I"], Assert.Single(details.Days).Rotors);
-    }
-
-    [Fact]
-    public void Should_keep_the_repository_unchanged_When_the_text_is_invalid()
-    {
-        // Arrange
-        var repository = new FakeKeySheetRepository();
-        var handler = new CreateKeySheetHandler(repository, Linking.For(repository));
-
-        // Act
-        void Act() => handler.Handle(new CreateKeySheet("Triton", "1944-06", "1 B I II"));
-
-        // Assert
-        Assert.Throws<DomainException>(Act);
-        Assert.Empty(repository.Sheets);
-    }
-
-    [Fact]
-    public void Should_keep_the_provenance_When_a_generated_sheet_is_updated()
-    {
-        // Arrange
-        var repository = new FakeKeySheetRepository(Sheet("g", "Hydra", "1944-06", Provenance.Generated));
-        var handler = new UpdateKeySheetHandler(repository, Linking.For(repository));
-
-        // Act
-        var details = handler.Handle(new UpdateKeySheet("g", "Triton", "1944-07", M4Row));
-
-        // Assert
-        Assert.Equal("Triton", details.Network);
-        Assert.Equal("1944-07", details.Month);
-        Assert.Equal("Generated", details.Provenance);
-        Assert.Equal("Triton", repository.Sheets["g"].Network);
-    }
-
-    [Fact]
-    public void Should_reject_the_change_When_a_historical_sheet_is_updated_or_deleted()
+    public void Should_reject_the_change_When_a_historical_sheet_is_deleted()
     {
         // Arrange
         var repository = new FakeKeySheetRepository(Sheet("h", "Hydra", "1944-06", Provenance.Historical("source")));
-        var update = new UpdateKeySheetHandler(repository, Linking.For(repository));
-        var delete = new DeleteKeySheetHandler(repository);
+        var handler = new DeleteKeySheetHandler(repository);
 
         // Act
-        void Update() => update.Handle(new UpdateKeySheet("h", "Triton", "1944-06", M3Row));
-        void Delete() => delete.Handle(new DeleteKeySheet("h"));
+        void Act() => handler.Handle(new DeleteKeySheet("h"));
 
         // Assert
-        Assert.Throws<DomainException>(Update);
-        Assert.Throws<DomainException>(Delete);
-        Assert.Equal("Hydra", repository.Sheets["h"].Network);
+        Assert.Throws<DomainException>(Act);
+        Assert.Contains("h", repository.Sheets.Keys);
     }
 
     [Fact]
@@ -133,19 +78,56 @@ public sealed class KeySheetHandlerTests
     }
 
     [Fact]
-    public void Should_store_a_full_month_When_a_sheet_is_generated()
+    public void Should_store_every_month_for_every_network_When_a_year_is_generated()
     {
         // Arrange
         var repository = new FakeKeySheetRepository();
-        var handler = new GenerateKeySheetHandler(repository, Linking.For(repository), new Random(1));
+        var handler = new GenerateKeySheetsHandler(repository, Linking.For(repository), new Random(1));
 
         // Act
-        var details = handler.Handle(new GenerateKeySheet("M4", "Triton", "1944-06"));
+        var sheets = handler.Handle(new GenerateKeySheets("M4", 1944));
 
         // Assert
-        Assert.Equal(30, details.Days.Count);
-        Assert.Equal("Generated", details.Provenance);
-        Assert.Contains(details.Id, repository.Sheets.Keys);
+        Assert.Equal(120, sheets.Count);
+        Assert.All(sheets, s => Assert.Equal(("M4", "Generated"), (s.Model, s.Provenance)));
+        Assert.Equal(Kenngruppenbuch.HistoricalNetworks, sheets.Select(s => s.Network).Distinct());
+        Assert.Equal(Enumerable.Range(1, 12).Select(m => $"1944-{m:00}"), sheets.Where(s => s.Network == "Aegir").Select(s => s.Month));
+        Assert.Equal(29, repository.Sheets[sheets[1].Id].DailyKeys.Count);
+        Assert.Single(repository.Sheets.Values.Select(s => s.KenngruppenbuchId).Distinct());
+    }
+
+    [Fact]
+    public void Should_refuse_When_generated_sheets_for_the_year_and_model_exist()
+    {
+        // Arrange
+        var repository = new FakeKeySheetRepository(Sheet("g", "Triton", "1944-06", Provenance.Generated));
+        var handler = new GenerateKeySheetsHandler(repository, Linking.For(repository), new Random(1));
+
+        // Act
+        void Act() => handler.Handle(new GenerateKeySheets("M3", 1944));
+
+        // Assert
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Equal("Generated M3 key sheets for 1944 already exist.", exception.Message);
+        Assert.Single(repository.Sheets);
+    }
+
+    [Theory]
+    [InlineData("M4", 1944, "Generated")]
+    [InlineData("M3", 1945, "Generated")]
+    [InlineData("M3", 1944, "UserDefined")]
+    public void Should_generate_When_the_existing_sheet_has_another_model_year_or_provenance(string model, int year, string provenance)
+    {
+        // Arrange
+        var existing = Sheet("x", "Triton", "1944-06", provenance == "Generated" ? Provenance.Generated : Provenance.UserDefined);
+        var repository = new FakeKeySheetRepository(existing);
+        var handler = new GenerateKeySheetsHandler(repository, Linking.For(repository), new Random(1));
+
+        // Act
+        var sheets = handler.Handle(new GenerateKeySheets(model, year));
+
+        // Assert
+        Assert.Equal(120, sheets.Count);
     }
 
     [Fact]
@@ -165,7 +147,7 @@ public sealed class KeySheetHandlerTests
         Assert.NotEqual("historical-x", details.Id);
         Assert.Equal("UserDefined", details.Provenance);
         Assert.Null(details.Source);
-        Assert.Matches("^26 B III VI VIII 01 08 13 AN EZ [A-Z]{3}\n$", details.Text);
+        Assert.Matches("^[A-Z]{3}$", Assert.Single(details.Days).Grundstellung);
     }
 
     [Fact]

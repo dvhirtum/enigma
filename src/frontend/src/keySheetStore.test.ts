@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { PrintDocument } from './api';
 import { createMachineStore } from './store';
 import { createFakeApi, defaultM3, fakeBook, fakeTables, generatedSheet, historicalSheet, summaryOf } from './test/fakeApi';
 
@@ -12,40 +13,40 @@ describe('key sheet store', () => {
     expect(store.getState().keySheets).toEqual([summaryOf(generatedSheet)]);
   });
 
-  it('opens a generated sheet and refreshes the list', async () => {
+  it('generates a year of sheets and refreshes the list without opening one', async () => {
     const { api } = createFakeApi();
     const store = createMachineStore(api);
 
-    const generated = await store.getState().generateKeySheet('M4', 'Triton', '1944-06');
+    const generated = await store.getState().generateKeySheets('M4', 1944);
 
     expect(generated).toBe(true);
-    expect(api.keySheets.generate).toHaveBeenCalledWith('M4', 'Triton', '1944-06');
-    expect(store.getState().keySheet).toEqual(generatedSheet);
+    expect(api.keySheets.generate).toHaveBeenCalledWith('M4', 1944);
     expect(api.keySheets.list).toHaveBeenCalled();
+    expect(store.getState().keySheet).toBeNull();
   });
 
-  it('reloads a Kenngruppenbuch after a sheet is generated, since the book may have allotted columns to it', async () => {
+  it('reloads a Kenngruppenbuch after sheets are generated, since the book may have allotted columns', async () => {
     const { api } = createFakeApi();
     const store = createMachineStore(api);
     await store.getState().loadBook(fakeBook.id);
 
-    await store.getState().generateKeySheet('M4', 'Seehund', '1944-06');
+    await store.getState().generateKeySheets('M4', 1944);
     await store.getState().loadBook(fakeBook.id);
 
     expect(store.getState().books[fakeBook.id]).toEqual(fakeBook);
     expect(api.procedure.getBook).toHaveBeenCalledTimes(2);
   });
 
-  it('keeps the open sheet and records the problem when a save is rejected', async () => {
+  it('keeps the open sheet and records the problem when generating is refused', async () => {
     const { api } = createFakeApi();
-    const problem = { status: 400, title: 'The operation was rejected.', detail: "Line 1: Unknown rotor 'IX'." };
-    api.keySheets.update.mockResolvedValue({ ok: false, problem });
+    const problem = { status: 400, title: 'The operation was rejected.', detail: 'Generated M4 key sheets for 1944 already exist.' };
+    api.keySheets.generate.mockResolvedValue({ ok: false, problem });
     const store = createMachineStore(api);
     await store.getState().openKeySheet('g1');
 
-    const saved = await store.getState().updateKeySheet('g1', 'Triton', '1944-06', '1 B I II IX 01 01 01');
+    const generated = await store.getState().generateKeySheets('M4', 1944);
 
-    expect(saved).toBe(false);
+    expect(generated).toBe(false);
     expect(store.getState().keySheet).toEqual(generatedSheet);
     expect(store.getState().error).toEqual(problem);
   });
@@ -107,6 +108,7 @@ describe('key sheet store', () => {
     expect(api.keySheets.export).toHaveBeenCalledWith('g1');
     const [name, content] = api.files.saveKeySheet.mock.calls[0] as [string, string];
     expect(name).toBe('Triton-1944-06.json');
+    expect(content).toBe(JSON.stringify(JSON.parse(content)));
     expect(JSON.parse(content)).toEqual({
       network: 'Triton',
       month: '1944-06',
@@ -131,7 +133,7 @@ describe('key sheet store', () => {
     expect(store.getState().error).toMatchObject({ title: 'Not found' });
   });
 
-  it('prints the open sheet with its book and tables to a PDF', async () => {
+  it('prints only the open sheet to a PDF', async () => {
     const { api } = createFakeApi();
     api.files.printKeySheet.mockResolvedValue('C:\\sheets\\Triton-1944-06.pdf');
     const store = createMachineStore(api);
@@ -141,12 +143,31 @@ describe('key sheet store', () => {
 
     expect(printed).toBe(true);
     expect(api.keySheets.export).toHaveBeenCalledWith('g1');
+    expect(api.files.printToFolder).not.toHaveBeenCalled();
     const [name, html] = api.files.printKeySheet.mock.calls[0] as [string, string];
     expect(name).toBe('Triton-1944-06.pdf');
     expect(html).toContain('Schlüsseltafel für das Schlüsselnetz <b>TRITON</b>');
-    expect(html).toContain('Spalten 101–120 · Triton');
-    expect(html).toContain('Kenngruppen Z..');
-    expect(html).toContain('Gültig 1.–15. Mai');
+    expect(html).not.toContain('Kenngruppenbuch');
+  });
+
+  it('prints the sheet and its book and tables to two PDFs in a folder', async () => {
+    const { api } = createFakeApi();
+    api.files.printToFolder.mockResolvedValue('C:\\sheets');
+    const store = createMachineStore(api);
+    await store.getState().openKeySheet('g1');
+
+    const printed = await store.getState().printKeySheet(true);
+
+    expect(printed).toBe(true);
+    expect(api.files.printKeySheet).not.toHaveBeenCalled();
+    const [[sheet, book]] = api.files.printToFolder.mock.calls[0] as [[PrintDocument, PrintDocument]];
+    expect(sheet.name).toBe('Triton-1944-06.pdf');
+    expect(sheet.html).toContain('Schlüsseltafel für das Schlüsselnetz <b>TRITON</b>');
+    expect(book.name).toBe('Kenngruppenbuch-Tauschtafeln-1944.pdf');
+    expect(book.html).toContain('Spalten 101–120 · Triton');
+    expect(book.html).toContain('Kenngruppen Z..');
+    expect(book.html).toContain('Gültig 1.–15. Mai');
+    expect(book.html).not.toContain('Schlüsseltafel');
   });
 
   it('prints nothing when the export fails', async () => {
