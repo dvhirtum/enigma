@@ -2,7 +2,7 @@
 
 [Back to the contents](README.md)
 
-The receiver undoes the sender's steps in reverse. As on the [sending page](sending-by-hand.md), use the key sheet panel, the top-down view and the [printed Kenngruppenbuch and Tauschtafeln](key-sheets.md#printing-a-sheet), with operator mode not running. The example receives the message from the sending page:
+The receiver undoes the sender's steps in reverse. As on the [sending page](sending-by-hand.md), you need the machine and the [printed](key-sheets.md#printing-a-sheet) key sheet, Kenngruppenbuch and Tauschtafeln, with operator mode not running. The example receives the message from the sending page:
 
 ```
 0915 = 60 = GEAQ LZBC IIYO GSLL WNVO EGSP CHZV PVOF RPJP ZRVD YQWS MOQX GJNC GEAQ LZBC
@@ -46,7 +46,7 @@ If you don't know which sheet to use, paste the message into operator mode and c
 
 ## 4. Find the Spruchschlüssel
 
-Apply the daily key, or [set it up by hand](key-sheets.md#setting-up-the-machine-by-hand). Turn the rotors to the Grundstellung and type the Verfahrenkenngruppe. The three lamps are the Spruchschlüssel, just as for the sender.
+Set up the machine from the network's key sheet, with the row for the day the message was sent. Follow [Setting up the machine by hand](key-sheets.md#setting-up-the-machine-by-hand). Turn the rotors to the Grundstellung and type the Verfahrenkenngruppe. The three lamps are the Spruchschlüssel, just as for the sender.
 
 **Example:** at `K D R W`, typing `W J M` lights `Y O K`.
 
@@ -64,7 +64,7 @@ That reads "ZWO ZERSTOERER X KURS NULL NEUN NULL X FAHRT ZWO NULL", followed by 
 
 ## Exercises: real messages
 
-The published texts of these messages don't include their indicators. For each one, the key row already holds the message's start position in the Grundstellung column. Save the sheet as a `.json` file and **Import** it, **Apply** the day (or set it up by hand from the row), turn the rotors to that position, and type the cipher text.
+The published texts of these messages don't include their indicators. For each one, the key row already holds the message's start position in the Grundstellung column. Save the sheet as a `.json` file and **Import** it. [Set up the machine by hand](key-sheets.md#setting-up-the-machine-by-hand) from the row (or click **Apply** on the day as a shortcut), turn the rotors to that position, and type the cipher text.
 
 ### Scharnhorst, 26 December 1943 (M3)
 

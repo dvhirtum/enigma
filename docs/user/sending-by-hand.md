@@ -2,7 +2,15 @@
 
 [Back to the contents](README.md)
 
-This page walks through the Navy procedure the way an operator worked it. It uses only the machine, the key sheet panel and the [printed PDFs](key-sheets.md#printing-a-sheet), not [operator mode](operator-mode.md). Print the key sheet with **Also print the Kenngruppenbuch and Tauschtafeln** ticked: you need the Kenngruppenbuch and the Tauschtafeln from the second PDF. You also need paper and a pencil to write down the lamps. If operator mode is running, click **Cancel** first, because it rejects keys it doesn't expect.
+This page walks through the Navy procedure the way an operator worked it: with the machine and the printed documents only, not [operator mode](operator-mode.md). You need:
+
+- the **key sheet** (Schlüsseltafel) for your network and month,
+- the **Kenngruppenbuch** and the **Tauschtafeln** for the year,
+- paper and a pencil to write down the lamps.
+
+Print them with **Print to PDF** in the key sheet panel, with **Also print the Kenngruppenbuch and Tauschtafeln** ticked (see [Printing a sheet](key-sheets.md#printing-a-sheet)).
+
+If operator mode is running, click **Cancel** first, because it rejects keys it doesn't expect.
 
 The worked example runs through every step with values you can check on your own machine.
 
@@ -28,9 +36,9 @@ That is 43 letters. Messages are sent in groups of 4, so add an X to fill the la
 
 ## 2. Set up the daily key
 
-Open **Key sheets** and click **Apply** on the day. The machine gets the reflector, rotors, rings and plugs, with all rotors at A. To do it the way operators did, set up the rotors, rings, reflector and plugs yourself from the sheet: see [Setting up the machine by hand](key-sheets.md#setting-up-the-machine-by-hand).
+Find the day's row on the printed key sheet and set up the machine from it: reflector, rotors, rings and plugs. Follow [Setting up the machine by hand](key-sheets.md#setting-up-the-machine-by-hand). Note the Grundstellung; you need it in step 4.
 
-**Example:** save this as `triton-1943-03.json`, click **Import** and choose the file, then **Apply** day 7:
+**Example:** save this as `triton-1943-03.json`, click **Import** in the key sheet panel and choose the file, then print it to PDF with the Kenngruppenbuch and Tauschtafeln:
 
 ```json
 {
@@ -43,7 +51,7 @@ Open **Key sheets** and click **Apply** on the day. The machine gets the reflect
 }
 ```
 
-This is an M4: reflector B-thin, rotors Beta V VI VIII, rings 13 02 20 05, ten plug pairs and the Grundstellung KDRW. By hand: rings `13 (M)` on Beta, `02 (B)` on V, `20 (T)` on VI and `05 (E)` on VIII, then Beta, V, VI and VIII into the slots from left to right. Print it to PDF with the Kenngruppenbuch and Tauschtafeln for the next steps.
+The key sheet has one row, day 7. It is for the M4: reflector B dünn (B-thin), Walzenlage Beta V VI VIII, Ringstellung 13 02 20 05, ten plug pairs and the Grundstellung KDRW. Set up the machine with it: rings `13 (M)` on Beta, `02 (B)` on V, `20 (T)` on VI and `05 (E)` on VIII.
 
 ## 3. Choose the Kenngruppen
 
