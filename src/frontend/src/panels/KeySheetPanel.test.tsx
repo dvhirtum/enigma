@@ -17,7 +17,7 @@ describe('KeySheetPanel', () => {
   it('lists the key sheets with their model and provenance', async () => {
     renderMachine(<KeySheetPanel />);
 
-    expect(await screen.findByRole('option', { name: 'Triton · M4 (generated)' })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Triton (generated)' })).toBeInTheDocument();
   });
 
   it('shows the daily keys of the chosen sheet', async () => {
@@ -82,13 +82,15 @@ describe('KeySheetPanel', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 
-  it('lists the months newest first and the sheets of the chosen month, historical first', async () => {
+  it('groups the months by year and the sheets of the chosen month by machine', async () => {
     const api = renderMachine(<KeySheetPanel />, undefined, (fake) =>
       fake.keySheets.list.mockResolvedValue({
         ok: true,
         value: [
           summaryOf({ ...generatedSheet, id: 't2', month: '1944-07' }),
+          summaryOf({ ...generatedSheet, id: 'd3', month: '1943-12' }),
           summaryOf({ ...generatedSheet, id: 'a1', network: 'Aegir' }),
+          summaryOf({ ...generatedSheet, id: 'n3', network: 'Neptun', model: 'M3' }),
           summaryOf(generatedSheet),
           summaryOf(historicalSheet),
         ],
@@ -97,12 +99,19 @@ describe('KeySheetPanel', () => {
 
     const month = await screen.findByRole('combobox', { name: 'Month' });
     await waitFor(() => expect(month).toHaveValue('1944-07'));
-    const optionsOf = (name: string) => within(screen.getByRole('combobox', { name })).getAllByRole('option').map((option) => option.textContent);
+    const groupsOf = (name: string) =>
+      [...screen.getByRole('combobox', { name }).querySelectorAll('optgroup')].map((group) => [group.label, [...group.querySelectorAll('option')].map((option) => option.textContent)]);
 
-    expect(optionsOf('Month')).toEqual(['1944-07', '1944-06']);
-    expect(optionsOf('Key sheet')).toEqual(['Choose a sheet', 'Triton · M4 (generated)']);
+    expect(groupsOf('Month')).toEqual([
+      ['1944', ['June', 'July']],
+      ['1943', ['December']],
+    ]);
+    expect(groupsOf('Key sheet')).toEqual([['M4', ['Triton (generated)']]]);
     fireEvent.change(month, { target: { value: '1944-06' } });
-    expect(optionsOf('Key sheet')).toEqual(['Choose a sheet', 'Hydra · M3 (historical)', 'Aegir · M4 (generated)', 'Triton · M4 (generated)']);
+    expect(groupsOf('Key sheet')).toEqual([
+      ['M3', ['Hydra (historical)', 'Neptun (generated)']],
+      ['M4', ['Aegir (generated)', 'Triton (generated)']],
+    ]);
     expect(api.keySheets.get).not.toHaveBeenCalled();
   });
 
@@ -110,7 +119,7 @@ describe('KeySheetPanel', () => {
     renderMachine(<KeySheetPanel />, undefined, (fake) =>
       fake.keySheets.list.mockResolvedValue({ ok: true, value: [summaryOf({ ...generatedSheet, id: 't2', month: '1944-07' }), summaryOf(generatedSheet)] }),
     );
-    await screen.findByRole('option', { name: 'Triton · M4 (generated)' });
+    await screen.findByRole('option', { name: 'Triton (generated)' });
     fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), { target: { value: '1944-06' } });
 
     await openSheet('g1');
@@ -124,7 +133,7 @@ describe('KeySheetPanel', () => {
     renderMachine(<KeySheetPanel />, undefined, (fake) =>
       fake.keySheets.list.mockResolvedValue({ ok: true, value: [summaryOf({ ...generatedSheet, id: 't2', month: '1944-07' }), summaryOf(generatedSheet)] }),
     );
-    await screen.findByRole('option', { name: 'Triton · M4 (generated)' });
+    await screen.findByRole('option', { name: 'Triton (generated)' });
     fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), { target: { value: '1944-06' } });
     await openSheet('g1');
     await screen.findByRole('listitem', { name: 'Day 1' });
