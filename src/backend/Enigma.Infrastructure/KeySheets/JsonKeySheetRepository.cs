@@ -49,6 +49,34 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
         }
     }
 
+    public void SaveLinks(KeySheet sheet)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+
+        lock (_lock)
+        {
+            if (!sheet.IsReadOnly)
+            {
+                Save(sheet);
+                return;
+            }
+
+            var links = ReadHistoricalLinks();
+            var link = new SheetLinks(
+                sheet.KenngruppenbuchId,
+                sheet.TauschtafelSetId,
+                sheet.DailyKeys.Where(k => k.Grundstellung is not null).ToDictionary(k => k.Day, k => k.Grundstellung!.ToString()));
+            links[sheet.Id] = link;
+            Directory.CreateDirectory(Path.GetDirectoryName(HistoricalLinksFile)!);
+            File.WriteAllText(HistoricalLinksFile, JsonSerializer.Serialize(links, KeySheetJsonContext.Default.DictionaryStringSheetLinks));
+            var cached = Historical().FirstOrDefault(s => s.Id == sheet.Id);
+            if (cached is not null && cached != sheet)
+            {
+                Apply(link, cached);
+            }
+        }
+    }
+
     public void Delete(string id)
     {
         lock (_lock)
@@ -69,6 +97,7 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
             return [];
         }
 
+        var links = ReadHistoricalLinks();
         return
         [
             .. Directory.EnumerateFiles(historicalPath, "*.json")
@@ -77,12 +106,56 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
                 {
                     var document = Deserialize(file)
                         ?? throw new InvalidDataException($"Historical key sheet {file} is empty.");
-                    return KeySheetMapper.FromDocument(
+                    var sheet = KeySheetMapper.FromDocument(
                         document,
                         "historical-" + Path.GetFileNameWithoutExtension(file),
                         Provenance.Historical(document.Source ?? string.Empty));
+                    if (links.TryGetValue(sheet.Id, out var link))
+                    {
+                        Apply(link, sheet);
+                    }
+
+                    return sheet;
                 }),
         ];
+    }
+
+    /// <summary>Applies the stored links and Grundstellungen to a historical sheet. Entries that no longer fit are skipped.</summary>
+    private static void Apply(SheetLinks link, KeySheet sheet)
+    {
+        if (link is { KenngruppenbuchId: { } book, TauschtafelSetId: { } tables })
+        {
+            sheet.Link(book, tables);
+        }
+
+        foreach (var (day, grundstellung) in link.Grundstellungen ?? [])
+        {
+            try
+            {
+                sheet.SetGrundstellung(day, RotorPositions.Parse(grundstellung));
+            }
+            catch (DomainException)
+            {
+                // The stored Grundstellung does not fit the day; the linker fills a new one.
+            }
+        }
+    }
+
+    private string HistoricalLinksFile => Path.Combine(userPath, "procedure", "historical-links.json");
+
+    /// <summary>The links of historical sheets by sheet id. An unreadable file counts as empty.</summary>
+    private Dictionary<string, SheetLinks> ReadHistoricalLinks()
+    {
+        try
+        {
+            return File.Exists(HistoricalLinksFile)
+                ? JsonSerializer.Deserialize(File.ReadAllText(HistoricalLinksFile), KeySheetJsonContext.Default.DictionaryStringSheetLinks) ?? []
+                : [];
+        }
+        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
     }
 
     private IEnumerable<KeySheet> UserSheets()
@@ -129,6 +202,10 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
         !string.IsNullOrEmpty(id) && id.All(c => char.IsAsciiLetterOrDigit(c) || c == '-');
 }
 
+/// <summary>The Kenngruppenbuch, Tauschtafel set and filled-in Grundstellungen (by day) of a historical sheet.</summary>
+internal sealed record SheetLinks(string? KenngruppenbuchId, string? TauschtafelSetId, Dictionary<int, string>? Grundstellungen = null);
+
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, WriteIndented = true)]
 [JsonSerializable(typeof(KeySheetDocument))]
+[JsonSerializable(typeof(Dictionary<string, SheetLinks>))]
 internal sealed partial class KeySheetJsonContext : JsonSerializerContext;

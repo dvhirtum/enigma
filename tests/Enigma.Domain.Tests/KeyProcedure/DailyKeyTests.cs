@@ -140,14 +140,15 @@ public sealed class DailyKeyTests
     }
 
     [Fact]
-    public void Should_reject_the_key_When_a_Kenngruppe_appears_twice()
+    public void Should_reject_the_key_When_the_Grundstellung_does_not_fit_the_rotors()
     {
         // Arrange
         // Act
-        void Act() => Keys.Day(2, "B", "I II III", "01 01 01", "", "ABC abc");
+        void Act() => Keys.Day(2, "B", "I II III", "01 01 01", "", "QRSA");
 
         // Assert
-        Assert.Throws<DomainException>(Act);
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Equal("Day 2: 3 rotors need a Grundstellung of 3 letters, got QRSA.", exception.Message);
     }
 
     [Theory]

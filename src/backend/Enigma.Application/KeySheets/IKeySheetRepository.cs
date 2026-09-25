@@ -13,6 +13,9 @@ public interface IKeySheetRepository
     /// <summary>Adds or replaces a generated or user-defined sheet.</summary>
     void Save(KeySheet sheet);
 
+    /// <summary>Stores the links of any sheet, historical ones included.</summary>
+    void SaveLinks(KeySheet sheet);
+
     void Delete(string id);
 }
 

@@ -57,10 +57,8 @@ public sealed class KeySheetGeneratorTests
         {
             Assert.Contains(key.Rotors, NavyRotors.Contains);
             Assert.Equal(KeySheetGenerator.PlugPairs, key.Plugs.Count);
-            Assert.Equal(KeySheetGenerator.KenngruppenPerDay, key.Kenngruppen.Count);
+            Assert.Equal(3, key.Grundstellung?.Count);
         });
-        var kenngruppen = sheet.DailyKeys.SelectMany(k => k.Kenngruppen).ToList();
-        Assert.Equal(kenngruppen.Count, kenngruppen.Distinct().Count());
     }
 
     [Fact]

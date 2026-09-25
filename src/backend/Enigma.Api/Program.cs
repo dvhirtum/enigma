@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 using Enigma.Api;
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
+using Enigma.Application.OperatorMode;
+using Enigma.Application.Procedure;
 using Enigma.Infrastructure.Machine;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -16,6 +18,7 @@ builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddSingleton<IMachineSessionStore, InMemoryMachineSessionStore>();
 builder.Services.AddMachineHandlers();
 builder.Services.AddKeySheets(builder.Configuration);
+builder.Services.AddOperatorHandlers();
 
 var app = builder.Build();
 
@@ -27,6 +30,7 @@ var version = typeof(Program).Assembly
 app.MapGet("/api/health", () => new HealthResponse("ok", version));
 app.MapMachineEndpoints();
 app.MapKeySheetEndpoints();
+app.MapOperatorEndpoints();
 
 app.Lifetime.ApplicationStarted.Register(() =>
 {
@@ -59,4 +63,10 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(KeySheetDocument))]
 [JsonSerializable(typeof(KeySheetDetails))]
 [JsonSerializable(typeof(IReadOnlyList<KeySheetSummary>))]
+[JsonSerializable(typeof(KenngruppenbuchDocument))]
+[JsonSerializable(typeof(TauschtafelSetDocument))]
+[JsonSerializable(typeof(FindReceivingKeys))]
+[JsonSerializable(typeof(IReadOnlyList<ReceivingKey>))]
+[JsonSerializable(typeof(StartReceiving))]
+[JsonSerializable(typeof(ChooseGroups))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;

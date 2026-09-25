@@ -1,5 +1,49 @@
 import { vi } from 'vitest';
-import type { BackendStatus, EnigmaApi, KeySheet, KeySheetSummary, MachineState } from '../api';
+import type { BackendStatus, EnigmaApi, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
+
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
+
+/** Trigrams in alphabetical order: column 1 holds AAA–AAZ, column 101 holds DWA–DWZ. */
+export const fakeBook: Kenngruppenbuch = {
+  id: 'book',
+  created: '1944-06-01T00:00:00+00:00',
+  verfahrenkenngruppen: { first: 1, last: 100 },
+  allotments: [
+    { network: 'Triton', first: 101, last: 120 },
+    { network: 'Hydra', first: 121, last: 140 },
+  ],
+  columns: Array.from({ length: 676 }, (_, column) => Array.from({ length: 26 }, (_, row) => trigram(column * 26 + row)).join(' ')),
+};
+
+export const fakeTables: TauschtafelSet = {
+  id: 'tables',
+  year: 1944,
+  tables: Array.from({ length: 9 }, (_, index) => ({ number: index + 1, swaps: ['AAZZ', 'ABZY', `AC${alphabet[index]}Q`] })),
+  calendar: Array.from({ length: 24 }, (_, index) => (index % 9) + 1),
+};
+
+export const sending: OperatorState = {
+  direction: 'Send',
+  step: 'ChooseGroups',
+  network: 'Triton',
+  kenngruppenbuchId: 'book',
+  table: 3,
+  grundstellung: 'QRSA',
+  schluesselkenngruppe: null,
+  verfahrenkenngruppe: null,
+  fillers: 'QX',
+  bigrams: [],
+  indicator: null,
+  spruchschluesselLamps: '',
+  spruchschluessel: null,
+  pad: '',
+  expectedKey: null,
+  fillersNeeded: 0,
+  cipherText: null,
+  message: null,
+  warnings: [],
+};
 
 export const defaultM3: MachineState = {
   model: 'M3',
@@ -14,6 +58,7 @@ export const defaultM3: MachineState = {
   heldKey: null,
   litLamp: null,
   appliedKey: null,
+  operator: null,
 };
 
 export const generatedSheet: KeySheet = {
@@ -31,11 +76,13 @@ export const generatedSheet: KeySheet = {
       rotors: ['Beta', 'II', 'IV', 'I'],
       rings: [1, 1, 1, 22],
       plugs: ['AT', 'BL', 'DF'],
-      kenngruppen: ['ABC', 'DEF'],
+      grundstellung: 'QRSA',
     },
-    { day: 2, reflector: 'B-thin', rotors: ['Beta', 'II', 'IV', 'I'], rings: [1, 1, 1, 22], plugs: ['CO'], kenngruppen: [] },
+    { day: 2, reflector: 'B-thin', rotors: ['Beta', 'II', 'IV', 'I'], rings: [1, 1, 1, 22], plugs: ['CO'], grundstellung: null },
   ],
-  text: '1 B-thin Beta II IV I 01 01 01 22 AT BL DF ABC DEF\n2 B-thin Beta II IV I 01 01 01 22 CO\n',
+  text: '1 B-thin Beta II IV I 01 01 01 22 AT BL DF QRSA\n2 B-thin Beta II IV I 01 01 01 22 CO\n',
+  kenngruppenbuchId: 'book',
+  tauschtafelSetId: 'tables',
 };
 
 export const historicalSheet: KeySheet = {
@@ -46,8 +93,22 @@ export const historicalSheet: KeySheet = {
   provenance: 'Historical',
   source: 'Test transcription',
   readOnly: true,
-  days: [{ day: 26, reflector: 'B', rotors: ['III', 'VI', 'VIII'], rings: [1, 8, 13], plugs: ['AN', 'EZ'], kenngruppen: null }],
+  days: [{ day: 26, reflector: 'B', rotors: ['III', 'VI', 'VIII'], rings: [1, 8, 13], plugs: ['AN', 'EZ'], grundstellung: null }],
   text: '26 B III VI VIII 01 08 13 AN EZ\n',
+};
+
+/** The export of the generated sheet as the backend returns it, with its id and provenance cleared. */
+export const exportedFile = {
+  id: null,
+  network: generatedSheet.network,
+  month: generatedSheet.month,
+  provenance: null,
+  source: null,
+  days: generatedSheet.days,
+  kenngruppenbuchId: 'book',
+  tauschtafelSetId: 'tables',
+  kenngruppenbuch: fakeBook,
+  tauschtafeln: fakeTables,
 };
 
 export function summaryOf({ id, network, month, model, provenance, source, readOnly }: KeySheet): KeySheetSummary {
@@ -75,6 +136,11 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       pressKey: ok(),
       releaseKey: ok(),
       applyDailyKey: ok(),
+      startSending: ok(),
+      startReceiving: ok(),
+      chooseGroups: ok(),
+      finishMessage: ok(),
+      cancelOperator: ok(),
     },
     keySheets: {
       list: vi.fn().mockResolvedValue({ ok: true, value: [summaryOf(generatedSheet)] }),
@@ -84,10 +150,20 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       remove: vi.fn().mockResolvedValue({ ok: true, value: null }),
       generate: sheet(),
       import: sheet(),
+      export: vi.fn().mockResolvedValue({ ok: true, value: exportedFile }),
+    },
+    procedure: {
+      getBook: vi.fn().mockResolvedValue({ ok: true, value: fakeBook }),
+      getTables: vi.fn().mockResolvedValue({ ok: true, value: fakeTables }),
+      findReceivingKeys: vi.fn().mockResolvedValue({ ok: true, value: [] }),
+    },
+    clipboard: {
+      writeText: vi.fn().mockResolvedValue(undefined),
     },
     files: {
       openKeySheet: vi.fn().mockResolvedValue(null),
       saveKeySheet: vi.fn().mockResolvedValue(null),
+      printKeySheet: vi.fn().mockResolvedValue(null),
     },
     backend: {
       status: vi.fn().mockResolvedValue(status),

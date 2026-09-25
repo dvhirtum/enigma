@@ -13,5 +13,7 @@ internal sealed class FakeKeySheetRepository(params KeySheet[] sheets) : IKeyShe
 
     public void Save(KeySheet sheet) => Sheets[sheet.Id] = sheet;
 
+    public void SaveLinks(KeySheet sheet) => Sheets[sheet.Id] = sheet;
+
     public void Delete(string id) => Sheets.Remove(id);
 }

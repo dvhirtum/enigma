@@ -1,21 +1,27 @@
+using System.Text.Json.Serialization;
 using Enigma.Application.Machine;
+using Enigma.Application.Procedure;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
 namespace Enigma.Application.KeySheets;
 
-/// <summary>A daily key as stored and exchanged: rotors left to right, rings 1–26, plugs such as "AT".</summary>
+/// <summary>
+/// A daily key as stored and exchanged: rotors left to right, rings 1–26, plugs such as "AT", and a Grundstellung
+/// such as "QRS" (or null).
+/// </summary>
 public sealed record DailyKeyDocument(
     int Day,
     string Reflector,
     IReadOnlyList<string> Rotors,
     IReadOnlyList<int> Rings,
     IReadOnlyList<string> Plugs,
-    IReadOnlyList<string>? Kenngruppen);
+    string? Grundstellung);
 
 /// <summary>
 /// A key sheet file. <see cref="Provenance"/> is Historical, Generated or UserDefined; <see cref="Source"/> names the
-/// document a historical sheet was transcribed from. Imports ignore the id and provenance.
+/// document a historical sheet was transcribed from. Imports ignore the id and provenance. An exported file also holds
+/// the linked <see cref="Kenngruppenbuch"/> and <see cref="Tauschtafeln"/>, so another installation can use them.
 /// </summary>
 public sealed record KeySheetDocument(
     string? Id,
@@ -23,7 +29,11 @@ public sealed record KeySheetDocument(
     string Month,
     string? Provenance,
     string? Source,
-    IReadOnlyList<DailyKeyDocument> Days);
+    IReadOnlyList<DailyKeyDocument> Days,
+    string? KenngruppenbuchId = null,
+    string? TauschtafelSetId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] KenngruppenbuchDocument? Kenngruppenbuch = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] TauschtafelSetDocument? Tauschtafeln = null);
 
 public sealed record KeySheetSummary(
     string Id,
@@ -44,7 +54,9 @@ public sealed record KeySheetDetails(
     string? Source,
     bool ReadOnly,
     IReadOnlyList<DailyKeyDocument> Days,
-    string Text);
+    string Text,
+    string? KenngruppenbuchId,
+    string? TauschtafelSetId);
 
 public static class KeySheetMapper
 {
@@ -64,7 +76,8 @@ public static class KeySheetMapper
         return new KeySheetDetails(
             sheet.Id, sheet.Network, sheet.Month.ToString(), sheet.Model.Name,
             ProvenanceName(sheet.Provenance), Source(sheet.Provenance), sheet.IsReadOnly,
-            [.. sheet.DailyKeys.Select(ToDocument)], KeySheetText.Format(sheet.DailyKeys));
+            [.. sheet.DailyKeys.Select(ToDocument)], KeySheetText.Format(sheet.DailyKeys),
+            sheet.KenngruppenbuchId, sheet.TauschtafelSetId);
     }
 
     public static KeySheetDocument ToDocument(KeySheet sheet)
@@ -74,7 +87,8 @@ public static class KeySheetMapper
         return new KeySheetDocument(
             sheet.Id, sheet.Network, sheet.Month.ToString(),
             ProvenanceName(sheet.Provenance), Source(sheet.Provenance),
-            [.. sheet.DailyKeys.Select(ToDocument)]);
+            [.. sheet.DailyKeys.Select(ToDocument)],
+            sheet.KenngruppenbuchId, sheet.TauschtafelSetId);
     }
 
     /// <summary>Builds a sheet from a document. Bad data throws <see cref="DomainException"/>.</summary>
@@ -87,9 +101,15 @@ public static class KeySheetMapper
             throw new DomainException("A key sheet file needs a list of days.");
         }
 
-        return new KeySheet(
+        var sheet = new KeySheet(
             id, document.Network, KeyMonth.Parse(document.Month ?? string.Empty), provenance,
             [.. document.Days.Select(FromDocument)]);
+        if (!string.IsNullOrWhiteSpace(document.KenngruppenbuchId) && !string.IsNullOrWhiteSpace(document.TauschtafelSetId))
+        {
+            sheet.Link(document.KenngruppenbuchId, document.TauschtafelSetId);
+        }
+
+        return sheet;
     }
 
     /// <summary>Reads the provenance stored in a document; unknown values count as user-defined.</summary>
@@ -111,7 +131,7 @@ public static class KeySheetMapper
         [.. key.Rotors.Select(r => r.Name)],
         [.. key.Rings.Select(r => r.Number)],
         [.. key.Plugs.Select(p => p.ToString())],
-        [.. key.Kenngruppen.Select(k => k.ToString())]);
+        key.Grundstellung?.ToString());
 
     private static DailyKey FromDocument(DailyKeyDocument day)
     {
@@ -128,7 +148,7 @@ public static class KeySheetMapper
                 [.. day.Rotors.Select(Input.Rotor)],
                 [.. day.Rings.Select(RingSetting.FromNumber)],
                 [.. day.Plugs.Select(Input.PlugPair)],
-                [.. (day.Kenngruppen ?? []).Select(Input.Kenngruppe)]);
+                string.IsNullOrEmpty(day.Grundstellung) ? null : RotorPositions.Parse(day.Grundstellung));
         }
         catch (DomainException exception) when (!exception.Message.StartsWith("Day ", StringComparison.Ordinal))
         {

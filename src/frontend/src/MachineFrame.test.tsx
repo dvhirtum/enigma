@@ -102,8 +102,16 @@ describe('MachineFrame', () => {
 
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Top-down' }), { key: 'ArrowUp' });
 
-    expect(screen.getByRole('tab', { name: 'Plugboard' })).toHaveFocus();
-    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Plugboard');
+    expect(screen.getByRole('tab', { name: 'Instructions' })).toHaveFocus();
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Instructions');
+  });
+
+  it('shows the user guide in the instructions tab', () => {
+    renderFrame();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Instructions' }));
+
+    expect(screen.getByRole('article', { name: 'Instructions' })).toHaveTextContent('Enigma user guide');
   });
 
   it('shows no daily key until one is applied', async () => {
@@ -115,11 +123,13 @@ describe('MachineFrame', () => {
   });
 
   it.each([
-    [false, 'Key: Triton 1944-06, day 19'],
-    [true, 'Key: Triton 1944-06, day 19 (modified)'],
-  ])('shows the applied sheet and day in the header (modified: %s)', async (modified, label) => {
+    [false, null, 'Key: Triton 1944-06, day 19'],
+    [true, null, 'Key: Triton 1944-06, day 19 (modified)'],
+    [false, 'QRSA', 'Key: Triton 1944-06, day 19 · Grundstellung QRSA'],
+    [true, 'QRSA', 'Key: Triton 1944-06, day 19 · Grundstellung QRSA (modified)'],
+  ])('shows the applied sheet, day and Grundstellung in the header (modified: %s, Grundstellung: %s)', async (modified, grundstellung, label) => {
     const { api } = createFakeApi();
-    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 19, modified };
+    const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 19, modified, grundstellung };
     api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, appliedKey } });
     render(
       <MachineStoreProvider api={api}>
@@ -147,5 +157,16 @@ describe('MachineFrame', () => {
     fireEvent.click(toggle);
 
     expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
+  });
+
+  it('shows one side panel at a time', async () => {
+    renderFrame();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Key sheets' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Operator mode' }));
+
+    expect(await screen.findByRole('complementary', { name: 'Operator mode' })).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: 'Key sheets' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Key sheets' })).toHaveAttribute('aria-expanded', 'false');
   });
 });

@@ -4,7 +4,7 @@ namespace Enigma.Domain.KeyProcedure;
 
 /// <summary>
 /// The key for one day of a sheet: reflector, Walzenlage (rotor order, left to right, Greek rotor first on the M4),
-/// Ringstellung, Steckerverbindungen and Kenngruppen.
+/// Ringstellung, Steckerverbindungen and optionally the Grundstellung.
 /// </summary>
 public sealed class DailyKey
 {
@@ -14,13 +14,12 @@ public sealed class DailyKey
         IReadOnlyList<RotorType> rotors,
         IReadOnlyList<RingSetting> rings,
         IReadOnlyList<PlugPair> plugs,
-        IReadOnlyList<Kenngruppe> kenngruppen)
+        RotorPositions? grundstellung = null)
     {
         ArgumentNullException.ThrowIfNull(reflector);
         ArgumentNullException.ThrowIfNull(rotors);
         ArgumentNullException.ThrowIfNull(rings);
         ArgumentNullException.ThrowIfNull(plugs);
-        ArgumentNullException.ThrowIfNull(kenngruppen);
 
         if (day is < 1 or > 31)
         {
@@ -50,9 +49,9 @@ public sealed class DailyKey
             throw new DomainException($"Day {day}: at most {Plugboard.MaxPairs} plug pairs, got {plugs.Count}.");
         }
 
-        if (kenngruppen.Distinct().Count() != kenngruppen.Count)
+        if (grundstellung is not null && grundstellung.Count != rotors.Count)
         {
-            throw new DomainException($"Day {day}: each Kenngruppe may appear only once.");
+            throw new DomainException($"Day {day}: {rotors.Count} rotors need a Grundstellung of {rotors.Count} letters, got {grundstellung}.");
         }
 
         Day = day;
@@ -60,7 +59,7 @@ public sealed class DailyKey
         Rotors = [.. rotors];
         Rings = [.. rings];
         Plugs = [.. plugs];
-        Kenngruppen = [.. kenngruppen];
+        Grundstellung = grundstellung;
 
         try
         {
@@ -86,7 +85,8 @@ public sealed class DailyKey
 
     public IReadOnlyList<PlugPair> Plugs { get; }
 
-    public IReadOnlyList<Kenngruppe> Kenngruppen { get; }
+    /// <summary>The rotor setting for encrypting the Verfahrenkenngruppe, or null when the sheet gives none.</summary>
+    public RotorPositions? Grundstellung { get; }
 
     /// <summary>True when <paramref name="machine"/> has this key's reflector, rotor order, rings and plugs. Positions are ignored.</summary>
     public bool IsSetUpOn(EnigmaMachine machine)
@@ -99,6 +99,10 @@ public sealed class DailyKey
             && machine.Rotors.Select(r => r.RingSetting).SequenceEqual(Rings)
             && machine.Plugboard.Pairs.ToHashSet().SetEquals(Plugs);
     }
+
+    /// <summary>A copy of this key with <paramref name="grundstellung"/>.</summary>
+    public DailyKey WithGrundstellung(RotorPositions grundstellung) =>
+        new(Day, Reflector, Rotors, Rings, Plugs, grundstellung);
 
     /// <summary>Creates a machine of <see cref="Model"/> set up with this key. All rotors show A.</summary>
     public EnigmaMachine SetUp()

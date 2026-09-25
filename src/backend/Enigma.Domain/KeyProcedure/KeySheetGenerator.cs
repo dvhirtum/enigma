@@ -4,14 +4,12 @@ namespace Enigma.Domain.KeyProcedure;
 
 /// <summary>
 /// Generates key sheets the Navy way. The inner setting (reflector, Walzenlage and rings) changes every other day,
-/// the plugs change daily. Every Walzenlage includes one of the Navy rotors VI–VIII. Each day gets 10 plug pairs
-/// and 4 Kenngruppen, unique within the sheet.
+/// the plugs and the Grundstellung change daily. Every Walzenlage includes one of the Navy rotors VI–VIII. Each day
+/// gets 10 plug pairs.
 /// </summary>
 public static class KeySheetGenerator
 {
     public const int PlugPairs = 10;
-
-    public const int KenngruppenPerDay = 4;
 
     private static readonly RotorType[] NavyRotors = [RotorType.VI, RotorType.VII, RotorType.VIII];
 
@@ -20,7 +18,6 @@ public static class KeySheetGenerator
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(random);
 
-        var used = new HashSet<Kenngruppe>();
         var keys = new List<DailyKey>();
 
         for (var first = 1; first <= month.Days; first += 2)
@@ -28,7 +25,7 @@ public static class KeySheetGenerator
             var (reflector, rotors, rings) = InnerSetting(model, random);
             for (var day = first; day <= Math.Min(first + 1, month.Days); day++)
             {
-                keys.Add(new DailyKey(day, reflector, rotors, rings, Plugs(random), Kenngruppen(random, used)));
+                keys.Add(new DailyKey(day, reflector, rotors, rings, Plugs(random), Grundstellung(rotors.Length, random)));
             }
         }
 
@@ -62,22 +59,8 @@ public static class KeySheetGenerator
         return [.. Enumerable.Range(0, PlugPairs).Select(i => PlugPair.Create(letters[2 * i], letters[(2 * i) + 1]))];
     }
 
-    private static Kenngruppe[] Kenngruppen(Random random, HashSet<Kenngruppe> used)
-    {
-        var groups = new List<Kenngruppe>();
-        while (groups.Count < KenngruppenPerDay)
-        {
-            var group = Kenngruppe.FromLetters(RandomLetter(random), RandomLetter(random), RandomLetter(random));
-            if (used.Add(group))
-            {
-                groups.Add(group);
-            }
-        }
-
-        return [.. groups];
-    }
-
-    private static Letter RandomLetter(Random random) => Letter.FromIndex(random.Next(Letter.Count));
+    private static RotorPositions Grundstellung(int rotors, Random random) =>
+        new(Enumerable.Range(0, rotors).Select(_ => new RotorPosition(Letter.FromIndex(random.Next(Letter.Count)))));
 
     private static T[] Shuffle<T>(IEnumerable<T> items, Random random)
     {

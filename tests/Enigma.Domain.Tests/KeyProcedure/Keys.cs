@@ -7,14 +7,14 @@ namespace Enigma.Domain.Tests.KeyProcedure;
 internal static class Keys
 {
     /// <summary>Builds a daily key from key-sheet notation, e.g. rotors "Beta II IV I", rings "01 01 01 22".</summary>
-    public static DailyKey Day(int day, string reflector, string rotors, string rings, string plugs = "", string kenngruppen = "") =>
+    public static DailyKey Day(int day, string reflector, string rotors, string rings, string plugs = "", string? grundstellung = null) =>
         new(
             day,
             ReflectorType.FromName(reflector),
             [.. Split(rotors).Select(RotorType.FromName)],
             [.. Split(rings).Select(r => RingSetting.FromNumber(int.Parse(r, CultureInfo.InvariantCulture)))],
             [.. Split(plugs).Select(PlugPair.Parse)],
-            [.. Split(kenngruppen).Select(Kenngruppe.Parse)]);
+            grundstellung is null ? null : RotorPositions.Parse(grundstellung));
 
     public static DailyKey M3(int day) => Day(day, "B", "I II III", "01 01 01");
 

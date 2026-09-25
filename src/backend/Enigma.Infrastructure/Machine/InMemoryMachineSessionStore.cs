@@ -1,4 +1,5 @@
 using Enigma.Application.Machine;
+using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
 namespace Enigma.Infrastructure.Machine;
@@ -10,6 +11,8 @@ public sealed class InMemoryMachineSessionStore : IMachineSessionStore
     private EnigmaMachine _machine = EnigmaMachine.Create(MachineModel.M3);
 
     public AppliedKey? AppliedKey { get; private set; }
+
+    public OperatorProcedure? Procedure { get; set; }
 
     public T Use<T>(Func<EnigmaMachine, T> action)
     {
@@ -29,6 +32,7 @@ public sealed class InMemoryMachineSessionStore : IMachineSessionStore
         {
             _machine = machine;
             AppliedKey = appliedKey;
+            Procedure = null;
         }
     }
 }

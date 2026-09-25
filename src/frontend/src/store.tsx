@@ -1,7 +1,20 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { createStore, useStore, type StoreApi } from 'zustand';
-import type { ApiResult, EnigmaApi, KeySheet, KeySheetFile, KeySheetSummary, MachineApi, MachineState, Problem } from './api';
+import type {
+  ApiResult,
+  EnigmaApi,
+  Kenngruppenbuch,
+  KeySheet,
+  KeySheetFile,
+  KeySheetSummary,
+  MachineApi,
+  MachineState,
+  Problem,
+  ReceivingKey,
+  TauschtafelSet,
+} from './api';
 import { shiftLetter, shiftRing } from './machine';
+import { keySheetDocument } from './printSheet';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -22,9 +35,23 @@ export interface KeySheetSlice {
   importKeySheet: () => Promise<boolean>;
   /** Saves the open sheet to a file the user picks. */
   exportKeySheet: () => Promise<boolean>;
+  /** Prints the open sheet with its Kenngruppenbuch and Tauschtafeln to a PDF the user picks. */
+  printKeySheet: () => Promise<boolean>;
 }
 
-export interface MachineStore extends Actions, KeySheetSlice {
+/** Kenngruppenbücher and Tauschtafel sets by id, loaded when first needed. Books are cleared after a sheet is created, updated, generated or imported. */
+export interface ProcedureSlice {
+  books: Record<string, Kenngruppenbuch>;
+  tables: Record<string, TauschtafelSet>;
+  loadBook: (id: string) => Promise<boolean>;
+  loadTables: (id: string) => Promise<boolean>;
+  /** The key sheet days that fit a received message on Thu Sep 24 21:20:27 WEDT 2026 (yyyy-MM-dd), or null when the lookup failed. */
+  findReceivingKeys: (message: string, date: string) => Promise<ReceivingKey[] | null>;
+  /** Copies text to the clipboard; resolves to true when it worked. */
+  copyText: (text: string) => Promise<boolean>;
+}
+
+export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
   machine: MachineState | null;
   version: string | null;
   error: Problem | null;
@@ -46,7 +73,7 @@ async function settle<T>(call: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
   }
 }
 
-export function createMachineStore({ machine: api, keySheets: sheets, files, health }: EnigmaApi): StoreApi<MachineStore> {
+export function createMachineStore({ machine: api, keySheets: sheets, procedure, files, clipboard, health }: EnigmaApi): StoreApi<MachineStore> {
   return createStore<MachineStore>()((set, get) => {
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
@@ -76,7 +103,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, files, hea
       if (!result.ok) {
         return false;
       }
-      set({ keySheet: result.value });
+      set({ keySheet: result.value, books: {} });
       await loadKeySheets();
       return true;
     };
@@ -87,6 +114,40 @@ export function createMachineStore({ machine: api, keySheets: sheets, files, hea
       error: null,
       keySheets: [],
       keySheet: null,
+      books: {},
+      tables: {},
+      loadBook: async (id) => {
+        if (get().books[id]) {
+          return true;
+        }
+        const result = await check(procedure.getBook(id));
+        if (result.ok) {
+          set((state) => ({ books: { ...state.books, [id]: result.value } }));
+        }
+        return result.ok;
+      },
+      loadTables: async (id) => {
+        if (get().tables[id]) {
+          return true;
+        }
+        const result = await check(procedure.getTables(id));
+        if (result.ok) {
+          set((state) => ({ tables: { ...state.tables, [id]: result.value } }));
+        }
+        return result.ok;
+      },
+      findReceivingKeys: async (message, date) => {
+        const result = await check(procedure.findReceivingKeys(message, date));
+        return result.ok ? result.value : null;
+      },
+      copyText: async (text) => {
+        try {
+          await clipboard.writeText(text);
+          return true;
+        } catch (error) {
+          return fail({ status: 0, title: 'The text could not be copied.', detail: String(error) });
+        }
+      },
       loadKeySheets,
       openKeySheet: async (id) => {
         if (id === null) {
@@ -134,11 +195,31 @@ export function createMachineStore({ machine: api, keySheets: sheets, files, hea
         if (!sheet) {
           return false;
         }
-        const file: KeySheetFile = { network: sheet.network, month: sheet.month, days: sheet.days };
+        const result = await check(sheets.export(sheet.id));
+        if (!result.ok) {
+          return false;
+        }
+        const { network, month, days, kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln } = result.value;
+        const file: KeySheetFile = { network, month, days, kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln };
         try {
           return (await files.saveKeySheet(`${sheet.network}-${sheet.month}.json`, `${JSON.stringify(file, null, 2)}\n`)) !== null;
         } catch (error) {
           return fail({ status: 0, title: 'The file could not be saved.', detail: String(error) });
+        }
+      },
+      printKeySheet: async () => {
+        const sheet = get().keySheet;
+        if (!sheet) {
+          return false;
+        }
+        const result = await check(sheets.export(sheet.id));
+        if (!result.ok) {
+          return false;
+        }
+        try {
+          return (await files.printKeySheet(`${sheet.network}-${sheet.month}.pdf`, keySheetDocument(result.value, sheet.model))) !== null;
+        } catch (error) {
+          return fail({ status: 0, title: 'The PDF could not be saved.', detail: String(error) });
         }
       },
       load: async () => {
@@ -173,6 +254,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, files, hea
       pressKey: (key) => apply(api.pressKey(key)),
       releaseKey: () => apply(api.releaseKey()),
       applyDailyKey: (sheetId, day) => apply(api.applyDailyKey(sheetId, day)),
+      startSending: () => apply(api.startSending()),
+      startReceiving: (message, sheetId, day) => apply(api.startReceiving(message, sheetId, day)),
+      chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
+        apply(api.chooseGroups(schluesselkenngruppe, verfahrenkenngruppe, fillers)),
+      finishMessage: () => apply(api.finishMessage()),
+      cancelOperator: () => apply(api.cancelOperator()),
     };
   });
 }

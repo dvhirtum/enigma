@@ -11,7 +11,7 @@ namespace Enigma.Api.Tests;
 
 public sealed class KeySheetEndpointTests : IDisposable
 {
-    private const string U264Row = "19 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX ABC\n";
+    private const string U264Row = "19 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX VJNA\n";
 
     private const string HistoricalJson = """
         {
@@ -124,7 +124,8 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(["III", "VI", "VIII"], state.Rotors.Select(r => r.Rotor));
         Assert.Equal([1, 8, 13], state.Rotors.Select(r => r.RingSetting));
         Assert.Equal(10, state.Plugs.Count);
-        Assert.Equal(new AppliedKeyState("historical-hydra-1943-12", "Hydra", "1943-12", 26, false), state.AppliedKey);
+        Assert.Equal(new AppliedKeyState("historical-hydra-1943-12", "Hydra", "1943-12", 26, false, null), state.AppliedKey! with { Grundstellung = null });
+        Assert.Matches("^[A-Z]{3}$", state.AppliedKey.Grundstellung);
     }
 
     [Fact]
@@ -140,10 +141,9 @@ public sealed class KeySheetEndpointTests : IDisposable
         var json = await client.GetStringAsync(Url("/api/machine"), Token);
 
         // Assert
-        Assert.Contains(
-            "\"appliedKey\":{\"sheetId\":\"historical-hydra-1943-12\",\"network\":\"Hydra\",\"month\":\"1943-12\",\"day\":26,\"modified\":true}",
-            json,
-            StringComparison.Ordinal);
+        Assert.Matches(
+            "\"appliedKey\":\\{\"sheetId\":\"historical-hydra-1943-12\",\"network\":\"Hydra\",\"month\":\"1943-12\",\"day\":26,\"modified\":true,\"grundstellung\":\"[A-Z]{3}\"\\}",
+            json);
     }
 
     [Fact]
@@ -195,11 +195,11 @@ public sealed class KeySheetEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task Should_return_bad_request_When_an_imported_sheet_has_an_empty_kenngruppe()
+    public async Task Should_return_bad_request_When_an_imported_sheet_has_a_bad_Grundstellung()
     {
         // Arrange
         var client = CreateClient();
-        var body = JsonSerializer.Deserialize<JsonElement>(WithKenngruppen("[\"ABC\", null]"));
+        var body = JsonSerializer.Deserialize<JsonElement>(WithGrundstellung("\"AB\""));
 
         // Act
         using var response = await client.PostAsJsonAsync(Url("/api/keysheets/import"), body, Token);
@@ -211,7 +211,7 @@ public sealed class KeySheetEndpointTests : IDisposable
     public static TheoryData<string, string> UnreadableUserFiles => new()
     {
         { "broken.json", "{ not json" },
-        { "null-kenngruppe.json", WithKenngruppen("[null]") },
+        { "bad-grundstellung.json", WithGrundstellung("\"A1B\"") },
         { ".json", HistoricalJson },
     };
 
@@ -231,8 +231,35 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(["historical-hydra-1943-12"], sheets!.Select(s => s.Id));
     }
 
-    private static string WithKenngruppen(string kenngruppen) =>
-        HistoricalJson.Replace("\"plugs\"", $"\"kenngruppen\": {kenngruppen}, \"plugs\"", StringComparison.Ordinal);
+    private static string WithGrundstellung(string grundstellung) =>
+        HistoricalJson.Replace("\"plugs\"", $"\"grundstellung\": {grundstellung}, \"plugs\"", StringComparison.Ordinal);
+
+    [Fact]
+    public async Task Should_share_the_book_and_the_tables_When_a_sheet_is_exported_to_another_installation()
+    {
+        // Arrange
+        var sender = CreateClient();
+        var receiver = CreateClient(Path.Combine(_root, "other-user"));
+        var created = await SendAsync<KeySheetDetails>(
+            sender, HttpMethod.Post, "/api/keysheets", new { network = "Triton", month = "1942-11", text = U264Row });
+        var file = await sender.GetStringAsync(Url($"/api/keysheets/{created.Id}/export"), Token);
+
+        // Act
+        using var content = new StringContent(file, System.Text.Encoding.UTF8, "application/json");
+        using var response = await receiver.PostAsync(Url("/api/keysheets/import"), content, Token);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var imported = (await response.Content.ReadFromJsonAsync<KeySheetDetails>(Token))!;
+        Assert.Equal(created.KenngruppenbuchId, imported.KenngruppenbuchId);
+        Assert.Equal(created.TauschtafelSetId, imported.TauschtafelSetId);
+        Assert.Equal(
+            await sender.GetStringAsync(Url($"/api/kenngruppenbuecher/{created.KenngruppenbuchId}"), Token),
+            await receiver.GetStringAsync(Url($"/api/kenngruppenbuecher/{imported.KenngruppenbuchId}"), Token));
+        Assert.Equal(
+            await sender.GetStringAsync(Url($"/api/tauschtafeln/{created.TauschtafelSetId}"), Token),
+            await receiver.GetStringAsync(Url($"/api/tauschtafeln/{imported.TauschtafelSetId}"), Token));
+    }
 
     private static Uri Url(string path) => new(path, UriKind.Relative);
 
@@ -245,12 +272,12 @@ public sealed class KeySheetEndpointTests : IDisposable
             ?? throw new InvalidOperationException("Empty response.");
     }
 
-    private HttpClient CreateClient()
+    private HttpClient CreateClient(string? userPath = null)
     {
         var root = new WebApplicationFactory<Program>();
         var factory = root.WithWebHostBuilder(builder => builder
             .UseSetting("KeySheets:HistoricalPath", HistoricalPath)
-            .UseSetting("KeySheets:UserPath", UserPath));
+            .UseSetting("KeySheets:UserPath", userPath ?? UserPath));
         var client = factory.CreateClient();
         _disposables.AddRange([client, factory, root]);
         return client;

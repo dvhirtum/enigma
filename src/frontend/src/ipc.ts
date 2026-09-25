@@ -1,10 +1,10 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow, clipboard, ipcMain } from 'electron';
 import type { ApiResult } from './api';
 import type { Backend } from './backend';
 import { send } from './http';
 import { createQueue } from './queue';
 import { registerFiles } from './files';
-import { healthRoute, keySheetRoutes, machineRoutes, type Route } from './routes';
+import { healthRoute, keySheetRoutes, machineRoutes, procedureRoutes, type Route } from './routes';
 
 /** Registers one IPC channel per API operation. Machine calls reach the backend one at a time, in order. */
 export function registerIpc(backend: Backend): void {
@@ -26,12 +26,24 @@ export function registerIpc(backend: Backend): void {
     ipcMain.handle(`machine:${name}`, (_event, ...args: unknown[]) => enqueue(() => call(route(...args))));
   }
 
-  for (const [name, toRoute] of Object.entries(keySheetRoutes)) {
-    const route = toRoute as (...args: unknown[]) => Route;
-    ipcMain.handle(`keySheets:${name}`, (_event, ...args: unknown[]) => call(route(...args)));
+  for (const [prefix, routes] of [
+    ['keySheets', keySheetRoutes],
+    ['procedure', procedureRoutes],
+  ] as const) {
+    for (const [name, toRoute] of Object.entries(routes)) {
+      const route = toRoute as (...args: unknown[]) => Route;
+      ipcMain.handle(`${prefix}:${name}`, (_event, ...args: unknown[]) => call(route(...args)));
+    }
   }
 
   registerFiles();
+
+  ipcMain.handle('clipboard:writeText', (_event, text: unknown) => {
+    if (typeof text !== 'string') {
+      throw new Error('Only text can be copied.');
+    }
+    return clipboard.writeText(text);
+  });
 
   ipcMain.handle('backend:status', () => backend.status());
   ipcMain.handle('backend:restart', () => backend.restart());

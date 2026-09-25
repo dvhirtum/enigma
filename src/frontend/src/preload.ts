@@ -19,6 +19,12 @@ const api: EnigmaApi = {
     pressKey: (key) => invoke('machine:pressKey', key),
     releaseKey: () => invoke('machine:releaseKey'),
     applyDailyKey: (sheetId, day) => invoke('machine:applyDailyKey', sheetId, day),
+    startSending: () => invoke('machine:startSending'),
+    startReceiving: (message, sheetId, day) => invoke('machine:startReceiving', message, sheetId, day),
+    chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
+      invoke('machine:chooseGroups', schluesselkenngruppe, verfahrenkenngruppe, fillers),
+    finishMessage: () => invoke('machine:finishMessage'),
+    cancelOperator: () => invoke('machine:cancelOperator'),
   },
   keySheets: {
     list: () => invoke('keySheets:list'),
@@ -28,10 +34,20 @@ const api: EnigmaApi = {
     remove: (id) => invoke('keySheets:remove', id),
     generate: (model, network, month) => invoke('keySheets:generate', model, network, month),
     import: (file) => invoke('keySheets:import', file),
+    export: (id) => invoke('keySheets:export', id),
+  },
+  procedure: {
+    getBook: (id) => invoke('procedure:getBook', id),
+    getTables: (id) => invoke('procedure:getTables', id),
+    findReceivingKeys: (message, date) => invoke('procedure:findReceivingKeys', message, date),
+  },
+  clipboard: {
+    writeText: (text) => invoke('clipboard:writeText', text),
   },
   files: {
     openKeySheet: () => invoke('files:openKeySheet'),
     saveKeySheet: (name, content) => invoke('files:saveKeySheet', name, content),
+    printKeySheet: (name, html) => invoke('files:printKeySheet', name, html),
   },
   backend: {
     status: () => invoke('backend:status'),

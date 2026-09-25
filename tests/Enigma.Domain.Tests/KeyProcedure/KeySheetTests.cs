@@ -24,6 +24,25 @@ public sealed class KeySheetTests
     }
 
     [Fact]
+    public void Should_fill_only_the_missing_Grundstellungen_When_a_historical_sheet_is_completed()
+    {
+        // Arrange
+        DailyKey[] keys = [Keys.Day(1, "B-thin", "Beta I II III", "01 01 01 01", "", "QRSA"), Keys.M4(2)];
+        var sheet = new KeySheet("id", "Triton", June1944, Provenance.Historical("source"), keys);
+
+        // Act
+        var changed = sheet.FillMissingGrundstellungen(new Random(1));
+        var again = sheet.FillMissingGrundstellungen(new Random(1));
+
+        // Assert
+        Assert.True(changed);
+        Assert.False(again);
+        Assert.Equal("QRSA", sheet.KeyFor(1).Grundstellung!.ToString());
+        Assert.Equal(4, sheet.KeyFor(2).Grundstellung!.Count);
+        Assert.False(sheet.HasMissingGrundstellungen);
+    }
+
+    [Fact]
     public void Should_reject_the_sheet_When_its_keys_are_for_different_models()
     {
         // Arrange

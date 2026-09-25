@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keySheetRoutes, machineRoutes } from './routes';
+import { keySheetRoutes, machineRoutes, procedureRoutes } from './routes';
 
 describe('machine routes', () => {
   it.each([
@@ -16,6 +16,17 @@ describe('machine routes', () => {
     ['pressKey', machineRoutes.pressKey('Q'), 'POST', '/api/machine/keyboard/press', { key: 'Q' }],
     ['releaseKey', machineRoutes.releaseKey(), 'POST', '/api/machine/keyboard/release', undefined],
     ['applyDailyKey', machineRoutes.applyDailyKey('g1', 19), 'POST', '/api/machine/daily-key', { sheetId: 'g1', day: 19 }],
+    ['startSending', machineRoutes.startSending(), 'POST', '/api/operator/send', undefined],
+    ['startReceiving', machineRoutes.startReceiving('QWER', 'g1', 19), 'POST', '/api/operator/receive', { message: 'QWER', sheetId: 'g1', day: 19 }],
+    [
+      'chooseGroups',
+      machineRoutes.chooseGroups('DWA', 'AAB', 'QX'),
+      'PUT',
+      '/api/operator/groups',
+      { schluesselkenngruppe: 'DWA', verfahrenkenngruppe: 'AAB', fillers: 'QX' },
+    ],
+    ['finishMessage', machineRoutes.finishMessage(), 'POST', '/api/operator/finish', undefined],
+    ['cancelOperator', machineRoutes.cancelOperator(), 'DELETE', '/api/operator', undefined],
   ])('maps %s to its endpoint', (_name, route, method, path, body) => {
     expect(route).toEqual({ method, path, ...(body && { body }) });
   });
@@ -24,7 +35,7 @@ describe('machine routes', () => {
     expect(machineRoutes.setRingSetting('../x', 1).path).toBe('/api/machine/rotor-box/..%2Fx/ring');
   });
 });
-
+
 describe('key sheet routes', () => {
   const file = { network: 'Hydra', month: '1943-12', days: [] };
 
@@ -36,11 +47,24 @@ describe('key sheet routes', () => {
     ['remove', keySheetRoutes.remove('g1'), 'DELETE', '/api/keysheets/g1', undefined],
     ['generate', keySheetRoutes.generate('M4', 'Triton', '1944-06'), 'POST', '/api/keysheets/generate', { model: 'M4', network: 'Triton', month: '1944-06' }],
     ['import', keySheetRoutes.import(file), 'POST', '/api/keysheets/import', file],
+    ['export', keySheetRoutes.export('g1'), 'GET', '/api/keysheets/g1/export', undefined],
   ])('maps %s to its endpoint', (_name, route, method, path, body) => {
     expect(route).toEqual({ method, path, ...(body && { body }) });
   });
 
   it('encodes the sheet id', () => {
     expect(keySheetRoutes.get('../x').path).toBe('/api/keysheets/..%2Fx');
+  });
+});
+
+describe('procedure routes', () => {
+  it('maps the book and tables to their endpoints', () => {
+    expect(procedureRoutes.getBook('b/1')).toEqual({ method: 'GET', path: '/api/kenngruppenbuecher/b%2F1' });
+    expect(procedureRoutes.getTables('t1')).toEqual({ method: 'GET', path: '/api/tauschtafeln/t1' });
+    expect(procedureRoutes.findReceivingKeys('QWER', '1944-06-19')).toEqual({
+      method: 'POST',
+      path: '/api/operator/receiving-keys',
+      body: { message: 'QWER', date: '1944-06-19' },
+    });
   });
 });

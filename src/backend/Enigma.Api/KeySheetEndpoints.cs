@@ -1,6 +1,8 @@
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
+using Enigma.Application.Procedure;
 using Enigma.Infrastructure.KeySheets;
+using Enigma.Infrastructure.Procedure;
 
 namespace Enigma.Api;
 
@@ -12,7 +14,8 @@ internal static class KeySheetEndpoints
 {
     /// <summary>
     /// Historical sheets come from <c>KeySheets:HistoricalPath</c> (default: <c>keysheets</c> next to the executable),
-    /// others are stored in <c>KeySheets:UserPath</c> (default: <c>Enigma/keysheets</c> in local app data).
+    /// others are stored in <c>KeySheets:UserPath</c> (default: <c>Enigma/keysheets</c> in local app data), with the
+    /// Kenngruppenbücher and Tauschtafel sets in its <c>procedure</c> folder.
     /// </summary>
     public static IServiceCollection AddKeySheets(this IServiceCollection services, IConfiguration configuration)
     {
@@ -23,7 +26,13 @@ internal static class KeySheetEndpoints
 
         return services
             .AddSingleton<IKeySheetRepository>(new JsonKeySheetRepository(historicalPath, userPath))
+            .AddSingleton<IKenngruppenbuchRepository>(new JsonKenngruppenbuchRepository(Path.Combine(userPath, "procedure", "books")))
+            .AddSingleton<ITauschtafelSetRepository>(new JsonTauschtafelSetRepository(Path.Combine(userPath, "procedure", "tables")))
             .AddSingleton(Random.Shared)
+            .AddSingleton(TimeProvider.System)
+            .AddSingleton<KeySheetLinker>()
+            .AddSingleton<GetKenngruppenbuchHandler>()
+            .AddSingleton<GetTauschtafelSetHandler>()
             .AddSingleton<ListKeySheetsHandler>()
             .AddSingleton<GetKeySheetHandler>()
             .AddSingleton<CreateKeySheetHandler>()
@@ -31,6 +40,7 @@ internal static class KeySheetEndpoints
             .AddSingleton<DeleteKeySheetHandler>()
             .AddSingleton<GenerateKeySheetHandler>()
             .AddSingleton<ImportKeySheetHandler>()
+            .AddSingleton<ExportKeySheetHandler>()
             .AddSingleton<ApplyDailyKeyHandler>();
     }
 
@@ -61,6 +71,15 @@ internal static class KeySheetEndpoints
 
         sheets.MapPost("/import", (KeySheetDocument document, ImportKeySheetHandler handler) =>
             handler.Handle(new ImportKeySheet(document)));
+
+        sheets.MapGet("/{id}/export", (string id, ExportKeySheetHandler handler) =>
+            handler.Handle(new ExportKeySheet(id)));
+
+        app.MapGet("/api/kenngruppenbuecher/{id}", (string id, GetKenngruppenbuchHandler handler) =>
+            handler.Handle(new GetKenngruppenbuch(id)));
+
+        app.MapGet("/api/tauschtafeln/{id}", (string id, GetTauschtafelSetHandler handler) =>
+            handler.Handle(new GetTauschtafelSet(id)));
 
         app.MapPost("/api/machine/daily-key", (DailyKeyRequest request, ApplyDailyKeyHandler handler) =>
             handler.Handle(new ApplyDailyKey(request.SheetId, request.Day)));

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { models, slots } from './machine';
 import { KeySheetPanel } from './panels/KeySheetPanel';
+import { OperatorPanel } from './panels/OperatorPanel';
 import { useMachine } from './store';
+import { InstructionsView } from './views/InstructionsView';
 import { OpenLidView } from './views/OpenLidView';
 import { PlugboardView } from './views/PlugboardView';
 import { TopDownView } from './views/TopDownView';
@@ -10,6 +12,7 @@ const views = [
   { id: 'top-down', label: 'Top-down', View: TopDownView },
   { id: 'open-lid', label: 'Open lid', View: OpenLidView },
   { id: 'plugboard', label: 'Plugboard', View: PlugboardView },
+  { id: 'instructions', label: 'Instructions', View: InstructionsView },
 ] as const;
 
 function MachineSummary() {
@@ -41,6 +44,20 @@ function PanelIcon({ open }: { open: boolean }) {
   );
 }
 
+/** A message pad with a pencil. */
+function OperatorIcon() {
+  return (
+    <svg className="panel-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <rect className="panel-icon-strip" x="3.5" y="3" width="13" height="18" rx="1.5" />
+      <rect x="3.5" y="3" width="13" height="18" rx="1.5" />
+      <path d="M6.5 8h7M6.5 11.5h7M6.5 15h4" />
+      <path d="M19.5 7.5l1.5 1.5-6 6-2 .5.5-2z" />
+    </svg>
+  );
+}
+
+type Panel = 'keySheets' | 'operator';
+
 function AppliedKeyLabel() {
   const key = useMachine((store) => store.machine?.appliedKey);
   if (!key) {
@@ -50,6 +67,7 @@ function AppliedKeyLabel() {
   return (
     <p className="summary" aria-label="Daily key">
       Key: {key.network} {key.month}, day {key.day}
+      {key.grundstellung && ` · Grundstellung ${key.grundstellung}`}
       {key.modified && ' (modified)'}
     </p>
   );
@@ -119,7 +137,8 @@ export function MachineFrame() {
   const load = useMachine((store) => store.load);
   const version = useMachine((store) => store.version);
   const [selected, setSelected] = useState(0);
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const toggle = (next: Panel) => setPanel(panel === next ? null : next);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
@@ -146,17 +165,30 @@ export function MachineFrame() {
         <ModelSwitch />
         <MachineSummary />
         <AppliedKeyLabel />
-        <button
-          type="button"
-          className="panel-toggle"
-          aria-label="Key sheets"
-          title="Key sheets"
-          aria-expanded={panelOpen}
-          aria-controls="key-sheet-panel"
-          onClick={() => setPanelOpen(!panelOpen)}
-        >
-          <PanelIcon open={panelOpen} />
-        </button>
+        <div className="panel-toggles">
+          <button
+            type="button"
+            className="panel-toggle"
+            aria-label="Operator mode"
+            title="Operator mode"
+            aria-expanded={panel === 'operator'}
+            aria-controls="operator-panel"
+            onClick={() => toggle('operator')}
+          >
+            <OperatorIcon />
+          </button>
+          <button
+            type="button"
+            className="panel-toggle"
+            aria-label="Key sheets"
+            title="Key sheets"
+            aria-expanded={panel === 'keySheets'}
+            aria-controls="key-sheet-panel"
+            onClick={() => toggle('keySheets')}
+          >
+            <PanelIcon open={panel === 'keySheets'} />
+          </button>
+        </div>
       </header>
       <nav role="tablist" aria-label="Views" aria-orientation="vertical" onKeyDown={onTabKeyDown}>
         {views.map((view, index) => (
@@ -181,8 +213,11 @@ export function MachineFrame() {
       <main role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`}>
         <View />
       </main>
-      <aside id="key-sheet-panel" aria-label="Key sheets" hidden={!panelOpen}>
-        {panelOpen && <KeySheetPanel />}
+      <aside id="key-sheet-panel" className="side-panel" aria-label="Key sheets" hidden={panel !== 'keySheets'}>
+        {panel === 'keySheets' && <KeySheetPanel />}
+      </aside>
+      <aside id="operator-panel" className="side-panel" aria-label="Operator mode" hidden={panel !== 'operator'}>
+        {panel === 'operator' && <OperatorPanel />}
       </aside>
       <footer>{version && `Backend v${version}`}</footer>
     </div>
