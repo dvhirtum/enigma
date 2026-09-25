@@ -13,21 +13,27 @@ function currentYear(): number {
   return new Date().getFullYear();
 }
 
+function currentMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function sheetLabel(sheet: KeySheetSummary): string {
-  return `${sheet.network} ${sheet.month} · ${sheet.model} (${provenanceLabels[sheet.provenance] ?? sheet.provenance})`;
+  return `${sheet.network} · ${sheet.model} (${provenanceLabels[sheet.provenance] ?? sheet.provenance})`;
 }
 
 const ring = (value: number) => String(value).padStart(2, '0');
 
-/** Historical sheets first, then one group per network with its months in order. */
-function sheetGroups(sheets: KeySheetSummary[]): [string, KeySheetSummary[]][] {
-  const sorted = [...sheets].sort((a, b) => Number(b.readOnly) - Number(a.readOnly) || a.network.localeCompare(b.network) || a.month.localeCompare(b.month));
-  const groups = new Map<string, KeySheetSummary[]>();
-  for (const sheet of sorted) {
-    const group = sheet.readOnly ? 'Historical' : sheet.network;
-    groups.set(group, [...(groups.get(group) ?? []), sheet]);
-  }
-  return [...groups];
+/** The months that have sheets, newest first. */
+function sheetMonths(sheets: KeySheetSummary[]): string[] {
+  return [...new Set(sheets.map((sheet) => sheet.month))].sort().reverse();
+}
+
+/** The sheets of `month`: historical first, then by network and model. */
+function sheetsOf(sheets: KeySheetSummary[], month: string): KeySheetSummary[] {
+  return sheets
+    .filter((sheet) => sheet.month === month)
+    .sort((a, b) => Number(b.readOnly) - Number(a.readOnly) || a.network.localeCompare(b.network) || a.model.localeCompare(b.model));
 }
 
 type Mode = 'view' | 'generate';
@@ -169,26 +175,40 @@ export function KeySheetPanel() {
   const openKeySheet = useMachine((store) => store.openKeySheet);
   const importKeySheet = useMachine((store) => store.importKeySheet);
   const [mode, setMode] = useState<Mode>('view');
+  const [chosenMonth, setChosenMonth] = useState<string | null>(null);
   const view = () => setMode('view');
+  const months = sheetMonths(sheets);
+  const fallback = months.includes(currentMonth()) ? currentMonth() : (months[0] ?? '');
+  const month = sheet?.month ?? (chosenMonth !== null && months.includes(chosenMonth) ? chosenMonth : fallback);
 
   useEffect(() => {
     void loadKeySheets();
   }, [loadKeySheets]);
 
+  const chooseMonth = (value: string) => {
+    setChosenMonth(value);
+    void openKeySheet(null).then(view);
+  };
+
   return (
     <div className="key-sheets">
       <label>
+        Month
+        <select value={month} disabled={months.length === 0} onChange={(event) => chooseMonth(event.target.value)}>
+          {months.length === 0 && <option value="">No key sheets yet</option>}
+          {months.map((value) => (
+            <option key={value}>{value}</option>
+          ))}
+        </select>
+      </label>
+      <label>
         Key sheet
-        <select value={sheet?.id ?? ''} onChange={(event) => void openKeySheet(event.target.value || null).then(view)}>
-          <option value="">{sheets.length > 0 ? 'Choose a sheet' : 'No key sheets yet'}</option>
-          {sheetGroups(sheets).map(([group, members]) => (
-            <optgroup key={group} label={group}>
-              {members.map((summary) => (
-                <option key={summary.id} value={summary.id}>
-                  {sheetLabel(summary)}
-                </option>
-              ))}
-            </optgroup>
+        <select value={sheet?.id ?? ''} disabled={months.length === 0} onChange={(event) => void openKeySheet(event.target.value || null).then(view)}>
+          <option value="">Choose a sheet</option>
+          {sheetsOf(sheets, month).map((summary) => (
+            <option key={summary.id} value={summary.id}>
+              {sheetLabel(summary)}
+            </option>
           ))}
         </select>
       </label>

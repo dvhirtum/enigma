@@ -17,7 +17,7 @@ describe('KeySheetPanel', () => {
   it('lists the key sheets with their model and provenance', async () => {
     renderMachine(<KeySheetPanel />);
 
-    expect(await screen.findByRole('option', { name: 'Triton 1944-06 · M4 (generated)' })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Triton · M4 (generated)' })).toBeInTheDocument();
   });
 
   it('shows the daily keys of the chosen sheet', async () => {
@@ -82,8 +82,8 @@ describe('KeySheetPanel', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 
-  it('groups the sheets by network, with the historical ones first', async () => {
-    renderMachine(<KeySheetPanel />, undefined, (fake) =>
+  it('lists the months newest first and the sheets of the chosen month, historical first', async () => {
+    const api = renderMachine(<KeySheetPanel />, undefined, (fake) =>
       fake.keySheets.list.mockResolvedValue({
         ok: true,
         value: [
@@ -95,14 +95,52 @@ describe('KeySheetPanel', () => {
       }),
     );
 
-    await screen.findByRole('option', { name: 'Aegir 1944-06 · M4 (generated)' });
+    const month = await screen.findByRole('combobox', { name: 'Month' });
+    await waitFor(() => expect(month).toHaveValue('1944-07'));
+    const optionsOf = (name: string) => within(screen.getByRole('combobox', { name })).getAllByRole('option').map((option) => option.textContent);
 
-    const groups = screen.getAllByRole('group').map((group) => [group.getAttribute('label'), within(group).getAllByRole('option').map((option) => option.getAttribute('value'))]);
-    expect(groups).toEqual([
-      ['Historical', ['historical-hydra']],
-      ['Aegir', ['a1']],
-      ['Triton', ['g1', 't2']],
-    ]);
+    expect(optionsOf('Month')).toEqual(['1944-07', '1944-06']);
+    expect(optionsOf('Key sheet')).toEqual(['Choose a sheet', 'Triton · M4 (generated)']);
+    fireEvent.change(month, { target: { value: '1944-06' } });
+    expect(optionsOf('Key sheet')).toEqual(['Choose a sheet', 'Hydra · M3 (historical)', 'Aegir · M4 (generated)', 'Triton · M4 (generated)']);
+    expect(api.keySheets.get).not.toHaveBeenCalled();
+  });
+
+  it('shows the month of the open sheet', async () => {
+    renderMachine(<KeySheetPanel />, undefined, (fake) =>
+      fake.keySheets.list.mockResolvedValue({ ok: true, value: [summaryOf({ ...generatedSheet, id: 't2', month: '1944-07' }), summaryOf(generatedSheet)] }),
+    );
+    await screen.findByRole('option', { name: 'Triton · M4 (generated)' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), { target: { value: '1944-06' } });
+
+    await openSheet('g1');
+
+    await screen.findByRole('listitem', { name: 'Day 1' });
+    expect(screen.getByRole('combobox', { name: 'Month' })).toHaveValue('1944-06');
+    expect(screen.getByRole('combobox', { name: 'Key sheet' })).toHaveValue('g1');
+  });
+
+  it('closes the open sheet when another month is chosen', async () => {
+    renderMachine(<KeySheetPanel />, undefined, (fake) =>
+      fake.keySheets.list.mockResolvedValue({ ok: true, value: [summaryOf({ ...generatedSheet, id: 't2', month: '1944-07' }), summaryOf(generatedSheet)] }),
+    );
+    await screen.findByRole('option', { name: 'Triton · M4 (generated)' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), { target: { value: '1944-06' } });
+    await openSheet('g1');
+    await screen.findByRole('listitem', { name: 'Day 1' });
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Month' }), { target: { value: '1944-07' } });
+
+    await waitFor(() => expect(screen.queryByRole('listitem', { name: 'Day 1' })).not.toBeInTheDocument());
+    expect(screen.getByRole('combobox', { name: 'Key sheet' })).toHaveValue('');
+  });
+
+  it('disables the selection when there are no sheets', async () => {
+    renderMachine(<KeySheetPanel />, undefined, (fake) => fake.keySheets.list.mockResolvedValue({ ok: true, value: [] }));
+
+    expect(await screen.findByRole('option', { name: 'No key sheets yet' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Month' })).toBeDisabled();
+    expect(screen.getByRole('combobox', { name: 'Key sheet' })).toBeDisabled();
   });
 
   it('prints the open sheet with its Kenngruppenbuch and Tauschtafeln to a folder', async () => {

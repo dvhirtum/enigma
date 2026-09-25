@@ -124,10 +124,14 @@ test('generates a year of key sheets, applies a daily key and deletes a sheet', 
   await form.getByRole('spinbutton', { name: 'Year' }).fill('1944');
   await form.getByRole('button', { name: 'Generate' }).click();
   await expect(form).toHaveCount(0);
-  await expect(panel.getByRole('option', { name: /^Triton 1944-\d\d · M4 \(generated\)$/ })).toHaveCount(12);
-  await expect(panel.getByRole('option', { name: /^Aegir 1944-\d\d · M4 \(generated\)$/ })).toHaveCount(12);
+  const months = panel.getByRole('combobox', { name: 'Month' });
+  for (let month = 1; month <= 12; month++) {
+    await expect(months.getByRole('option', { name: `1944-${String(month).padStart(2, '0')}` })).toHaveCount(1);
+  }
 
-  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Aegir 1944-02 · M4 (generated)' });
+  await months.selectOption('1944-02');
+  await expect(panel.getByRole('combobox', { name: 'Key sheet' }).getByRole('option', { name: / · M4 \(generated\)$/ })).toHaveCount(10);
+  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Aegir · M4 (generated)' });
   const day = panel.getByRole('listitem', { name: 'Day 29' });
   await expect(day).toContainText(/UKW (B|C)-thin/);
   await day.getByRole('button', { name: 'Apply' }).click();
@@ -138,7 +142,7 @@ test('generates a year of key sheets, applies a daily key and deletes a sheet', 
 
   await panel.getByRole('button', { name: 'Delete' }).click();
   await panel.getByRole('group', { name: 'Confirm delete' }).getByRole('button', { name: 'Delete' }).click();
-  await expect(panel.getByRole('option', { name: /^Aegir 1944-02/ })).toHaveCount(0);
+  await expect(panel.getByRole('combobox', { name: 'Key sheet' }).getByRole('option', { name: 'Aegir · M4 (generated)' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Key sheets' }).click();
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');
@@ -163,7 +167,8 @@ test('exports a key sheet with its Kenngruppenbuch and Tauschtafeln', async () =
 
   await page.getByRole('button', { name: 'Key sheets' }).click();
   const panel = page.getByRole('complementary', { name: 'Key sheets' });
-  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Neptun 1943-03 · M3 (generated)' });
+  await panel.getByRole('combobox', { name: 'Month' }).selectOption('1943-03');
+  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Neptun · M3 (generated)' });
   await panel.getByRole('button', { name: 'Export' }).click();
 
   const readExport = () => {
@@ -205,7 +210,8 @@ test('prints a key sheet and its Kenngruppenbuch and Tauschtafeln to two PDFs', 
 
   await page.getByRole('button', { name: 'Key sheets' }).click();
   const panel = page.getByRole('complementary', { name: 'Key sheets' });
-  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Hydra 1942-06 · M4 (generated)' });
+  await panel.getByRole('combobox', { name: 'Month' }).selectOption('1942-06');
+  await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Hydra · M4 (generated)' });
   await expect(panel.getByRole('checkbox', { name: 'Also print the Kenngruppenbuch and Tauschtafeln' })).toBeChecked();
   await panel.getByRole('button', { name: 'Print to PDF' }).click();
 
@@ -296,7 +302,8 @@ test('sends a message with the indicator procedure and receives it again', async
   await form.getByRole('spinbutton', { name: 'Year' }).fill('1945');
   await form.getByRole('button', { name: 'Generate' }).click();
   await expect(form).toHaveCount(0);
-  await sheets.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Triton 1945-03 · M3 (generated)' });
+  await sheets.getByRole('combobox', { name: 'Month' }).selectOption('1945-03');
+  await sheets.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Triton · M3 (generated)' });
   await sheets.getByRole('listitem', { name: 'Day 1', exact: true }).getByRole('button', { name: 'Apply' }).click();
   await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1945-03, day 1 · Grundstellung [A-Z]{3}$/);
 

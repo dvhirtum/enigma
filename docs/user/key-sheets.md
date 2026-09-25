@@ -13,7 +13,7 @@ Each sheet is linked to a Kenngruppenbuch and a set of Tauschtafeln, which [oper
 
 ## Working with a sheet
 
-Choose a sheet from the list to see its days. The list groups the sheets by network, with historical sheets first.
+Choose a **Month**, then a **Key sheet** of that month, to see its days. The month list holds only months with sheets, newest first; it starts at the current month when that has sheets. Historical sheets come first in the sheet list.
 
 - **Apply** sets up the machine with that day's key and all rotors at A. For a sheet of the other model the application asks first, as the machine is replaced. The applied day is marked; "Applied, since modified" means the setup has changed since. To set up the machine yourself instead, see [Setting up the machine by hand](#setting-up-the-machine-by-hand).
 - **Export** saves the sheet as a file and **Delete** removes it. Historical sheets are read-only.
