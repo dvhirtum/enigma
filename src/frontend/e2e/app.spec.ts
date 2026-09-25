@@ -159,8 +159,15 @@ test('exports a key sheet with its Kenngruppenbuch and Tauschtafeln', async () =
   await panel.getByRole('combobox', { name: 'Key sheet' }).selectOption({ label: 'Export 1944-03 · M3 (generated)' });
   await panel.getByRole('button', { name: 'Export' }).click();
 
-  await expect.poll(() => existsSync(file)).toBe(true);
-  const exported = JSON.parse(readFileSync(file, 'utf8')) as KeySheetFile;
+  const readExport = () => {
+    try {
+      return JSON.parse(readFileSync(file, 'utf8')) as KeySheetFile;
+    } catch {
+      return null;
+    }
+  };
+  await expect.poll(readExport).not.toBeNull();
+  const exported = readExport()!;
   expect(exported.kenngruppenbuch?.id).toBe(generated.value.kenngruppenbuchId);
   expect(exported.kenngruppenbuch?.columns).toHaveLength(676);
   expect(exported.tauschtafeln?.id).toBe(generated.value.tauschtafelSetId);
