@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
@@ -16,7 +16,7 @@ const safeName = (name: string) => name.replace(/[^\w.-]+/g, '-');
 
 function isPrintDocument(value: unknown): value is PrintDocument {
   const document = value as PrintDocument;
-  return typeof value === 'object' && value !== null && typeof document.html === 'string' && typeof document.name === 'string' && /^[\w-]+\.pdf$/.test(safeName(document.name));
+  return typeof value === 'object' && value !== null && typeof document.html === 'string' && typeof document.name === 'string' && /^[\w.-]+\.pdf$/.test(safeName(document.name));
 }
 
 function isPrintDocuments(value: unknown): value is PrintDocument[] {
@@ -99,8 +99,24 @@ export function registerFiles(): void {
     if (result.canceled || !folder) {
       return null;
     }
-    for (const { name, html } of documents) {
-      await writeFile(path.join(folder, safeName(name)), await printToPdf(html));
+    const files = documents.map(({ name, html }) => ({ name: safeName(name), html }));
+    const existing = (await Promise.all(files.map(({ name }) => access(path.join(folder, name)).then(() => name, () => null)))).filter((name) => name !== null);
+    if (existing.length > 0) {
+      const question = {
+        type: 'warning' as const,
+        title: 'Print key sheet to PDF files in folder',
+        message: `${existing.join(' and ')} already ${existing.length === 1 ? 'exists' : 'exist'}. Do you want to replace ${existing.length === 1 ? 'it' : 'them'}?`,
+        buttons: ['Replace', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1,
+      };
+      const answer = window ? await dialog.showMessageBox(window, question) : await dialog.showMessageBox(question);
+      if (answer.response !== 0) {
+        return null;
+      }
+    }
+    for (const { name, html } of files) {
+      await writeFile(path.join(folder, name), await printToPdf(html));
     }
     return folder;
   });

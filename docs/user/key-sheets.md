@@ -50,6 +50,8 @@ The rotor positions are not part of the setup: the [indicator procedure](sending
 - `<network>-<month>.pdf`, such as `Triton-1944-06.pdf`: the key sheet.
 - `Kenngruppenbuch-Tauschtafeln-<year>.pdf` (about 40 A4 pages): the Kenngruppenbuch and the Tauschtafeln. They are the same for every network and month of the year, so one copy serves all your sheets.
 
+If the folder already has files with these names, it asks before replacing them.
+
 Untick the box when you already have the Kenngruppenbuch and Tauschtafeln; it then asks where to save the key sheet only. The documents hold:
 
 1. **Schlüsseltafel**: the daily keys, with the last day at the top, as on the real sheets. Operators cut off and destroyed the days they had used.

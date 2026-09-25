@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { DailyKey, KeySheet, KeySheetSummary } from '../api';
 import { models } from '../machine';
 import { useMachine } from '../store';
@@ -62,11 +62,23 @@ function GenerateForm({ onDone }: { onDone: () => void }) {
   const currentModel = useMachine((store) => store.machine?.model ?? 'M3');
   const [model, setModel] = useState(currentModel);
   const [year, setYear] = useState(currentYear);
+  const [generating, setGenerating] = useState(false);
+  const running = useRef(false);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (await generate(model, year)) {
-      onDone();
+    if (running.current) {
+      return;
+    }
+    running.current = true;
+    setGenerating(true);
+    try {
+      if (await generate(model, year)) {
+        onDone();
+      }
+    } finally {
+      running.current = false;
+      setGenerating(false);
     }
   };
 
@@ -86,7 +98,9 @@ function GenerateForm({ onDone }: { onDone: () => void }) {
       </label>
       <p className="sheet-hint">One sheet per month for every network of the Kenngruppenbuch.</p>
       <div className="sheet-actions">
-        <button type="submit">Generate</button>
+        <button type="submit" disabled={generating}>
+          Generate
+        </button>
         <button type="button" onClick={onDone}>
           Cancel
         </button>

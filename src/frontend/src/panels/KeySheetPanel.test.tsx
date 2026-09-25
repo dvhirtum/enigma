@@ -196,6 +196,23 @@ describe('KeySheetPanel', () => {
     expect(await screen.findByRole('form', { name: 'Generate key sheets' })).toBeInTheDocument();
   });
 
+  it('generates once while a request is running', async () => {
+    let finish: (value: unknown) => void = () => undefined;
+    const api = renderMachine(<KeySheetPanel />, undefined, (fake) =>
+      fake.keySheets.generate.mockReturnValue(new Promise((resolve) => (finish = resolve))),
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Generate' }));
+    const submit = within(screen.getByRole('form', { name: 'Generate key sheets' })).getByRole('button', { name: 'Generate' });
+    fireEvent.click(submit);
+    fireEvent.click(submit);
+
+    expect(api.keySheets.generate).toHaveBeenCalledTimes(1);
+    expect(submit).toBeDisabled();
+    finish({ ok: true, value: [summaryOf(generatedSheet)] });
+    await waitFor(() => expect(screen.queryByRole('form')).not.toBeInTheDocument());
+  });
+
   it('deletes a sheet once confirmed', async () => {
     const api = renderMachine(<KeySheetPanel />);
     await openSheet();

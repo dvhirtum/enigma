@@ -112,6 +112,27 @@ public sealed class KeySheetHandlerTests
         Assert.Single(repository.Sheets);
     }
 
+    [Fact]
+    public async Task Should_generate_the_year_once_When_two_requests_run_at_the_same_time()
+    {
+        // Arrange
+        var repository = new FakeKeySheetRepository();
+        var handler = new GenerateKeySheetsHandler(repository, Linking.For(repository), new Random(1));
+        using var start = new Barrier(2);
+
+        // Act
+        var exceptions = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() =>
+        {
+            start.SignalAndWait();
+            return Record.Exception(() => handler.Handle(new GenerateKeySheets("M4", 1944)));
+        })));
+
+        // Assert
+        Assert.Single(exceptions, e => e is DomainException);
+        Assert.Single(exceptions, e => e is null);
+        Assert.Equal(120, repository.Sheets.Count);
+    }
+
     [Theory]
     [InlineData("M4", 1944, "Generated")]
     [InlineData("M3", 1945, "Generated")]

@@ -46,10 +46,21 @@ public sealed class DeleteKeySheetHandler(IKeySheetRepository repository)
 
 public sealed class GenerateKeySheetsHandler(IKeySheetRepository repository, KeySheetLinker linker, Random random)
 {
-    /// <summary>Refuses when generated sheets for the model already cover any month of the year.</summary>
+    private readonly Lock gate = new();
+
+    /// <summary>Refuses when generated sheets for the model already cover any month of the year. Runs one generation at a time.</summary>
     public IReadOnlyList<KeySheetSummary> Handle(GenerateKeySheets command)
     {
         ArgumentNullException.ThrowIfNull(command);
+
+        lock (gate)
+        {
+            return Generate(command);
+        }
+    }
+
+    private List<KeySheetSummary> Generate(GenerateKeySheets command)
+    {
 
         var model = Input.Model(command.Model);
         var months = Enumerable.Range(1, 12).Select(month => new KeyMonth(command.Year, month)).ToList();
