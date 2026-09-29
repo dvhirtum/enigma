@@ -311,6 +311,11 @@ body {
   cursor: pointer;
 }
 
+.menu-graph.busy .menu-link,
+.menu-graph.busy .menu-letter {
+  cursor: progress;
+}
+
 .menu-link path {
   fill: none;
   stroke: var(--fg);

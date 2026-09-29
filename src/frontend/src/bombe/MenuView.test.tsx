@@ -86,6 +86,24 @@ describe('MenuView', () => {
     expect(api.bombe.setMenu).not.toHaveBeenCalled();
   });
 
+  it('locks the menu until the backend has answered a change', async () => {
+    let answer: (value: unknown) => void = () => undefined;
+    const api = renderBombe(<MenuView />, carterMenu, (fake) => fake.bombe.setMenu.mockReturnValue(new Promise((resolve) => (answer = resolve))));
+
+    fireEvent.click(await screen.findByRole('checkbox', { name: /T–O at 8/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /M–T at 3/ }));
+    const letter = within(screen.getByRole('group', { name: 'Menu graph' })).getByRole('button', { name: 'Letter E' });
+    fireEvent.pointerDown(letter);
+    fireEvent.pointerUp(letter);
+
+    expect(api.bombe.setMenu).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('checkbox', { name: /M–T at 3/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Build menu' })).toBeDisabled();
+
+    answer({ ok: true, value: carterMenu });
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: /M–T at 3/ })).toBeEnabled());
+  });
+
   it('builds the menu again', async () => {
     const api = renderBombe(<MenuView />, carterMenu);
 

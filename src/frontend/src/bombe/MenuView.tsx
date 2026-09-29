@@ -50,7 +50,17 @@ function linkPaths(links: Link[], at: Record<string, Point>): Map<string, { d: s
  * Every link of the placed crib as a graph: plugged links solid, the others faded. Click a link to plug it in or out,
  * click a letter to put the test register on it, and drag letters to tidy the picture.
  */
-function MenuGraph({ menu, onToggle, onTestRegister }: { menu: BombeMenu; onToggle: (link: string) => void; onTestRegister: (letter: string) => void }) {
+function MenuGraph({
+  menu,
+  busy,
+  onToggle,
+  onTestRegister,
+}: {
+  menu: BombeMenu;
+  busy: boolean;
+  onToggle: (link: string) => void;
+  onTestRegister: (letter: string) => void;
+}) {
   const cribLinks = useMemo(() => menu.cribLinks.map(parseLink), [menu.cribLinks]);
   const laidOut = useMemo(() => layoutMenu(cribLinks, width, height, 2 * radius), [cribLinks]);
   const [moved, setMoved] = useState<Record<string, Point>>({});
@@ -104,7 +114,7 @@ function MenuGraph({ menu, onToggle, onTestRegister }: { menu: BombeMenu; onTogg
     ['menu-letter', !onMenu.has(letter) && 'spare', onMenu.has(letter) && !tested.has(letter) && 'loose', letter === menu.testRegister && 'test-register'].filter(Boolean).join(' ');
 
   return (
-    <svg ref={svg} className="menu-graph" viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Menu graph">
+    <svg ref={svg} className={busy ? 'menu-graph busy' : 'menu-graph'} viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Menu graph">
       {cribLinks.map((link) => {
         const path = paths.get(link.id)!;
         return (
@@ -126,7 +136,7 @@ function MenuGraph({ menu, onToggle, onTestRegister }: { menu: BombeMenu; onTogg
           tabIndex={onMenu.has(letter) ? 0 : -1}
           aria-label={`Letter ${letter}`}
           aria-pressed={letter === menu.testRegister}
-          aria-disabled={!onMenu.has(letter)}
+          aria-disabled={busy || !onMenu.has(letter)}
           onPointerDown={onPointerDown(letter)}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp(letter)}
@@ -180,7 +190,7 @@ function MenuSummary({ menu, diagonalBoard }: { menu: BombeMenu; diagonalBoard: 
 }
 
 /** The crib's links as a list of switches, in crib order. */
-function LinkList({ menu, onToggle }: { menu: BombeMenu; onToggle: (link: string) => void }) {
+function LinkList({ menu, busy, onToggle }: { menu: BombeMenu; busy: boolean; onToggle: (link: string) => void }) {
   const plugged = new Set(menu.links);
   return (
     <fieldset className="menu-links">
@@ -191,7 +201,7 @@ function LinkList({ menu, onToggle }: { menu: BombeMenu; onToggle: (link: string
             type="checkbox"
             aria-label={`Link ${link.first}–${link.second} at ${link.offset} (${drumLetters(link.offset)})`}
             checked={plugged.has(link.id)}
-            disabled={plugged.has(link.id) && plugged.size === 1}
+            disabled={busy || (plugged.has(link.id) && plugged.size === 1)}
             onChange={() => onToggle(link.id)}
           />
           <span className="offset">{link.offset}</span>
@@ -205,15 +215,32 @@ function LinkList({ menu, onToggle }: { menu: BombeMenu; onToggle: (link: string
   );
 }
 
-/** The menu of the placed crib: built automatically when the crib is placed, and edited by hand here. */
+/**
+ * The menu of the placed crib: built automatically when the crib is placed, and edited by hand here. The controls are
+ * locked while a change is on its way to the backend.
+ */
 export function MenuView() {
   const bombe = useMachine((store) => store.bombe);
   const setMenu = useMachine((store) => store.setMenu);
   const buildMenu = useMachine((store) => store.buildMenu);
+  const pending = useRef(false);
+  const [busy, setBusy] = useState(false);
   const menu = bombe?.menu;
   if (!menu) {
     return <p className="bombe-empty">Place the crib in the Crib view first.</p>;
   }
+
+  const send = (change: () => Promise<boolean>) => {
+    if (pending.current) {
+      return;
+    }
+    pending.current = true;
+    setBusy(true);
+    void change().finally(() => {
+      pending.current = false;
+      setBusy(false);
+    });
+  };
 
   const onToggle = (link: string) => {
     const links = menu.cribLinks.filter((own) => (own === link) !== menu.links.includes(own));
@@ -221,21 +248,27 @@ export function MenuView() {
       return;
     }
     const keeps = links.some((own) => own.slice(0, 2).includes(menu.testRegister));
-    void setMenu(links, keeps ? menu.testRegister : undefined);
+    send(() => setMenu(links, keeps ? menu.testRegister : undefined));
   };
 
   return (
-    <div className="bombe-view menu-view">
+    <div className="bombe-view menu-view" aria-busy={busy}>
       <div className="crib-controls">
-        <button type="button" onClick={() => void buildMenu()}>
+        <button type="button" disabled={busy} onClick={() => send(buildMenu)}>
           Build menu
         </button>
         <p className="summary">Click a link to plug it in or out, and a letter to put the test register on it.</p>
       </div>
       <MenuSummary menu={menu} diagonalBoard={bombe.settings.diagonalBoard} />
       <div className="menu-layout">
-        <MenuGraph key={menu.cribLinks.join(' ')} menu={menu} onToggle={onToggle} onTestRegister={(letter) => void setMenu(menu.links, letter)} />
-        <LinkList menu={menu} onToggle={onToggle} />
+        <MenuGraph
+          key={menu.cribLinks.join(' ')}
+          menu={menu}
+          busy={busy}
+          onToggle={onToggle}
+          onTestRegister={(letter) => send(() => setMenu(menu.links, letter))}
+        />
+        <LinkList menu={menu} busy={busy} onToggle={onToggle} />
       </div>
     </div>
   );
