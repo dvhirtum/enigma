@@ -59,15 +59,25 @@
   outline-offset: -4px;
 }
 
+/* Floats over the page so it does not move. */
 .notebook-error {
+  position: fixed;
+  top: calc(var(--sq) * 2.5);
+  left: 50%;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - var(--sq) * 2);
   padding: 0.4rem 0.75rem;
+  border-radius: 4px;
   background: #f7dcd6;
   color: #7a1f12;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+  transform: translateX(-50%);
 }
 
 .page {
