@@ -58,6 +58,7 @@ export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
   dismissError: () => void;
   /** Opens the operator's notebook window, or brings it to the front. */
   openNotebook: () => Promise<void>;
+  /** Opens the instructions window, or brings it to the front. */
   openInstructions: () => Promise<void>;
   /** Runs operations that depend on earlier ones one at a time, in order. */
   enqueue: <T>(task: () => Promise<T>) => Promise<T>;
