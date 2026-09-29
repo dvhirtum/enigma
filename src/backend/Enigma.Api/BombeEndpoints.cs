@@ -11,6 +11,10 @@ internal static class BombeEndpoints
     public static IServiceCollection AddBombeHandlers(this IServiceCollection services) => services
         .AddSingleton<GetBombeStateHandler>()
         .AddSingleton<SetCipherTextHandler>()
+        .AddSingleton<LoadInterceptHandler>()
+        .AddSingleton<GenerateExerciseHandler>()
+        .AddSingleton<GetSourceCribHandler>()
+        .AddSingleton<GetSolutionHandler>()
         .AddSingleton<SetCribHandler>()
         .AddSingleton<PlaceCribHandler>()
         .AddSingleton<SetMenuHandler>()
@@ -31,6 +35,21 @@ internal static class BombeEndpoints
 
         bombe.MapPut("/cipher-text", (SetCipherText command, SetCipherTextHandler handler) =>
             handler.Handle(command));
+
+        bombe.MapGet("/intercepts", () =>
+            ListInterceptsHandler.Handle(new ListIntercepts()));
+
+        bombe.MapPost("/source/intercept", (LoadIntercept command, LoadInterceptHandler handler) =>
+            handler.Handle(command));
+
+        bombe.MapPost("/source/exercise", (GenerateExerciseHandler handler) =>
+            handler.Handle(new GenerateExercise()));
+
+        bombe.MapGet("/source/crib", (GetSourceCribHandler handler) =>
+            handler.Handle(new GetSourceCrib()));
+
+        bombe.MapGet("/source/solution", (GetSolutionHandler handler) =>
+            handler.Handle(new GetSolution()));
 
         bombe.MapPut("/crib", (SetCrib command, SetCribHandler handler) =>
             handler.Handle(command));

@@ -46,7 +46,10 @@ public sealed partial class RadioMessage
         return new RadioMessage(timeOfOrigin, message.LetterCount, indicator, cipherText);
     }
 
-    /// <summary>Reads a message with or without its preamble. The indicator must be repeated at the end.</summary>
+    /// <summary>
+    /// Reads a message with or without its preamble, which may also be written without separators (<c>1925 21</c>) or
+    /// end with a full stop. The indicator must be repeated at the end.
+    /// </summary>
     public static RadioMessage Parse(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -99,6 +102,6 @@ public sealed partial class RadioMessage
         return preamble + string.Join(' ', groups);
     }
 
-    [GeneratedRegex(@"^\s*(?<time>\d{4})\s*=\s*(?<count>\d{1,6})\s*=")]
+    [GeneratedRegex(@"^\s*(?<time>\d{4})(?:\s*=\s*|\s+)(?<count>\d{1,6})(?:\s*[=.])?")]
     private static partial Regex Preamble();
 }

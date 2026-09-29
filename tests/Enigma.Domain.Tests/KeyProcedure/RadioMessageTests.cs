@@ -35,6 +35,8 @@ public sealed class RadioMessageTests
     [Theory]
     [InlineData("1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI", 24)]
     [InlineData("  1840=99=\nqwer tzui abcd\nefgh qwer tzui\n", 99)]
+    [InlineData("1840 21\nQWER TZUI ABCD EFGH QWER TZUI", 21)]
+    [InlineData("1840   6. QWER TZUI ABCD EFGH QWER TZUI", 6)]
     public void Should_read_the_preamble_indicator_and_cipher_text_When_a_message_is_parsed(string text, int count)
     {
         // Arrange

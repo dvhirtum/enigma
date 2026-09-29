@@ -28,7 +28,7 @@ public sealed class BombeJobTests
     {
         // Arrange
         var job = new BombeJob();
-        job.SetCipherText(Letters("ABCDEF"));
+        job.Load(MessageSource.Pasted("ABCDEF"));
         job.SetCrib(Crib.Parse("XC"));
 
         // Act
@@ -40,19 +40,22 @@ public sealed class BombeJobTests
     }
 
     [Fact]
-    public void Should_clear_the_placement_and_menu_When_the_cipher_text_changes()
+    public void Should_clear_the_crib_placement_and_menu_When_a_message_is_loaded()
     {
         // Arrange
         var job = CarterJob();
         job.Place(0);
+        var source = MessageSource.Pasted(BombeKeys.CarterCipher + "AB");
 
         // Act
-        job.SetCipherText(Letters(BombeKeys.CarterCipher + "AB"));
+        job.Load(source);
 
         // Assert
+        Assert.Same(source, job.Source);
+        Assert.Equal(Letters(BombeKeys.CarterCipher + "AB"), job.CipherText);
+        Assert.Null(job.Crib);
         Assert.Null(job.Placement);
         Assert.Null(job.Menu);
-        Assert.Equal(Crib.Parse(BombeKeys.CarterCrib), job.Crib);
     }
 
     [Fact]
@@ -107,7 +110,7 @@ public sealed class BombeJobTests
     {
         // Arrange
         var job = new BombeJob();
-        job.SetCipherText(Letters(pair[..1]));
+        job.Load(MessageSource.Pasted(pair[..1]));
         job.SetCrib(Crib.Parse(pair[1..]));
         job.Place(0);
 
@@ -176,7 +179,7 @@ public sealed class BombeJobTests
     private static BombeJob CarterJob()
     {
         var job = new BombeJob();
-        job.SetCipherText(Letters(BombeKeys.CarterCipher));
+        job.Load(MessageSource.Pasted(BombeKeys.CarterCipher));
         job.SetCrib(Crib.Parse(BombeKeys.CarterCrib));
         return job;
     }
