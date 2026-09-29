@@ -38,6 +38,15 @@ const api: EnigmaApi = {
     getBook: (id) => invoke('procedure:getBook', id),
     findReceivingKeys: (message, date) => invoke('procedure:findReceivingKeys', message, date),
   },
+  bombe: {
+    getState: () => invoke('bombe:getState'),
+    intercepts: () => invoke('bombe:intercepts'),
+    loadIntercept: (id) => invoke('bombe:loadIntercept', id),
+    generateExercise: () => invoke('bombe:generateExercise'),
+    pasteCipherText: (text) => invoke('bombe:pasteCipherText', text),
+    setCrib: (crib) => invoke('bombe:setCrib', crib),
+    placeCrib: (position) => invoke('bombe:placeCrib', position),
+  },
   clipboard: {
     writeText: (text) => invoke('clipboard:writeText', text),
   },

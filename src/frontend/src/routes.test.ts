@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keySheetRoutes, machineRoutes, procedureRoutes } from './routes';
+import { bombeRoutes, keySheetRoutes, machineRoutes, procedureRoutes } from './routes';
 
 describe('machine routes', () => {
   it.each([
@@ -63,5 +63,19 @@ describe('procedure routes', () => {
       path: '/api/operator/receiving-keys',
       body: { message: 'QWER', date: '1944-06-19' },
     });
+  });
+});
+
+describe('bombe routes', () => {
+  it.each([
+    ['getState', bombeRoutes.getState(), 'GET', '/api/bombe', undefined],
+    ['intercepts', bombeRoutes.intercepts(), 'GET', '/api/bombe/intercepts', undefined],
+    ['loadIntercept', bombeRoutes.loadIntercept('carter'), 'POST', '/api/bombe/source/intercept', { id: 'carter' }],
+    ['generateExercise', bombeRoutes.generateExercise(), 'POST', '/api/bombe/source/exercise', undefined],
+    ['pasteCipherText', bombeRoutes.pasteCipherText('QWER'), 'PUT', '/api/bombe/cipher-text', { text: 'QWER' }],
+    ['setCrib', bombeRoutes.setCrib('WETTER'), 'PUT', '/api/bombe/crib', { crib: 'WETTER' }],
+    ['placeCrib', bombeRoutes.placeCrib(0), 'PUT', '/api/bombe/placement', { position: 0 }],
+  ])('maps %s to its endpoint', (_name, route, method, path, body) => {
+    expect(route).toEqual({ method, path, ...(body && { body }) });
   });
 });

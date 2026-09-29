@@ -2,7 +2,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { createStore, useStore, type StoreApi } from 'zustand';
 import type {
   ApiResult,
+  BombeState,
   EnigmaApi,
+  Intercept,
   Kenngruppenbuch,
   KeySheet,
   KeySheetFile,
@@ -50,7 +52,23 @@ export interface ProcedureSlice {
   copyText: (text: string) => Promise<boolean>;
 }
 
-export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
+/** The Bombe job. Each action resolves to true when the backend accepted it; problems go to `error`. */
+export interface BombeSlice {
+  bombe: BombeState | null;
+  intercepts: Intercept[];
+  /** Loads the job and the list of intercepts. */
+  loadBombe: () => Promise<boolean>;
+  loadIntercept: (id: string) => Promise<boolean>;
+  generateExercise: () => Promise<boolean>;
+  /** Loads a pasted radio message or bare cipher text; empty text clears the message. */
+  pasteCipherText: (text: string) => Promise<boolean>;
+  /** Replaces the crib, or removes it when empty. */
+  setCrib: (crib: string) => Promise<boolean>;
+  /** Places the crib at a position (0 = the first letter) and builds the menu. */
+  placeCrib: (position: number) => Promise<boolean>;
+}
+
+export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice, BombeSlice {
   machine: MachineState | null;
   version: string | null;
   error: Problem | null;
@@ -76,7 +94,7 @@ async function settle<T>(call: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
   }
 }
 
-export function createMachineStore({ machine: api, keySheets: sheets, procedure, files, clipboard, windows, health }: EnigmaApi): StoreApi<MachineStore> {
+export function createMachineStore({ machine: api, keySheets: sheets, procedure, bombe, files, clipboard, windows, health }: EnigmaApi): StoreApi<MachineStore> {
   return createStore<MachineStore>()((set, get) => {
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
@@ -101,6 +119,13 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }
       return result.ok;
     };
+    const job = async (call: Promise<ApiResult<BombeState>>) => {
+      const result = await check(call);
+      if (result.ok) {
+        set({ bombe: result.value });
+      }
+      return result.ok;
+    };
     const show = async (call: Promise<ApiResult<KeySheet>>) => {
       const result = await check(call);
       if (!result.ok) {
@@ -118,6 +143,27 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       keySheets: [],
       keySheet: null,
       books: {},
+      bombe: null,
+      intercepts: [],
+      loadBombe: async () => {
+        const [listed, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.getState())]);
+        if (listed.ok) {
+          set({ intercepts: listed.value });
+        }
+        if (state.ok) {
+          set({ bombe: state.value });
+        }
+        const failed = [state, listed].find((result) => !result.ok);
+        if (failed && !failed.ok) {
+          set({ error: failed.problem });
+        }
+        return !failed;
+      },
+      loadIntercept: (id) => job(bombe.loadIntercept(id)),
+      generateExercise: () => job(bombe.generateExercise()),
+      pasteCipherText: (text) => job(bombe.pasteCipherText(text)),
+      setCrib: (crib) => job(bombe.setCrib(crib)),
+      placeCrib: (position) => job(bombe.placeCrib(position)),
       loadBook: async (id) => {
         if (get().books[id]) {
           return true;

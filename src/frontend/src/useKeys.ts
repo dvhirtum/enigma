@@ -52,7 +52,7 @@ export function useKeys(): Keys {
   return { press, release };
 }
 
-function isFormControl(target: EventTarget | null): boolean {
+export function isFormControl(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement;
 }
 

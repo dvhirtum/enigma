@@ -180,7 +180,10 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 - Procedure: place a crib (crashes rejected), build a menu, run the Bombe, test the stops on the checking machine, recover the key (wheel order, rings, steckers), then decrypt the indicators with the bigram tables to read the day's other messages.
 - Welchman's diagonal board can be switched on and off (on by default).
 - Banburismus is explained in the user guide and Hut 8 mode, not simulated.
-- The frame has a header with the mode switch and the instructions button.
+- The frame has a header with the mode switch and the instructions button, the error message and vertical tabs for the views (`TabbedViews`, shared with the Enigma frame). The Bombe job lives in the same Zustand store (`BombeSlice`) and loads when Bombe mode is first shown.
+- Views:
+  - **Message:** load a historical intercept (listed with its date), a new exercise, or pasted text (a radio message or bare cipher text). Shows the title, kind, hint, the transcript as received and the cipher text in groups of five.
+  - **Crib:** type the crib (letters only, in capitals). The crib strip shows the cipher text with position numbers and the crib under it. Drag the crib, or use Arrow Left/Right, Home and End (anywhere in the view, except in a text field) or the ◀ ▶ buttons, to slide it; the covered cipher letters are shaded and crashes marked on both rows. **Place crib** (disabled on a crash) places it and builds the menu.
 - Tests: round-trip vectors (the true key stops) and vectors from primary sources.
 
 ### Domain: Bombe

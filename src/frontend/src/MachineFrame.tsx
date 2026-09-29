@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { InstructionsIcon, OperatorIcon, PanelIcon } from './components/icons';
+import { TabbedViews } from './components/TabbedViews';
 import { ErrorToast } from './ErrorToast';
 import { models, slots } from './machine';
 import { ModeSwitch } from './mode';
@@ -93,26 +94,11 @@ export function MachineFrame() {
   const openNotebook = useMachine((store) => store.openNotebook);
   const openInstructions = useMachine((store) => store.openInstructions);
   const keyHeld = useMachine((store) => store.machine?.heldKey != null);
-  const [selected, setSelected] = useState(0);
   const [keySheetsOpen, setKeySheetsOpen] = useState(false);
-  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  const onTabKeyDown = (event: KeyboardEvent) => {
-    const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
-    if (step === undefined) {
-      return;
-    }
-    event.preventDefault();
-    const next = (selected + step + views.length) % views.length;
-    setSelected(next);
-    tabs.current[next]?.focus();
-  };
-
-  const { id, View } = views[selected];
 
   return (
     <div className="frame">
@@ -141,29 +127,8 @@ export function MachineFrame() {
           </button>
         </div>
       </header>
-      <nav role="tablist" aria-label="Views" aria-orientation="vertical" onKeyDown={onTabKeyDown}>
-        {views.map((view, index) => (
-          <button
-            key={view.id}
-            ref={(element) => {
-              tabs.current[index] = element;
-            }}
-            type="button"
-            role="tab"
-            id={`tab-${view.id}`}
-            aria-selected={index === selected}
-            aria-controls={`panel-${view.id}`}
-            tabIndex={index === selected ? 0 : -1}
-            onClick={() => setSelected(index)}
-          >
-            {view.label}
-          </button>
-        ))}
-      </nav>
       <ErrorToast className="error" />
-      <main role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`}>
-        <View />
-      </main>
+      <TabbedViews label="Views" views={views} />
       <aside id="key-sheet-panel" className="side-panel" aria-label="Key sheets" hidden={!keySheetsOpen}>
         {keySheetsOpen && <KeySheetPanel />}
       </aside>

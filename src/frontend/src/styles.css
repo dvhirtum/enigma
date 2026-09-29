@@ -102,15 +102,151 @@ body {
   cursor: not-allowed;
 }
 
-.bombe {
-  grid-area: main;
-  padding: 1.25rem;
-  overflow: auto;
+/* Bombe views */
+
+.bombe-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 60rem;
 }
 
-.bombe p {
-  max-width: 40rem;
-  margin-top: 0;
+.bombe-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 2rem;
+}
+
+.bombe-source,
+.bombe-paste,
+.crib-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.bombe-sources label,
+.crib-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.bombe-paste textarea,
+.crib-form input {
+  min-width: 18rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.95rem;
+}
+
+.bombe-message h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.bombe-message h3 {
+  margin: 1rem 0 0.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.bombe-message pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+.bombe-hint {
+  margin: 0.5rem 0 0;
+  font-style: italic;
+}
+
+.bombe-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.crib-strip {
+  --cell: 1.6rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.75rem;
+  border: 1px solid var(--line);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  user-select: none;
+}
+
+.crib-strip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.crib-ruler,
+.crib-cipher,
+.crib-letters {
+  display: flex;
+  width: max-content;
+  padding: 0 0.5rem;
+}
+
+.crib-strip span {
+  flex: none;
+  box-sizing: border-box;
+  width: var(--cell);
+  text-align: center;
+}
+
+.crib-ruler span {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.crib-cipher span,
+.crib-letters span {
+  padding: 0.2rem 0;
+  font-size: 1.1rem;
+}
+
+.crib-letters {
+  cursor: grab;
+  touch-action: none;
+}
+
+.crib-letters:active {
+  cursor: grabbing;
+}
+
+.crib-letters span {
+  border: 1px solid var(--accent);
+  border-left-width: 0;
+  color: var(--accent);
+}
+
+.crib-letters span:first-child {
+  border-left-width: 1px;
+}
+
+.crib-cipher .covered {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.crib-strip .crash {
+  background: var(--error-bg);
+  color: var(--error-fg);
+  font-weight: bold;
+}
+
+.crib-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .summary {

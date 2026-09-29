@@ -1,4 +1,4 @@
-import type { KeySheetApi, MachineApi, ProcedureApi } from './api';
+import type { BombeApi, KeySheetApi, MachineApi, ProcedureApi } from './api';
 
 export interface Route {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -11,6 +11,7 @@ type Routes<Api> = { [K in keyof Api]: Api[K] extends (...args: infer Args) => u
 const machine = '/api/machine';
 const keySheets = '/api/keysheets';
 const operator = '/api/operator';
+const bombe = '/api/bombe';
 const segment = encodeURIComponent;
 
 export const healthRoute: Route = { method: 'GET', path: '/api/health' };
@@ -52,4 +53,14 @@ export const keySheetRoutes: Routes<KeySheetApi> = {
   generate: (model, year) => ({ method: 'POST', path: `${keySheets}/generate`, body: { model, year } }),
   import: (file) => ({ method: 'POST', path: `${keySheets}/import`, body: file }),
   export: (id) => ({ method: 'GET', path: `${keySheets}/${segment(id)}/export` }),
+};
+
+export const bombeRoutes: Routes<BombeApi> = {
+  getState: () => ({ method: 'GET', path: bombe }),
+  intercepts: () => ({ method: 'GET', path: `${bombe}/intercepts` }),
+  loadIntercept: (id) => ({ method: 'POST', path: `${bombe}/source/intercept`, body: { id } }),
+  generateExercise: () => ({ method: 'POST', path: `${bombe}/source/exercise` }),
+  pasteCipherText: (text) => ({ method: 'PUT', path: `${bombe}/cipher-text`, body: { text } }),
+  setCrib: (crib) => ({ method: 'PUT', path: `${bombe}/crib`, body: { crib } }),
+  placeCrib: (position) => ({ method: 'PUT', path: `${bombe}/placement`, body: { position } }),
 };

@@ -72,7 +72,7 @@ test('switches to Bombe mode and back', async () => {
 
   await page.getByRole('button', { name: 'Bombe' }).click();
 
-  await expect(page.getByRole('main', { name: 'Bombe' })).toBeVisible();
+  await expect(page.getByRole('tablist', { name: 'Bombe views' })).toBeVisible();
   await expect(page).toHaveTitle('Bombe');
   await page.keyboard.press('a');
   await page.getByRole('button', { name: 'Enigma' }).click();
@@ -80,6 +80,31 @@ test('switches to Bombe mode and back', async () => {
   await expect(page).toHaveTitle('Enigma');
   await page.getByRole('tab', { name: 'Top-down' }).click();
   await expect(page.getByRole('spinbutton', { name: 'Right rotor' })).toHaveAttribute('aria-valuetext', 'A');
+});
+
+test('places a crib under an intercept in Bombe mode', async () => {
+  await page.getByRole('button', { name: 'Bombe' }).click();
+  await page.getByRole('tab', { name: 'Message' }).click();
+  await page.getByRole('combobox', { name: 'Intercept' }).selectOption({ label: "Carter's weather crib" });
+  await page.getByRole('button', { name: 'Load intercept' }).click();
+  await expect(page.getByLabel('Cipher text', { exact: true })).toHaveText('SNMKG GSTZZ UGARL V');
+
+  await page.getByRole('tab', { name: 'Crib' }).click();
+  await page.getByRole('textbox', { name: 'Crib' }).fill('wetter');
+  await page.getByRole('button', { name: 'Set crib' }).click();
+  const slider = page.getByRole('slider', { name: 'Crib position' });
+  await expect(slider).toHaveAttribute('aria-valuenow', '1');
+  for (let step = 0; step < 4; step++) {
+    await page.keyboard.press('ArrowRight');
+  }
+  await expect(slider).toHaveAttribute('aria-valuetext', 'Position 5, 1 crash');
+  await expect(page.getByRole('button', { name: 'Place crib' })).toBeDisabled();
+
+  await page.getByRole('button', { name: 'Slide left' }).click();
+  await page.getByRole('button', { name: 'Place crib' }).click();
+
+  await expect(page.getByLabel('Placed')).toHaveText('Placed at position 4');
+  await page.getByRole('button', { name: 'Enigma' }).click();
 });
 
 test('lights a lamp while a key is held on the physical keyboard', async () => {
