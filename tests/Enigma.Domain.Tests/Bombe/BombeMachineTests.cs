@@ -26,10 +26,24 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
         var stops = bombe.Run().ToList();
 
         // Assert
-        output.WriteLine($"Diagonal board {diagonalBoard}: {stops.Count} stops (Carter reports 2).");
+        output.WriteLine($"Diagonal board {diagonalBoard}: {stops.Count} stops.");
         var stop = Assert.Single(stops, stop => stop.Position == DrumPosition.Parse("VMB"));
         Assert.Equal(Q, stop.Stecker);
         Assert.Equal("ENY", stop.Position.Indicator.ToString());
+    }
+
+    [Fact]
+    public void Should_give_two_stops_as_Carter_reports_When_running_his_weather_menu_with_the_diagonal_board()
+    {
+        // Arrange
+        var bombe = new BombeMachine(
+            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, G, A);
+
+        // Act
+        var stops = bombe.Run().Count();
+
+        // Assert
+        Assert.Equal(2, stops);
     }
 
     [Fact]

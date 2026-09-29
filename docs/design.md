@@ -197,7 +197,7 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
   - `Enigma.Domain.Tests`, `Enigma.Application.Tests`, and `Enigma.Api.Tests` (using `WebApplicationFactory`).
   - Test names follow `Should_<expected>_When_<condition>`.
   - Tests mark `// Arrange`, `// Act` and `// Assert`.
-  - Tests include historical vectors, such as the U-264 message and Frank Carter's weather crib for the Bombe (2 stops with the diagonal board, the true one at core positions VMB with G/Q).
+  - Tests include historical vectors, such as the U-264 message and Frank Carter's weather crib for the Bombe (exactly 2 stops with the diagonal board, as Carter reports; the true one at core positions VMB with G/Q).
 - **Frontend:** Vitest + React Testing Library, plus Playwright for end-to-end tests. They use plain JavaScript naming.
 - **CI:** GitHub Actions runs on every PR and every push to `main`.
 
