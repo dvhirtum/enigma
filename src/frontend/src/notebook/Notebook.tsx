@@ -35,11 +35,14 @@ function Hand({ children }: { children: ReactNode }) {
   return <span className="hand">{children}</span>;
 }
 
-/** Writes `text` by hand, one character per square. Each space leaves an empty square, and groups do not break across lines. */
-function Squares({ text, label }: { text: string; label?: string }) {
+/**
+ * Writes `text` by hand, one character per square. Each space leaves an empty square, and groups do not break across lines.
+ * `stacked` writes each group on a line of its own.
+ */
+function Squares({ text, label, stacked = false }: { text: string; label?: string; stacked?: boolean }) {
   const words = text.split(' ').filter(Boolean);
   return (
-    <span className="squares" role={label ? 'group' : undefined} aria-label={label}>
+    <span className={stacked ? 'squares squares-stacked' : 'squares'} role={label ? 'group' : undefined} aria-label={label}>
       {words.map((word, wordIndex) => (
         <span key={wordIndex} className="squares-group">
           {[...word].map((letter, index) => (
@@ -55,11 +58,11 @@ function Squares({ text, label }: { text: string; label?: string }) {
 }
 
 /** A printed label with handwritten squares after it. */
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value, stacked }: { label: string; value: string; stacked?: boolean }) {
   return (
     <p className="field">
       <span className="field-label">{label}</span>
-      <Squares text={value} label={label} />
+      <Squares text={value} label={label} stacked={stacked} />
     </p>
   );
 }
@@ -220,7 +223,7 @@ function IndicatorView({ operator }: { operator: OperatorState }) {
           ))}
         </p>
       </div>
-      {operator.indicator && <Field label="Groups" value={operator.indicator} />}
+      {operator.indicator && <Field label="Groups" value={operator.indicator} stacked />}
     </section>
   );
 }

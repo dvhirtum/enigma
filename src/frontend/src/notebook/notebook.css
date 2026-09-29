@@ -203,6 +203,10 @@
   display: flex;
 }
 
+.squares-stacked {
+  flex-direction: column;
+}
+
 .square {
   display: block;
   width: var(--sq);
