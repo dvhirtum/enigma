@@ -96,6 +96,16 @@ describe('Notebook', () => {
     expect(screen.getByRole('tab', { name: 'Decrypt' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('starts a message on the other page once the message on this page is done', async () => {
+    const api = renderNotebook({ ...receiving, step: 'Done', pad: 'WETTERXX' });
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Encrypt' }));
+    expect(screen.queryByText(/A message is being/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Send a message' }));
+
+    expect(api.machine.startSending).toHaveBeenCalled();
+  });
+
   it('finds the keys that fit a received message on the applied day and receives with the chosen one', async () => {
     const message = 'QWER TZUI ABCD QWER TZUI';
     const keys = [

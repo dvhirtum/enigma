@@ -8,7 +8,7 @@ The notebook looks like squared paper. The instructions are printed; everything 
 
 Turn the rotors in the [top-down view](machine.md) of the machine window. Type there, or type letters straight into the notebook: they press the machine keys. Keys other than the expected one are rejected. **Cancel** stops the procedure at any time.
 
-The **Encrypt** tab sends and the **Decrypt** tab receives. One message can be in progress at a time. While it is, the other tab asks you to finish or cancel it first.
+The **Encrypt** tab sends and the **Decrypt** tab receives. One message can be in progress at a time. While it is, the other tab asks you to finish or cancel it first. Once it is done, the other tab works as usual; starting a message there replaces the finished one.
 
 To work through the same steps without guidance, see [Sending by hand](sending-by-hand.md) and [Receiving by hand](receiving-by-hand.md). [The Enigma in the Kriegsmarine](history.md) explains why the procedure works this way.
 

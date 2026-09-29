@@ -563,10 +563,10 @@ export function Notebook() {
   };
 
   let content: ReactNode;
-  if (operator && operator.direction !== selected) {
-    content = <Busy running={operator.direction} onShow={() => setChosen(operator.direction)} />;
-  } else if (operator) {
+  if (operator && operator.direction === selected) {
     content = <Procedure operator={operator} />;
+  } else if (operator && operator.step !== 'Done') {
+    content = <Busy running={operator.direction} onShow={() => setChosen(operator.direction)} />;
   } else {
     content = selected === 'Send' ? <Send /> : <Receive />;
   }
