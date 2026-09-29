@@ -183,13 +183,21 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 - The frame has a header with the mode switch and the instructions button.
 - Tests: round-trip vectors (the true key stops) and vectors from primary sources.
 
+### Domain: Bombe
+- `WheelOrder`: three distinct rotors of I–VIII, left to right (upper, middle, lower drum); `All` lists the 336.
+- `DrumPosition`: the core positions of the three drums (window letter minus ring setting). Offsets are written as the drum letters from ZZZ (1 = ZZA, 26 = ZAZ), and `Advance` turns each drum on its own, without carrying: every scrambler keeps its offset. `Indicator` reads the reversed letters of the indicator drums: the ring settings that give the core positions with the rotors at ZZZ.
+- `Scrambler`: a double-ended Enigma (rotors and reflector B or C, no plugboard) at a drum position, as a precomputed table.
+- `MenuLink`: two crib letters and their offset. A letter never links to itself.
+- `BombeMachine`: a scrambler, a menu, the test register letter, the input letter and the diagonal board switch. Each letter has a cable of 26 wires; a link's scrambler joins wire x of one cable to wire scrambler(x) of the other, and the diagonal board joins wire b of cable a to wire a of cable b. `Test(position)` makes the input wire live, spreads the current and stops when not all 26 test register wires are live. `Run()` tests all 17,576 positions from ZZZ, the upper drum fastest.
+- `BombeStop`: the wheel order, drum position, test register and live wires. `Stecker` is the only live wire, or the only dead one when 25 are live.
+
 ## Testing
 
 - **Backend:** xUnit.
   - `Enigma.Domain.Tests`, `Enigma.Application.Tests`, and `Enigma.Api.Tests` (using `WebApplicationFactory`).
   - Test names follow `Should_<expected>_When_<condition>`.
   - Tests mark `// Arrange`, `// Act` and `// Assert`.
-  - Tests include historical vectors, such as the U-264 message.
+  - Tests include historical vectors, such as the U-264 message and Frank Carter's weather crib for the Bombe (exactly 2 stops with the diagonal board, as Carter reports; the true one at core positions VMB with G/Q).
 - **Frontend:** Vitest + React Testing Library, plus Playwright for end-to-end tests. They use plain JavaScript naming.
 - **CI:** GitHub Actions runs on every PR and every push to `main`.
 
