@@ -296,6 +296,23 @@ function IndicatorExplanation({ operator }: { operator: OperatorState }) {
   );
 }
 
+/** Explains the time of origin and the letter count at the start of a radio message. */
+function PreambleExplanation({ message, cipherLength }: { message: string; cipherLength: number }) {
+  const preamble = /^(\d{2})(\d{2}) = (\d+) =/.exec(message);
+  if (!preamble) {
+    return null;
+  }
+
+  const [, hours, minutes, count] = preamble;
+  return (
+    <p>
+      The first number, <Hand>{hours + minutes}</Hand>, is the time of origin: the message was written at {hours}:{minutes}. The second,{' '}
+      <Hand>{count}</Hand>, is the letter count: every letter after it, so the two indicator groups at the start, the {cipherLength} letters of
+      cipher text and the indicator groups again at the end (8 + {cipherLength} + 8). The receiver checks it to see whether letters went missing.
+    </p>
+  );
+}
+
 function CopyButton({ text }: { text: string }) {
   const copyText = useMachine((store) => store.copyText);
   const [copied, setCopied] = useState(false);
@@ -386,6 +403,7 @@ function StepContent({ operator, step, current }: { operator: OperatorState; ste
           <output aria-label="Radio message" className="radio-message">
             <Squares text={operator.message} />
           </output>
+          <PreambleExplanation message={operator.message} cipherLength={operator.pad.length} />
           <p className="notebook-actions">
             <CopyButton text={operator.message} />
           </p>

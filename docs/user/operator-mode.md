@@ -22,7 +22,7 @@ Sending needs an applied daily key (see [Key sheets](key-sheets.md)). The notebo
 4. **Type the Verfahrenkenngruppe.** The lamps give the Spruchschlüssel (message key), which the notebook writes down.
 5. **Set the Spruchschlüssel.** On the M4 the Greek rotor keeps its Grundstellung letter.
 6. **Type the message.** The notebook writes the cipher text in groups of 4. Type X until the last group is full, then click **Finish**.
-7. Click **Copy** to copy the radio message.
+7. Click **Copy** to copy the radio message. The notebook explains the numbers at its start.
 
 A radio message looks like this:
 

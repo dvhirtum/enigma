@@ -235,6 +235,9 @@ describe('Notebook', () => {
     const api = renderNotebook({ ...indicatorChosen, step: 'Done', pad: 'ABCDEFGH', message });
 
     expect(await screen.findByRole('status', { name: 'Radio message' })).toHaveTextContent(message);
+    expect(screen.getByText(/is the time of origin/)).toHaveTextContent(
+      'The first number, 1840, is the time of origin: the message was written at 18:40. The second, 24, is the letter count: every letter after it, so the two indicator groups at the start, the 8 letters of cipher text and the indicator groups again at the end (8 + 8 + 8).',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'New message' }));
