@@ -37,6 +37,7 @@ export const sending: OperatorState = {
   indicator: null,
   spruchschluesselLamps: '',
   spruchschluessel: null,
+  typed: '',
   pad: '',
   expectedKey: null,
   fillersNeeded: 0,

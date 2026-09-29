@@ -67,20 +67,23 @@ function Field({ label, value, stacked }: { label: string; value: string; stacke
   );
 }
 
-/** The cipher text in groups of 4, with the plaintext written under each letter as it is typed. */
-function Decipherment({ cipher, plain }: { cipher: string; plain: string }) {
-  const cells = (from: string, start: number, row: string) =>
+/**
+ * The keys in groups of 4, with the lamp each one lit written underneath in red. When receiving, `keys` is the whole
+ * cipher text and the next letter to type is circled.
+ */
+function KeysAndLamps({ keys, lamps, label, circleNext }: { keys: string; lamps: string; label: string; circleNext: boolean }) {
+  const cells = (from: string, start: number, top: boolean) =>
     [...from].map((letter, column) => (
-      <span key={column} className="square" aria-current={row === 'cipher' && start + column === plain.length ? 'true' : undefined}>
+      <span key={column} className="square" aria-current={top && circleNext && start + column === lamps.length ? 'true' : undefined}>
         {letter}
       </span>
     ));
   return (
-    <p className="decipherment" role="group" aria-label="Cipher text">
-      {groups(cipher).map((group, index) => (
-        <span key={index} className="decipherment-group">
-          <span className="decipherment-row">{cells(group, index * 4, 'cipher')}</span>
-          <span className="decipherment-row decipherment-plain">{cells(plain.slice(index * 4, index * 4 + 4).padEnd(group.length, ' '), index * 4, 'plain')}</span>
+    <p className="keys-lamps" role="group" aria-label={label}>
+      {groups(keys).map((group, index) => (
+        <span key={index} className="keys-lamps-group">
+          <span className="keys-lamps-row">{cells(group, index * 4, true)}</span>
+          <span className="keys-lamps-row keys-lamps-lamp">{cells(lamps.slice(index * 4, index * 4 + 4).padEnd(group.length, ' '), index * 4, false)}</span>
         </span>
       ))}
     </p>
@@ -364,8 +367,9 @@ function StepContent({ operator, step, current }: { operator: OperatorState; ste
     case 'TypeMessage':
       return sending ? (
         <>
-          <p>Type the plaintext.{current && ` ${keyboardHint}`} The lamps give the cipher text.</p>
-          <Squares text={groups(operator.pad).join(' ')} label="Cipher text" />
+          <p>Type the plaintext. The lamps give the cipher text, written under each letter.{current && ` ${keyboardHint}`}</p>
+          <KeysAndLamps keys={operator.typed} lamps={operator.pad} label="Plaintext" circleNext={false} />
+          <Field label="Cipher text" value={groups(operator.pad).join(' ')} />
           {current && operator.fillersNeeded > 0 && (
             <p role="status">
               Type <Hand>X</Hand> {operator.fillersNeeded} more time(s) to fill the last group.
@@ -390,7 +394,7 @@ function StepContent({ operator, step, current }: { operator: OperatorState; ste
               </>
             )}
           </p>
-          <Decipherment cipher={operator.cipherText ?? ''} plain={operator.pad} />
+          <KeysAndLamps keys={operator.cipherText ?? ''} lamps={operator.pad} label="Cipher text" circleNext />
           <Field label="Plaintext" value={groups(operator.pad).join(' ')} />
         </>
       );

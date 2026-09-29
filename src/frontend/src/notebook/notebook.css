@@ -390,28 +390,28 @@ input.hand-input.fillers {
   gap: 0 var(--sq);
 }
 
-/* Decipherment: cipher letters with the plaintext underneath */
+/* Keys and lamps: the letters typed with the lamps they lit underneath */
 
-.decipherment {
+.keys-lamps {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sq);
 }
 
-.decipherment-group {
+.keys-lamps-group {
   display: flex;
   flex-direction: column;
 }
 
-.decipherment-row {
+.keys-lamps-row {
   display: flex;
 }
 
-.decipherment-plain .square {
+.keys-lamps-lamp .square {
   color: var(--red-pencil);
 }
 
-.decipherment [aria-current='true'] {
+.keys-lamps [aria-current='true'] {
   border-radius: 50%;
   box-shadow: inset 0 0 0 2px var(--red-pencil);
 }

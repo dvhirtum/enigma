@@ -223,11 +223,21 @@ describe('Notebook', () => {
   });
 
   it('asks for X to fill the last group before finishing', async () => {
-    renderNotebook({ ...indicatorChosen, step: 'TypeMessage', spruchschluessel: 'QKLM', pad: 'ABCDEF', fillersNeeded: 2 });
+    renderNotebook({ ...indicatorChosen, step: 'TypeMessage', spruchschluessel: 'QKLM', typed: 'WETTER', pad: 'ABCDEF', fillersNeeded: 2 });
 
     expect(await screen.findByRole('status')).toHaveTextContent('Type X 2 more time(s) to fill the last group.');
     expect(screen.getByRole('button', { name: 'Finish' })).toBeDisabled();
     expect(screen.getByRole('group', { name: 'Cipher text' })).toHaveTextContent('ABCD EF');
+  });
+
+  it('writes the cipher text under each plaintext letter when sending', async () => {
+    renderNotebook({ ...indicatorChosen, step: 'TypeMessage', spruchschluessel: 'QKLM', typed: 'WETTER', pad: 'ABCDEF', fillersNeeded: 2 });
+
+    const pairs = await screen.findByRole('group', { name: 'Plaintext' });
+    const [first, second] = pairs.children;
+    expect(first).toHaveTextContent(/^WETTABCD$/);
+    expect(second).toHaveTextContent(/^EREF$/);
+    expect(pairs.querySelector('[aria-current]')).toBeNull();
   });
 
   it('shows the radio message to copy when sending is done', async () => {

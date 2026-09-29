@@ -8,8 +8,8 @@ public sealed record BigramSwapState(string From, string To);
 
 /// <summary>
 /// The running operator procedure. <see cref="Direction"/> is Send or Receive; <see cref="Step"/> is ChooseGroups,
-/// SetGrundstellung, TypeVerfahrenkenngruppe, SetSpruchschluessel, TypeMessage or Done. <see cref="Pad"/> holds the
-/// lamps lit while typing the message. <see cref="Message"/> is the radio message received, or sent once done.
+/// SetGrundstellung, TypeVerfahrenkenngruppe, SetSpruchschluessel, TypeMessage or Done. <see cref="Typed"/> holds the
+/// keys typed for the message and <see cref="Pad"/> the lamps they lit. <see cref="Message"/> is the radio message received, or sent once done.
 /// </summary>
 public sealed record OperatorState(
     string Direction,
@@ -25,6 +25,7 @@ public sealed record OperatorState(
     string? Indicator,
     string SpruchschluesselLamps,
     string? Spruchschluessel,
+    string Typed,
     string Pad,
     string? ExpectedKey,
     int FillersNeeded,
@@ -52,6 +53,7 @@ public sealed record OperatorState(
             procedure.IndicatorGroups?.ToString(),
             Letters(procedure.SpruchschluesselLamps),
             procedure.MessageKey?.Spruchschluessel.ToString(),
+            Letters(procedure.Typed),
             Letters(procedure.Pad),
             procedure.ExpectedKey?.ToString(),
             procedure.FillersNeeded,

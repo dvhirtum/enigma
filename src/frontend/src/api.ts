@@ -25,7 +25,7 @@ export interface MachineState {
 
 export type OperatorStep = 'ChooseGroups' | 'SetGrundstellung' | 'TypeVerfahrenkenngruppe' | 'SetSpruchschluessel' | 'TypeMessage' | 'Done';
 
-/** The guided send or receive procedure. `pad` holds the lamps lit while typing the message. */
+/** The guided send or receive procedure. `typed` holds the keys typed for the message and `pad` the lamps they lit. */
 export interface OperatorState {
   direction: 'Send' | 'Receive';
   step: OperatorStep;
@@ -43,6 +43,7 @@ export interface OperatorState {
   indicator: string | null;
   spruchschluesselLamps: string;
   spruchschluessel: string | null;
+  typed: string;
   pad: string;
   expectedKey: string | null;
   fillersNeeded: number;
