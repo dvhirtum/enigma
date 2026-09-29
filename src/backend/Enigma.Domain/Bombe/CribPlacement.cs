@@ -19,7 +19,7 @@ public sealed class CribPlacement
                 $"A crib of {crib.Length} letters does not fit at position {position} of a {cipherText.Count}-letter text.");
         }
 
-        CipherText = cipherText;
+        CipherText = [.. cipherText];
         Crib = crib;
         Position = position;
         Crashes = [.. Enumerable.Range(0, crib.Length).Where(i => cipherText[position + i] == crib.Letters[i])];

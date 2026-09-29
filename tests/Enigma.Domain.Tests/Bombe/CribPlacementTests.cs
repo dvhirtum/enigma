@@ -61,6 +61,21 @@ public sealed class CribPlacementTests
         Assert.Throws<DomainException>(Act);
     }
 
+    [Fact]
+    public void Should_keep_its_links_When_the_cipher_text_is_changed_afterwards()
+    {
+        // Arrange
+        var cipher = Letters(BombeKeys.CarterCipher);
+        var placement = new CribPlacement(cipher, Crib.Parse(BombeKeys.CarterCrib), 0);
+
+        // Act
+        cipher[0] = Letter.FromChar('W');
+
+        // Assert
+        Assert.False(placement.Crashed);
+        Assert.Equal(MenuLink.Parse("SW1"), placement.Links[0]);
+    }
+
     [Theory]
     [InlineData(-1)]
     [InlineData(6)]
