@@ -11,6 +11,7 @@ const carterWetter = withCrib(carterBombe, 'WETTER');
 describe('CribView', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
   });
 
   it('asks for a message first', async () => {
@@ -128,18 +129,51 @@ describe('CribView', () => {
   });
 
   it('slides the crib by dragging it a letter width at a time', async () => {
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 160 } as DOMRect);
+    // Letters 10 pixels wide, the first at 0.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 10 } as DOMRect);
     renderBombe(<CribView />, carterWetter);
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
     const crib = document.querySelector('.crib-letters')!;
 
-    fireEvent.pointerDown(crib, { clientX: 100, pointerId: 1 });
-    fireEvent.pointerMove(crib, { clientX: 131, pointerId: 1 });
+    fireEvent.pointerDown(crib, { clientX: 25, pointerId: 1 });
+    fireEvent.pointerMove(crib, { clientX: 56, pointerId: 1 });
     fireEvent.pointerUp(crib, { pointerId: 1 });
-    fireEvent.pointerMove(crib, { clientX: 200, pointerId: 1 });
+    fireEvent.pointerMove(crib, { clientX: 100, pointerId: 1 });
 
-    // 16 letters in 160 pixels: 31 pixels is 3 letters.
+    // 31 pixels is 3 letters.
     expect(slider).toHaveAttribute('aria-valuenow', '4');
+  });
+
+  it('keeps the crib under the pointer when the strip scrolls during a drag', async () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 10 } as DOMRect);
+    renderBombe(<CribView />, carterWetter);
+    const slider = await screen.findByRole('slider', { name: 'Crib position' });
+    const crib = document.querySelector('.crib-letters')!;
+
+    fireEvent.pointerDown(crib, { clientX: 25, pointerId: 1 });
+    // The strip scrolls 40 pixels to the left: the pointer, not moved, is now over a letter 4 places on.
+    rect.mockReturnValue({ left: -40, width: 10 } as DOMRect);
+    fireEvent.pointerMove(crib, { clientX: 25, pointerId: 1 });
+
+    expect(slider).toHaveAttribute('aria-valuenow', '5');
+  });
+
+  it('does not scroll the strip while the crib is dragged', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 10 } as DOMRect);
+    const scroll = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scroll;
+    renderBombe(<CribView />, carterWetter);
+    await screen.findByRole('slider', { name: 'Crib position' });
+    const crib = document.querySelector('.crib-letters')!;
+    scroll.mockClear();
+
+    fireEvent.pointerDown(crib, { clientX: 25, pointerId: 1 });
+    fireEvent.pointerMove(crib, { clientX: 56, pointerId: 1 });
+    expect(scroll).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(crib, { pointerId: 1 });
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(scroll).toHaveBeenCalled();
   });
 });
 

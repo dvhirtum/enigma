@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { InstructionsIcon } from '../components/icons';
 import { TabbedViews } from '../components/TabbedViews';
 import { ErrorToast } from '../ErrorToast';
-import { ModeSwitch } from '../mode';
+import { ModeSwitch, useActive } from '../mode';
 import { useMachine } from '../store';
 import { CribView } from './CribView';
 import { MessageView } from './MessageView';
@@ -12,15 +12,19 @@ const views = [
   { id: 'bombe-crib', label: 'Crib', View: CribView },
 ] as const;
 
-/** The Bombe mode: breaks Enigma messages from a crib. */
+/** The Bombe mode: breaks Enigma messages from a crib. The job loads when the mode is first shown. */
 export function BombeFrame() {
   const version = useMachine((store) => store.version);
   const openInstructions = useMachine((store) => store.openInstructions);
   const loadBombe = useMachine((store) => store.loadBombe);
+  const loaded = useMachine((store) => store.bombe !== null);
+  const active = useActive();
 
   useEffect(() => {
-    void loadBombe();
-  }, [loadBombe]);
+    if (active && !loaded) {
+      void loadBombe();
+    }
+  }, [active, loaded, loadBombe]);
 
   return (
     <div className="frame">

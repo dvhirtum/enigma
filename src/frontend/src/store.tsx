@@ -146,12 +146,18 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       bombe: null,
       intercepts: [],
       loadBombe: async () => {
-        const result = await check(bombe.intercepts());
-        if (!result.ok) {
-          return false;
+        const [listed, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.getState())]);
+        if (listed.ok) {
+          set({ intercepts: listed.value });
         }
-        set({ intercepts: result.value });
-        return job(bombe.getState());
+        if (state.ok) {
+          set({ bombe: state.value });
+        }
+        const failed = [state, listed].find((result) => !result.ok);
+        if (failed && !failed.ok) {
+          set({ error: failed.problem });
+        }
+        return !failed;
       },
       loadIntercept: (id) => job(bombe.loadIntercept(id)),
       generateExercise: () => job(bombe.generateExercise()),

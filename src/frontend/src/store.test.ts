@@ -170,3 +170,31 @@ describe('bombe slice', () => {
     expect(store.getState().error).toEqual(problem);
   });
 });
+
+describe('bombe slice loading', () => {
+  it('loads the job when the intercepts cannot be listed', async () => {
+    const { api } = createFakeApi();
+    const problem = { status: 500, title: 'The intercepts could not be listed.' };
+    api.bombe.getState.mockResolvedValue({ ok: true, value: carterBombe });
+    api.bombe.intercepts.mockResolvedValue({ ok: false, problem });
+    const store = createMachineStore(api);
+
+    const loaded = await store.getState().loadBombe();
+
+    expect(loaded).toBe(false);
+    expect(store.getState().bombe).toEqual(carterBombe);
+    expect(store.getState().error).toEqual(problem);
+  });
+
+  it('keeps an earlier error when the job loads', async () => {
+    const { api } = createFakeApi();
+    const problem = { status: 400, title: 'The machine rejected the operation.' };
+    api.machine.getState.mockResolvedValue({ ok: false, problem });
+    const store = createMachineStore(api);
+    await store.getState().load();
+
+    await store.getState().loadBombe();
+
+    expect(store.getState().error).toEqual(problem);
+  });
+});

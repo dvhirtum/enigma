@@ -36,10 +36,10 @@ function crashText(crashes: number): string {
   return crashes === 0 ? 'no crashes' : crashes === 1 ? '1 crash' : `${crashes} crashes`;
 }
 
-/** Where a drag of the crib started: the pointer and the crib position. */
-interface DragStart {
-  x: number;
-  position: number;
+/** The cipher letter under a pointer, counted in letter widths from the first (fractional, so 2.5 is halfway along the third). */
+function letterAt(row: HTMLElement | null, clientX: number): number | null {
+  const first = row?.firstElementChild?.getBoundingClientRect();
+  return first && first.width > 0 ? (clientX - first.left) / first.width : null;
 }
 
 /**
@@ -49,7 +49,8 @@ interface DragStart {
 function CribStrip({ cipherText, crib, placements, placed }: { cipherText: string; crib: string; placements: Placement[]; placed: number | null }) {
   const placeCrib = useMachine((store) => store.placeCrib);
   const [position, setPosition] = useState(placed ?? 0);
-  const drag = useRef<DragStart | null>(null);
+  /** While dragging: which crib letter the pointer holds, in letter widths from the crib start. */
+  const grip = useRef<number | null>(null);
   const cipherRow = useRef<HTMLDivElement>(null);
   const cribRow = useRef<HTMLDivElement>(null);
   const last = placements.length - 1;
@@ -58,7 +59,9 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
   const active = useActive();
 
   useEffect(() => {
-    cribRow.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    if (grip.current === null) {
+      cribRow.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    }
   }, [position]);
 
   const slideTo = (next: number) => setPosition(Math.min(last, Math.max(0, next)));
@@ -83,21 +86,24 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
   }, [active, last]);
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    const letter = letterAt(cipherRow.current, event.clientX);
+    if (letter === null) {
+      return;
+    }
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    drag.current = { x: event.clientX, position };
+    grip.current = letter - position;
   };
 
   const onPointerMove = (event: PointerEvent) => {
-    const start = drag.current;
-    const width = cipherRow.current?.getBoundingClientRect().width ?? 0;
-    if (!start || width === 0) {
+    const letter = letterAt(cipherRow.current, event.clientX);
+    if (grip.current === null || letter === null) {
       return;
     }
-    slideTo(start.position + Math.round(((event.clientX - start.x) * cipherText.length) / width));
+    slideTo(Math.round(letter - grip.current));
   };
 
   const onPointerUp = () => {
-    drag.current = null;
+    grip.current = null;
   };
 
   const covered = (index: number) => index >= position && index < position + crib.length;

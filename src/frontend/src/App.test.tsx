@@ -72,6 +72,21 @@ describe('App', () => {
     await waitFor(() => expect(api.machine.releaseKey).toHaveBeenCalledOnce());
   });
 
+  it('loads the Bombe job when Bombe mode is first shown', async () => {
+    const { api } = createFakeApi();
+    render(<App api={api} />);
+    await screen.findByRole('tablist', { name: 'Views' });
+    expect(api.bombe.getState).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bombe' }));
+    await waitFor(() => expect(api.bombe.getState).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'Enigma' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bombe' }));
+    await act(() => Promise.resolve());
+
+    expect(api.bombe.getState).toHaveBeenCalledOnce();
+  });
+
   it('opens the instructions from Bombe mode', async () => {
     const { api } = createFakeApi();
     render(<App api={api} />);
