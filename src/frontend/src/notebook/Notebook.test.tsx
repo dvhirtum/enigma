@@ -268,6 +268,7 @@ describe('Notebook', () => {
     const indicator = within(step).getByRole('region', { name: 'Indicator' });
     const groupsFirst = within(indicator).getByRole('group', { name: 'Groups' }).compareDocumentPosition(within(indicator).getByRole('group', { name: 'Upper row' }));
     expect(groupsFirst & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(indicator).getByLabelText('Swaps')).toHaveTextContent('JZ→QA');
   });
 
   it('presses the machine key for a letter typed in the notebook', async () => {

@@ -240,9 +240,7 @@ function IndicatorView({ operator }: { operator: OperatorState }) {
         </p>
         <p className="indicator-swaps" aria-label="Swaps">
           {operator.bigrams.map((bigram) => (
-            <Hand key={bigram.from}>
-              {bigram.from}→{bigram.to}
-            </Hand>
+            <Hand key={bigram.from}>{receiving ? `${bigram.to}→${bigram.from}` : `${bigram.from}→${bigram.to}`}</Hand>
           ))}
         </p>
       </div>
