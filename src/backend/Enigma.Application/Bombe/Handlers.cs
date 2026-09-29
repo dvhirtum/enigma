@@ -71,7 +71,7 @@ public sealed class ConfigureBombeHandler(IBombeSessionStore store)
         Letter? input = command.Input is null ? null : Input.Letter(command.Input);
         var reflector = Input.Reflector(command.Reflector);
         IReadOnlyList<WheelOrder> wheelOrders = [.. (command.WheelOrders ?? []).Select(o => WheelOrder.Parse(o ?? string.Empty))];
-        return store.Update(job => job.Configure(input, command.DiagonalBoard, reflector, wheelOrders));
+        return store.Update(job => job.Configure(input, command.DiagonalBoard ?? job.DiagonalBoard, reflector, wheelOrders));
     }
 }
 

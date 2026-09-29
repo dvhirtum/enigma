@@ -212,6 +212,37 @@ public sealed class BombeHandlerTests
         Assert.Null(_store.Run);
     }
 
+    [Fact]
+    public void Should_keep_the_diagonal_board_When_the_settings_leave_it_out()
+    {
+        // Arrange
+        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, false, "B", ["II V III"]));
+
+        // Act
+        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, null, "C", ["II V III"]));
+
+        // Assert
+        Assert.False(state.Settings.DiagonalBoard);
+        Assert.Equal("C", state.Settings.Reflector);
+    }
+
+    [Fact]
+    public async Task Should_report_the_error_When_the_run_fails()
+    {
+        // Arrange
+        SetUpCarter();
+
+        // Act
+        new StartRunHandler(_store, new FailingClock()).Handle(new StartRun(BombeRun.HistoricalSpeed));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+
+        // Assert
+        var run = new GetRunHandler(_store).Handle(new GetRun());
+        Assert.Equal("Failed", run.Status);
+        Assert.Equal(FailingClock.Message, run.Error);
+        Assert.Null(run.WheelOrder);
+    }
+
     [Theory]
     [InlineData(0.0)]
     [InlineData(-5.0)]

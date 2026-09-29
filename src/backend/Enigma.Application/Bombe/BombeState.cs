@@ -45,8 +45,8 @@ public sealed record MenuState(IReadOnlyList<string> Links, string TestRegister,
 public sealed record BombeSettings(string Input, bool DiagonalBoard, string Reflector, IReadOnlyList<string> WheelOrders);
 
 /// <summary>
-/// A run's progress. Speed is in positions per second, null for full speed. The wheel order and drum position in
-/// hand are shown while the run is paced.
+/// A run's progress. Speed is in positions per second, null for full speed. Error is set when the run failed. The
+/// wheel order and drum position in hand are shown while the run is paced.
 /// </summary>
 public sealed record RunState(
     string Status,
@@ -59,6 +59,7 @@ public sealed record RunState(
     string? WheelOrder,
     string? Position,
     int Stops,
+    string? Error,
     double ElapsedSeconds)
 {
     public static RunState From(BombeRun run)
@@ -77,6 +78,7 @@ public sealed record RunState(
             progress.WheelOrder?.ToString(),
             progress.Position?.ToString(),
             progress.Stops,
+            progress.Error,
             progress.Elapsed.TotalSeconds);
     }
 }

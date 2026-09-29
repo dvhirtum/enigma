@@ -8,6 +8,7 @@ public enum RunStatus
     Running,
     Finished,
     Cancelled,
+    Failed,
 }
 
 /// <summary>
@@ -34,6 +35,7 @@ public sealed class BombeRun
     private (BombeMachine Machine, int Order, int Step)? _current;
     private long? _ended;
     private RunStatus _status = RunStatus.Running;
+    private string? _error;
 
     private BombeRun(BombeJob job, double? speed, TimeProvider time)
     {
@@ -53,7 +55,7 @@ public sealed class BombeRun
 
     public ReflectorType Reflector { get; }
 
-    /// <summary>Completes when the run has finished or was cancelled.</summary>
+    /// <summary>Completes when the run has finished, was cancelled or failed.</summary>
     public Task Completion { get; }
 
     public double? Speed
@@ -110,6 +112,7 @@ public sealed class BombeRun
                 _current?.Machine.WheelOrder,
                 _current is { } current ? BombeMachine.PositionAt(current.Step) : null,
                 _stops.Count,
+                _error,
                 _time.GetElapsedTime(_started, _ended ?? _time.GetTimestamp()));
         }
     }
@@ -144,13 +147,20 @@ public sealed class BombeRun
                 }
             }
         }
+        catch (Exception exception)
+        {
+            lock (_lock)
+            {
+                _error = exception.GetBaseException().Message;
+            }
+        }
         finally
         {
             lock (_lock)
             {
                 _current = null;
                 _ended = _time.GetTimestamp();
-                _status = _cancelled ? RunStatus.Cancelled : RunStatus.Finished;
+                _status = _error is not null ? RunStatus.Failed : _cancelled ? RunStatus.Cancelled : RunStatus.Finished;
             }
         }
     }
@@ -241,4 +251,5 @@ public sealed record RunProgress(
     WheelOrder? WheelOrder,
     DrumPosition? Position,
     int Stops,
+    string? Error,
     TimeSpan Elapsed);

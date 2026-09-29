@@ -199,7 +199,7 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 ### Application and API: Bombe
 - `IBombeSessionStore` holds one job and its latest run (`InMemoryBombeSessionStore`).
 - `BombeRun` runs the menu over the job's wheel orders in the background. The speed is in positions per second, or null for full speed. At full speed the wheel orders run in parallel (all 336 in about 3 s on 16 cores); at a set speed one runs at a time, paced by `TimeProvider`, and the progress shows the wheel order and drum position in hand. `HistoricalSpeed` is a wheel order in 20 minutes (14.6 positions per second). The speed can change while the run goes.
-- Changing the job is refused while the Bombe runs, and clears the stops of a finished run. There is one run at a time.
+- Changing the job is refused while the Bombe runs, and clears the stops of a finished run. There is one run at a time. A run that throws ends as `Failed` with its error.
 - Stops are fetched from an index on, as a run with a poor menu can have hundreds of thousands.
 
 | Method | Path | Body |
@@ -210,7 +210,7 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 | PUT | `/api/bombe/placement` | `{ position }` |
 | PUT | `/api/bombe/menu` | `{ links, testRegister? }` |
 | POST | `/api/bombe/menu/build` | |
-| PUT | `/api/bombe/settings` | `{ input?, diagonalBoard, reflector, wheelOrders }` |
+| PUT | `/api/bombe/settings` | `{ input?, diagonalBoard?, reflector, wheelOrders }` |
 | POST | `/api/bombe/run` | `{ speed? }` |
 | PUT | `/api/bombe/run/speed` | `{ speed? }` |
 | DELETE | `/api/bombe/run` | |
