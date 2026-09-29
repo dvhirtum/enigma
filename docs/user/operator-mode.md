@@ -36,7 +36,7 @@ The time of origin and the letter count come first. The two indicator groups sta
 
 1. On the **Decrypt** tab, paste the message under **Received message**. The date is filled in from the applied key, or today.
 2. Click **Find key**. The notebook lists the key sheet days whose network the Schlüsselkenngruppe belongs to. Click **Receive with this key**. If the right key is already applied, click **Receive with applied key** instead.
-3. Set the Grundstellung, type the Verfahrenkenngruppe and set the Spruchschlüssel, as when sending.
+3. Set the Grundstellung, type the Verfahrenkenngruppe and set the Spruchschlüssel, as when sending. The Verfahrenkenngruppe step explains the indicator: which Kenngruppenbuch column the Schlüsselkenngruppe comes from and which network that column is allotted to, and which column the Verfahrenkenngruppe comes from.
 4. Type the cipher text. The next letter is circled, and the plaintext is written under each cipher letter and again in groups below.
 
 The notebook warns when the letter count differs, when the Schlüsselkenngruppe does not belong to the network, or when the Verfahrenkenngruppe is not one.

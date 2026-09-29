@@ -253,6 +253,17 @@ describe('Notebook', () => {
     expect(screen.queryByText('Choose the groups')).not.toBeInTheDocument();
   });
 
+  it('explains which network and columns the indicator groups point to when receiving', async () => {
+    renderNotebook({ ...receiving, step: 'TypeVerfahrenkenngruppe', pad: '', expectedKey: 'A' });
+
+    const step = await screen.findByRole('listitem', { name: 'Type the Verfahrenkenngruppe' });
+    expect(await within(step).findByText(/Columns 101–120 are allotted to Triton/)).toHaveTextContent(
+      'Schlüsselkenngruppe DWA, which stands in column 101 of the Kenngruppenbuch. Columns 101–120 are allotted to Triton, so the message belongs to that network',
+    );
+    expect(within(step).getByText(/The lower row holds/)).toHaveTextContent('Verfahrenkenngruppe AAB and a filler. The Verfahrenkenngruppe stands in column 1, one of the Verfahrenkenngruppen columns 1–100.');
+    expect(within(step).getByText(/The indicator groups/)).toHaveTextContent('JWDZ ZZYC');
+  });
+
   it('presses the machine key for a letter typed in the notebook', async () => {
     const api = renderNotebook(receiving);
     await screen.findByRole('group', { name: 'Cipher text' });

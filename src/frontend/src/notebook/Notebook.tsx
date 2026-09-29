@@ -245,6 +245,51 @@ function IndicatorView({ operator }: { operator: OperatorState }) {
   );
 }
 
+/** The Kenngruppenbuch column that holds `trigram`, numbered from 1, or null. */
+function columnOf(book: Kenngruppenbuch, trigram: string): number | null {
+  const index = book.columns.findIndex((column) => column.split(' ').includes(trigram));
+  return index < 0 ? null : index + 1;
+}
+
+/** Explains how the receiver reads the network and the Verfahrenkenngruppe from the indicator groups. */
+function IndicatorExplanation({ operator }: { operator: OperatorState }) {
+  const book = useMachine((store) => store.books[operator.kenngruppenbuchId]);
+  const loadBook = useMachine((store) => store.loadBook);
+
+  useEffect(() => {
+    void loadBook(operator.kenngruppenbuchId);
+  }, [loadBook, operator.kenngruppenbuchId, book]);
+
+  const { schluesselkenngruppe, verfahrenkenngruppe, indicator } = operator;
+  if (!book || !schluesselkenngruppe || !verfahrenkenngruppe || !indicator) {
+    return null;
+  }
+
+  const schluesselColumn = columnOf(book, schluesselkenngruppe);
+  const allotment = book.allotments.find((a) => schluesselColumn !== null && a.first <= schluesselColumn && schluesselColumn <= a.last);
+  const verfahrenColumn = columnOf(book, verfahrenkenngruppe);
+  const { first, last } = book.verfahrenkenngruppen;
+  return (
+    <>
+      <p>
+        The indicator groups <Hand>{indicator}</Hand> stand at the start and the end of the message. Undo the bigram swaps of Tauschtafel{' '}
+        {operator.table} to get the two rows written below them.
+      </p>
+      <p>
+        The upper row holds a filler and the Schlüsselkenngruppe <Hand>{schluesselkenngruppe}</Hand>, which stands in column {schluesselColumn ?? '—'} of
+        the Kenngruppenbuch.{' '}
+        {allotment
+          ? `Columns ${allotment.first}–${allotment.last} are allotted to ${allotment.network}, so the message belongs to that network and was sent with its key.`
+          : 'That column is not allotted to any network.'}
+      </p>
+      <p>
+        The lower row holds the Verfahrenkenngruppe <Hand>{verfahrenkenngruppe}</Hand> and a filler. The Verfahrenkenngruppe stands in column{' '}
+        {verfahrenColumn ?? '—'}, one of the Verfahrenkenngruppen columns {first}–{last}. It is typed to get the Spruchschlüssel.
+      </p>
+    </>
+  );
+}
+
 function CopyButton({ text }: { text: string }) {
   const copyText = useMachine((store) => store.copyText);
   const [copied, setCopied] = useState(false);
@@ -274,6 +319,7 @@ function StepContent({ operator, step, current }: { operator: OperatorState; ste
     case 'TypeVerfahrenkenngruppe':
       return (
         <>
+          {!sending && <IndicatorExplanation operator={operator} />}
           {!sending && <IndicatorView operator={operator} />}
           <p>
             Type the Verfahrenkenngruppe <Hand>{operator.verfahrenkenngruppe}</Hand>.
