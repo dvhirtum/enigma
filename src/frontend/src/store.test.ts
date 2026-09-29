@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { createMachineStore, MachineStoreProvider, useMachine } from './store';
-import { createFakeApi, defaultM3 } from './test/fakeApi';
+import { carterBombe, createFakeApi, defaultM3, intercepts, withCrib } from './test/fakeApi';
 
 describe('machine store', () => {
   it('loads the machine state and backend version', async () => {
@@ -126,5 +126,47 @@ describe('machine store provider', () => {
     await waitFor(() => expect(api.keySheets.list).toHaveBeenCalledTimes(1));
     await act(() => result.current.loadBook('book'));
     expect(api.procedure.getBook).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('bombe slice', () => {
+  it('loads the job and the intercepts', async () => {
+    const { api } = createFakeApi();
+    api.bombe.getState.mockResolvedValue({ ok: true, value: carterBombe });
+    const store = createMachineStore(api);
+
+    const loaded = await store.getState().loadBombe();
+
+    expect(loaded).toBe(true);
+    expect(store.getState().bombe).toEqual(carterBombe);
+    expect(store.getState().intercepts).toEqual(intercepts);
+  });
+
+  it('replaces the job after an operation', async () => {
+    const { api } = createFakeApi();
+    const placed = withCrib(carterBombe, 'WETTER', 1);
+    api.bombe.placeCrib.mockResolvedValue({ ok: true, value: placed });
+    const store = createMachineStore(api);
+
+    const accepted = await store.getState().placeCrib(1);
+
+    expect(accepted).toBe(true);
+    expect(api.bombe.placeCrib).toHaveBeenCalledWith(1);
+    expect(store.getState().bombe).toEqual(placed);
+  });
+
+  it('keeps the job and records the problem when an operation is rejected', async () => {
+    const { api } = createFakeApi();
+    const problem = { status: 400, title: 'Generate or import M3 key sheets first.' };
+    api.bombe.getState.mockResolvedValue({ ok: true, value: carterBombe });
+    api.bombe.generateExercise.mockResolvedValue({ ok: false, problem });
+    const store = createMachineStore(api);
+    await store.getState().loadBombe();
+
+    const accepted = await store.getState().generateExercise();
+
+    expect(accepted).toBe(false);
+    expect(store.getState().bombe).toEqual(carterBombe);
+    expect(store.getState().error).toEqual(problem);
   });
 });

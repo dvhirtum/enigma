@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { BackendStatus, EnigmaApi, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
+import type { BackendStatus, BombeState, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -110,6 +110,44 @@ export const exportedFile = {
   tauschtafeln: fakeTables,
 };
 
+export const emptyBombe: BombeState = {
+  source: null,
+  cipherText: '',
+  crib: null,
+  placements: [],
+  position: null,
+  menu: null,
+  settings: { input: 'A', diagonalBoard: true, reflector: 'B', wheelOrders: [] },
+};
+
+export const carterBombe: BombeState = {
+  ...emptyBombe,
+  source: {
+    kind: 'Intercept',
+    title: 'Carter weather crib',
+    hint: 'A weather forecast.',
+    transcript: 'SNMKG GSTZZ UGARL V',
+    message: null,
+    hasCrib: true,
+    hasSolution: true,
+  },
+  cipherText: 'SNMKGGSTZZUGARLV',
+};
+
+/** The job with `crib` under the cipher text, crashes worked out as the backend does, placed at `position` if given. */
+export function withCrib(state: BombeState, crib: string, position: number | null = null): BombeState {
+  const placements = Array.from({ length: Math.max(0, state.cipherText.length - crib.length + 1) }, (_, start) => ({
+    position: start,
+    crashes: [...crib].flatMap((letter, index) => (state.cipherText[start + index] === letter ? [index] : [])),
+  }));
+  return { ...state, crib, placements, position };
+}
+
+export const intercepts: Intercept[] = [
+  { id: 'carter', title: 'Carter weather crib', date: null, hint: 'A weather forecast.' },
+  { id: 'scharnhorst', title: 'Scharnhorst', date: '1943-12-26', hint: null },
+];
+
 export function summaryOf({ id, network, month, model, provenance, source, readOnly }: KeySheet): KeySheetSummary {
   return { id, network, month, model, provenance, source, readOnly };
 }
@@ -119,6 +157,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
   const stateListeners = new Set<(state: MachineState) => void>();
   const keySheetListeners = new Set<() => void>();
   const ok = (value: MachineState = defaultM3) => vi.fn().mockResolvedValue({ ok: true, value });
+  const bombe = (value: BombeState = emptyBombe) => vi.fn().mockResolvedValue({ ok: true, value });
   const sheet = (value: KeySheet = generatedSheet) => vi.fn().mockResolvedValue({ ok: true, value });
 
   const api = {
@@ -154,6 +193,15 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     procedure: {
       getBook: vi.fn().mockResolvedValue({ ok: true, value: fakeBook }),
       findReceivingKeys: vi.fn().mockResolvedValue({ ok: true, value: [] }),
+    },
+    bombe: {
+      getState: bombe(),
+      intercepts: vi.fn().mockResolvedValue({ ok: true, value: intercepts }),
+      loadIntercept: bombe(carterBombe),
+      generateExercise: bombe(),
+      pasteCipherText: bombe(),
+      setCrib: bombe(),
+      placeCrib: bombe(),
     },
     clipboard: {
       writeText: vi.fn().mockResolvedValue(undefined),

@@ -1,11 +1,26 @@
+import { useEffect } from 'react';
 import { InstructionsIcon } from '../components/icons';
+import { TabbedViews } from '../components/TabbedViews';
+import { ErrorToast } from '../ErrorToast';
 import { ModeSwitch } from '../mode';
 import { useMachine } from '../store';
+import { CribView } from './CribView';
+import { MessageView } from './MessageView';
+
+const views = [
+  { id: 'bombe-message', label: 'Message', View: MessageView },
+  { id: 'bombe-crib', label: 'Crib', View: CribView },
+] as const;
 
 /** The Bombe mode: breaks Enigma messages from a crib. */
 export function BombeFrame() {
   const version = useMachine((store) => store.version);
   const openInstructions = useMachine((store) => store.openInstructions);
+  const loadBombe = useMachine((store) => store.loadBombe);
+
+  useEffect(() => {
+    void loadBombe();
+  }, [loadBombe]);
 
   return (
     <div className="frame">
@@ -17,9 +32,8 @@ export function BombeFrame() {
           </button>
         </div>
       </header>
-      <main aria-label="Bombe" className="bombe">
-        <p>The Bombe finds the Enigma key of a message from a crib: a guessed piece of its plaintext.</p>
-      </main>
+      <ErrorToast className="error" />
+      <TabbedViews label="Bombe views" views={views} />
       <footer>{version && `Backend v${version}`}</footer>
     </div>
   );

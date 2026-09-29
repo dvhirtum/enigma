@@ -38,7 +38,7 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Bombe' }));
 
-    expect(screen.getByRole('main', { name: 'Bombe' })).toBeInTheDocument();
+    expect(await screen.findByRole('tablist', { name: 'Bombe views' })).toBeInTheDocument();
     expect(screen.queryByRole('tablist', { name: 'Views' })).not.toBeInTheDocument();
     expect(document.title).toBe('Bombe');
 

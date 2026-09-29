@@ -4,7 +4,7 @@ import type { Backend } from './backend';
 import { send } from './http';
 import { createQueue } from './queue';
 import { registerFiles } from './files';
-import { healthRoute, keySheetRoutes, machineRoutes, procedureRoutes, type Route } from './routes';
+import { bombeRoutes, healthRoute, keySheetRoutes, machineRoutes, procedureRoutes, type Route } from './routes';
 
 export interface Windows {
   openNotebook: () => void;
@@ -65,6 +65,11 @@ export function registerIpc(backend: Backend, windows: Windows): void {
   for (const [name, toRoute] of Object.entries(procedureRoutes)) {
     const route = toRoute as (...args: unknown[]) => Route;
     ipcMain.handle(`procedure:${name}`, (_event, ...args: unknown[]) => call(route(...args)));
+  }
+
+  for (const [name, toRoute] of Object.entries(bombeRoutes)) {
+    const route = toRoute as (...args: unknown[]) => Route;
+    ipcMain.handle(`bombe:${name}`, (_event, ...args: unknown[]) => call(route(...args)));
   }
 
   registerFiles();

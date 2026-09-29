@@ -122,6 +122,57 @@ export interface KeySheetFile {
   tauschtafeln?: TauschtafelSet;
 }
 
+/** The message the Bombe is to break. `message` is the Navy radio message, when it is one. */
+export interface BombeSource {
+  kind: 'Intercept' | 'Exercise' | 'Pasted';
+  title: string;
+  hint: string | null;
+  transcript: string;
+  message: string | null;
+  hasCrib: boolean;
+  hasSolution: boolean;
+}
+
+/** A crib position under the cipher text (0 = the first letter) and the crib indexes that crash. */
+export interface Placement {
+  position: number;
+  crashes: number[];
+}
+
+/** The menu links (letters, then offset), the test register, loops and estimated stops per wheel order. */
+export interface BombeMenu {
+  links: string[];
+  testRegister: string;
+  loops: number;
+  estimatedStops: number;
+}
+
+export interface BombeSettings {
+  input: string;
+  diagonalBoard: boolean;
+  reflector: string;
+  wheelOrders: string[];
+}
+
+/** The Bombe job: the message, the crib, every crib position, the placed one, the menu and the run settings. */
+export interface BombeState {
+  source: BombeSource | null;
+  cipherText: string;
+  crib: string | null;
+  placements: Placement[];
+  position: number | null;
+  menu: BombeMenu | null;
+  settings: BombeSettings;
+}
+
+/** A bundled historical intercept. The date is yyyy-MM-dd, or null when unknown. */
+export interface Intercept {
+  id: string;
+  title: string;
+  date: string | null;
+  hint: string | null;
+}
+
 export interface Problem {
   status: number;
   title: string;
@@ -187,6 +238,19 @@ export interface ProcedureApi {
   findReceivingKeys: Call<[message: string, date: string], ReceivingKey[]>;
 }
 
+export interface BombeApi {
+  getState: Call<[], BombeState>;
+  intercepts: Call<[], Intercept[]>;
+  loadIntercept: Call<[id: string], BombeState>;
+  generateExercise: Call<[], BombeState>;
+  /** Loads a pasted radio message or bare cipher text; empty text clears the message. */
+  pasteCipherText: Call<[text: string], BombeState>;
+  /** Replaces the crib, or removes it when empty. */
+  setCrib: Call<[crib: string], BombeState>;
+  /** Places the crib at a position (0 = the first letter) and builds the menu. */
+  placeCrib: Call<[position: number], BombeState>;
+}
+
 /** An HTML document to print to the PDF file `name`. */
 export interface PrintDocument {
   name: string;
@@ -232,6 +296,7 @@ export interface EnigmaApi {
   machine: MachineApi;
   keySheets: KeySheetApi;
   procedure: ProcedureApi;
+  bombe: BombeApi;
   files: FilesApi;
   clipboard: ClipboardApi;
   windows: WindowsApi;
