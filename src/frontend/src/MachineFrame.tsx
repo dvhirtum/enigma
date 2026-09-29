@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { ErrorToast } from './ErrorToast';
 import { models, slots } from './machine';
 import { KeySheetPanel } from './panels/KeySheetPanel';
 import { useMachine } from './store';
@@ -110,26 +111,6 @@ function ModelSwitch() {
   );
 }
 
-function ErrorBanner() {
-  const error = useMachine((store) => store.error);
-  const dismiss = useMachine((store) => store.dismissError);
-  if (!error) {
-    return null;
-  }
-
-  return (
-    <div className="error" role="alert">
-      <span>
-        {error.title}
-        {error.detail && ` ${error.detail}`}
-      </span>
-      <button type="button" onClick={dismiss}>
-        Dismiss
-      </button>
-    </div>
-  );
-}
-
 export function MachineFrame() {
   const load = useMachine((store) => store.load);
   const version = useMachine((store) => store.version);
@@ -198,7 +179,7 @@ export function MachineFrame() {
           </button>
         ))}
       </nav>
-      <ErrorBanner />
+      <ErrorToast className="error" />
       <main role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`}>
         <View />
       </main>

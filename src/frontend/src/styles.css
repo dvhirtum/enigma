@@ -830,3 +830,8 @@ button {
   text-align: left;
   vertical-align: top;
 }
+
+.error-fading {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}

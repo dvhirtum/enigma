@@ -156,7 +156,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ## Frontend
 
 - Electron Forge (Vite + TypeScript) with React. The machine state lives in a Zustand store per window. The main process sends the machine state a window's call produces to the other windows.
-- App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, the applied daily key ("Key: Triton 1944-06, day 19 · Grundstellung QRS", with "(modified)" after a setup change), a button that opens the operator's notebook window, a side panel button for key sheets (its arrow points left to open and right to close), an error banner for rejected operations, and the backend version.
+- App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, the applied daily key ("Key: Triton 1944-06, day 19 · Grundstellung QRS", with "(modified)" after a setup change), a button that opens the operator's notebook window, a side panel button for key sheets (its arrow points left to open and right to close), an error message for rejected operations that floats under the header and fades out after 5 seconds (also in the notebook), and the backend version.
 - SVG components: `RotorWindow`, `Thumbwheel`, `RotorDrum`, `Lamp`, `Key`, `PlugSocket`.
 - Views:
   - **Top-down:**

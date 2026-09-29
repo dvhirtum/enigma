@@ -6,7 +6,7 @@ The operator's notebook walks through the Navy indicator procedure while you wor
 
 The notebook looks like squared paper. The instructions are printed; everything the operator would write down (groups, indicator, keys, cipher text and plaintext) is handwritten, one letter per square. The numbered steps run down the page, each with its instructions and what was written in it. The current step is highlighted and the notebook scrolls to it. Finished steps are ticked off and keep everything, so you can read back the whole procedure once the message is done.
 
-Turn the rotors in the [top-down view](machine.md) of the machine window. Type there, or type letters straight into the notebook: they press the machine keys. Keys other than the expected one are rejected. **Cancel** stops the procedure at any time.
+Turn the rotors in the [top-down view](machine.md) of the machine window. Type there, or type letters straight into the notebook: they press the machine keys. Keys other than the expected one are rejected; the message about it fades out after 5 seconds. **Cancel** stops the procedure at any time.
 
 The **Encrypt** tab sends and the **Decrypt** tab receives. One message can be in progress at a time. While it is, the other tab asks you to finish or cancel it first. Once it is done, the other tab works as usual; starting a message there replaces the finished one.
 

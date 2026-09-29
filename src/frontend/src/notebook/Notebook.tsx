@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import type { AppliedKey, Kenngruppenbuch, OperatorState, OperatorStep, ReceivingKey } from '../api';
+import { ErrorToast } from '../ErrorToast';
 import { useMachine } from '../store';
 import { useKeys, usePhysicalKeyboard } from '../useKeys';
 
@@ -589,26 +590,6 @@ function Busy({ running, onShow }: { running: Direction; onShow: () => void }) {
   );
 }
 
-function ErrorNote() {
-  const error = useMachine((store) => store.error);
-  const dismiss = useMachine((store) => store.dismissError);
-  if (!error) {
-    return null;
-  }
-
-  return (
-    <div className="notebook-error" role="alert">
-      <span>
-        {error.title}
-        {error.detail && ` ${error.detail}`}
-      </span>
-      <button type="button" onClick={dismiss}>
-        Dismiss
-      </button>
-    </div>
-  );
-}
-
 /** The operator's notebook: walks through the Navy indicator procedure while the operator works the machine. */
 export function Notebook() {
   const load = useMachine((store) => store.load);
@@ -664,7 +645,7 @@ export function Notebook() {
           </button>
         ))}
       </div>
-      <ErrorNote />
+      <ErrorToast className="notebook-error" />
       <section className="page" role="tabpanel" id="notebook-page" aria-labelledby={`notebook-tab-${selected}`}>
         {appliedKey && (
           <p className="page-key" aria-label="Daily key">
