@@ -15,7 +15,7 @@ public sealed record SetMenu(IReadOnlyList<string>? Links, string? TestRegister)
 public sealed record BuildMenu;
 
 /// <summary>
-/// The run settings. A null input letter uses the default; a null diagonal board keeps it as it is. Wheel orders are
+/// The run settings; each one left out (null) stays as it is. An empty input letter uses the default. Wheel orders are
 /// written as "II V III".
 /// </summary>
 public sealed record ConfigureBombe(string? Input, bool? DiagonalBoard, string? Reflector, IReadOnlyList<string>? WheelOrders);
@@ -25,6 +25,9 @@ public sealed record StartRun(double? Speed);
 
 /// <summary>Sets the speed of the run in positions per second, or full speed when null.</summary>
 public sealed record SetRunSpeed(double? Speed);
+
+/// <summary>Continues a run paused at a stop.</summary>
+public sealed record ContinueRun;
 
 public sealed record CancelRun;
 

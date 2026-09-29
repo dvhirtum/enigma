@@ -24,6 +24,9 @@ public sealed class BombeJob
     /// <summary>The live wire on the test register cable: as set, or A (B when the test register is on A).</summary>
     public Letter Input => _input ?? (Menu?.TestRegister == Letter.A ? Letter.A.Shift(1) : Letter.A);
 
+    /// <summary>The input letter as set, or null for the default.</summary>
+    public Letter? ChosenInput => _input;
+
     public bool DiagonalBoard { get; private set; } = true;
 
     public ReflectorType Reflector { get; private set; } = ReflectorType.B;

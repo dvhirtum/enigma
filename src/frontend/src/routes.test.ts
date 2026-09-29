@@ -77,6 +77,12 @@ describe('bombe routes', () => {
     ['placeCrib', bombeRoutes.placeCrib(0), 'PUT', '/api/bombe/placement', { position: 0 }],
     ['setMenu', bombeRoutes.setMenu(['SW1', 'NE2'], 'E'), 'PUT', '/api/bombe/menu', { links: ['SW1', 'NE2'], testRegister: 'E' }],
     ['buildMenu', bombeRoutes.buildMenu(), 'POST', '/api/bombe/menu/build', undefined],
+    ['configure', bombeRoutes.configure({ reflector: 'C' }), 'PUT', '/api/bombe/settings', { reflector: 'C' }],
+    ['startRun', bombeRoutes.startRun(null), 'POST', '/api/bombe/run', { speed: null }],
+    ['setRunSpeed', bombeRoutes.setRunSpeed(14.6), 'PUT', '/api/bombe/run/speed', { speed: 14.6 }],
+    ['continueRun', bombeRoutes.continueRun(), 'POST', '/api/bombe/run/continue', undefined],
+    ['cancelRun', bombeRoutes.cancelRun(), 'DELETE', '/api/bombe/run', undefined],
+    ['getRun', bombeRoutes.getRun(), 'GET', '/api/bombe/run', undefined],
   ])('maps %s to its endpoint', (_name, route, method, path, body) => {
     expect(route).toEqual({ method, path, ...(body && { body }) });
   });

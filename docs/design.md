@@ -185,6 +185,9 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
   - **Message:** load a historical intercept (listed with its date), a new exercise, or pasted text (a radio message or bare cipher text). Shows the title, kind, hint, the transcript as received and the cipher text in groups of five.
   - **Crib:** type the crib (letters only, in capitals). The crib strip shows the cipher text with position numbers and the crib under it. Drag the crib, or use Arrow Left/Right, Home and End (anywhere in the view, except in a text field) or the ◀ ▶ buttons, to slide it; the covered cipher letters are shaded and crashes marked on both rows. **Place crib** (disabled on a crash) places it and builds the menu.
   - **Menu:** an SVG graph of every link of the placed crib, laid out by a force-directed layout (`menuLayout`, no library) that stays put while links change; letters can be dragged. Plugged links connected to the test register are solid, plugged but unconnected ones dashed red (also listed in a warning), the rest dotted grey; offsets label the links, and links between the same letters bow apart. Click a link, or tick it in the Links list (offset, letters, drum letters), to plug it in or out; the last link stays. Click a letter on the menu to put the test register on it (ringed); a link change keeps the test register while its letter stays on the menu, otherwise the backend chooses. The summary gives the connected links, letters and loops, and the estimated stops with and without the diagonal board. **Build menu** builds it automatically again.
+  - **Front:** the reflector (B or C), rotor checkboxes (the wheel orders are every arrangement of three ticked rotors; at least three stay ticked), the speed slider (historical 14.6 positions/s up to a thousand times that, then full speed), Start, Stop, and the run's progress. The SVG shows three banks of twelve scramblers with three drums each (upper, middle, lower, rimmed in the rotor's colour); the menu's links take the first scramblers by offset and show their drum letters, the others are empty. The indicator drums read the reversed letters. The drums follow a paced run, stand at ZZZ otherwise, and spin at full speed. A run paused at a stop shows it (wheel order, indicator, core position, stecker) with **Continue**. Settings lock while the Bombe runs.
+  - **Back:** the menu as plugged up: the diagonal board's 26 jacks, a common for each menu letter cabled to the board, each scrambler's two jacks cabled to their letters' commons, and the test register on its letter. The diagonal board switch and the input wire of the test register cable are set here.
+- The run is polled while it runs (every 100 ms when paced, 250 ms at full speed), in either mode. The speed is kept in the store for the next run and sent to a running one.
 - Tests: round-trip vectors (the true key stops) and vectors from primary sources.
 
 ### Domain: Bombe
@@ -205,8 +208,8 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 
 ### Application and API: Bombe
 - `IBombeSessionStore` holds one job and its latest run (`InMemoryBombeSessionStore`).
-- `BombeRun` runs the menu over the job's wheel orders in the background. The speed is in positions per second, or null for full speed. At full speed the wheel orders run in parallel (all 336 in about 3 s on 16 cores); at a set speed one runs at a time, paced by `TimeProvider`, and the progress shows the wheel order and drum position in hand. `HistoricalSpeed` is a wheel order in 20 minutes (14.6 positions per second). The speed can change while the run goes.
-- Changing the job is refused while the Bombe runs, and clears the stops of a finished run. There is one run at a time. A run that throws ends as `Failed` with its error.
+- `BombeRun` runs the menu over the job's wheel orders in the background. The speed is in positions per second, or null for full speed. At full speed the wheel orders run in parallel (all 336 in about 3 s on 16 cores); at a set speed one runs at a time, paced by `TimeProvider`, and the progress shows the wheel order and drum position in hand. A paced run pauses at each stop (`Paused`, with the stop) until it is continued; it stays paused when set to full speed. `HistoricalSpeed` is a wheel order in 20 minutes (14.6 positions per second). The speed can change while the run goes.
+- Changing the job is refused while the Bombe runs or is paused, and clears the stops of a finished run. There is one run at a time. A run that throws ends as `Failed` with its error.
 - The menu state lists the plugged links, every link of the placed crib, the links connected to the test register, the loops and the estimated stops with and without the diagonal board.
 - Stops are fetched from an index on, as a run with a poor menu can have hundreds of thousands.
 - `GenerateExercise` uses a random day of a random M3 key sheet (linked through `KeySheetLinker`), and is refused when there is none. The state shows the message's hint, never its crib or solution; unknown intercepts and asking a pasted message for them give 404.
@@ -224,9 +227,10 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 | PUT | `/api/bombe/placement` | `{ position }` |
 | PUT | `/api/bombe/menu` | `{ links, testRegister? }` |
 | POST | `/api/bombe/menu/build` | |
-| PUT | `/api/bombe/settings` | `{ input?, diagonalBoard?, reflector, wheelOrders }` |
+| PUT | `/api/bombe/settings` | `{ input?, diagonalBoard?, reflector?, wheelOrders? }` (left out: unchanged; empty input: default) |
 | POST | `/api/bombe/run` | `{ speed? }` |
 | PUT | `/api/bombe/run/speed` | `{ speed? }` |
+| POST | `/api/bombe/run/continue` | |
 | DELETE | `/api/bombe/run` | |
 | GET | `/api/bombe/run` | |
 | GET | `/api/bombe/run/stops?from=` | |

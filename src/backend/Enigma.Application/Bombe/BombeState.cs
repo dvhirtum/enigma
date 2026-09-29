@@ -65,7 +65,7 @@ public sealed record BombeSettings(string Input, bool DiagonalBoard, string Refl
 
 /// <summary>
 /// A run's progress. Speed is in positions per second, null for full speed. Error is set when the run failed. The
-/// wheel order and drum position in hand are shown while the run is paced.
+/// wheel order and drum position in hand are shown while the run is paced; a paused run gives the stop it waits at.
 /// </summary>
 public sealed record RunState(
     string Status,
@@ -77,6 +77,7 @@ public sealed record RunState(
     long Positions,
     string? WheelOrder,
     string? Position,
+    StopState? Pause,
     int Stops,
     string? Error,
     double ElapsedSeconds)
@@ -96,6 +97,7 @@ public sealed record RunState(
             (long)run.WheelOrders.Count * DrumPosition.Count,
             progress.WheelOrder?.ToString(),
             progress.Position?.ToString(),
+            progress.Pause is null ? null : StopState.From(progress.Pause),
             progress.Stops,
             progress.Error,
             progress.Elapsed.TotalSeconds);

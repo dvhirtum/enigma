@@ -6,6 +6,7 @@ namespace Enigma.Application.Bombe;
 public enum RunStatus
 {
     Running,
+    Paused,
     Finished,
     Cancelled,
     Failed,
@@ -13,8 +14,8 @@ public enum RunStatus
 
 /// <summary>
 /// A Bombe run of the job's menu over its wheel orders, in the background. At full speed (null) the wheel orders run
-/// in parallel; at a set speed (positions per second) one wheel order runs at a time, paced by the clock. The speed can
-/// change while the run goes.
+/// in parallel; at a set speed (positions per second) one wheel order runs at a time, paced by the clock, and pauses at
+/// each stop until it is continued. The speed can change while the run goes.
 /// </summary>
 public sealed class BombeRun
 {
@@ -33,6 +34,7 @@ public sealed class BombeRun
     private double? _speed;
     private int _ordersDone;
     private (BombeMachine Machine, int Order, int Step)? _current;
+    private BombeStop? _pause;
     private long? _ended;
     private RunStatus _status = RunStatus.Running;
     private string? _error;
@@ -84,7 +86,23 @@ public sealed class BombeRun
         {
             lock (_lock)
             {
-                return _status;
+                return CurrentStatus;
+            }
+        }
+    }
+
+    /// <summary>Running or paused.</summary>
+    public bool IsActive => Status is RunStatus.Running or RunStatus.Paused;
+
+    private RunStatus CurrentStatus => _status == RunStatus.Running && _pause is not null ? RunStatus.Paused : _status;
+
+    private bool IsPaused
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _pause is not null;
             }
         }
     }
@@ -100,17 +118,29 @@ public sealed class BombeRun
 
     public void Cancel() => _cancelled = true;
 
+    /// <summary>Continues a run paused at a stop.</summary>
+    public void Continue()
+    {
+        lock (_lock)
+        {
+            _pause = CurrentStatus == RunStatus.Paused
+                ? null
+                : throw new DomainException("The Bombe is not paused at a stop.");
+        }
+    }
+
     public RunProgress Progress()
     {
         lock (_lock)
         {
             return new RunProgress(
-                _status,
+                CurrentStatus,
                 _speed,
                 _ordersDone,
                 ((long)_ordersDone * DrumPosition.Count) + (_current?.Step ?? 0),
-                _current?.Machine.WheelOrder,
-                _current is { } current ? BombeMachine.PositionAt(current.Step) : null,
+                _pause?.WheelOrder ?? _current?.Machine.WheelOrder,
+                _pause?.Position ?? (_current is { } current ? BombeMachine.PositionAt(current.Step) : null),
+                _pause,
                 _stops.Count,
                 _error,
                 _time.GetElapsedTime(_started, _ended ?? _time.GetTimestamp()));
@@ -159,6 +189,7 @@ public sealed class BombeRun
             lock (_lock)
             {
                 _current = null;
+                _pause = null;
                 _ended = _time.GetTimestamp();
                 _status = _error is not null ? RunStatus.Failed : _cancelled ? RunStatus.Cancelled : RunStatus.Finished;
             }
@@ -185,7 +216,8 @@ public sealed class BombeRun
         });
     }
 
-    // Runs one wheel order at the set speed, until it is done, cancelled or the speed is set to full.
+    // Runs one wheel order at the set speed, until it is done, cancelled or the speed is set to full. Waits at each stop
+    // until the run is continued.
     private async Task RunPacedAsync(int order)
     {
         var (machine, _, step) = _current ?? (_machine(WheelOrders[order]), order, 0);
@@ -203,16 +235,30 @@ public sealed class BombeRun
             last = now;
             var count = (int)Math.Min(budget, DrumPosition.Count - step);
             budget -= count;
-            step = Test(machine, order, step, step + count);
-            if (step < DrumPosition.Count)
+            step = Test(machine, order, step, step + count, pause: true);
+            if (IsPaused)
+            {
+                await WaitWhilePausedAsync().ConfigureAwait(false);
+                (budget, last) = (0, _time.GetTimestamp());
+            }
+            else if (step < DrumPosition.Count)
             {
                 await Task.Delay(Tick, _time).ConfigureAwait(false);
             }
         }
     }
 
-    // Tests the steps [from, to) of a wheel order and records its stops; returns the next step.
-    private int Test(BombeMachine machine, int order, int from, int to)
+    private async Task WaitWhilePausedAsync()
+    {
+        while (IsPaused && !_cancelled)
+        {
+            await Task.Delay(Tick, _time).ConfigureAwait(false);
+        }
+    }
+
+    // Tests the steps [from, to) of a wheel order and records its stops; returns the next step. With pause, it stops
+    // after the first stop and pauses the run there.
+    private int Test(BombeMachine machine, int order, int from, int to, bool pause = false)
     {
         var stops = new List<BombeStop>();
         for (var step = from; step < to; step++)
@@ -220,12 +266,21 @@ public sealed class BombeRun
             if (machine.Test(BombeMachine.PositionAt(step)) is { } stop)
             {
                 stops.Add(stop);
+                if (pause)
+                {
+                    to = step + 1;
+                }
             }
         }
 
         lock (_lock)
         {
             _stops.AddRange(stops);
+            if (pause && stops.Count > 0)
+            {
+                _pause = stops[0];
+            }
+
             if (to < DrumPosition.Count)
             {
                 _current = (machine, order, to);
@@ -242,7 +297,10 @@ public sealed class BombeRun
     }
 }
 
-/// <summary>How far a run has got. The wheel order and drum position in hand are known while the run is paced.</summary>
+/// <summary>
+/// How far a run has got. The wheel order and drum position in hand are known while the run is paced; a paused run
+/// gives the stop it waits at.
+/// </summary>
 public sealed record RunProgress(
     RunStatus Status,
     double? Speed,
@@ -250,6 +308,7 @@ public sealed record RunProgress(
     long PositionsTested,
     WheelOrder? WheelOrder,
     DrumPosition? Position,
+    BombeStop? Pause,
     int Stops,
     string? Error,
     TimeSpan Elapsed);

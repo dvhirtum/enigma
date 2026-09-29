@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { createStore, useStore, type StoreApi } from 'zustand';
 import type {
   ApiResult,
+  BombeRun,
+  BombeSettingsChange,
   BombeState,
   EnigmaApi,
   Intercept,
@@ -16,6 +18,7 @@ import type {
 } from './api';
 import { shiftLetter, shiftRing } from './machine';
 import { keySheetDocument, procedureDocument, procedureName } from './printSheet';
+import { historicalSpeed } from './bombe/drums';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -70,6 +73,18 @@ export interface BombeSlice {
   setMenu: (links: string[], testRegister?: string) => Promise<boolean>;
   /** Builds the menu from the placed crib again. */
   buildMenu: () => Promise<boolean>;
+  /** Changes run settings; those left out stay as they are. */
+  configureBombe: (settings: BombeSettingsChange) => Promise<boolean>;
+  /** Starts a run at `speed` positions per second, or at full speed when null. */
+  startRun: (speed: number | null) => Promise<boolean>;
+  /** Continues a run paused at a stop. */
+  continueRun: () => Promise<boolean>;
+  cancelRun: () => Promise<boolean>;
+  /** Fetches the progress of the run. */
+  pollRun: () => Promise<boolean>;
+  /** The run speed in positions per second, or null for full speed: for the next run, and the running one. */
+  speed: number | null;
+  chooseSpeed: (speed: number | null) => Promise<boolean>;
 }
 
 export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice, BombeSlice {
@@ -130,6 +145,18 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }
       return result.ok;
     };
+    /** A run call; a poll leaves the error as it is unless the poll fails. */
+    const run = async (call: Promise<ApiResult<BombeRun>>, poll = false) => {
+      const result = poll ? await settle(call) : await check(call);
+      if (poll && !result.ok) {
+        set({ error: result.problem });
+      }
+      const current = get().bombe;
+      if (result.ok && current) {
+        set({ bombe: { ...current, run: result.value } });
+      }
+      return result.ok;
+    };
     const show = async (call: Promise<ApiResult<KeySheet>>) => {
       const result = await check(call);
       if (!result.ok) {
@@ -149,6 +176,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       books: {},
       bombe: null,
       intercepts: [],
+      speed: historicalSpeed,
       loadBombe: async () => {
         const [listed, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.getState())]);
         if (listed.ok) {
@@ -170,6 +198,16 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       placeCrib: (position) => job(bombe.placeCrib(position)),
       setMenu: (links, testRegister) => job(bombe.setMenu(links, testRegister)),
       buildMenu: () => job(bombe.buildMenu()),
+      configureBombe: (settings) => job(bombe.configure(settings)),
+      startRun: (speed) => run(bombe.startRun(speed)),
+      continueRun: () => run(bombe.continueRun()),
+      cancelRun: () => run(bombe.cancelRun()),
+      pollRun: () => run(bombe.getRun(), true),
+      chooseSpeed: async (speed) => {
+        set({ speed });
+        const status = get().bombe?.run?.status;
+        return status === 'Running' || status === 'Paused' ? run(bombe.setRunSpeed(speed)) : true;
+      },
       loadBook: async (id) => {
         if (get().books[id]) {
           return true;

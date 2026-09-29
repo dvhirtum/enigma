@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { createMachineStore, MachineStoreProvider, useMachine } from './store';
-import { carterBombe, createFakeApi, defaultM3, intercepts, withCrib } from './test/fakeApi';
+import { carterBombe, carterMenu, carterPaused, createFakeApi, defaultM3, intercepts, withCrib } from './test/fakeApi';
 
 describe('machine store', () => {
   it('loads the machine state and backend version', async () => {
@@ -168,6 +168,52 @@ describe('bombe slice', () => {
     expect(accepted).toBe(false);
     expect(store.getState().bombe).toEqual(carterBombe);
     expect(store.getState().error).toEqual(problem);
+  });
+});
+
+describe('bombe runs', () => {
+  it('keeps the run with the job', async () => {
+    const { api } = createFakeApi();
+    api.bombe.getState.mockResolvedValue({ ok: true, value: carterMenu });
+    api.bombe.startRun.mockResolvedValue({ ok: true, value: carterPaused });
+    const store = createMachineStore(api);
+    await store.getState().loadBombe();
+
+    await store.getState().startRun(null);
+
+    expect(api.bombe.startRun).toHaveBeenCalledWith(null);
+    expect(store.getState().bombe).toEqual({ ...carterMenu, run: carterPaused });
+  });
+
+  it('leaves the error alone when a poll succeeds', async () => {
+    const { api } = createFakeApi();
+    const problem = { status: 400, title: 'Cancel the run before changing the job.' };
+    api.bombe.getState.mockResolvedValue({ ok: true, value: carterMenu });
+    api.bombe.setCrib.mockResolvedValue({ ok: false, problem });
+    const store = createMachineStore(api);
+    await store.getState().loadBombe();
+    await store.getState().setCrib('WETTER');
+
+    await store.getState().pollRun();
+
+    expect(store.getState().error).toEqual(problem);
+    expect(store.getState().bombe?.run?.status).toBe('Running');
+  });
+
+  it('keeps the speed for the next run, and sends it to a running one', async () => {
+    const { api } = createFakeApi();
+    api.bombe.getState.mockResolvedValue({ ok: true, value: carterMenu });
+    const store = createMachineStore(api);
+    await store.getState().loadBombe();
+
+    await store.getState().chooseSpeed(1000);
+    expect(api.bombe.setRunSpeed).not.toHaveBeenCalled();
+    await store.getState().startRun(store.getState().speed);
+    await store.getState().chooseSpeed(null);
+
+    expect(api.bombe.startRun).toHaveBeenCalledWith(1000);
+    expect(api.bombe.setRunSpeed).toHaveBeenCalledWith(null);
+    expect(store.getState().speed).toBeNull();
   });
 });
 
