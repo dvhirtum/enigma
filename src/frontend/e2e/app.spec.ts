@@ -93,7 +93,7 @@ test('places a crib under an intercept in Bombe mode', async () => {
   await page.getByRole('textbox', { name: 'Crib' }).fill('wetter');
   await page.getByRole('button', { name: 'Set crib' }).click();
   const slider = page.getByRole('slider', { name: 'Crib position' });
-  await slider.focus();
+  await expect(slider).toHaveAttribute('aria-valuenow', '1');
   for (let step = 0; step < 4; step++) {
     await page.keyboard.press('ArrowRight');
   }

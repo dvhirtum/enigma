@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ActiveContext } from '../mode';
 import { carterBombe, emptyBombe, withCrib } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
 import { cribLetters, CribView } from './CribView';
@@ -54,17 +55,40 @@ describe('CribView', () => {
     renderBombe(<CribView />, carterWetter);
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
 
-    fireEvent.keyDown(slider, { key: 'ArrowRight' });
-    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
     fireEvent.click(screen.getByRole('button', { name: 'Slide left' }));
 
     expect(slider).toHaveAttribute('aria-valuenow', '2');
-    fireEvent.keyDown(slider, { key: 'End' });
+    fireEvent.keyDown(window, { key: 'End' });
     expect(slider).toHaveAttribute('aria-valuenow', '11');
     expect(screen.getByRole('button', { name: 'Slide right' })).toBeDisabled();
-    fireEvent.keyDown(slider, { key: 'Home' });
+    fireEvent.keyDown(window, { key: 'Home' });
     expect(slider).toHaveAttribute('aria-valuenow', '1');
     expect(screen.getByRole('button', { name: 'Slide left' })).toBeDisabled();
+  });
+
+  it('leaves the arrow keys to the crib field', async () => {
+    renderBombe(<CribView />, carterWetter);
+    const slider = await screen.findByRole('slider', { name: 'Crib position' });
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Crib' }), { key: 'ArrowRight' });
+
+    expect(slider).toHaveAttribute('aria-valuenow', '1');
+  });
+
+  it('leaves the arrow keys alone while Enigma mode is shown', async () => {
+    renderBombe(
+      <ActiveContext.Provider value={false}>
+        <CribView />
+      </ActiveContext.Provider>,
+      carterWetter,
+    );
+    const slider = await screen.findByRole('slider', { name: 'Crib position' });
+
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+
+    expect(slider).toHaveAttribute('aria-valuenow', '1');
   });
 
   it('marks the crashes and will not place a crashed crib', async () => {
@@ -73,7 +97,7 @@ describe('CribView', () => {
 
     // GGSTZZ over WETTER: the second T crashes.
     for (let step = 0; step < 4; step++) {
-      fireEvent.keyDown(slider, { key: 'ArrowRight' });
+      fireEvent.keyDown(window, { key: 'ArrowRight' });
     }
 
     expect(slider).toHaveAttribute('aria-valuetext', 'Position 5, 1 crash');
@@ -88,7 +112,7 @@ describe('CribView', () => {
     );
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
 
-    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
     expect(slider).toHaveAttribute('aria-valuetext', 'Position 2, no crashes');
     fireEvent.click(screen.getByRole('button', { name: 'Place crib' }));
 

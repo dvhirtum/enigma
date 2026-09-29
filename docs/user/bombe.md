@@ -27,7 +27,7 @@ A crib is a piece of plaintext you expect in the message, such as `WETTERVORHERS
 The crib strip shows the cipher text with the crib under it. The Enigma never encrypts a letter to itself, so where a crib letter sits under the same cipher letter, the crib cannot be at that position: a crash, marked in red. Slide the crib to a position without crashes:
 
 - drag the crib sideways,
-- or click the strip and use Arrow Left and Right, Home and End,
+- or press Arrow Left and Right, Home and End (not while typing in the crib field),
 - or click ◀ and ▶.
 
 Under the strip you see the position and the number of crashes. **Place crib** places the crib at a position without crashes and builds the menu from it.

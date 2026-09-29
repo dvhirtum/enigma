@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import type { Placement } from '../api';
+import { useActive } from '../mode';
 import { useMachine } from '../store';
+import { isFormControl } from '../useKeys';
 
 /** Keeps the letters of typed text, in capitals. */
 export function cribLetters(text: string): string {
@@ -40,7 +42,10 @@ interface DragStart {
   position: number;
 }
 
-/** The cipher text with the crib under it. Drag the crib or use the arrow keys to slide it; placing it builds the menu. */
+/**
+ * The cipher text with the crib under it. Drag the crib, or use the arrow keys anywhere outside a text field, to slide
+ * it; placing it builds the menu.
+ */
 function CribStrip({ cipherText, crib, placements, placed }: { cipherText: string; crib: string; placements: Placement[]; placed: number | null }) {
   const placeCrib = useMachine((store) => store.placeCrib);
   const [position, setPosition] = useState(placed ?? 0);
@@ -50,20 +55,32 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
   const last = placements.length - 1;
   const crashes = placements[position]?.crashes ?? [];
 
+  const active = useActive();
+
   useEffect(() => {
     cribRow.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
   }, [position]);
 
   const slideTo = (next: number) => setPosition(Math.min(last, Math.max(0, next)));
 
-  const onKeyDown = (event: KeyboardEvent) => {
-    const next = { ArrowLeft: position - 1, ArrowRight: position + 1, Home: 0, End: last }[event.key];
-    if (next === undefined) {
+  useEffect(() => {
+    if (!active) {
       return;
     }
-    event.preventDefault();
-    slideTo(next);
-  };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.altKey || event.metaKey || isFormControl(event.target)) {
+        return;
+      }
+      const step = { ArrowLeft: (at: number) => at - 1, ArrowRight: (at: number) => at + 1, Home: () => 0, End: () => last }[event.key];
+      if (!step) {
+        return;
+      }
+      event.preventDefault();
+      setPosition((at) => Math.min(last, Math.max(0, step(at))));
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [active, last]);
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -96,7 +113,6 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
         aria-valuemax={last + 1}
         aria-valuenow={position + 1}
         aria-valuetext={`Position ${position + 1}, ${crashText(crashes.length)}`}
-        onKeyDown={onKeyDown}
       >
         <div className="crib-ruler" aria-hidden="true">
           {[...cipherText].map((_, index) => (
