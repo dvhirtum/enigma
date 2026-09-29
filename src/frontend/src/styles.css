@@ -819,6 +819,30 @@ button {
   overflow-x: auto;
 }
 
+.guide :not(pre) > code,
+.guide pre.guide-hand {
+  font-family: 'Kalam', cursive;
+  font-size: 1.05rem;
+}
+
+.guide-hand-line {
+  display: block;
+  min-height: 1.5em;
+}
+
+.guide-hand-square {
+  display: inline-block;
+  width: 0.8em;
+  text-align: center;
+  white-space: pre;
+}
+
+.instructions-window {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 1.5rem 2rem;
+}
+
 .guide table {
   border-collapse: collapse;
 }

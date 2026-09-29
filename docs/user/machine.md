@@ -7,7 +7,7 @@
 - **Model** switches between the M3 and the M4. The machine resets, so the application asks first.
 - The summary shows the model, the reflector (UKW) and the rotors from left to right.
 - **Key** shows the applied daily key and its Grundstellung. It says "(modified)" once the reflector, rotors, rings or plugs differ from the key. Turning the rotors does not count.
-- The buttons at the right open the [operator's notebook](operator-mode.md) in its own window and the [Key sheets](key-sheets.md) panel.
+- The buttons at the right open these instructions and the [operator's notebook](operator-mode.md), each in its own window, and the [Key sheets](key-sheets.md) panel.
 
 Use the tabs on the left, or Arrow Up/Down on a focused tab, to switch views.
 

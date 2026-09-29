@@ -2,6 +2,8 @@
 
 This application simulates the Enigma M3 and M4 used by the Kriegsmarine. It covers the machine, the monthly key sheets and the Navy indicator procedure for sending and receiving messages.
 
+These instructions open in their own window with the book button at the top right of the machine window. Examples of what the operator writes down are handwritten, as in the operator's notebook.
+
 ## Contents
 
 1. [The Enigma in the Kriegsmarine](history.md): how the machine and the Navy's procedures were used, and how they were broken.

@@ -49,6 +49,7 @@ const api: EnigmaApi = {
   },
   windows: {
     openNotebook: () => invoke('windows:openNotebook'),
+    openInstructions: () => invoke('windows:openInstructions'),
     onMachineState: (listener) => {
       const handler = (_event: IpcRendererEvent, state: MachineState) => listener(state);
       ipcRenderer.on('machine:state', handler);

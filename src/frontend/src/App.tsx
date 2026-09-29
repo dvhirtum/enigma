@@ -3,6 +3,7 @@ import type { BackendStatus, EnigmaApi } from './api';
 import { MachineFrame } from './MachineFrame';
 import { Notebook } from './notebook/Notebook';
 import { MachineStoreProvider } from './store';
+import { InstructionsView } from './views/InstructionsView';
 
 function useBackendStatus(api: EnigmaApi): BackendStatus {
   const [status, setStatus] = useState<BackendStatus>({ state: 'starting' });
@@ -24,11 +25,19 @@ function useBackendStatus(api: EnigmaApi): BackendStatus {
   return status;
 }
 
-export type Page = 'machine' | 'notebook';
+export type Page = 'machine' | 'notebook' | 'instructions';
 
-/** The machine window, or the operator's notebook window. */
+/** The machine window, the operator's notebook window, or the instructions window. */
 export function App({ api, page = 'machine' }: { api: EnigmaApi; page?: Page }) {
   const status = useBackendStatus(api);
+
+  if (page === 'instructions') {
+    return (
+      <div className="instructions-window">
+        <InstructionsView />
+      </div>
+    );
+  }
 
   if (status.state === 'starting') {
     return (

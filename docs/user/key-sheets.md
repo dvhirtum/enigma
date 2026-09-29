@@ -11,6 +11,23 @@ A key sheet (Schlüsseltafel) holds one month of daily keys for one network. Ope
 
 Each sheet is linked to a Kenngruppenbuch and a set of Tauschtafeln, which the [operator's notebook](operator-mode.md) uses. A network gets its own columns in the Kenngruppenbuch the first time it is used.
 
+## The networks
+
+The Kriegsmarine split its radio traffic into networks (Schlüsselkreise), each with its own key sheets, so a broken key exposed only part of it. Bletchley Park gave most of them a British name.
+
+| Network | Used by | British name |
+|---|---|---|
+| Aegir | Surface warships, auxiliary cruisers and supply ships overseas. Never broken. | |
+| Hydra | Ships in home and coastal waters, the main naval network, first called Heimische Gewässer. Read from August 1941. | Dolphin |
+| Medusa | U-boats in the Mediterranean from 1943. Broken soon after it started. | Turtle |
+| Neptun | Battleships and heavy cruisers on fleet operations. Never broken. | Barracuda |
+| Niobe | U-boats in northern waters (Norway and the Arctic) from 1944. Broken from September 1944. | Narwhal |
+| Sleipnir | Torpedo firing training for U-boats in the Baltic. Never broken. | |
+| Süd | Surface ships in the Mediterranean and the Black Sea. | Porpoise |
+| Thetis | U-boat training exercises in the Baltic. Never broken. | |
+| Tibet | Supply ships and U-boats in the Far East. Broken on and off from August 1943. | Sunfish |
+| Triton | U-boats in the Atlantic and the Mediterranean, on the M4 from February 1942. Unreadable until December 1942. | Shark |
+
 ## Working with a sheet
 
 Choose a **Month**, then a **Key sheet** of that month, to see its days. The month list holds only months with sheets, grouped by year with the newest year first and named like "June 1944"; it starts at the current month when that has sheets. The sheet list groups the month's sheets by machine (M3, M4), with historical sheets first.

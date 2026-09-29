@@ -1,13 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App';
+import { App, type Page } from './App';
 import './styles.css';
 import './notebook/notebook.css';
 
-const page = window.location.hash === '#notebook' ? 'notebook' : 'machine';
-if (page === 'notebook') {
-  document.title = "Operator's notebook";
-}
+const titles: Record<Page, string | null> = { machine: null, notebook: "Operator's notebook", instructions: 'Instructions' };
+const hash = window.location.hash.slice(1);
+const page: Page = hash in titles ? (hash as Page) : 'machine';
+document.title = titles[page] ?? document.title;
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

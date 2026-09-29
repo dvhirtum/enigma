@@ -102,16 +102,8 @@ describe('MachineFrame', () => {
 
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Top-down' }), { key: 'ArrowUp' });
 
-    expect(screen.getByRole('tab', { name: 'Instructions' })).toHaveFocus();
-    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Instructions');
-  });
-
-  it('shows the user guide in the instructions tab', () => {
-    renderFrame();
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Instructions' }));
-
-    expect(screen.getByRole('article', { name: 'Instructions' })).toHaveTextContent('Enigma user guide');
+    expect(screen.getByRole('tab', { name: 'Plugboard' })).toHaveFocus();
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Plugboard');
   });
 
   it('shows no daily key until one is applied', async () => {
@@ -167,5 +159,14 @@ describe('MachineFrame', () => {
 
     expect(api.windows.openNotebook).toHaveBeenCalledOnce();
     expect(await screen.findByRole('complementary', { name: 'Key sheets' })).toBeInTheDocument();
+  });
+
+  it('opens the instructions in their own window', () => {
+    const api = renderFrame();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Instructions' }));
+
+    expect(api.windows.openInstructions).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('tab', { name: 'Instructions' })).not.toBeInTheDocument();
   });
 });
