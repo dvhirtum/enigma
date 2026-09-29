@@ -136,7 +136,8 @@ function TrigramPicker({
   );
 }
 
-function ChooseGroups({ operator }: { operator: OperatorState }) {
+/** Picks the groups while `current`; afterwards writes down the groups chosen and the indicator. */
+function ChooseGroups({ operator, current }: { operator: OperatorState; current: boolean }) {
   const book = useMachine((store) => store.books[operator.kenngruppenbuchId]);
   const loadBook = useMachine((store) => store.loadBook);
   const chooseGroups = useMachine((store) => store.chooseGroups);
@@ -171,12 +172,28 @@ function ChooseGroups({ operator }: { operator: OperatorState }) {
     }
   };
 
+  const instruction = (
+    <p>
+      Pick a Schlüsselkenngruppe from the columns allotted to {operator.network} ({allotment.first}–{allotment.last}) and a Verfahrenkenngruppe
+      from columns {book.verfahrenkenngruppen.first}–{book.verfahrenkenngruppen.last}.
+    </p>
+  );
+
+  if (!current) {
+    return (
+      <>
+        {instruction}
+        <Field label="Schlüsselkenngruppe" value={operator.schluesselkenngruppe ?? ''} />
+        <Field label="Verfahrenkenngruppe" value={operator.verfahrenkenngruppe ?? ''} />
+        <Field label="Fillers" value={operator.fillers} />
+        <IndicatorView operator={operator} />
+      </>
+    );
+  }
+
   return (
     <form className="notebook-form" aria-label="Choose the groups" onSubmit={submit}>
-      <p>
-        Pick a Schlüsselkenngruppe from the columns allotted to {operator.network} ({allotment.first}–{allotment.last}) and a Verfahrenkenngruppe
-        from columns {book.verfahrenkenngruppen.first}–{book.verfahrenkenngruppen.last}.
-      </p>
+      {instruction}
       <TrigramPicker label="Schlüsselkenngruppe" book={book} range={netRange} value={schluessel ?? { column: netRange.first, trigram: null }} onChange={setSchluessel} />
       <TrigramPicker
         label="Verfahrenkenngruppe"
@@ -209,7 +226,7 @@ function IndicatorView({ operator }: { operator: OperatorState }) {
 
   return (
     <section className="notebook-section" aria-label="Indicator">
-      <h3>Indicator · Tauschtafel {operator.table}</h3>
+      <h4>Indicator · Tauschtafel {operator.table}</h4>
       <div className="indicator">
         <p className="indicator-rows">
           <Squares text={operator.fillers[0] + operator.schluesselkenngruppe} label="Upper row" />
@@ -239,86 +256,114 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-/** What to do now, in print. */
-function Instruction({ operator }: { operator: OperatorState }) {
+/** What the operator reads and writes in one step. `current` is true while the step is being worked. */
+function StepContent({ operator, step, current }: { operator: OperatorState; step: OperatorStep; current: boolean }) {
   const finishMessage = useMachine((store) => store.finishMessage);
   const sending = operator.direction === 'Send';
 
-  switch (operator.step) {
+  switch (step) {
     case 'ChooseGroups':
-      return <ChooseGroups operator={operator} />;
+      return <ChooseGroups operator={operator} current={current} />;
     case 'SetGrundstellung':
       return (
-        <p>
-          Set the rotor windows to the Grundstellung <Hand>{operator.grundstellung}</Hand>. {rotorHint}
-        </p>
+        <>
+          <p>Set the rotor windows to the Grundstellung of the daily key. {rotorHint}</p>
+          <Field label="Grundstellung" value={operator.grundstellung} />
+        </>
       );
     case 'TypeVerfahrenkenngruppe':
       return (
-        <p>
-          Type the Verfahrenkenngruppe <Hand>{operator.verfahrenkenngruppe}</Hand>. Next: <Hand>{operator.expectedKey}</Hand>. {keyboardHint}
-        </p>
+        <>
+          {!sending && <IndicatorView operator={operator} />}
+          <p>
+            Type the Verfahrenkenngruppe <Hand>{operator.verfahrenkenngruppe}</Hand>.
+            {current && (
+              <>
+                {' '}
+                Next: <Hand>{operator.expectedKey}</Hand>. {keyboardHint}
+              </>
+            )}
+          </p>
+          <Field label="Lamps" value={operator.spruchschluesselLamps} />
+        </>
       );
     case 'SetSpruchschluessel':
       return (
-        <p>
-          The lamps gave the Spruchschlüssel. Set the rotor windows to <Hand>{operator.spruchschluessel}</Hand>. {rotorHint}
-        </p>
+        <>
+          <p>The lamps give the Spruchschlüssel. Set the rotor windows to it. {rotorHint}</p>
+          <Field label="Spruchschlüssel" value={operator.spruchschluessel ?? ''} />
+        </>
       );
     case 'TypeMessage':
       return sending ? (
-        <div className="notebook-form">
-          <p>Type the plaintext. {keyboardHint}</p>
-          {operator.fillersNeeded > 0 && (
+        <>
+          <p>Type the plaintext.{current && ` ${keyboardHint}`} The lamps give the cipher text.</p>
+          <Squares text={groups(operator.pad).join(' ')} label="Cipher text" />
+          {current && operator.fillersNeeded > 0 && (
             <p role="status">
               Type <Hand>X</Hand> {operator.fillersNeeded} more time(s) to fill the last group.
             </p>
           )}
-          <p className="notebook-actions">
-            <button type="button" disabled={operator.pad.length === 0 || operator.fillersNeeded > 0} onClick={() => void finishMessage()}>
-              Finish
-            </button>
-          </p>
-        </div>
+          {current && (
+            <p className="notebook-actions">
+              <button type="button" disabled={operator.pad.length === 0 || operator.fillersNeeded > 0} onClick={() => void finishMessage()}>
+                Finish
+              </button>
+            </p>
+          )}
+        </>
       ) : (
-        <p>
-          Type the cipher text. Next: <Hand>{operator.expectedKey}</Hand>. {keyboardHint}
-        </p>
+        <>
+          <p>
+            Type the cipher text. The lamps give the plaintext, written under each letter.
+            {current && (
+              <>
+                {' '}
+                Next: <Hand>{operator.expectedKey}</Hand>. {keyboardHint}
+              </>
+            )}
+          </p>
+          <Decipherment cipher={operator.cipherText ?? ''} plain={operator.pad} />
+          <Field label="Plaintext" value={groups(operator.pad).join(' ')} />
+        </>
       );
     case 'Done':
-      return <p>{sending ? 'The message is encrypted. Copy the radio message and send it.' : 'The message is decrypted.'}</p>;
+      return sending && operator.message ? (
+        <>
+          <p>The message is encrypted. Copy the radio message and send it.</p>
+          <output aria-label="Radio message" className="radio-message">
+            <Squares text={operator.message} />
+          </output>
+          <p className="notebook-actions">
+            <CopyButton text={operator.message} />
+          </p>
+        </>
+      ) : (
+        <p>The message is decrypted.</p>
+      );
   }
 }
 
-/** The steps, with the finished ones ticked off. */
-function Steps({ operator }: { operator: OperatorState }) {
-  const steps = operator.direction === 'Send' ? sendSteps : receiveSteps;
-  const current = steps.indexOf(operator.step);
-  return (
-    <ol className="steps" aria-label="Steps">
-      {steps.map((step, index) => (
-        <li key={step} aria-current={step === operator.step ? 'step' : undefined} data-done={index < current || operator.step === 'Done' ? '' : undefined}>
-          {stepLabels[step]}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/** The procedure's worksheet: the groups, the indicator, the message key and the message, written as they come. */
+/**
+ * The steps, each with what the operator reads and writes in it. Finished steps are ticked off and keep their
+ * contents, so the whole procedure can be read back. Steps still to come show their title only.
+ */
 function Procedure({ operator }: { operator: OperatorState }) {
   const cancelOperator = useMachine((store) => store.cancelOperator);
-  const sending = operator.direction === 'Send';
-  const typingKey = operator.step === 'TypeVerfahrenkenngruppe';
+  const steps = operator.direction === 'Send' ? sendSteps : receiveSteps;
+  const currentIndex = steps.indexOf(operator.step);
+  const currentRef = useRef<HTMLLIElement | null>(null);
+
+  useEffect(() => {
+    currentRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+  }, [operator.step]);
 
   return (
     <>
       <p className="field">
-        <span className="field-label">{sending ? 'Sending' : 'Receiving'}</span>
-        <span className="field-text">{operator.network}</span>
+        <span className="field-label">{operator.direction === 'Send' ? 'Sending' : 'Receiving'}</span>
+        <span>{operator.network}</span>
       </p>
-      <Field label="Grundstellung" value={operator.grundstellung} />
-      <Steps operator={operator} />
       {operator.warnings.length > 0 && (
         <ul className="notebook-warnings" aria-label="Warnings">
           {operator.warnings.map((warning) => (
@@ -326,31 +371,26 @@ function Procedure({ operator }: { operator: OperatorState }) {
           ))}
         </ul>
       )}
-      <div className="instruction" aria-label="Instruction" role="region">
-        <Instruction operator={operator} />
-      </div>
-      <IndicatorView operator={operator} />
-      {(typingKey || operator.spruchschluessel) && (
-        <Field label="Spruchschlüssel" value={operator.spruchschluessel ?? operator.spruchschluesselLamps} />
-      )}
-      {(operator.step === 'TypeMessage' || operator.step === 'Done') && (
-        <section className="notebook-section" aria-label="Message">
-          <h3>{sending ? 'Cipher text' : 'Cipher text, plaintext underneath'}</h3>
-          {sending ? <Squares text={groups(operator.pad).join(' ')} label="Cipher text" /> : <Decipherment cipher={operator.cipherText ?? ''} plain={operator.pad} />}
-        </section>
-      )}
-      {!sending && operator.pad && <Field label="Plaintext" value={groups(operator.pad).join(' ')} />}
-      {sending && operator.step === 'Done' && operator.message && (
-        <section className="notebook-section" aria-label="Radio message section">
-          <h3>Radio message</h3>
-          <output aria-label="Radio message" className="radio-message">
-            <Squares text={operator.message} />
-          </output>
-          <p className="notebook-actions">
-            <CopyButton text={operator.message} />
-          </p>
-        </section>
-      )}
+      <ol className="steps" aria-label="Steps">
+        {steps.map((step, index) => {
+          const current = step === operator.step;
+          const done = index < currentIndex || operator.step === 'Done';
+          return (
+            <li
+              key={step}
+              ref={current ? currentRef : undefined}
+              aria-current={current ? 'step' : undefined}
+              aria-labelledby={`step-${step}`}
+              data-done={done ? '' : undefined}
+            >
+              <h3 id={`step-${step}`} className="step-title">
+                {stepLabels[step]}
+              </h3>
+              {index <= currentIndex && <StepContent operator={operator} step={step} current={current} />}
+            </li>
+          );
+        })}
+      </ol>
       <p className="notebook-actions">
         <button type="button" onClick={() => void cancelOperator()}>
           {operator.step === 'Done' ? 'New message' : 'Cancel'}

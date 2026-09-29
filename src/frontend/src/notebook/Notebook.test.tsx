@@ -173,12 +173,15 @@ describe('Notebook', () => {
     renderNotebook({ ...indicatorChosen, step: 'SetGrundstellung' });
 
     const current = await screen.findByRole('listitem', { current: 'step' });
-    expect(current).toHaveTextContent('Set the Grundstellung');
-    expect(screen.getByText('Choose the groups')).toHaveAttribute('data-done');
+    expect(current).toHaveAccessibleName('Set the Grundstellung');
     expect(current).not.toHaveAttribute('data-done');
-    expect(screen.getByRole('region', { name: 'Instruction' })).toHaveTextContent('Set the rotor windows to the Grundstellung QRSA.');
-    expect(screen.getByRole('group', { name: 'Grundstellung' })).toHaveTextContent('QRSA');
-    const indicator = screen.getByRole('region', { name: 'Indicator' });
+    expect(within(current).getByRole('group', { name: 'Grundstellung' })).toHaveTextContent('QRSA');
+    const chosen = screen.getByRole('listitem', { name: 'Choose the groups' });
+    expect(chosen).toHaveAttribute('data-done');
+    expect(within(chosen).getByRole('group', { name: 'Schlüsselkenngruppe' })).toHaveTextContent('DWA');
+    expect(within(chosen).getByRole('group', { name: 'Verfahrenkenngruppe' })).toHaveTextContent('AAB');
+    expect(within(chosen).getByRole('group', { name: 'Fillers' })).toHaveTextContent('QX');
+    const indicator = await within(chosen).findByRole('region', { name: 'Indicator' });
     expect(within(indicator).getByRole('group', { name: 'Upper row' })).toHaveTextContent('QDWA');
     expect(within(indicator).getByRole('group', { name: 'Lower row' })).toHaveTextContent('AABX');
     expect(within(indicator).getByLabelText('Swaps')).toHaveTextContent('QA→JZ');
@@ -188,8 +191,25 @@ describe('Notebook', () => {
   it('writes down the lamps of the Spruchschlüssel while the Verfahrenkenngruppe is typed', async () => {
     renderNotebook({ ...indicatorChosen, step: 'TypeVerfahrenkenngruppe', spruchschluesselLamps: 'QK', expectedKey: 'B' });
 
-    expect(await screen.findByRole('group', { name: 'Spruchschlüssel' })).toHaveTextContent('QK');
-    expect(screen.getByRole('region', { name: 'Instruction' })).toHaveTextContent('Next: B.');
+    const current = await screen.findByRole('listitem', { current: 'step' });
+    expect(within(current).getByRole('group', { name: 'Lamps' })).toHaveTextContent('QK');
+    expect(current).toHaveTextContent('Next: B.');
+    expect(screen.getByRole('listitem', { name: 'Set the Spruchschlüssel' })).toHaveTextContent(/^Set the Spruchschlüssel$/);
+  });
+
+  it('keeps every step written out once the message is done', async () => {
+    const message = '1840 = 24 = JWDZ ZZYC ABCD EFGH JWDZ ZZYC';
+    renderNotebook({ ...indicatorChosen, step: 'Done', spruchschluesselLamps: 'QKL', spruchschluessel: 'QKL', pad: 'ABCDEFGH', message });
+
+    const steps = await screen.findAllByRole('listitem');
+    expect(steps.slice(0, 6).every((step) => step.hasAttribute('data-done'))).toBe(true);
+    expect(await screen.findByRole('region', { name: 'Indicator' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Grundstellung' })).toHaveTextContent('QRSA');
+    expect(screen.getByRole('group', { name: 'Lamps' })).toHaveTextContent('QKL');
+    expect(screen.getByRole('group', { name: 'Spruchschlüssel' })).toHaveTextContent('QKL');
+    expect(screen.getByRole('group', { name: 'Cipher text' })).toHaveTextContent('ABCD EFGH');
+    expect(screen.queryByText(/Next:/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finish' })).not.toBeInTheDocument();
   });
 
   it('asks for X to fill the last group before finishing', async () => {

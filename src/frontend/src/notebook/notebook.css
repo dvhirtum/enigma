@@ -92,12 +92,13 @@
 
 .page p,
 .page h3,
+.page h4,
 .page ol,
 .page ul {
   margin: 0;
 }
 
-.page h3 {
+.page h4 {
   color: var(--print-muted);
   font-size: 0.8rem;
   font-weight: 600;
@@ -266,30 +267,48 @@ input.hand-input.fillers {
   box-shadow: inset 0 -1px var(--pencil);
 }
 
-/* Steps, ticked off in the margin */
+/* Steps, each with its contents, ticked off in the margin */
 
 .steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sq);
   padding: 0;
   list-style: none;
   counter-reset: step;
 }
 
-.steps li {
+.steps > li {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sq);
   counter-increment: step;
-  color: var(--print-muted);
 }
 
-.steps li::before {
+.page .step-title {
+  width: fit-content;
+  padding-right: 0.25rem;
+  color: var(--print);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.step-title::before {
   content: counter(step) '.';
   display: inline-block;
   width: var(--sq);
-  color: var(--print-muted);
 }
 
-.steps li[data-done]::after {
+.steps > li:not([data-done], [aria-current='step']) .step-title {
+  color: var(--print-muted);
+  font-weight: normal;
+}
+
+.steps > li[data-done]::after {
   content: '✓';
   position: absolute;
+  top: 0;
   left: calc(var(--sq) * -2);
   width: var(--sq);
   color: var(--pencil);
@@ -298,18 +317,8 @@ input.hand-input.fillers {
   text-align: center;
 }
 
-.steps li[aria-current='step'] {
-  width: fit-content;
-  padding-right: 0.25rem;
+.steps > li[aria-current='step'] .step-title {
   background: linear-gradient(transparent 20%, var(--highlight) 20%, var(--highlight) 85%, transparent 85%);
-  color: var(--print);
-  font-weight: 600;
-}
-
-.instruction {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sq);
 }
 
 /* Kenngruppenbuch */

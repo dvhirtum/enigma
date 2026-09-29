@@ -4,7 +4,7 @@
 
 The operator's notebook walks through the Navy indicator procedure while you work the machine. Open it with the message pad button at the top right. It opens in its own window, so you can place it next to the machine.
 
-The notebook looks like squared paper. The instructions are printed; everything the operator would write down (groups, indicator, keys, cipher text and plaintext) is handwritten, one letter per square. The steps are listed at the top, the current one highlighted and the finished ones ticked off.
+The notebook looks like squared paper. The instructions are printed; everything the operator would write down (groups, indicator, keys, cipher text and plaintext) is handwritten, one letter per square. The numbered steps run down the page, each with its instructions and what was written in it. The current step is highlighted and the notebook scrolls to it. Finished steps are ticked off and keep everything, so you can read back the whole procedure once the message is done.
 
 Turn the rotors in the [top-down view](machine.md) of the machine window. Type there, or type letters straight into the notebook: they press the machine keys. Keys other than the expected one are rejected. **Cancel** stops the procedure at any time.
 

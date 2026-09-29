@@ -318,13 +318,13 @@ test('sends a message with the indicator procedure and receives it again', async
 
   const step = notebook.locator('[aria-current="step"]');
   const runMessageKey = async () => {
-    await expect(step).toHaveText('Set the Grundstellung');
+    await expect(step).toHaveAccessibleName('Set the Grundstellung');
     await setRotors((await notebook.getByRole('group', { name: 'Grundstellung' }).textContent())!);
     const verfahren = (await notebook.getByRole('group', { name: 'Lower row' }).textContent())!.slice(0, 3);
     await typeLetters(verfahren, notebook);
-    await expect(step).toHaveText('Set the Spruchschlüssel');
+    await expect(step).toHaveAccessibleName('Set the Spruchschlüssel');
     await setRotors((await notebook.getByRole('group', { name: 'Spruchschlüssel' }).textContent())!);
-    await expect(step).toHaveText('Type the message');
+    await expect(step).toHaveAccessibleName('Type the message');
   };
 
   await notebook.getByRole('button', { name: 'Send a message' }).click();
