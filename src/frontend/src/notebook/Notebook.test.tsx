@@ -262,6 +262,9 @@ describe('Notebook', () => {
     );
     expect(within(step).getByText(/The lower row holds/)).toHaveTextContent('Verfahrenkenngruppe AAB and a filler. The Verfahrenkenngruppe stands in column 1, one of the Verfahrenkenngruppen columns 1–100.');
     expect(within(step).getByText(/The indicator groups/)).toHaveTextContent('JWDZ ZZYC');
+    const indicator = within(step).getByRole('region', { name: 'Indicator' });
+    const groupsFirst = within(indicator).getByRole('group', { name: 'Groups' }).compareDocumentPosition(within(indicator).getByRole('group', { name: 'Upper row' }));
+    expect(groupsFirst & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('presses the machine key for a letter typed in the notebook', async () => {

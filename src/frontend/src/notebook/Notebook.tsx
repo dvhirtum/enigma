@@ -218,15 +218,21 @@ function ChooseGroups({ operator, current }: { operator: OperatorState; current:
   );
 }
 
-/** The indicator written out, its bigram swaps and the resulting groups. */
+/**
+ * The indicator written out, its bigram swaps and the resulting groups. When receiving, the groups come first,
+ * because the receiver works from them back to the rows.
+ */
 function IndicatorView({ operator }: { operator: OperatorState }) {
   if (!operator.schluesselkenngruppe || !operator.verfahrenkenngruppe) {
     return null;
   }
 
+  const groupsField = operator.indicator && <Field label="Groups" value={operator.indicator} stacked />;
+  const receiving = operator.direction === 'Receive';
   return (
     <section className="notebook-section" aria-label="Indicator">
       <h4>Indicator · Tauschtafel {operator.table}</h4>
+      {receiving && groupsField}
       <div className="indicator">
         <p className="indicator-rows">
           <Squares text={operator.fillers[0] + operator.schluesselkenngruppe} label="Upper row" />
@@ -240,7 +246,7 @@ function IndicatorView({ operator }: { operator: OperatorState }) {
           ))}
         </p>
       </div>
-      {operator.indicator && <Field label="Groups" value={operator.indicator} stacked />}
+      {!receiving && groupsField}
     </section>
   );
 }
