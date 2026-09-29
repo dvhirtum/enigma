@@ -58,6 +58,7 @@ export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
   dismissError: () => void;
   /** Opens the operator's notebook window, or brings it to the front. */
   openNotebook: () => Promise<void>;
+  openInstructions: () => Promise<void>;
   /** Runs operations that depend on earlier ones one at a time, in order. */
   enqueue: <T>(task: () => Promise<T>) => Promise<T>;
   /** Turns a rotor `steps` letters on from its position once the queued operations are done. */
@@ -234,6 +235,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       },
       dismissError: () => set({ error: null }),
       openNotebook: () => windows.openNotebook(),
+      openInstructions: () => windows.openInstructions(),
       enqueue,
       stepRotor: (slot, steps) =>
         enqueue(async () => {

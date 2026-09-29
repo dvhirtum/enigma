@@ -213,6 +213,8 @@ export interface ClipboardApi {
 export interface WindowsApi {
   /** Opens the operator's notebook window, or brings it to the front. */
   openNotebook: () => Promise<void>;
+  /** Opens the instructions window, or brings it to the front. */
+  openInstructions: () => Promise<void>;
   /** Listens for machine states changed by another window. */
   onMachineState: (listener: (state: MachineState) => void) => () => void;
   /** Listens for key sheets generated, imported or deleted by another window. */

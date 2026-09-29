@@ -51,14 +51,20 @@ test('switches between the views', async () => {
   await expect(page.getByRole('tabpanel')).toHaveAccessibleName('Open lid');
 });
 
-test('shows the user guide and follows its links', async () => {
-  await page.getByRole('tab', { name: 'Instructions' }).click();
-  const guide = page.getByRole('article', { name: 'Instructions' });
+test('shows the user guide in its own window and follows its links', async () => {
+  const opened = app.waitForEvent('window');
+  await page.getByRole('button', { name: 'Instructions' }).click();
+  const instructions = await opened;
+  await expect(instructions).toHaveTitle('Instructions');
+  const guide = instructions.getByRole('article', { name: 'Instructions' });
   await expect(guide.getByRole('heading', { level: 1 })).toHaveText('Enigma user guide');
 
   await guide.getByRole('link', { name: 'Key sheets' }).click();
 
   await expect(guide.getByRole('heading', { level: 1 })).toHaveText('Key sheets');
+  await page.getByRole('button', { name: 'Instructions' }).click();
+  expect(app.windows()).toHaveLength(2);
+  await instructions.close();
 });
 
 test('lights a lamp while a key is held on the physical keyboard', async () => {

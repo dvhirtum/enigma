@@ -166,6 +166,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     },
     windows: {
       openNotebook: vi.fn().mockResolvedValue(undefined),
+      openInstructions: vi.fn().mockResolvedValue(undefined),
       onMachineState: vi.fn((listener: (state: MachineState) => void) => {
         stateListeners.add(listener);
         return () => stateListeners.delete(listener);

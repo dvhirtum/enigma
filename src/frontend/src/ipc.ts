@@ -8,6 +8,7 @@ import { healthRoute, keySheetRoutes, machineRoutes, procedureRoutes, type Route
 
 export interface Windows {
   openNotebook: () => void;
+  openInstructions: () => void;
 }
 
 /**
@@ -76,6 +77,7 @@ export function registerIpc(backend: Backend, windows: Windows): void {
   });
 
   ipcMain.handle('windows:openNotebook', () => windows.openNotebook());
+  ipcMain.handle('windows:openInstructions', () => windows.openInstructions());
 
   ipcMain.handle('backend:status', () => backend.status());
   ipcMain.handle('backend:restart', () => backend.restart());

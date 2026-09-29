@@ -7,7 +7,7 @@ import { registerIpc } from './ipc';
 import { harden } from './security';
 
 let mainWindow: BrowserWindow | null = null;
-let notebookWindow: BrowserWindow | null = null;
+const pageWindows = new Map<string, BrowserWindow>();
 
 /** Loads the renderer; `hash` picks the page it shows. */
 function load(window: BrowserWindow, hash?: string): void {
@@ -35,30 +35,32 @@ const createMainWindow = () => {
   mainWindow = createWindow({ width: 1200, height: 800 });
   mainWindow.on('closed', () => {
     mainWindow = null;
-    notebookWindow?.close();
+    for (const window of pageWindows.values()) {
+      window.close();
+    }
   });
   load(mainWindow);
 };
 
-/** Opens the operator's notebook, or brings it to the front. */
-const openNotebook = () => {
-  if (notebookWindow) {
-    if (notebookWindow.isMinimized()) {
-      notebookWindow.restore();
+/** Opens the window that shows `page`, or brings it to the front. */
+const openPage = (page: string) => {
+  const existing = pageWindows.get(page);
+  if (existing) {
+    if (existing.isMinimized()) {
+      existing.restore();
     }
-    notebookWindow.focus();
+    existing.focus();
     return;
   }
-  notebookWindow = createWindow({ width: 760, height: 900, minWidth: 560, minHeight: 480 });
-  notebookWindow.on('closed', () => {
-    notebookWindow = null;
-  });
-  load(notebookWindow, 'notebook');
+  const window = createWindow({ width: 760, height: 900, minWidth: 560, minHeight: 480 });
+  pageWindows.set(page, window);
+  window.on('closed', () => pageWindows.delete(page));
+  load(window, page);
 };
 
 const run = () => {
   const backend = createBackend();
-  registerIpc(backend, { openNotebook });
+  registerIpc(backend, { openNotebook: () => openPage('notebook'), openInstructions: () => openPage('instructions') });
 
   void app.whenReady().then(() => {
     harden(MAIN_WINDOW_VITE_DEV_SERVER_URL);

@@ -3,7 +3,6 @@ import { ErrorToast } from './ErrorToast';
 import { models, slots } from './machine';
 import { KeySheetPanel } from './panels/KeySheetPanel';
 import { useMachine } from './store';
-import { InstructionsView } from './views/InstructionsView';
 import { OpenLidView } from './views/OpenLidView';
 import { PlugboardView } from './views/PlugboardView';
 import { TopDownView } from './views/TopDownView';
@@ -12,7 +11,6 @@ const views = [
   { id: 'top-down', label: 'Top-down', View: TopDownView },
   { id: 'open-lid', label: 'Open lid', View: OpenLidView },
   { id: 'plugboard', label: 'Plugboard', View: PlugboardView },
-  { id: 'instructions', label: 'Instructions', View: InstructionsView },
 ] as const;
 
 function MachineSummary() {
@@ -52,6 +50,16 @@ function OperatorIcon() {
       <rect x="3.5" y="3" width="13" height="18" rx="1.5" />
       <path d="M6.5 8h7M6.5 11.5h7M6.5 15h4" />
       <path d="M19.5 7.5l1.5 1.5-6 6-2 .5.5-2z" />
+    </svg>
+  );
+}
+
+/** An open book. */
+function InstructionsIcon() {
+  return (
+    <svg className="panel-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path className="panel-icon-strip" d="M12 6.5C10 5 7 4.5 3 5v13.5c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5z" />
+      <path d="M12 6.5C10 5 7 4.5 3 5v13.5c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5zM12 6.5V20" />
     </svg>
   );
 }
@@ -115,6 +123,7 @@ export function MachineFrame() {
   const load = useMachine((store) => store.load);
   const version = useMachine((store) => store.version);
   const openNotebook = useMachine((store) => store.openNotebook);
+  const openInstructions = useMachine((store) => store.openInstructions);
   const [selected, setSelected] = useState(0);
   const [keySheetsOpen, setKeySheetsOpen] = useState(false);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -144,6 +153,9 @@ export function MachineFrame() {
         <MachineSummary />
         <AppliedKeyLabel />
         <div className="panel-toggles">
+          <button type="button" className="panel-toggle" aria-label="Instructions" title="Instructions" onClick={() => void openInstructions()}>
+            <InstructionsIcon />
+          </button>
           <button type="button" className="panel-toggle" aria-label="Operator's notebook" title="Operator's notebook" onClick={() => void openNotebook()}>
             <OperatorIcon />
           </button>

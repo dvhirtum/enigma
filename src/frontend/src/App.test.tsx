@@ -30,6 +30,15 @@ describe('App', () => {
     expect(screen.queryByRole('tablist', { name: 'Views' })).not.toBeInTheDocument();
   });
 
+  it('shows the user guide in the instructions window', () => {
+    const { api } = createFakeApi();
+
+    render(<App api={api} page="instructions" />);
+
+    expect(screen.getByRole('article', { name: 'Instructions' })).toHaveTextContent('Enigma user guide');
+    expect(screen.queryByRole('tablist', { name: 'Views' })).not.toBeInTheDocument();
+  });
+
   it('follows the machine state changed in another window', async () => {
     const { api, pushState } = createFakeApi();
     render(<App api={api} />);
