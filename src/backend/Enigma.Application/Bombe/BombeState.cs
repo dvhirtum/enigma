@@ -27,12 +27,15 @@ public sealed record BombeState(
             job.Crib?.ToString(),
             [.. job.Placements.Select(p => new PlacementState(p.Position, p.Crashes))],
             job.Placement?.Position,
-            job.Menu is { } menu
+            job is { Menu: { } menu, Placement: { } placement }
                 ? new MenuState(
                     [.. menu.Links.Select(link => link.ToString())],
+                    [.. placement.Links.Select(link => link.ToString())],
                     menu.TestRegister.ToString(),
+                    [.. menu.ConnectedLinks.Select(link => link.ToString())],
                     menu.Loops,
-                    menu.EstimatedStops(job.DiagonalBoard))
+                    menu.EstimatedStops(diagonalBoard: true),
+                    menu.EstimatedStops(diagonalBoard: false))
                 : null,
             new BombeSettings(
                 job.Input.ToString(),
@@ -45,8 +48,18 @@ public sealed record BombeState(
 
 public sealed record PlacementState(int Position, IReadOnlyList<int> Crashes);
 
-/// <summary>The menu links (letters, then offset), the test register, loops and estimated stops per wheel order.</summary>
-public sealed record MenuState(IReadOnlyList<string> Links, string TestRegister, int Loops, double EstimatedStops);
+/// <summary>
+/// The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it,
+/// their loops and the estimated false stops per wheel order with and without the diagonal board.
+/// </summary>
+public sealed record MenuState(
+    IReadOnlyList<string> Links,
+    IReadOnlyList<string> CribLinks,
+    string TestRegister,
+    IReadOnlyList<string> ConnectedLinks,
+    int Loops,
+    double StopsWithBoard,
+    double StopsWithoutBoard);
 
 public sealed record BombeSettings(string Input, bool DiagonalBoard, string Reflector, IReadOnlyList<string> WheelOrders);
 

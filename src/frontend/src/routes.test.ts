@@ -75,6 +75,8 @@ describe('bombe routes', () => {
     ['pasteCipherText', bombeRoutes.pasteCipherText('QWER'), 'PUT', '/api/bombe/cipher-text', { text: 'QWER' }],
     ['setCrib', bombeRoutes.setCrib('WETTER'), 'PUT', '/api/bombe/crib', { crib: 'WETTER' }],
     ['placeCrib', bombeRoutes.placeCrib(0), 'PUT', '/api/bombe/placement', { position: 0 }],
+    ['setMenu', bombeRoutes.setMenu(['SW1', 'NE2'], 'E'), 'PUT', '/api/bombe/menu', { links: ['SW1', 'NE2'], testRegister: 'E' }],
+    ['buildMenu', bombeRoutes.buildMenu(), 'POST', '/api/bombe/menu/build', undefined],
   ])('maps %s to its endpoint', (_name, route, method, path, body) => {
     expect(route).toEqual({ method, path, ...(body && { body }) });
   });

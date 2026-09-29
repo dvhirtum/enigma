@@ -49,7 +49,25 @@ public sealed class BombeHandlerTests
         Assert.Equal(0, state.Position);
         Assert.NotNull(state.Menu);
         Assert.True(state.Menu.Loops > 0);
-        Assert.True(state.Menu.EstimatedStops > 0);
+        Assert.InRange(state.Menu.StopsWithBoard, double.Epsilon, state.Menu.StopsWithoutBoard);
+    }
+
+    [Fact]
+    public void Should_list_every_crib_link_and_leave_unconnected_links_out_When_the_menu_is_set_by_hand()
+    {
+        // Arrange
+        SetUpCarter(menu: false);
+        new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
+
+        // Act
+        var state = new SetMenuHandler(_store).Handle(new SetMenu([.. CarterLinks, "MT3"], "G"));
+
+        // Assert
+        Assert.NotNull(state.Menu);
+        Assert.Equal(CarterCrib.Length, state.Menu.CribLinks.Count);
+        Assert.Contains("TO8", state.Menu.CribLinks);
+        Assert.Equal(CarterLinks.Length + 1, state.Menu.Links.Count);
+        Assert.Equal(state.Menu.Links.Where(link => link != "MT3"), state.Menu.ConnectedLinks);
     }
 
     [Fact]

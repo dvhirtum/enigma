@@ -63,4 +63,6 @@ export const bombeRoutes: Routes<BombeApi> = {
   pasteCipherText: (text) => ({ method: 'PUT', path: `${bombe}/cipher-text`, body: { text } }),
   setCrib: (crib) => ({ method: 'PUT', path: `${bombe}/crib`, body: { crib } }),
   placeCrib: (position) => ({ method: 'PUT', path: `${bombe}/placement`, body: { position } }),
+  setMenu: (links, testRegister) => ({ method: 'PUT', path: `${bombe}/menu`, body: { links, testRegister } }),
+  buildMenu: () => ({ method: 'POST', path: `${bombe}/menu/build` }),
 };

@@ -66,6 +66,10 @@ export interface BombeSlice {
   setCrib: (crib: string) => Promise<boolean>;
   /** Places the crib at a position (0 = the first letter) and builds the menu. */
   placeCrib: (position: number) => Promise<boolean>;
+  /** Plugs up links of the placed crib; without a test register letter one is chosen. */
+  setMenu: (links: string[], testRegister?: string) => Promise<boolean>;
+  /** Builds the menu from the placed crib again. */
+  buildMenu: () => Promise<boolean>;
 }
 
 export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice, BombeSlice {
@@ -164,6 +168,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       pasteCipherText: (text) => job(bombe.pasteCipherText(text)),
       setCrib: (crib) => job(bombe.setCrib(crib)),
       placeCrib: (position) => job(bombe.placeCrib(position)),
+      setMenu: (links, testRegister) => job(bombe.setMenu(links, testRegister)),
+      buildMenu: () => job(bombe.buildMenu()),
       loadBook: async (id) => {
         if (get().books[id]) {
           return true;

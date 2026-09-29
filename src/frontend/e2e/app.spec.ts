@@ -107,6 +107,25 @@ test('places a crib under an intercept in Bombe mode', async () => {
   await page.getByRole('button', { name: 'Enigma' }).click();
 });
 
+test('edits the menu of the placed crib in Bombe mode', async () => {
+  await page.getByRole('button', { name: 'Bombe' }).click();
+  await page.getByRole('tab', { name: 'Menu' }).click();
+  await expect(page.getByLabel('Menu size')).toHaveText('4 links, 4 letters, 1 loop · test register on T');
+
+  await page.getByRole('checkbox', { name: 'Link K–W at 1 (ZZA)' }).click();
+  await expect(page.getByRole('checkbox', { name: 'Link K–W at 1 (ZZA)' })).toBeChecked();
+  await expect(page.getByRole('status')).toHaveText(/KW1/);
+
+  await page.getByRole('button', { name: 'Letter G' }).click();
+  await expect(page.getByRole('button', { name: 'Letter G' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Menu size')).toHaveText('4 links, 4 letters, 1 loop · test register on G');
+
+  await page.getByRole('button', { name: 'Build menu' }).click();
+  await expect(page.getByLabel('Menu size')).toHaveText(/test register on T/);
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Enigma' }).click();
+});
+
 test('lights a lamp while a key is held on the physical keyboard', async () => {
   await page.getByRole('tab', { name: 'Top-down' }).click();
 

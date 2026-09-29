@@ -139,12 +139,18 @@ export interface Placement {
   crashes: number[];
 }
 
-/** The menu links (letters, then offset), the test register, loops and estimated stops per wheel order. */
+/**
+ * The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it,
+ * their loops and the estimated false stops per wheel order with and without the diagonal board.
+ */
 export interface BombeMenu {
   links: string[];
+  cribLinks: string[];
   testRegister: string;
+  connectedLinks: string[];
   loops: number;
-  estimatedStops: number;
+  stopsWithBoard: number;
+  stopsWithoutBoard: number;
 }
 
 export interface BombeSettings {
@@ -249,6 +255,10 @@ export interface BombeApi {
   setCrib: Call<[crib: string], BombeState>;
   /** Places the crib at a position (0 = the first letter) and builds the menu. */
   placeCrib: Call<[position: number], BombeState>;
+  /** Plugs up links of the placed crib, such as "SW1"; without a test register letter one is chosen. */
+  setMenu: Call<[links: string[], testRegister?: string], BombeState>;
+  /** Builds the menu from the placed crib again. */
+  buildMenu: Call<[], BombeState>;
 }
 
 /** An HTML document to print to the PDF file `name`. */
