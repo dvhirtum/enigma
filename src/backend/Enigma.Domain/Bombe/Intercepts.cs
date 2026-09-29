@@ -25,7 +25,10 @@ public static class Intercepts
 
         """;
 
-    private static readonly RadioMessage Scharnhorst = RadioMessage.Parse("1925 = 21 = " + ScharnhorstGroups);
+    // The preamble as on the Red Form: time of origin and count, without separators.
+    private const string ScharnhorstTranscript = "1925 21\n" + ScharnhorstGroups;
+
+    private static readonly RadioMessage Scharnhorst = RadioMessage.Parse(ScharnhorstTranscript);
 
     private const string BarbarossaSource =
         "Key recovered by Geoff Sullivan and Frode Weierud; message as given in Dirk Rijmenants' Enigma Sim manual.";
@@ -42,7 +45,7 @@ public static class Intercepts
                 "Scharnhorst, 26 December 1943",
                 "The battleship Scharnhorst's last signal, sent at 1925 during the Battle of the North Cape and taken down "
                 + "on HMS Duke of York. She reported steering for the Tanafjord. Navy key Heimisch (Dolphin), three-rotor M3.",
-                "1925 21\n" + ScharnhorstGroups,
+                ScharnhorstTranscript,
                 Scharnhorst,
                 MessageSource.Letters(Scharnhorst.CipherText),
                 Crib.Parse("STEUEREJTANAFJORD"),

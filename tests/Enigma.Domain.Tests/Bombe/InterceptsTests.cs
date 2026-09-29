@@ -68,6 +68,22 @@ public sealed class InterceptsTests
     }
 
     [Fact]
+    public void Should_read_the_same_message_When_the_Red_Form_transcript_is_pasted()
+    {
+        // Arrange
+        var source = Intercepts.Find("scharnhorst-1943")!.Source;
+
+        // Act
+        var pasted = MessageSource.Pasted(source.Transcript);
+
+        // Assert
+        Assert.StartsWith("1925 21\n", source.Transcript, StringComparison.Ordinal);
+        Assert.Equal(source.CipherText, pasted.CipherText);
+        Assert.Equal(source.Message?.Indicator, pasted.Message?.Indicator);
+        Assert.Equal(21, pasted.Message?.StatedLetterCount);
+    }
+
+    [Fact]
     public void Should_return_null_When_no_intercept_has_the_id()
     {
         // Arrange

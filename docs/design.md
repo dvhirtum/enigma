@@ -92,7 +92,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 - `TauschtafelSet`: 9 tables for one year, with a calendar that gives each half month (days 1–15, 16–end) a table, cycling through the 9.
 - `Indicator`: the Schlüsselkenngruppe with a filler letter in front, above the Verfahrenkenngruppe with a filler behind. The vertical bigrams are swapped with the table; the top row gives the first group, the bottom row the second.
 - `MessageKey`: the Grundstellung and the Spruchschlüssel (message key). Typing the Verfahrenkenngruppe at the Grundstellung lights the Spruchschlüssel; the Greek rotor keeps its Grundstellung letter.
-- `RadioMessage`: a preamble (time of origin `HHMM`, total letter count), the 2 indicator groups, the cipher text in groups of 4, and the indicator groups again. For example `1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI`.
+- `RadioMessage`: a preamble (time of origin `HHMM`, total letter count), the 2 indicator groups, the cipher text in groups of 4, and the indicator groups again. For example `1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI`. Parsing also takes a preamble without separators, as on a Red Form (`1925 21`).
 - `OperatorProcedure`: the guided send or receive procedure.
   - Send: choose the groups and fillers → set the Grundstellung → type the Verfahrenkenngruppe → set the Spruchschlüssel → type the plaintext and fill the last group with X → the radio message.
   - Receive: decrypt the indicator; the Schlüsselkenngruppe names the key → set the Grundstellung → type the Verfahrenkenngruppe → set the Spruchschlüssel → type the cipher text → the plaintext.
