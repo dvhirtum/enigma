@@ -20,7 +20,7 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
         // key that enciphers the whole crib with Carter's ten stecker pairs. Carter prints the stop as DKX, which does
         // not encipher the crib; the reason is not known.
         var bombe = new BombeMachine(
-            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, G, A, diagonalBoard);
+            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, A, diagonalBoard);
 
         // Act
         var stops = bombe.Run().ToList();
@@ -37,7 +37,7 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
     {
         // Arrange
         var bombe = new BombeMachine(
-            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, G, A);
+            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, A);
 
         // Act
         var stops = bombe.Run().Count();
@@ -51,7 +51,7 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
     {
         // Arrange
         var bombe = new BombeMachine(
-            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, G, Q);
+            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, Q);
 
         // Act
         var stop = bombe.Test(DrumPosition.Parse("VMB"));
@@ -66,7 +66,7 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
     {
         // Arrange
         var bombe = new BombeMachine(
-            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, G, A);
+            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, A);
 
         // Act
         var stop = bombe.Test(DrumPosition.Parse("VMB"));
@@ -91,8 +91,8 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
         var test = Letter.FromChar(testRegister[0]);
         var partner = Plugboard(plugs, test);
         var input = partner.Shift(1);
-        var bombe = new BombeMachine(
-            new Scrambler(WheelOrder.Parse(rotors), ReflectorType.B), BombeKeys.FullMenu(cipher, plain), test, input);
+        var menu = new Menu(BombeKeys.FullMenu(cipher, plain), test);
+        var bombe = new BombeMachine(new Scrambler(WheelOrder.Parse(rotors), ReflectorType.B), menu, input);
         var core = BombeKeys.CorePosition(rings, windows);
 
         // Act
@@ -114,24 +114,12 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
         var scrambler = new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B);
 
         // Act
-        var with = new BombeMachine(scrambler, chain, G, A, diagonalBoard: true).Run().Count();
-        var without = new BombeMachine(scrambler, chain, G, A, diagonalBoard: false).Run().Count();
+        var with = new BombeMachine(scrambler, new Menu(chain, G), A, diagonalBoard: true).Run().Count();
+        var without = new BombeMachine(scrambler, new Menu(chain, G), A, diagonalBoard: false).Run().Count();
 
         // Assert
         output.WriteLine($"Chain menu: {with} stops with the diagonal board, {without} without.");
         Assert.True(with < without, $"{with} stops with the diagonal board, {without} without.");
-    }
-
-    [Fact]
-    public void Should_reject_the_menu_When_the_test_register_letter_is_not_on_it()
-    {
-        // Arrange
-        // Act
-        static object Act() => new BombeMachine(
-            new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, Q, A);
-
-        // Assert
-        Assert.Throws<DomainException>(Act);
     }
 
     [Fact]
