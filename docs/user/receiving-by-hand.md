@@ -2,7 +2,7 @@
 
 [Back to the contents](README.md)
 
-The receiver undoes the sender's steps in reverse. As on the [sending page](sending-by-hand.md), you need the machine and the [printed](key-sheets.md#printing-a-sheet) key sheet, Kenngruppenbuch and Tauschtafeln, with operator mode not running. The example receives the message from the sending page:
+The receiver undoes the sender's steps in reverse. As on the [sending page](sending-by-hand.md), you need the machine and the [printed](key-sheets.md#printing-a-sheet) key sheet, Kenngruppenbuch and Tauschtafeln, with no message in progress in the operator's notebook. The example receives the message from the sending page:
 
 ```
 0915 = 60 = GEAQ LZBC IIYO GSLL WNVO EGSP CHZV PVOF RPJP ZRVD YQWS MOQX GJNC GEAQ LZBC
@@ -42,7 +42,7 @@ Drop the filler at the front of the top row and at the end of the bottom row:
 
 The Schlüsselkenngruppe names the network, and so the key sheet. Look it up in the [Suchtafel](key-sheets.md#using-the-suchtafel) of the Kenngruppenbuch PDF: block `Kenngruppen O..`, row `OF`, column `P` gives the column of `OFP`. Then find that column's range in the Zuteilungsliste. Use that network's sheet for the day the message was sent. The Verfahrenkenngruppe must come from the Verfahrenkenngruppen columns (1–100).
 
-If you don't know which sheet to use, paste the message into operator mode and click **Find key**. It only lists the matching sheets and starts nothing until you choose one.
+If you don't know which sheet to use, paste the message on the **Decrypt** tab of the operator's notebook and click **Find key**. It only lists the matching sheets and starts nothing until you choose one.
 
 ## 4. Find the Spruchschlüssel
 

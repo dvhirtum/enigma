@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { createStore, useStore, type StoreApi } from 'zustand';
 import type {
   ApiResult,
@@ -56,6 +56,8 @@ export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
   error: Problem | null;
   load: () => Promise<void>;
   dismissError: () => void;
+  /** Opens the operator's notebook window, or brings it to the front. */
+  openNotebook: () => Promise<void>;
   /** Runs operations that depend on earlier ones one at a time, in order. */
   enqueue: <T>(task: () => Promise<T>) => Promise<T>;
   /** Turns a rotor `steps` letters on from its position once the queued operations are done. */
@@ -72,7 +74,7 @@ async function settle<T>(call: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
   }
 }
 
-export function createMachineStore({ machine: api, keySheets: sheets, procedure, files, clipboard, health }: EnigmaApi): StoreApi<MachineStore> {
+export function createMachineStore({ machine: api, keySheets: sheets, procedure, files, clipboard, windows, health }: EnigmaApi): StoreApi<MachineStore> {
   return createStore<MachineStore>()((set, get) => {
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
@@ -231,6 +233,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         });
       },
       dismissError: () => set({ error: null }),
+      openNotebook: () => windows.openNotebook(),
       enqueue,
       stepRotor: (slot, steps) =>
         enqueue(async () => {
@@ -266,8 +269,10 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
 
 const MachineStoreContext = createContext<StoreApi<MachineStore> | null>(null);
 
+/** Provides the machine store, which follows machine states changed by other windows. */
 export function MachineStoreProvider({ api, children }: { api: EnigmaApi; children: ReactNode }) {
   const [store] = useState(() => createMachineStore(api));
+  useEffect(() => api.windows.onMachineState((machine) => store.setState({ machine })), [api, store]);
   return <MachineStoreContext.Provider value={store}>{children}</MachineStoreContext.Provider>;
 }
 

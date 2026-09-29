@@ -1,23 +1,27 @@
-# Operator mode
+# Operator's notebook
 
 [Back to the contents](README.md)
 
-Operator mode walks through the Navy indicator procedure while you work the machine. Open it with the message pad button at the top right. The panel lists the steps and marks the current one. Type and turn the rotors in the [top-down view](machine.md).
+The operator's notebook walks through the Navy indicator procedure while you work the machine. Open it with the message pad button at the top right. It opens in its own window, so you can place it next to the machine.
 
-Keys other than the expected one are rejected. **Cancel** stops the procedure at any time.
+The notebook looks like squared paper. The instructions are printed; everything the operator would write down (groups, indicator, keys, cipher text and plaintext) is handwritten, one letter per square. The steps are listed at the top, the current one highlighted and the finished ones ticked off.
+
+Turn the rotors in the [top-down view](machine.md) of the machine window. Type there, or type letters straight into the notebook: they press the machine keys. Keys other than the expected one are rejected. **Cancel** stops the procedure at any time.
+
+The **Encrypt** tab sends and the **Decrypt** tab receives. One message can be in progress at a time. While it is, the other tab asks you to finish or cancel it first.
 
 To work through the same steps without guidance, see [Sending by hand](sending-by-hand.md) and [Receiving by hand](receiving-by-hand.md). [The Enigma in the Kriegsmarine](history.md) explains why the procedure works this way.
 
 ## Sending
 
-Sending needs an applied daily key (see [Key sheets](key-sheets.md)). The panel warns when the setup differs from the key.
+Sending needs an applied daily key (see [Key sheets](key-sheets.md)). The notebook warns when the setup differs from the key.
 
-1. Click **Send a message**.
-2. **Choose the groups.** Pick a Schlüsselkenngruppe from your network's columns and a Verfahrenkenngruppe from the Verfahrenkenngruppen columns, or click **Random**. Enter two filler letters and click **Encrypt indicator**. The panel shows the bigram swaps from the Tauschtafel and the two indicator groups.
+1. On the **Encrypt** tab, click **Send a message**.
+2. **Choose the groups.** Pick a Schlüsselkenngruppe from your network's columns and a Verfahrenkenngruppe from the Verfahrenkenngruppen columns, or click **Random**. Enter two filler letters and click **Encrypt indicator**. The notebook writes out the indicator, the bigram swaps from the Tauschtafel and the two indicator groups.
 3. **Set the Grundstellung.** Turn the rotors until the windows show it.
-4. **Type the Verfahrenkenngruppe.** The lamps give the Spruchschlüssel (message key).
+4. **Type the Verfahrenkenngruppe.** The lamps give the Spruchschlüssel (message key), which the notebook writes down.
 5. **Set the Spruchschlüssel.** On the M4 the Greek rotor keeps its Grundstellung letter.
-6. **Type the message.** The message pad shows the cipher text in groups of 4. Type X until the last group is full, then click **Finish**.
+6. **Type the message.** The notebook writes the cipher text in groups of 4. Type X until the last group is full, then click **Finish**.
 7. Click **Copy** to copy the radio message.
 
 A radio message looks like this:
@@ -30,11 +34,11 @@ The time of origin and the letter count come first. The two indicator groups sta
 
 ## Receiving
 
-1. Paste the message under **Received message**. The date is filled in from the applied key, or today.
-2. Click **Find key**. The panel lists the key sheet days whose network the Schlüsselkenngruppe belongs to. Click **Receive with this key**. If the right key is already applied, click **Receive with applied key** instead.
+1. On the **Decrypt** tab, paste the message under **Received message**. The date is filled in from the applied key, or today.
+2. Click **Find key**. The notebook lists the key sheet days whose network the Schlüsselkenngruppe belongs to. Click **Receive with this key**. If the right key is already applied, click **Receive with applied key** instead.
 3. Set the Grundstellung, type the Verfahrenkenngruppe and set the Spruchschlüssel, as when sending.
-4. Type the cipher text. The next letter is highlighted, and the message pad shows the plaintext.
+4. Type the cipher text. The next letter is circled, and the plaintext is written under each cipher letter and again in groups below.
 
-The panel warns when the letter count differs, when the Schlüsselkenngruppe does not belong to the network, or when the Verfahrenkenngruppe is not one.
+The notebook warns when the letter count differs, when the Schlüsselkenngruppe does not belong to the network, or when the Verfahrenkenngruppe is not one.
 
 Click **New message** to start again.

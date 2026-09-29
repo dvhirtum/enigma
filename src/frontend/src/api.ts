@@ -209,6 +209,13 @@ export interface ClipboardApi {
   writeText: (text: string) => Promise<void>;
 }
 
+export interface WindowsApi {
+  /** Opens the operator's notebook window, or brings it to the front. */
+  openNotebook: () => Promise<void>;
+  /** Listens for machine states changed by another window. */
+  onMachineState: (listener: (state: MachineState) => void) => () => void;
+}
+
 export interface BackendApi {
   status: () => Promise<BackendStatus>;
   onStatus: (listener: (status: BackendStatus) => void) => () => void;
@@ -222,5 +229,6 @@ export interface EnigmaApi {
   procedure: ProcedureApi;
   files: FilesApi;
   clipboard: ClipboardApi;
+  windows: WindowsApi;
   backend: BackendApi;
 }

@@ -3,12 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import type { OperatorState } from '../api';
 import { defaultM3, sending } from '../test/fakeApi';
 import { renderMachine } from '../test/renderMachine';
-import { OperatorPanel } from './OperatorPanel';
+import { Notebook } from './Notebook';
 
 const appliedKey = { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 1, modified: false, grundstellung: 'QRSA' };
 
-function renderOperator(operator: Partial<OperatorState> | null, modified = false) {
-  return renderMachine(<OperatorPanel />, {
+function renderNotebook(operator: Partial<OperatorState> | null, modified = false) {
+  return renderMachine(<Notebook />, {
     ...defaultM3,
     appliedKey: { ...appliedKey, modified },
     operator: operator && { ...sending, ...operator },
@@ -27,29 +27,73 @@ const indicatorChosen: Partial<OperatorState> = {
   indicator: 'JWDZ ZZYC',
 };
 
-describe('OperatorPanel', () => {
-  it('asks for a daily key before sending but receives without one', async () => {
-    renderMachine(<OperatorPanel />);
+const receiving: Partial<OperatorState> = {
+  ...indicatorChosen,
+  direction: 'Receive',
+  step: 'TypeMessage',
+  cipherText: 'ABCDEFGH',
+  pad: 'WET',
+  expectedKey: 'D',
+};
+
+describe('Notebook', () => {
+  it('opens on the Encrypt page and asks for a daily key before sending', async () => {
+    renderMachine(<Notebook />);
 
     expect(await screen.findByText(/Apply a daily key to send/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Encrypt' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('button', { name: 'Send a message' })).not.toBeInTheDocument();
+  });
+
+  it('receives on the Decrypt page without a daily key', async () => {
+    renderMachine(<Notebook />);
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Decrypt' }));
+
     expect(screen.getByRole('form', { name: 'Receive a message' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Receive with applied key' })).not.toBeInTheDocument();
   });
 
+  it('switches pages with the arrow keys', async () => {
+    renderMachine(<Notebook />);
+
+    fireEvent.keyDown(await screen.findByRole('tab', { name: 'Encrypt' }), { key: 'ArrowRight' });
+
+    expect(screen.getByRole('tab', { name: 'Decrypt' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Decrypt' })).toHaveFocus();
+  });
+
   it('warns when the setup differs from the daily key', async () => {
-    renderOperator(null, true);
+    renderNotebook(null, true);
 
     expect(await screen.findByRole('status')).toHaveTextContent('The machine setup differs from the daily key.');
     expect(screen.getByRole('button', { name: 'Send a message' })).toBeEnabled();
   });
 
   it('starts sending', async () => {
-    const api = renderOperator(null);
+    const api = renderNotebook(null);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Send a message' }));
 
     expect(api.machine.startSending).toHaveBeenCalled();
+  });
+
+  it('opens on the page of the message in progress', async () => {
+    renderNotebook(receiving);
+
+    expect(await screen.findByRole('tab', { name: 'Decrypt' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('group', { name: 'Cipher text' })).toBeInTheDocument();
+  });
+
+  it('shows the other page but asks to finish the message in progress first', async () => {
+    renderNotebook(receiving);
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Encrypt' }));
+    expect(screen.getByRole('status')).toHaveTextContent('A message is being decrypted. Finish or cancel it on the Decrypt page first.');
+    expect(screen.queryByRole('button', { name: 'Send a message' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Go to Decrypt' }));
+
+    expect(screen.getByRole('tab', { name: 'Decrypt' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('finds the keys that fit a received message on the applied day and receives with the chosen one', async () => {
@@ -58,10 +102,11 @@ describe('OperatorPanel', () => {
       { sheetId: 'g1', network: 'Triton', month: '1944-06', day: 1, model: 'M4', schluesselkenngruppe: 'DWA' },
       { sheetId: 'g2', network: 'Triton', month: '1944-06', day: 1, model: 'M3', schluesselkenngruppe: 'DWA' },
     ];
-    const api = renderOperator(null);
+    const api = renderNotebook(null);
     api.procedure.findReceivingKeys.mockResolvedValue({ ok: true, value: keys });
 
-    const form = await screen.findByRole('form', { name: 'Receive a message' });
+    fireEvent.click(await screen.findByRole('tab', { name: 'Decrypt' }));
+    const form = screen.getByRole('form', { name: 'Receive a message' });
     expect(within(form).getByLabelText('Date')).toHaveValue('1944-06-01');
     fireEvent.change(within(form).getByRole('textbox', { name: 'Received message' }), { target: { value: message } });
     fireEvent.click(within(form).getByRole('button', { name: 'Find key' }));
@@ -73,9 +118,10 @@ describe('OperatorPanel', () => {
   });
 
   it('receives with the applied key without looking it up', async () => {
-    const api = renderOperator(null);
+    const api = renderNotebook(null);
 
-    const form = await screen.findByRole('form', { name: 'Receive a message' });
+    fireEvent.click(await screen.findByRole('tab', { name: 'Decrypt' }));
+    const form = screen.getByRole('form', { name: 'Receive a message' });
     expect(within(form).getByRole('button', { name: 'Receive with applied key' })).toBeDisabled();
     fireEvent.change(within(form).getByRole('textbox', { name: 'Received message' }), { target: { value: 'QWER TZUI ABCD QWER TZUI' } });
     fireEvent.click(within(form).getByRole('button', { name: 'Receive with applied key' }));
@@ -85,9 +131,10 @@ describe('OperatorPanel', () => {
   });
 
   it('says when no key sheet fits the received message', async () => {
-    renderMachine(<OperatorPanel />);
+    renderMachine(<Notebook />);
 
-    const form = await screen.findByRole('form', { name: 'Receive a message' });
+    fireEvent.click(await screen.findByRole('tab', { name: 'Decrypt' }));
+    const form = screen.getByRole('form', { name: 'Receive a message' });
     fireEvent.change(within(form).getByLabelText('Date'), { target: { value: '1944-06-19' } });
     fireEvent.change(within(form).getByRole('textbox', { name: 'Received message' }), { target: { value: 'QWER TZUI ABCD QWER TZUI' } });
     fireEvent.click(within(form).getByRole('button', { name: 'Find key' }));
@@ -96,7 +143,7 @@ describe('OperatorPanel', () => {
   });
 
   it('picks the groups from the network and Verfahrenkenngruppen columns', async () => {
-    const api = renderOperator({});
+    const api = renderNotebook({});
 
     const schluessel = await screen.findByRole('group', { name: 'Schlüsselkenngruppe, column 101' });
     fireEvent.click(within(schluessel).getByRole('button', { name: 'DWC' }));
@@ -113,7 +160,7 @@ describe('OperatorPanel', () => {
 
   it('fills both groups at random', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
-    const api = renderOperator({});
+    const api = renderNotebook({});
 
     fireEvent.click(await screen.findByRole('button', { name: 'Random' }));
     fireEvent.click(screen.getByRole('button', { name: 'Encrypt indicator' }));
@@ -122,29 +169,40 @@ describe('OperatorPanel', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows the current step and the indicator', async () => {
-    renderOperator({ ...indicatorChosen, step: 'SetGrundstellung' });
+  it('ticks off the finished steps and writes out the indicator', async () => {
+    renderNotebook({ ...indicatorChosen, step: 'SetGrundstellung' });
 
-    expect(await screen.findByRole('listitem', { current: 'step' })).toHaveTextContent('Set the Grundstellung');
-    expect(screen.getByText(/Set the rotor windows to the Grundstellung/)).toHaveTextContent('Q R S A');
+    const current = await screen.findByRole('listitem', { current: 'step' });
+    expect(current).toHaveTextContent('Set the Grundstellung');
+    expect(screen.getByText('Choose the groups')).toHaveAttribute('data-done');
+    expect(current).not.toHaveAttribute('data-done');
+    expect(screen.getByRole('region', { name: 'Instruction' })).toHaveTextContent('Set the rotor windows to the Grundstellung QRSA.');
+    expect(screen.getByRole('group', { name: 'Grundstellung' })).toHaveTextContent('QRSA');
     const indicator = screen.getByRole('region', { name: 'Indicator' });
-    expect(indicator).toHaveTextContent('Q D W A');
-    expect(indicator).toHaveTextContent('A A B X');
-    expect(indicator).toHaveTextContent('QA→JZ');
-    expect(indicator).toHaveTextContent('JWDZ ZZYC');
+    expect(within(indicator).getByRole('group', { name: 'Upper row' })).toHaveTextContent('QDWA');
+    expect(within(indicator).getByRole('group', { name: 'Lower row' })).toHaveTextContent('AABX');
+    expect(within(indicator).getByLabelText('Swaps')).toHaveTextContent('QA→JZ');
+    expect(within(indicator).getByRole('group', { name: 'Groups' })).toHaveTextContent('JWDZ ZZYC');
+  });
+
+  it('writes down the lamps of the Spruchschlüssel while the Verfahrenkenngruppe is typed', async () => {
+    renderNotebook({ ...indicatorChosen, step: 'TypeVerfahrenkenngruppe', spruchschluesselLamps: 'QK', expectedKey: 'B' });
+
+    expect(await screen.findByRole('group', { name: 'Spruchschlüssel' })).toHaveTextContent('QK');
+    expect(screen.getByRole('region', { name: 'Instruction' })).toHaveTextContent('Next: B.');
   });
 
   it('asks for X to fill the last group before finishing', async () => {
-    renderOperator({ ...indicatorChosen, step: 'TypeMessage', spruchschluessel: 'QKLM', pad: 'ABCDEF', fillersNeeded: 2 });
+    renderNotebook({ ...indicatorChosen, step: 'TypeMessage', spruchschluessel: 'QKLM', pad: 'ABCDEF', fillersNeeded: 2 });
 
-    expect(await screen.findByText('Type X 2 more time(s) to fill the last group.')).toBeInTheDocument();
+    expect(await screen.findByRole('status')).toHaveTextContent('Type X 2 more time(s) to fill the last group.');
     expect(screen.getByRole('button', { name: 'Finish' })).toBeDisabled();
-    expect(screen.getByRole('region', { name: 'Message pad' })).toHaveTextContent('ABCD EF');
+    expect(screen.getByRole('group', { name: 'Cipher text' })).toHaveTextContent('ABCD EF');
   });
 
   it('shows the radio message to copy when sending is done', async () => {
     const message = '1840 = 24 = JWDZ ZZYC ABCD EFGH JWDZ ZZYC';
-    const api = renderOperator({ ...indicatorChosen, step: 'Done', pad: 'ABCDEFGH', message });
+    const api = renderNotebook({ ...indicatorChosen, step: 'Done', pad: 'ABCDEFGH', message });
 
     expect(await screen.findByRole('status', { name: 'Radio message' })).toHaveTextContent(message);
     fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
@@ -155,21 +213,24 @@ describe('OperatorPanel', () => {
     expect(api.machine.cancelOperator).toHaveBeenCalled();
   });
 
-  it('highlights the next cipher letter and lists warnings when receiving', async () => {
-    renderOperator({
-      ...indicatorChosen,
-      direction: 'Receive',
-      step: 'TypeMessage',
-      cipherText: 'ABCDEFGH',
-      pad: 'WET',
-      expectedKey: 'D',
-      warnings: ['The preamble gives 30 letters, but the message has 24.'],
-    });
+  it('writes the plaintext under the cipher text, circles the next letter and lists warnings when receiving', async () => {
+    renderNotebook({ ...receiving, warnings: ['The preamble gives 30 letters, but the message has 24.'] });
 
-    const cipher = await screen.findByLabelText('Cipher text');
+    const cipher = await screen.findByRole('group', { name: 'Cipher text' });
     expect(within(cipher).getByText('D')).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('group', { name: 'Plaintext' })).toHaveTextContent('WET');
     expect(screen.getByRole('list', { name: 'Warnings' })).toHaveTextContent('The preamble gives 30 letters');
-    expect(screen.getByRole('region', { name: 'Message pad' })).toHaveTextContent('WET');
-    expect(screen.queryByRole('listitem', { name: 'Choose the groups' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Choose the groups')).not.toBeInTheDocument();
+  });
+
+  it('presses the machine key for a letter typed in the notebook', async () => {
+    const api = renderNotebook(receiving);
+    await screen.findByRole('group', { name: 'Cipher text' });
+
+    fireEvent.keyDown(window, { key: 'd', code: 'KeyD' });
+    fireEvent.keyUp(window, { key: 'd', code: 'KeyD' });
+
+    await vi.waitFor(() => expect(api.machine.releaseKey).toHaveBeenCalled());
+    expect(api.machine.pressKey).toHaveBeenCalledWith('D');
   });
 });

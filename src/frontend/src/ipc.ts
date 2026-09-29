@@ -1,13 +1,20 @@
 import { BrowserWindow, clipboard, ipcMain } from 'electron';
-import type { ApiResult } from './api';
+import type { ApiResult, MachineState } from './api';
 import type { Backend } from './backend';
 import { send } from './http';
 import { createQueue } from './queue';
 import { registerFiles } from './files';
 import { healthRoute, keySheetRoutes, machineRoutes, procedureRoutes, type Route } from './routes';
 
-/** Registers one IPC channel per API operation. Machine calls reach the backend one at a time, in order. */
-export function registerIpc(backend: Backend): void {
+export interface Windows {
+  openNotebook: () => void;
+}
+
+/**
+ * Registers one IPC channel per API operation. Machine calls reach the backend one at a time, in order,
+ * and the other windows receive the resulting machine state.
+ */
+export function registerIpc(backend: Backend, windows: Windows): void {
   const call = async <T>(route: Route): Promise<ApiResult<T>> => {
     let baseUrl: string;
     try {
@@ -23,7 +30,19 @@ export function registerIpc(backend: Backend): void {
   const enqueue = createQueue();
   for (const [name, toRoute] of Object.entries(machineRoutes)) {
     const route = toRoute as (...args: unknown[]) => Route;
-    ipcMain.handle(`machine:${name}`, (_event, ...args: unknown[]) => enqueue(() => call(route(...args))));
+    ipcMain.handle(`machine:${name}`, (event, ...args: unknown[]) =>
+      enqueue(async () => {
+        const result = await call<MachineState>(route(...args));
+        if (result.ok) {
+          for (const window of BrowserWindow.getAllWindows()) {
+            if (window.webContents !== event.sender) {
+              window.webContents.send('machine:state', result.value);
+            }
+          }
+        }
+        return result;
+      }),
+    );
   }
 
   for (const [prefix, routes] of [
@@ -44,6 +63,8 @@ export function registerIpc(backend: Backend): void {
     }
     return clipboard.writeText(text);
   });
+
+  ipcMain.handle('windows:openNotebook', () => windows.openNotebook());
 
   ipcMain.handle('backend:status', () => backend.status());
   ipcMain.handle('backend:restart', () => backend.restart());

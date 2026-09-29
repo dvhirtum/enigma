@@ -287,9 +287,9 @@ async function setRotors(letters: string): Promise<void> {
   }
 }
 
-async function typeLetters(letters: string): Promise<void> {
+async function typeLetters(letters: string, into: Page = page): Promise<void> {
   for (const letter of letters.toLowerCase()) {
-    await page.keyboard.press(letter);
+    await into.keyboard.press(letter);
   }
 }
 
@@ -307,48 +307,56 @@ test('sends a message with the indicator procedure and receives it again', async
   await sheets.getByRole('listitem', { name: 'Day 1', exact: true }).getByRole('button', { name: 'Apply' }).click();
   await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1945-03, day 1 · Grundstellung [A-Z]{3}$/);
 
-  await page.getByRole('button', { name: 'Operator mode' }).click();
-  const panel = page.getByRole('complementary', { name: 'Operator mode' });
+  await page.getByRole('button', { name: 'Key sheets' }).click();
+  const opened = app.waitForEvent('window');
+  await page.getByRole('button', { name: "Operator's notebook" }).click();
+  const notebook = await opened;
+  await expect(notebook).toHaveTitle("Operator's notebook");
+  await page.getByRole('button', { name: "Operator's notebook" }).click();
+  expect(app.windows()).toHaveLength(2);
   await page.getByRole('tab', { name: 'Top-down' }).click();
 
+  const step = notebook.locator('[aria-current="step"]');
   const runMessageKey = async () => {
-    const meta = await panel.getByText(/· Grundstellung [A-Z]{3}$/).textContent();
-    await setRotors(meta!.slice(-3));
-    const verfahren = (await panel.getByRole('region', { name: 'Indicator' }).locator('.indicator-rows span').nth(1).textContent())!.replace(/ /g, '');
-    await typeLetters(verfahren.slice(0, 3));
-    const spruchschluessel = (await panel.getByText(/^Spruchschlüssel [A-Z]{3}$/).textContent())!.slice(-3);
-    await setRotors(spruchschluessel);
-    await expect(panel.locator('[aria-current="step"]')).toHaveText('Type the message');
+    await expect(step).toHaveText('Set the Grundstellung');
+    await setRotors((await notebook.getByRole('group', { name: 'Grundstellung' }).textContent())!);
+    const verfahren = (await notebook.getByRole('group', { name: 'Lower row' }).textContent())!.slice(0, 3);
+    await typeLetters(verfahren, notebook);
+    await expect(step).toHaveText('Set the Spruchschlüssel');
+    await setRotors((await notebook.getByRole('group', { name: 'Spruchschlüssel' }).textContent())!);
+    await expect(step).toHaveText('Type the message');
   };
 
-  await panel.getByRole('button', { name: 'Send a message' }).click();
-  await panel.getByRole('button', { name: 'Random' }).click();
-  await panel.getByRole('button', { name: 'Encrypt indicator' }).click();
+  await notebook.getByRole('button', { name: 'Send a message' }).click();
+  await notebook.getByRole('button', { name: 'Random' }).click();
+  await notebook.getByRole('button', { name: 'Encrypt indicator' }).click();
   await runMessageKey();
   await typeLetters('WETTERXX');
-  await panel.getByRole('button', { name: 'Finish' }).click();
-  const message = (await panel.getByRole('status', { name: 'Radio message' }).textContent())!;
+  await notebook.getByRole('button', { name: 'Finish' }).click();
+  const message = (await notebook.getByRole('status', { name: 'Radio message' }).textContent())!;
   expect(message).toMatch(/^\d{4} = 24 = ([A-Z]{4} ){5}[A-Z]{4}$/);
-  await panel.getByRole('button', { name: 'Copy' }).click();
-  await expect(panel.getByRole('button', { name: 'Copied' })).toBeVisible();
+  await notebook.getByRole('button', { name: 'Copy' }).click();
+  await expect(notebook.getByRole('button', { name: 'Copied' })).toBeVisible();
   expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(message);
 
-  await panel.getByRole('button', { name: 'New message' }).click();
+  await notebook.getByRole('button', { name: 'New message' }).click();
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
   await page.getByRole('button', { name: 'Switch' }).click();
   await expect(page.getByLabel('Daily key', { exact: true })).toHaveCount(0);
-  await panel.getByRole('textbox', { name: 'Received message' }).fill(message);
-  await panel.getByLabel('Date').fill('1945-03-01');
-  await panel.getByRole('button', { name: 'Find key' }).click();
-  await panel.getByRole('list', { name: 'Matching keys' }).getByRole('button', { name: 'Receive with this key' }).click();
+  await notebook.getByRole('tab', { name: 'Decrypt' }).click();
+  await notebook.getByRole('textbox', { name: 'Received message' }).fill(message);
+  await notebook.getByLabel('Date').fill('1945-03-01');
+  await notebook.getByRole('button', { name: 'Find key' }).click();
+  await notebook.getByRole('list', { name: 'Matching keys' }).getByRole('button', { name: 'Receive with this key' }).click();
   await expect(page.getByLabel('Daily key', { exact: true })).toHaveText(/^Key: Triton 1945-03, day 1 · Grundstellung [A-Z]{3}$/);
   await runMessageKey();
   const cipher = message.split(' = ')[2].split(' ').slice(2, 4).join('');
-  await typeLetters(cipher);
+  await typeLetters(cipher, notebook);
 
-  await expect(panel.getByRole('region', { name: 'Message pad' })).toContainText('WETT ERXX');
-  await panel.getByRole('button', { name: 'New message' }).click();
-  await page.getByRole('button', { name: 'Operator mode' }).click();
+  await expect(notebook.getByRole('group', { name: 'Plaintext' })).toHaveText('WETT ERXX');
+  await notebook.getByRole('button', { name: 'New message' }).click();
+  await notebook.close();
+  expect(app.windows()).toHaveLength(1);
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
   await page.getByRole('button', { name: 'Switch' }).click();
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');

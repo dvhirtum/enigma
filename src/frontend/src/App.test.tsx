@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
-import { createFakeApi } from './test/fakeApi';
+import { createFakeApi, defaultM3 } from './test/fakeApi';
 
 describe('App', () => {
   it('shows a starting screen while the backend starts', async () => {
@@ -19,6 +19,25 @@ describe('App', () => {
 
     expect(await screen.findByRole('tablist', { name: 'Views' })).toBeInTheDocument();
     expect(await screen.findByText('Backend v1.2.3')).toBeInTheDocument();
+  });
+
+  it("shows the operator's notebook in the notebook window", async () => {
+    const { api } = createFakeApi();
+
+    render(<App api={api} page="notebook" />);
+
+    expect(await screen.findByRole('tablist', { name: 'Notebook' })).toBeInTheDocument();
+    expect(screen.queryByRole('tablist', { name: 'Views' })).not.toBeInTheDocument();
+  });
+
+  it('follows the machine state changed in another window', async () => {
+    const { api, pushState } = createFakeApi();
+    render(<App api={api} />);
+    await screen.findByText('M3 · UKW B · I II III');
+
+    act(() => pushState({ ...defaultM3, reflector: 'C' }));
+
+    expect(screen.getByLabelText('Machine')).toHaveTextContent('M3 · UKW C · I II III');
   });
 
   it('shows the error screen when the backend stops', async () => {
