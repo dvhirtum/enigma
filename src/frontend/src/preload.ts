@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { BackendStatus, EnigmaApi } from './api';
+import type { BackendStatus, EnigmaApi, MachineState } from './api';
 
 const invoke = <T>(channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args) as Promise<T>;
 
@@ -46,6 +46,19 @@ const api: EnigmaApi = {
     saveKeySheet: (name, content) => invoke('files:saveKeySheet', name, content),
     printKeySheet: (name, html) => invoke('files:printKeySheet', name, html),
     printToFolder: (documents) => invoke('files:printToFolder', documents),
+  },
+  windows: {
+    openNotebook: () => invoke('windows:openNotebook'),
+    onMachineState: (listener) => {
+      const handler = (_event: IpcRendererEvent, state: MachineState) => listener(state);
+      ipcRenderer.on('machine:state', handler);
+      return () => ipcRenderer.removeListener('machine:state', handler);
+    },
+    onKeySheetsChanged: (listener) => {
+      const handler = () => listener();
+      ipcRenderer.on('keySheets:changed', handler);
+      return () => ipcRenderer.removeListener('keySheets:changed', handler);
+    },
   },
   backend: {
     status: () => invoke('backend:status'),

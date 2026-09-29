@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { ErrorToast } from './ErrorToast';
 import { models, slots } from './machine';
 import { KeySheetPanel } from './panels/KeySheetPanel';
-import { OperatorPanel } from './panels/OperatorPanel';
 import { useMachine } from './store';
 import { InstructionsView } from './views/InstructionsView';
 import { OpenLidView } from './views/OpenLidView';
@@ -55,8 +55,6 @@ function OperatorIcon() {
     </svg>
   );
 }
-
-type Panel = 'keySheets' | 'operator';
 
 function AppliedKeyLabel() {
   const key = useMachine((store) => store.machine?.appliedKey);
@@ -113,32 +111,12 @@ function ModelSwitch() {
   );
 }
 
-function ErrorBanner() {
-  const error = useMachine((store) => store.error);
-  const dismiss = useMachine((store) => store.dismissError);
-  if (!error) {
-    return null;
-  }
-
-  return (
-    <div className="error" role="alert">
-      <span>
-        {error.title}
-        {error.detail && ` ${error.detail}`}
-      </span>
-      <button type="button" onClick={dismiss}>
-        Dismiss
-      </button>
-    </div>
-  );
-}
-
 export function MachineFrame() {
   const load = useMachine((store) => store.load);
   const version = useMachine((store) => store.version);
+  const openNotebook = useMachine((store) => store.openNotebook);
   const [selected, setSelected] = useState(0);
-  const [panel, setPanel] = useState<Panel | null>(null);
-  const toggle = (next: Panel) => setPanel(panel === next ? null : next);
+  const [keySheetsOpen, setKeySheetsOpen] = useState(false);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
@@ -166,15 +144,7 @@ export function MachineFrame() {
         <MachineSummary />
         <AppliedKeyLabel />
         <div className="panel-toggles">
-          <button
-            type="button"
-            className="panel-toggle"
-            aria-label="Operator mode"
-            title="Operator mode"
-            aria-expanded={panel === 'operator'}
-            aria-controls="operator-panel"
-            onClick={() => toggle('operator')}
-          >
+          <button type="button" className="panel-toggle" aria-label="Operator's notebook" title="Operator's notebook" onClick={() => void openNotebook()}>
             <OperatorIcon />
           </button>
           <button
@@ -182,11 +152,11 @@ export function MachineFrame() {
             className="panel-toggle"
             aria-label="Key sheets"
             title="Key sheets"
-            aria-expanded={panel === 'keySheets'}
+            aria-expanded={keySheetsOpen}
             aria-controls="key-sheet-panel"
-            onClick={() => toggle('keySheets')}
+            onClick={() => setKeySheetsOpen(!keySheetsOpen)}
           >
-            <PanelIcon open={panel === 'keySheets'} />
+            <PanelIcon open={keySheetsOpen} />
           </button>
         </div>
       </header>
@@ -209,15 +179,12 @@ export function MachineFrame() {
           </button>
         ))}
       </nav>
-      <ErrorBanner />
+      <ErrorToast className="error" />
       <main role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`}>
         <View />
       </main>
-      <aside id="key-sheet-panel" className="side-panel" aria-label="Key sheets" hidden={panel !== 'keySheets'}>
-        {panel === 'keySheets' && <KeySheetPanel />}
-      </aside>
-      <aside id="operator-panel" className="side-panel" aria-label="Operator mode" hidden={panel !== 'operator'}>
-        {panel === 'operator' && <OperatorPanel />}
+      <aside id="key-sheet-panel" className="side-panel" aria-label="Key sheets" hidden={!keySheetsOpen}>
+        {keySheetsOpen && <KeySheetPanel />}
       </aside>
       <footer>{version && `Backend v${version}`}</footer>
     </div>

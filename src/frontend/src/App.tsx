@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { BackendStatus, EnigmaApi } from './api';
 import { MachineFrame } from './MachineFrame';
+import { Notebook } from './notebook/Notebook';
 import { MachineStoreProvider } from './store';
 
 function useBackendStatus(api: EnigmaApi): BackendStatus {
@@ -23,7 +24,10 @@ function useBackendStatus(api: EnigmaApi): BackendStatus {
   return status;
 }
 
-export function App({ api }: { api: EnigmaApi }) {
+export type Page = 'machine' | 'notebook';
+
+/** The machine window, or the operator's notebook window. */
+export function App({ api, page = 'machine' }: { api: EnigmaApi; page?: Page }) {
   const status = useBackendStatus(api);
 
   if (status.state === 'starting') {
@@ -47,8 +51,6 @@ export function App({ api }: { api: EnigmaApi }) {
   }
 
   return (
-    <MachineStoreProvider api={api}>
-      <MachineFrame />
-    </MachineStoreProvider>
+    <MachineStoreProvider api={api}>{page === 'notebook' ? <Notebook /> : <MachineFrame />}</MachineStoreProvider>
   );
 }

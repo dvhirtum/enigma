@@ -1,5 +1,7 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { createMachineStore } from './store';
+import { createMachineStore, MachineStoreProvider, useMachine } from './store';
 import { createFakeApi, defaultM3 } from './test/fakeApi';
 
 describe('machine store', () => {
@@ -108,5 +110,21 @@ describe('machine store', () => {
 
     expect(api.procedure.getBook).toHaveBeenCalledTimes(1);
     expect(store.getState().books.book.allotments[0].network).toBe('Triton');
+  });
+});
+
+describe('machine store provider', () => {
+  it('forgets the Kenngruppenbuecher and reloads the key sheets when another window changes the key sheets', async () => {
+    const { api, pushKeySheetsChanged } = createFakeApi();
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(MachineStoreProvider, { api, children });
+    const { result } = renderHook(() => useMachine((store) => store), { wrapper });
+    await act(() => result.current.loadBook('book'));
+
+    act(() => pushKeySheetsChanged());
+
+    expect(result.current.books).toEqual({});
+    await waitFor(() => expect(api.keySheets.list).toHaveBeenCalledTimes(1));
+    await act(() => result.current.loadBook('book'));
+    expect(api.procedure.getBook).toHaveBeenCalledTimes(2);
   });
 });

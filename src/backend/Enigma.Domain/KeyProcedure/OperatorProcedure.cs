@@ -28,6 +28,7 @@ public sealed record OperatorContext(string Network, RotorPositions Grundstellun
 public sealed class OperatorProcedure
 {
     private readonly List<Letter> _spruchschluesselLamps = [];
+    private readonly List<Letter> _typed = [];
     private readonly List<Letter> _pad = [];
     private readonly List<string> _warnings = [];
     private RotorPositions? _afterLastKey;
@@ -60,6 +61,9 @@ public sealed class OperatorProcedure
     public IReadOnlyList<Letter> SpruchschluesselLamps => _spruchschluesselLamps;
 
     public MessageKey? MessageKey { get; private set; }
+
+    /// <summary>The keys typed for the message: plaintext when sending, cipher text when receiving.</summary>
+    public IReadOnlyList<Letter> Typed => _typed;
 
     /// <summary>The lamps lit while typing the message: cipher text when sending, plaintext when receiving.</summary>
     public IReadOnlyList<Letter> Pad => _pad;
@@ -207,6 +211,7 @@ public sealed class OperatorProcedure
             return;
         }
 
+        _typed.Add(key);
         _pad.Add(lamp);
         if (Direction == OperatorDirection.Receive && _pad.Count == Message!.CipherText.Length)
         {

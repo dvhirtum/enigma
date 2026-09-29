@@ -6,10 +6,21 @@ import { createBackend } from './backend';
 import { registerIpc } from './ipc';
 import { harden } from './security';
 
-const createWindow = () => {
-  const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+let mainWindow: BrowserWindow | null = null;
+let notebookWindow: BrowserWindow | null = null;
+
+/** Loads the renderer; `hash` picks the page it shows. */
+function load(window: BrowserWindow, hash?: string): void {
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    void window.loadURL(hash ? `${MAIN_WINDOW_VITE_DEV_SERVER_URL}#${hash}` : MAIN_WINDOW_VITE_DEV_SERVER_URL);
+  } else {
+    void window.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`), { hash });
+  }
+}
+
+function createWindow(options: Electron.BrowserWindowConstructorOptions): BrowserWindow {
+  return new BrowserWindow({
+    ...options,
     icon: nativeImage.createFromDataURL(icon),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -18,31 +29,49 @@ const createWindow = () => {
       sandbox: true,
     },
   });
+}
 
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    void mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
-  } else {
-    void mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+const createMainWindow = () => {
+  mainWindow = createWindow({ width: 1200, height: 800 });
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    notebookWindow?.close();
+  });
+  load(mainWindow);
+};
+
+/** Opens the operator's notebook, or brings it to the front. */
+const openNotebook = () => {
+  if (notebookWindow) {
+    if (notebookWindow.isMinimized()) {
+      notebookWindow.restore();
+    }
+    notebookWindow.focus();
+    return;
   }
+  notebookWindow = createWindow({ width: 760, height: 900, minWidth: 560, minHeight: 480 });
+  notebookWindow.on('closed', () => {
+    notebookWindow = null;
+  });
+  load(notebookWindow, 'notebook');
 };
 
 const run = () => {
   const backend = createBackend();
-  registerIpc(backend);
+  registerIpc(backend, { openNotebook });
 
   void app.whenReady().then(() => {
     harden(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     Menu.setApplicationMenu(null);
-    createWindow();
+    createMainWindow();
   });
 
   app.on('second-instance', () => {
-    const [window] = BrowserWindow.getAllWindows();
-    if (window) {
-      if (window.isMinimized()) {
-        window.restore();
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
       }
-      window.focus();
+      mainWindow.focus();
     }
   });
 
@@ -54,7 +83,7 @@ const run = () => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createMainWindow();
     }
   });
 

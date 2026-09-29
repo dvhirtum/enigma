@@ -1,0 +1,445 @@
+@font-face {
+  font-family: 'Kalam';
+  src: url('../../assets/fonts/Kalam-Regular.ttf') format('truetype');
+}
+
+/* Every block is a whole number of squares high, so handwriting sits in the squares of the paper. */
+.notebook {
+  --sq: 24px;
+  --desk: #4a4238;
+  --paper: #f8f4e6;
+  --grid: #c8d7e3;
+  --margin-line: #e0a0a0;
+  --print: #2a2926;
+  --print-muted: #6f6a60;
+  --pencil: #2f3d63;
+  --red-pencil: #9b2c22;
+  --highlight: rgb(255 226 90 / 0.55);
+  color-scheme: light;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: calc(var(--sq) / 2) var(--sq) var(--sq);
+  background: var(--desk);
+  color: var(--print);
+  font-size: 15px;
+  line-height: var(--sq);
+}
+
+@media (prefers-color-scheme: dark) {
+  .notebook {
+    --desk: #221f1b;
+  }
+}
+
+.notebook-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding-left: calc(var(--sq) * 3);
+}
+
+.notebook-tabs [role='tab'] {
+  padding: 0.35rem 1.25rem 0.25rem;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  background: #d8cfb6;
+  color: var(--print-muted);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.notebook-tabs [role='tab'][aria-selected='true'] {
+  background: var(--paper);
+  color: var(--print);
+}
+
+.notebook-tabs [role='tab']:focus-visible {
+  outline: 2px solid var(--pencil);
+  outline-offset: -4px;
+}
+
+/* Floats over the page so it does not move. */
+.notebook-error {
+  position: fixed;
+  top: calc(var(--sq) * 2.5);
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - var(--sq) * 2);
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  background: #f7dcd6;
+  color: #7a1f12;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+  transform: translateX(-50%);
+}
+
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sq);
+  min-height: calc(100vh - var(--sq) * 4);
+  box-sizing: border-box;
+  padding: var(--sq) var(--sq) calc(var(--sq) * 2) calc(var(--sq) * 3);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, transparent calc(var(--sq) * 2.5 - 1px), var(--margin-line) calc(var(--sq) * 2.5 - 1px), var(--margin-line) calc(var(--sq) * 2.5 + 1px), transparent calc(var(--sq) * 2.5 + 1px)),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    var(--sq) var(--sq),
+    var(--sq) var(--sq);
+  box-shadow: 0 3px 12px rgb(0 0 0 / 0.45);
+}
+
+.page p,
+.page h3,
+.page h4,
+.page ol,
+.page ul {
+  margin: 0;
+}
+
+.page h4 {
+  color: var(--print-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-key {
+  color: var(--print-muted);
+}
+
+.page button,
+.page select,
+.page input:not(.hand-input) {
+  box-sizing: border-box;
+  height: var(--sq);
+  padding: 0 0.6rem;
+  border: 1px solid var(--print-muted);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--print);
+  font: inherit;
+  line-height: calc(var(--sq) - 2px);
+}
+
+.page select,
+.page input:not(.hand-input) {
+  padding: 0 0.3rem;
+}
+
+.page button:not(:disabled) {
+  cursor: pointer;
+}
+
+.page button:not(:disabled):hover {
+  background: #efe7cf;
+}
+
+.page button:disabled {
+  opacity: 0.5;
+}
+
+.notebook-form,
+.notebook-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sq);
+}
+
+.notebook-section {
+  gap: 0;
+}
+
+.notebook-form > label {
+  display: flex;
+  flex-direction: column;
+  color: var(--print-muted);
+}
+
+.notebook-form > .inline-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notebook-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5rem;
+}
+
+.notebook-warning,
+.notebook-warnings {
+  color: var(--red-pencil);
+}
+
+.notebook-warnings {
+  padding-left: 1.25rem;
+}
+
+/* Handwriting */
+
+.hand,
+.square,
+.hand-input,
+.picker-grid button {
+  font-family: 'Kalam', cursive;
+  color: var(--pencil);
+}
+
+.hand {
+  font-size: 19px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+}
+
+.squares {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.squares-group {
+  display: flex;
+}
+
+.squares-stacked {
+  flex-direction: column;
+}
+
+.square {
+  display: block;
+  width: var(--sq);
+  height: var(--sq);
+  font-size: 20px;
+  line-height: calc(var(--sq) + 3px);
+  text-align: center;
+  white-space: pre;
+}
+
+.field {
+  display: flex;
+  align-items: flex-start;
+}
+
+.field-label {
+  flex: none;
+  width: calc(var(--sq) * 7);
+  color: var(--print-muted);
+}
+
+.field .squares {
+  flex: 1;
+}
+
+.hand-input {
+  box-sizing: border-box;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: var(--sq);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hand-input:focus {
+  outline: none;
+  background: rgb(47 61 99 / 0.06);
+}
+
+.hand-input::placeholder {
+  color: rgb(47 61 99 / 0.35);
+}
+
+textarea.hand-input {
+  width: 100%;
+  resize: none;
+  word-spacing: 0.4em;
+}
+
+input.hand-input.fillers {
+  width: calc(var(--sq) * 2);
+  height: var(--sq);
+  letter-spacing: 0.3em;
+  text-align: center;
+  box-shadow: inset 0 -1px var(--pencil);
+}
+
+/* Steps, each with its contents, ticked off in the margin */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sq);
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps > li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sq);
+  counter-increment: step;
+}
+
+.page .step-title {
+  width: fit-content;
+  padding-right: 0.25rem;
+  color: var(--print);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.step-title::before {
+  content: counter(step) '.';
+  display: inline-block;
+  width: var(--sq);
+}
+
+.steps > li:not([data-done], [aria-current='step']) .step-title {
+  color: var(--print-muted);
+  font-weight: normal;
+}
+
+.steps > li[data-done]::after {
+  content: '✓';
+  position: absolute;
+  top: 0;
+  left: calc(var(--sq) * -2);
+  width: var(--sq);
+  color: var(--pencil);
+  font-family: 'Kalam', cursive;
+  font-size: 22px;
+  text-align: center;
+}
+
+.steps > li[aria-current='step'] .step-title {
+  background: linear-gradient(transparent 20%, var(--highlight) 20%, var(--highlight) 85%, transparent 85%);
+}
+
+/* Kenngruppenbuch */
+
+.picker {
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--print-muted);
+}
+
+.picker-heading label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, calc(var(--sq) * 4));
+}
+
+.page .picker-grid button {
+  position: relative;
+  width: calc(var(--sq) * 3);
+  height: var(--sq);
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  letter-spacing: 0.25em;
+  line-height: calc(var(--sq) + 3px);
+}
+
+.page .picker-grid button:hover {
+  background: rgb(47 61 99 / 0.08);
+}
+
+.picker-grid button[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  inset: 1px -3px;
+  border: 2px solid var(--red-pencil);
+  border-radius: 50%;
+  transform: rotate(-3deg);
+}
+
+/* Indicator */
+
+.indicator {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sq);
+}
+
+.indicator-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.indicator-swaps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--sq);
+}
+
+/* Keys and lamps: the letters typed with the lamps they lit underneath */
+
+.keys-lamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sq);
+}
+
+.keys-lamps-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.keys-lamps-row {
+  display: flex;
+}
+
+.keys-lamps-lamp .square {
+  color: var(--red-pencil);
+}
+
+.keys-lamps [aria-current='true'] {
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--red-pencil);
+}
+
+.radio-message {
+  display: block;
+}
+
+.receiving-keys {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sq);
+  padding: 0;
+  list-style: none;
+}
+
+.receiving-keys li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}

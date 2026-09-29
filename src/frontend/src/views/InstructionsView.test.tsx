@@ -13,8 +13,8 @@ describe('InstructionsView', () => {
   it('opens a linked page and returns to the contents', () => {
     render(<InstructionsView />);
 
-    fireEvent.click(screen.getByRole('link', { name: 'Operator mode' }));
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Operator mode');
+    fireEvent.click(screen.getByRole('link', { name: "Operator's notebook" }));
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("Operator's notebook");
 
     fireEvent.click(screen.getByRole('link', { name: 'Back to the contents' }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Enigma user guide');

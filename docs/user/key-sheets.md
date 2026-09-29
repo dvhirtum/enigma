@@ -9,7 +9,7 @@ A key sheet (Schlüsseltafel) holds one month of daily keys for one network. Ope
 - **Generate** creates a whole year for a model: one sheet per month for each network of the Kenngruppenbuch (Aegir, Hydra, Medusa, Neptun, Niobe, Sleipnir, Süd, Thetis, Tibet and Triton). The rotor order, reflector and rings change every other day; the plugs (10 pairs) and the Grundstellung change daily. A year can be generated once per model; delete its generated sheets to generate it again.
 - **Import** reads a key sheet file (JSON), such as one saved with **Export**. To make your own sheet, edit an exported file and import it.
 
-Each sheet is linked to a Kenngruppenbuch and a set of Tauschtafeln, which [operator mode](operator-mode.md) uses. A network gets its own columns in the Kenngruppenbuch the first time it is used.
+Each sheet is linked to a Kenngruppenbuch and a set of Tauschtafeln, which the [operator's notebook](operator-mode.md) uses. A network gets its own columns in the Kenngruppenbuch the first time it is used.
 
 ## Working with a sheet
 
@@ -92,6 +92,6 @@ Check the Verfahrenkenngruppe the same way. Its column number must be 100 or low
 
 ## Sharing a sheet
 
-To exchange messages with someone who has the application on another computer, **Export** a sheet and give them the file (compact JSON, without whitespace). They **Import** it. The file holds the daily keys, the Kenngruppenbuch and the Tauschtafeln, so both of you use the same key, Kenngruppen and bigram tables. Messages sent by one can then be received by the other, in operator mode or [by hand](receiving-by-hand.md).
+To exchange messages with someone who has the application on another computer, **Export** a sheet and give them the file (compact JSON, without whitespace). They **Import** it. The file holds the daily keys, the Kenngruppenbuch and the Tauschtafeln, so both of you use the same key, Kenngruppen and bigram tables. Messages sent by one can then be received by the other, in the operator's notebook or [by hand](receiving-by-hand.md).
 
 Share further sheets the same way. When the Kenngruppenbuch is already there, importing adds the networks it lacks. The import is rejected if the file's Kenngruppenbuch or Tauschtafeln clash with the ones on the computer, for example when both sides gave the same columns to different networks. To avoid that, let one person create the sheets for everyone.

@@ -113,6 +113,7 @@ public sealed class OperatorHandlerTests
         Assert.Equal(spruchschluessel, afterVerfahren.Operator.Spruchschluessel);
         Assert.Equal("TypeMessage", atSpruchschluessel.Operator!.Step);
         Assert.Equal("Done", done.Operator!.Step);
+        Assert.Equal("WETTERXX", done.Operator.Typed);
         Assert.Equal(cipher, done.Operator.Pad);
         Assert.Equal($"1840 = 24 = {chosen.Operator.Indicator} {cipher[..4]} {cipher[4..]} {chosen.Operator.Indicator}", done.Operator.Message);
     }
@@ -165,6 +166,7 @@ public sealed class OperatorHandlerTests
         Assert.Equal(schluessel, received.Operator.Schluesselkenngruppe);
         Assert.Empty(received.Operator.Warnings);
         Assert.Equal("Done", state.Operator!.Step);
+        Assert.Equal(received.Operator.CipherText, state.Operator.Typed);
         Assert.Equal("FUNKSPRUCHXX", state.Operator.Pad);
     }
 

@@ -2,7 +2,7 @@
 
 [Back to the contents](README.md)
 
-This page walks through the Navy procedure the way an operator worked it: with the machine and the printed documents only, not [operator mode](operator-mode.md). You need:
+This page walks through the Navy procedure the way an operator worked it: with the machine and the printed documents only, not the [operator's notebook](operator-mode.md). You need:
 
 - the **key sheet** (Schlüsseltafel) for your network and month,
 - the **Kenngruppenbuch** and the **Tauschtafeln** for the year,
@@ -10,7 +10,7 @@ This page walks through the Navy procedure the way an operator worked it: with t
 
 Print them with **Print to PDF** in the key sheet panel, with **Also print the Kenngruppenbuch and Tauschtafeln** ticked (see [Printing a sheet](key-sheets.md#printing-a-sheet)).
 
-If operator mode is running, click **Cancel** first, because it rejects keys it doesn't expect.
+If a message is in progress in the operator's notebook, click **Cancel** first, because it rejects keys it doesn't expect.
 
 The worked example runs through every step with values you can check on your own machine.
 
