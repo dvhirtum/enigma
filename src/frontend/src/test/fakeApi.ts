@@ -117,6 +117,7 @@ export function summaryOf({ id, network, month, model, provenance, source, readO
 export function createFakeApi(status: BackendStatus = { state: 'running' }) {
   const listeners = new Set<(status: BackendStatus) => void>();
   const stateListeners = new Set<(state: MachineState) => void>();
+  const keySheetListeners = new Set<() => void>();
   const ok = (value: MachineState = defaultM3) => vi.fn().mockResolvedValue({ ok: true, value });
   const sheet = (value: KeySheet = generatedSheet) => vi.fn().mockResolvedValue({ ok: true, value });
 
@@ -169,6 +170,10 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
         stateListeners.add(listener);
         return () => stateListeners.delete(listener);
       }),
+      onKeySheetsChanged: vi.fn((listener: () => void) => {
+        keySheetListeners.add(listener);
+        return () => keySheetListeners.delete(listener);
+      }),
     },
     backend: {
       status: vi.fn().mockResolvedValue(status),
@@ -182,6 +187,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
 
   const pushStatus = (next: BackendStatus) => listeners.forEach((listener) => listener(next));
   const pushState = (next: MachineState) => stateListeners.forEach((listener) => listener(next));
+  const pushKeySheetsChanged = () => keySheetListeners.forEach((listener) => listener());
 
-  return { api, pushStatus, pushState };
+  return { api, pushStatus, pushState, pushKeySheetsChanged };
 }

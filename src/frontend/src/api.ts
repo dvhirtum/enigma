@@ -215,6 +215,8 @@ export interface WindowsApi {
   openNotebook: () => Promise<void>;
   /** Listens for machine states changed by another window. */
   onMachineState: (listener: (state: MachineState) => void) => () => void;
+  /** Listens for key sheets generated, imported or deleted by another window. */
+  onKeySheetsChanged: (listener: () => void) => () => void;
 }
 
 export interface BackendApi {

@@ -269,10 +269,18 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
 
 const MachineStoreContext = createContext<StoreApi<MachineStore> | null>(null);
 
-/** Provides the machine store, which follows machine states changed by other windows. */
+/** Provides the machine store, which follows machine states and key sheets changed by other windows. */
 export function MachineStoreProvider({ api, children }: { api: EnigmaApi; children: ReactNode }) {
   const [store] = useState(() => createMachineStore(api));
   useEffect(() => api.windows.onMachineState((machine) => store.setState({ machine })), [api, store]);
+  useEffect(
+    () =>
+      api.windows.onKeySheetsChanged(() => {
+        store.setState({ books: {} });
+        void store.getState().loadKeySheets();
+      }),
+    [api, store],
+  );
   return <MachineStoreContext.Provider value={store}>{children}</MachineStoreContext.Provider>;
 }
 

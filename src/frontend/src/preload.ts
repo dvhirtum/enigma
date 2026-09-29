@@ -54,6 +54,11 @@ const api: EnigmaApi = {
       ipcRenderer.on('machine:state', handler);
       return () => ipcRenderer.removeListener('machine:state', handler);
     },
+    onKeySheetsChanged: (listener) => {
+      const handler = () => listener();
+      ipcRenderer.on('keySheets:changed', handler);
+      return () => ipcRenderer.removeListener('keySheets:changed', handler);
+    },
   },
   backend: {
     status: () => invoke('backend:status'),
