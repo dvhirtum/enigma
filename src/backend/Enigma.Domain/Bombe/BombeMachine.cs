@@ -102,15 +102,20 @@ public sealed class BombeMachine
     /// </summary>
     public IEnumerable<BombeStop> Run()
     {
-        const int Square = Letter.Count * Letter.Count;
         for (var step = 0; step < DrumPosition.Count; step++)
         {
-            var (upper, rest) = (step % Letter.Count, step / Letter.Count);
-            var offset = (upper * Square) + ((rest % Letter.Count) * Letter.Count) + (rest / Letter.Count);
-            if (Test(DrumPosition.FromOffset(offset)) is { } stop)
+            if (Test(PositionAt(step)) is { } stop)
             {
                 yield return stop;
             }
         }
+    }
+
+    /// <summary>The drum position tested at <paramref name="step"/> (0 to 17,575) of a run.</summary>
+    public static DrumPosition PositionAt(int step)
+    {
+        const int Square = Letter.Count * Letter.Count;
+        var (upper, rest) = (step % Letter.Count, step / Letter.Count);
+        return DrumPosition.FromOffset((upper * Square) + ((rest % Letter.Count) * Letter.Count) + (rest / Letter.Count));
     }
 }

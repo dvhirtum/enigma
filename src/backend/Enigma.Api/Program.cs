@@ -1,10 +1,12 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Enigma.Api;
+using Enigma.Application.Bombe;
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
 using Enigma.Application.OperatorMode;
 using Enigma.Application.Procedure;
+using Enigma.Infrastructure.Bombe;
 using Enigma.Infrastructure.Machine;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -19,6 +21,8 @@ builder.Services.AddSingleton<IMachineSessionStore, InMemoryMachineSessionStore>
 builder.Services.AddMachineHandlers();
 builder.Services.AddKeySheets(builder.Configuration);
 builder.Services.AddOperatorHandlers();
+builder.Services.AddSingleton<IBombeSessionStore, InMemoryBombeSessionStore>();
+builder.Services.AddBombeHandlers();
 
 var app = builder.Build();
 
@@ -31,6 +35,7 @@ app.MapGet("/api/health", () => new HealthResponse("ok", version));
 app.MapMachineEndpoints();
 app.MapKeySheetEndpoints();
 app.MapOperatorEndpoints();
+app.MapBombeEndpoints();
 
 app.Lifetime.ApplicationStarted.Register(() =>
 {
@@ -68,4 +73,13 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(IReadOnlyList<ReceivingKey>))]
 [JsonSerializable(typeof(StartReceiving))]
 [JsonSerializable(typeof(ChooseGroups))]
+[JsonSerializable(typeof(BombeState))]
+[JsonSerializable(typeof(RunState))]
+[JsonSerializable(typeof(IReadOnlyList<StopState>))]
+[JsonSerializable(typeof(SetCipherText))]
+[JsonSerializable(typeof(SetCrib))]
+[JsonSerializable(typeof(PlacementRequest))]
+[JsonSerializable(typeof(SetMenu))]
+[JsonSerializable(typeof(ConfigureBombe))]
+[JsonSerializable(typeof(SpeedRequest))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;

@@ -192,8 +192,30 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 - `Menu`: 1–36 links (the 36 scramblers), one per offset, and the test register letter, which must be on the menu. `Loops` counts the closures of the part connected to the test register (links − letters + 1). `LoopsThrough(letter)` is the loops lost without that letter. `EstimatedStops(diagonalBoard)` estimates false stops per wheel order: 17,576 × (1 − e^−λ), with λ = 26^(1 − loops), times (600/676)^(letter pairs) with the diagonal board.
   - `Create(links)` puts the test register on the letter with the most links, then the most loops through it, then A–Z.
   - `Build(placement)` takes the connected part with the fewest estimated stops. Above 36 links it drops the links at chain ends first, then links on loops, the last offsets first.
-- `BombeMachine`: a scrambler, a menu, the input letter and the diagonal board switch. Each letter has a cable of 26 wires; a link's scrambler joins wire x of one cable to wire scrambler(x) of the other, and the diagonal board joins wire b of cable a to wire a of cable b. `Test(position)` makes the input wire live, spreads the current and stops when not all 26 test register wires are live. `Run()` tests all 17,576 positions from ZZZ, the upper drum fastest.
+- `BombeMachine`: a scrambler, a menu, the input letter and the diagonal board switch. Each letter has a cable of 26 wires; a link's scrambler joins wire x of one cable to wire scrambler(x) of the other, and the diagonal board joins wire b of cable a to wire a of cable b. `Test(position)` makes the input wire live, spreads the current and stops when not all 26 test register wires are live. `Run()` tests all 17,576 positions from ZZZ, the upper drum fastest; `PositionAt(step)` gives the position of each step.
 - `BombeStop`: the wheel order, drum position, test register and live wires. `Stecker` is the only live wire, or the only dead one when 25 are live.
+- `BombeJob`: the cipher text, crib, placement, menu and run settings: input letter (A, or B when the test register is A, unless set), diagonal board (on), reflector (B or C, default B) and wheel orders (all 336 by default). A new cipher text or crib clears the placement and menu. Placing the crib rejects crashes and builds the menu; a menu set by hand takes links of the placement only (either letter first).
+
+### Application and API: Bombe
+- `IBombeSessionStore` holds one job and its latest run (`InMemoryBombeSessionStore`).
+- `BombeRun` runs the menu over the job's wheel orders in the background. The speed is in positions per second, or null for full speed. At full speed the wheel orders run in parallel (all 336 in about 3 s on 16 cores); at a set speed one runs at a time, paced by `TimeProvider`, and the progress shows the wheel order and drum position in hand. `HistoricalSpeed` is a wheel order in 20 minutes (14.6 positions per second). The speed can change while the run goes.
+- Changing the job is refused while the Bombe runs, and clears the stops of a finished run. There is one run at a time.
+- Stops are fetched from an index on, as a run with a poor menu can have hundreds of thousands.
+
+| Method | Path | Body |
+|---|---|---|
+| GET | `/api/bombe` | |
+| PUT | `/api/bombe/cipher-text` | `{ text }` |
+| PUT | `/api/bombe/crib` | `{ crib }` |
+| PUT | `/api/bombe/placement` | `{ position }` |
+| PUT | `/api/bombe/menu` | `{ links, testRegister? }` |
+| POST | `/api/bombe/menu/build` | |
+| PUT | `/api/bombe/settings` | `{ input?, diagonalBoard, reflector, wheelOrders }` |
+| POST | `/api/bombe/run` | `{ speed? }` |
+| PUT | `/api/bombe/run/speed` | `{ speed? }` |
+| DELETE | `/api/bombe/run` | |
+| GET | `/api/bombe/run` | |
+| GET | `/api/bombe/run/stops?from=` | |
 
 ## Testing
 
