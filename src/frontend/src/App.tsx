@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { BackendStatus, EnigmaApi } from './api';
+import { BombeFrame } from './bombe/BombeFrame';
 import { MachineFrame } from './MachineFrame';
+import { ActiveContext, ModeProvider, type Mode } from './mode';
 import { Notebook } from './notebook/Notebook';
 import { MachineStoreProvider } from './store';
 import { InstructionsView } from './views/InstructionsView';
@@ -59,7 +61,26 @@ export function App({ api, page = 'machine' }: { api: EnigmaApi; page?: Page }) 
     );
   }
 
+  return <MachineStoreProvider api={api}>{page === 'notebook' ? <Notebook /> : <Modes />}</MachineStoreProvider>;
+}
+
+const titles: Record<Mode, string> = { enigma: 'Enigma', bombe: 'Bombe' };
+
+/** The Enigma and Bombe frames. Both stay mounted, so each keeps its state while the other is shown. */
+function Modes() {
+  const [mode, setMode] = useState<Mode>('enigma');
+
+  useEffect(() => {
+    document.title = titles[mode];
+  }, [mode]);
+
   return (
-    <MachineStoreProvider api={api}>{page === 'notebook' ? <Notebook /> : <MachineFrame />}</MachineStoreProvider>
+    <ModeProvider value={{ mode, setMode }}>
+      {(['enigma', 'bombe'] as const).map((frame) => (
+        <div key={frame} className="mode-frame" hidden={frame !== mode}>
+          <ActiveContext.Provider value={frame === mode}>{frame === 'enigma' ? <MachineFrame /> : <BombeFrame />}</ActiveContext.Provider>
+        </div>
+      ))}
+    </ModeProvider>
   );
 }

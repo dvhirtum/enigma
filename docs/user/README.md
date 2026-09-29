@@ -1,6 +1,6 @@
 # Enigma user guide
 
-This application simulates the Enigma M3 and M4 used by the Kriegsmarine. It covers the machine, the monthly key sheets and the Navy indicator procedure for sending and receiving messages.
+This application simulates the Enigma M3 and M4 used by the Kriegsmarine, and the Bombe that broke it. It covers the machine, the monthly key sheets, the Navy indicator procedure for sending and receiving messages, and breaking a message with the Bombe.
 
 These instructions open in their own window with the book button at the top right of the machine window. Examples of what the operator writes down are handwritten, as in the operator's notebook.
 
@@ -12,7 +12,8 @@ These instructions open in their own window with the book button at the top righ
 4. [Sending by hand](sending-by-hand.md): encrypting a message yourself, step by step, with a worked example.
 5. [Receiving by hand](receiving-by-hand.md): decrypting a message yourself, plus two historical messages to try.
 6. [Operator's notebook](operator-mode.md): the same procedures with the application guiding each step.
-7. [Glossary](glossary.md): the German terms used in the application.
+7. [The Bombe](bombe.md): switching to Bombe mode to break Enigma messages.
+8. [Glossary](glossary.md): the German terms used in the application.
 
 ## Quick start
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { alphabet } from './machine';
+import { useActive } from './mode';
 import { useMachine } from './store';
 
 export interface Keys {
@@ -60,9 +61,17 @@ function physicalKey(event: KeyboardEvent): string {
   return event.code || event.key.toUpperCase();
 }
 
-/** Presses the machine key for a letter typed on the physical keyboard, and releases it when that physical key goes up. */
+/**
+ * Presses the machine key for a letter typed on the physical keyboard, and releases it when that physical key goes up.
+ * Does nothing while its frame is not the active mode.
+ */
 export function usePhysicalKeyboard({ press, release }: Keys): void {
+  const active = useActive();
+
   useEffect(() => {
+    if (!active) {
+      return;
+    }
     let down: string | null = null;
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -101,5 +110,5 @@ export function usePhysicalKeyboard({ press, release }: Keys): void {
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
     };
-  }, [press, release]);
+  }, [active, press, release]);
 }
