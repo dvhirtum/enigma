@@ -155,9 +155,21 @@ function RunSettings({ bombe, locked }: { bombe: BombeState; locked: boolean }) 
   );
 }
 
+/** The speed slider. The speed is chosen when the drag or key press ends, not at every step on the way. */
 function SpeedControl() {
-  const speed = useMachine((store) => store.speed);
+  const chosen = useMachine((store) => store.speed);
   const chooseSpeed = useMachine((store) => store.chooseSpeed);
+  const [draft, setDraft] = useState<number | null>(null);
+  const step = draft ?? stepOf(chosen);
+  const speed = speedAt(step);
+
+  const commit = () => {
+    if (draft !== null) {
+      setDraft(null);
+      void chooseSpeed(speedAt(draft));
+    }
+  };
+
   return (
     <label className="speed">
       Speed
@@ -165,9 +177,12 @@ function SpeedControl() {
         type="range"
         min={0}
         max={fullSpeedStep}
-        value={stepOf(speed)}
+        value={step}
         aria-valuetext={formatSpeed(speed)}
-        onChange={(event) => void chooseSpeed(speedAt(Number(event.target.value)))}
+        onChange={(event) => setDraft(Number(event.target.value))}
+        onPointerUp={commit}
+        onKeyUp={commit}
+        onBlur={commit}
       />
       <span className="summary">{formatSpeed(speed)}</span>
     </label>

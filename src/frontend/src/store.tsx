@@ -145,15 +145,15 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }
       return result.ok;
     };
-    /** A run call; a poll leaves the error as it is unless the poll fails. */
+    /** A run call; a poll leaves the error as it is unless the poll fails. A run the backend no longer has is dropped. */
     const run = async (call: Promise<ApiResult<BombeRun>>, poll = false) => {
       const result = poll ? await settle(call) : await check(call);
       if (poll && !result.ok) {
         set({ error: result.problem });
       }
       const current = get().bombe;
-      if (result.ok && current) {
-        set({ bombe: { ...current, run: result.value } });
+      if (current && (result.ok || result.problem.status === 404)) {
+        set({ bombe: { ...current, run: result.ok ? result.value : null } });
       }
       return result.ok;
     };

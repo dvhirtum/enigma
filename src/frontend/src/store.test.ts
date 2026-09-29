@@ -200,6 +200,20 @@ describe('bombe runs', () => {
     expect(store.getState().bombe?.run?.status).toBe('Running');
   });
 
+  it('drops a run the backend no longer has', async () => {
+    const { api } = createFakeApi();
+    const problem = { status: 404, title: 'There is no run.' };
+    api.bombe.getState.mockResolvedValue({ ok: true, value: { ...carterMenu, run: carterPaused } });
+    api.bombe.getRun.mockResolvedValue({ ok: false, problem });
+    const store = createMachineStore(api);
+    await store.getState().loadBombe();
+
+    await store.getState().pollRun();
+
+    expect(store.getState().bombe?.run).toBeNull();
+    expect(store.getState().error).toEqual(problem);
+  });
+
   it('keeps the speed for the next run, and sends it to a running one', async () => {
     const { api } = createFakeApi();
     api.bombe.getState.mockResolvedValue({ ok: true, value: carterMenu });

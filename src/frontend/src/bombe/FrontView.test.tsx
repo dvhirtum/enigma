@@ -47,19 +47,27 @@ describe('FrontView', () => {
 
   it('starts a run at the chosen speed', async () => {
     const api = renderBombe(<FrontView />, carter);
-    fireEvent.change(await screen.findByRole('slider', { name: /Speed/ }), { target: { value: '40' } });
+    const slider = await screen.findByRole('slider', { name: /Speed/ });
+    fireEvent.change(slider, { target: { value: '40' } });
+    fireEvent.pointerUp(slider);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(api.bombe.startRun).toHaveBeenCalledWith(null));
   });
 
-  it('changes the speed of the running run', async () => {
+  it('changes the speed of the running run when the drag ends', async () => {
     const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
+    const slider = await screen.findByRole('slider', { name: /Speed/ });
 
-    fireEvent.change(await screen.findByRole('slider', { name: /Speed/ }), { target: { value: '40' } });
+    fireEvent.change(slider, { target: { value: '20' } });
+    fireEvent.change(slider, { target: { value: '40' } });
 
+    expect(screen.getByText('Full speed')).toBeInTheDocument();
+    expect(api.bombe.setRunSpeed).not.toHaveBeenCalled();
+    fireEvent.pointerUp(slider);
     await waitFor(() => expect(api.bombe.setRunSpeed).toHaveBeenCalledWith(null));
+    expect(api.bombe.setRunSpeed).toHaveBeenCalledOnce();
   });
 
   it('stops a run and locks the settings while it runs', async () => {
