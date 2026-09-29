@@ -5,11 +5,13 @@ import { ErrorToast } from '../ErrorToast';
 import { ModeSwitch, useActive } from '../mode';
 import { useMachine } from '../store';
 import { CribView } from './CribView';
+import { MenuView } from './MenuView';
 import { MessageView } from './MessageView';
 
 const views = [
   { id: 'bombe-message', label: 'Message', View: MessageView },
   { id: 'bombe-crib', label: 'Crib', View: CribView },
+  { id: 'bombe-menu', label: 'Menu', View: MenuView },
 ] as const;
 
 /** The Bombe mode: breaks Enigma messages from a crib. The job loads when the mode is first shown. */

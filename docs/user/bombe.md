@@ -31,3 +31,21 @@ The crib strip shows the cipher text with the crib under it. The Enigma never en
 - or click ◀ and ▶.
 
 Under the strip you see the position and the number of crashes. **Place crib** places the crib at a position without crashes and builds the menu from it.
+
+## The menu
+
+The **Menu** tab shows the menu built from the placed crib. Each crib letter and the cipher letter above it form a link, numbered by its place in the crib. On the Bombe one scrambler joins the two letters, set that many steps from the first (1 = ZZA). The drawing shows every link of the crib:
+
+- solid links are plugged up and tested,
+- dashed red links are plugged up but not connected to the test register letter, so they test nothing,
+- dotted grey links are not on the menu.
+
+Loops (closures) make a menu good. At a wrong position, each loop lets the current through with a chance of about 1 in 26, so more loops mean fewer false stops. The summary counts the links, letters and loops connected to the test register letter, and estimates the false stops per wheel order with and without the diagonal board.
+
+To change the menu:
+
+- click a link in the drawing, or tick it in the **Links** list, to plug it in or out,
+- click a letter on the menu to put the test register on it (the ringed letter),
+- drag letters to tidy the drawing.
+
+**Build menu** builds the menu again from the part of the crib with the fewest expected stops, with the test register on the letter with the most links.

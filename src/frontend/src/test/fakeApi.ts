@@ -143,6 +143,20 @@ export function withCrib(state: BombeState, crib: string, position: number | nul
   return { ...state, crib, placements, position };
 }
 
+/** Carter's crib placed at the start, with his training menu (positions 3, 4 and 8 left out) and the test register on G. */
+export const carterMenu: BombeState = {
+  ...withCrib(carterBombe, 'WETTERVORHERSAGE', 0),
+  menu: {
+    links: ['SW1', 'NE2', 'GE5', 'GR6', 'SV7', 'ZR9', 'ZH10', 'UE11', 'GR12', 'AS13', 'RA14', 'LG15', 'VE16'],
+    cribLinks: ['SW1', 'NE2', 'MT3', 'KT4', 'GE5', 'GR6', 'SV7', 'TO8', 'ZR9', 'ZH10', 'UE11', 'GR12', 'AS13', 'RA14', 'LG15', 'VE16'],
+    testRegister: 'G',
+    connectedLinks: ['SW1', 'NE2', 'GE5', 'GR6', 'SV7', 'ZR9', 'ZH10', 'UE11', 'GR12', 'AS13', 'RA14', 'LG15', 'VE16'],
+    loops: 2,
+    stopsWithBoard: 0.4,
+    stopsWithoutBoard: 721.3,
+  },
+};
+
 export const intercepts: Intercept[] = [
   { id: 'carter', title: 'Carter weather crib', date: null, hint: 'A weather forecast.' },
   { id: 'scharnhorst', title: 'Scharnhorst', date: '1943-12-26', hint: null },
@@ -202,6 +216,8 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       pasteCipherText: bombe(),
       setCrib: bombe(),
       placeCrib: bombe(),
+      setMenu: bombe(),
+      buildMenu: bombe(),
     },
     clipboard: {
       writeText: vi.fn().mockResolvedValue(undefined),

@@ -46,6 +46,8 @@ const api: EnigmaApi = {
     pasteCipherText: (text) => invoke('bombe:pasteCipherText', text),
     setCrib: (crib) => invoke('bombe:setCrib', crib),
     placeCrib: (position) => invoke('bombe:placeCrib', position),
+    setMenu: (links, testRegister) => invoke('bombe:setMenu', links, testRegister),
+    buildMenu: () => invoke('bombe:buildMenu'),
   },
   clipboard: {
     writeText: (text) => invoke('clipboard:writeText', text),
