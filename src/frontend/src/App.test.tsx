@@ -61,6 +61,17 @@ describe('App', () => {
     expect(api.machine.pressKey).not.toHaveBeenCalled();
   });
 
+  it('releases a key held on the physical keyboard when switching to the Bombe', async () => {
+    const { api } = createFakeApi();
+    render(<App api={api} />);
+    await screen.findByRole('tablist', { name: 'Views' });
+    fireEvent.keyDown(window, { key: 'q', code: 'KeyQ' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bombe' }));
+
+    await waitFor(() => expect(api.machine.releaseKey).toHaveBeenCalledOnce());
+  });
+
   it('opens the instructions from Bombe mode', async () => {
     const { api } = createFakeApi();
     render(<App api={api} />);

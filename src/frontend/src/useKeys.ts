@@ -95,7 +95,7 @@ export function usePhysicalKeyboard({ press, release }: Keys): void {
       }
     };
 
-    const onBlur = () => {
+    const releaseDown = () => {
       if (down) {
         down = null;
         release();
@@ -104,11 +104,12 @@ export function usePhysicalKeyboard({ press, release }: Keys): void {
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('blur', onBlur);
+    window.addEventListener('blur', releaseDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('blur', releaseDown);
+      releaseDown();
     };
   }, [active, press, release]);
 }
