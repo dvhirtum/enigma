@@ -3,14 +3,17 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// A Bombe job: the cipher text, the crib and where it is placed, the menu, and the settings a run uses (input letter,
-/// diagonal board, reflector and wheel orders).
+/// A Bombe job: the message and its cipher text, the crib and where it is placed, the menu, and the settings a run
+/// uses (input letter, diagonal board, reflector and wheel orders).
 /// </summary>
 public sealed class BombeJob
 {
     private Letter? _input;
 
-    public IReadOnlyList<Letter> CipherText { get; private set; } = [];
+    /// <summary>The message being broken, or null before one is loaded.</summary>
+    public MessageSource? Source { get; private set; }
+
+    public IReadOnlyList<Letter> CipherText => Source?.CipherText ?? [];
 
     public Crib? Crib { get; private set; }
 
@@ -30,12 +33,11 @@ public sealed class BombeJob
     /// <summary>Every position the crib fits under the cipher text, crashed or not.</summary>
     public IReadOnlyList<CribPlacement> Placements => Crib is null ? [] : CribPlacement.All(CipherText, Crib);
 
-    /// <summary>Replaces the cipher text. The crib stays; its placement and the menu are cleared.</summary>
-    public void SetCipherText(IReadOnlyList<Letter> cipherText)
+    /// <summary>Loads a message to break, or none when null. The crib, its placement and the menu are cleared.</summary>
+    public void Load(MessageSource? source)
     {
-        ArgumentNullException.ThrowIfNull(cipherText);
-
-        CipherText = [.. cipherText];
+        Source = source;
+        Crib = null;
         ClearPlacement();
     }
 

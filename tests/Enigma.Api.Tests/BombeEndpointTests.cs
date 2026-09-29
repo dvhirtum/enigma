@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Enigma.Application.Bombe;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -82,6 +84,61 @@ public sealed class BombeEndpointTests : IDisposable
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Should_load_the_intercept_and_reveal_its_crib_and_key_When_asked_through_the_api()
+    {
+        // Arrange
+        var intercepts = await _client.GetFromJsonAsync<IReadOnlyList<InterceptState>>(Url("/api/bombe/intercepts"), Token);
+
+        // Act
+        var state = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/intercept", new { id = "barbarossa-1941-1" });
+        var crib = await _client.GetFromJsonAsync<CribState>(Url("/api/bombe/source/crib"), Token);
+        var solution = await _client.GetFromJsonAsync<SolutionState>(Url("/api/bombe/source/solution"), Token);
+
+        // Assert
+        Assert.Contains(intercepts!, intercept => intercept.Id == "barbarossa-1941-1" && intercept.Date == "1941-07-07");
+        Assert.Equal("Intercept", state.Source?.Kind);
+        Assert.Contains("WXC KCH", state.Source?.Transcript, StringComparison.Ordinal);
+        Assert.Null(state.Source?.Message);
+        Assert.StartsWith("EDPUD", state.CipherText, StringComparison.Ordinal);
+        Assert.Equal("AUFKLXABTEILUNGXVONX", crib?.Crib);
+        Assert.Equal("II IV V", solution?.WheelOrder);
+        Assert.Equal("BLA", solution?.MessageKey);
+    }
+
+    [Fact]
+    public async Task Should_return_not_found_When_the_intercept_is_unknown()
+    {
+        // Arrange
+        // Act
+        using var response = await _client.PostAsJsonAsync(Url("/api/bombe/source/intercept"), new { id = "u-110" }, Token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Should_generate_an_exercise_When_there_are_M3_key_sheets()
+    {
+        // Arrange
+        using var paths = new TemporaryKeySheetPaths();
+        using var factory = paths.Configure(_factory);
+        using var client = factory.CreateClient();
+        using var none = await client.PostAsync(Url("/api/bombe/source/exercise"), null, Token);
+        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M3", year = 1944 });
+
+        // Act
+        var state = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/exercise", new { });
+        var solution = await client.GetFromJsonAsync<SolutionState>(Url("/api/bombe/source/solution"), Token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, none.StatusCode);
+        Assert.Equal("Exercise", state.Source?.Kind);
+        Assert.NotNull(state.Source?.Message);
+        Assert.NotNull(solution?.Exercise);
+        Assert.StartsWith("1944-", solution.Exercise.Month, StringComparison.Ordinal);
+    }
+
     private static Uri Url(string path) => new(path, UriKind.Relative);
 
     private async Task<RunState> WaitForRunAsync()
@@ -101,12 +158,27 @@ public sealed class BombeEndpointTests : IDisposable
         }
     }
 
-    private async Task<T> SendAsync<T>(HttpMethod method, string url, object body)
+    private Task<T> SendAsync<T>(HttpMethod method, string url, object body) => SendAsync<T>(_client, method, url, body);
+
+    private static async Task<T> SendAsync<T>(HttpClient client, HttpMethod method, string url, object body)
     {
         using var request = new HttpRequestMessage(method, Url(url)) { Content = JsonContent.Create(body) };
-        using var response = await _client.SendAsync(request, Token);
+        using var response = await client.SendAsync(request, Token);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(Token)
             ?? throw new InvalidOperationException("Empty response.");
     }
+}
+
+/// <summary>Empty key sheet folders for one test, deleted afterwards.</summary>
+internal sealed class TemporaryKeySheetPaths : IDisposable
+{
+    private readonly string _root = Directory.CreateTempSubdirectory("enigma-bombe-").FullName;
+
+    public WebApplicationFactory<Program> Configure(WebApplicationFactory<Program> factory) =>
+        factory.WithWebHostBuilder(builder => builder
+            .UseSetting("KeySheets:HistoricalPath", Path.Combine(_root, "historical"))
+            .UseSetting("KeySheets:UserPath", Path.Combine(_root, "user")));
+
+    public void Dispose() => Directory.Delete(_root, recursive: true);
 }

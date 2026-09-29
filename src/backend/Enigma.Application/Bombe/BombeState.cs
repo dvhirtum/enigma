@@ -1,9 +1,14 @@
+using System.Globalization;
 using Enigma.Domain.Bombe;
 
 namespace Enigma.Application.Bombe;
 
-/// <summary>The Bombe job and a summary of its latest run. Positions count from 0; crashes are crib indexes.</summary>
+/// <summary>
+/// The Bombe job, with the loaded message, and a summary of its latest run. Positions count from 0; crashes are crib
+/// indexes.
+/// </summary>
 public sealed record BombeState(
+    SourceState? Source,
     string CipherText,
     string? Crib,
     IReadOnlyList<PlacementState> Placements,
@@ -17,6 +22,7 @@ public sealed record BombeState(
         ArgumentNullException.ThrowIfNull(job);
 
         return new BombeState(
+            job.Source is null ? null : SourceState.From(job.Source),
             string.Concat(job.CipherText),
             job.Crib?.ToString(),
             [.. job.Placements.Select(p => new PlacementState(p.Position, p.Crashes))],
@@ -108,3 +114,96 @@ public sealed record StopState(
             stop.Stecker?.ToString());
     }
 }
+
+/// <summary>
+/// The loaded message: its kind (Intercept, Exercise or Pasted), title, hint, transcript as received, the Navy radio
+/// message when it is one, and whether a crib and a solution can be asked for.
+/// </summary>
+public sealed record SourceState(
+    string Kind,
+    string Title,
+    string? Hint,
+    string Transcript,
+    string? Message,
+    bool HasCrib,
+    bool HasSolution)
+{
+    public static SourceState From(MessageSource source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        return new SourceState(
+            source.Kind.ToString(),
+            source.Title,
+            source.Hint,
+            source.Transcript,
+            source.Message?.ToString(),
+            source.Crib is not null,
+            source.Solution is not null);
+    }
+}
+
+/// <summary>A bundled intercept. The date is yyyy-MM-dd, or null when unknown.</summary>
+public sealed record InterceptState(string Id, string Title, string? Date, string? Hint)
+{
+    public static InterceptState From(Intercept intercept)
+    {
+        ArgumentNullException.ThrowIfNull(intercept);
+
+        return new InterceptState(
+            intercept.Id,
+            intercept.Source.Title,
+            intercept.Date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            intercept.Source.Hint);
+    }
+}
+
+public sealed record CribState(string Crib);
+
+/// <summary>
+/// How the loaded message was encrypted: reflector, wheel order, ring settings (1–26), plug pairs, the rotor positions
+/// the cipher text starts from, the plain text and notes. Exercises also give their key sheet day and indicator.
+/// </summary>
+public sealed record SolutionState(
+    string Reflector,
+    string WheelOrder,
+    IReadOnlyList<int> Rings,
+    IReadOnlyList<string> Plugs,
+    string MessageKey,
+    string Plaintext,
+    string Notes,
+    ExerciseState? Exercise)
+{
+    public static SolutionState From(Solution solution)
+    {
+        ArgumentNullException.ThrowIfNull(solution);
+
+        return new SolutionState(
+            solution.Reflector.Name,
+            solution.WheelOrder.ToString(),
+            [.. solution.Rings.Select(ring => ring.Number)],
+            [.. solution.Plugs.Select(plug => plug.ToString())],
+            solution.MessageKey.ToString(),
+            solution.Plaintext,
+            solution.Notes,
+            solution.Exercise is { } exercise
+                ? new ExerciseState(
+                    exercise.SheetId,
+                    exercise.Network,
+                    exercise.Month.ToString(),
+                    exercise.Day,
+                    exercise.Grundstellung.ToString(),
+                    exercise.Indicator.Schluesselkenngruppe.ToString(),
+                    exercise.Indicator.Verfahrenkenngruppe.ToString())
+                : null);
+    }
+}
+
+public sealed record ExerciseState(
+    string SheetId,
+    string Network,
+    string Month,
+    int Day,
+    string Grundstellung,
+    string Schluesselkenngruppe,
+    string Verfahrenkenngruppe);

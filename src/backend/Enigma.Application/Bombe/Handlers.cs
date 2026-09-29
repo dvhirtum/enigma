@@ -16,12 +16,59 @@ public sealed class SetCipherTextHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var letters = Letters(command.Text);
-        return store.Update(job => job.SetCipherText(letters));
+        var source = string.IsNullOrWhiteSpace(command.Text) ? null : MessageSource.Pasted(command.Text);
+        return store.Update(job => job.Load(source));
     }
+}
 
-    private static IReadOnlyList<Letter> Letters(string? text) =>
-        [.. (text ?? string.Empty).Where(c => !char.IsWhiteSpace(c)).Select(Letter.FromChar)];
+public static class ListInterceptsHandler
+{
+    public static IReadOnlyList<InterceptState> Handle(ListIntercepts query) => [.. Intercepts.All.Select(InterceptState.From)];
+}
+
+public sealed class LoadInterceptHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(LoadIntercept command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var intercept = Intercepts.Find(command.Id ?? string.Empty)
+            ?? throw new NotFoundException($"No intercept has id '{command.Id}'.");
+        return store.Update(job => job.Load(intercept.Source));
+    }
+}
+
+public sealed class GenerateExerciseHandler(IBombeSessionStore store, KeySheetLinker linker, Random random)
+{
+    public BombeState Handle(GenerateExercise command)
+    {
+        var sheets = linker.List().Where(sheet => sheet.Model == MachineModel.M3).ToList();
+        if (sheets.Count == 0)
+        {
+            throw new DomainException("Generate or import M3 key sheets first.");
+        }
+
+        var sheet = sheets[random.Next(sheets.Count)];
+        var day = sheet.DailyKeys[random.Next(sheet.DailyKeys.Count)].Day;
+        var source = ExerciseGenerator.Generate(
+            sheet, day, linker.Book(sheet.KenngruppenbuchId!), linker.Tables(sheet.TauschtafelSetId!), random);
+        return store.Update(job => job.Load(source));
+    }
+}
+
+public sealed class GetSourceCribHandler(IBombeSessionStore store)
+{
+    public CribState Handle(GetSourceCrib query) =>
+        new(store.Use(job => Loaded(job).Crib)?.ToString() ?? throw new NotFoundException("This message has no known crib."));
+
+    internal static MessageSource Loaded(BombeJob job) => job.Source ?? throw new NotFoundException("No message is loaded.");
+}
+
+public sealed class GetSolutionHandler(IBombeSessionStore store)
+{
+    public SolutionState Handle(GetSolution query) =>
+        SolutionState.From(store.Use(job => GetSourceCribHandler.Loaded(job).Solution)
+            ?? throw new NotFoundException("This message has no known solution."));
 }
 
 public sealed class SetCribHandler(IBombeSessionStore store)

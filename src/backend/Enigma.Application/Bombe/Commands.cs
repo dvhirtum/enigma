@@ -1,6 +1,6 @@
 namespace Enigma.Application.Bombe;
 
-/// <summary>Replaces the cipher text. Spaces and line breaks are ignored.</summary>
+/// <summary>Loads pasted text: a Navy radio message, or bare cipher text (spaces and line breaks ignored). Empty clears it.</summary>
 public sealed record SetCipherText(string? Text);
 
 /// <summary>Replaces the crib, or removes it when empty.</summary>
@@ -34,3 +34,17 @@ public sealed record GetRun;
 
 /// <summary>The stops of the run from the <see cref="From"/>th on.</summary>
 public sealed record GetStops(int From);
+
+public sealed record ListIntercepts;
+
+/// <summary>Loads a bundled historical intercept.</summary>
+public sealed record LoadIntercept(string? Id);
+
+/// <summary>Loads a new exercise, sent on a random day of a random M3 key sheet.</summary>
+public sealed record GenerateExercise;
+
+/// <summary>The likely crib of the loaded intercept or exercise.</summary>
+public sealed record GetSourceCrib;
+
+/// <summary>The key and plain text of the loaded intercept or exercise.</summary>
+public sealed record GetSolution;
