@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
 import { createFakeApi, defaultM3 } from './test/fakeApi';
@@ -18,7 +18,77 @@ describe('App', () => {
     render(<App api={api} />);
 
     expect(await screen.findByRole('tablist', { name: 'Views' })).toBeInTheDocument();
-    expect(await screen.findByText('Backend v1.2.3')).toBeInTheDocument();
+    expect(await screen.findByRole('contentinfo')).toHaveTextContent('Backend v1.2.3');
+  });
+
+  it('starts in Enigma mode', async () => {
+    const { api } = createFakeApi();
+
+    render(<App api={api} />);
+
+    expect(await screen.findByRole('button', { name: 'Enigma', pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bombe', pressed: false })).toBeInTheDocument();
+    expect(document.title).toBe('Enigma');
+  });
+
+  it('switches to the Bombe and back, keeping the Enigma view', async () => {
+    const { api } = createFakeApi();
+    render(<App api={api} />);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Plugboard' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bombe' }));
+
+    expect(screen.getByRole('main', { name: 'Bombe' })).toBeInTheDocument();
+    expect(screen.queryByRole('tablist', { name: 'Views' })).not.toBeInTheDocument();
+    expect(document.title).toBe('Bombe');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enigma' }));
+
+    expect(screen.getByRole('tab', { name: 'Plugboard' })).toHaveAttribute('aria-selected', 'true');
+    expect(document.title).toBe('Enigma');
+  });
+
+  it('leaves the Enigma keys alone in Bombe mode', async () => {
+    const { api } = createFakeApi();
+    render(<App api={api} />);
+    await screen.findByRole('tablist', { name: 'Views' });
+    fireEvent.click(screen.getByRole('button', { name: 'Bombe' }));
+
+    fireEvent.keyDown(window, { key: 'q', code: 'KeyQ' });
+    fireEvent.keyUp(window, { key: 'q', code: 'KeyQ' });
+    await act(() => Promise.resolve());
+
+    expect(api.machine.pressKey).not.toHaveBeenCalled();
+  });
+
+  it('releases a key held on the physical keyboard when switching to the Bombe', async () => {
+    const { api } = createFakeApi();
+    render(<App api={api} />);
+    await screen.findByRole('tablist', { name: 'Views' });
+    fireEvent.keyDown(window, { key: 'q', code: 'KeyQ' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bombe' }));
+
+    await waitFor(() => expect(api.machine.releaseKey).toHaveBeenCalledOnce());
+  });
+
+  it('opens the instructions from Bombe mode', async () => {
+    const { api } = createFakeApi();
+    render(<App api={api} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Bombe' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Instructions' }));
+
+    expect(api.windows.openInstructions).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the mode while a key is held down', async () => {
+    const { api } = createFakeApi();
+    api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, heldKey: 'Q' } });
+
+    render(<App api={api} />);
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Bombe' })).toBeDisabled());
   });
 
   it("shows the operator's notebook in the notebook window", async () => {

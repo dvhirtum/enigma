@@ -6,6 +6,7 @@
 - Historically exact wirings, stepping and plugboard.
 - UI: top-down view of the machine; frontal view of the plugboard.
 - Setup from key sheets (Schlüsseltafeln) and the Navy indicator procedure.
+- A Bombe mode that breaks Enigma messages from a crib.
 
 | Model | Slots | Rotors | Reflector |
 |---|---|---|---|
@@ -156,6 +157,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 ## Frontend
 
 - Electron Forge (Vite + TypeScript) with React. The machine state lives in a Zustand store per window. The main process sends the machine state a window's call produces to the other windows.
+- Modes: the header title switches between Enigma and Bombe (`mode.tsx`). The active mode is in capitals. Both frames stay mounted and the inactive one is hidden, so each keeps its state; only the active frame listens to the physical keyboard. The switch is disabled while an Enigma key is held down. The window title follows the mode.
 - App frame: tabs for the views, the M3/M4 model switch (asks before it resets the machine), a machine summary, the applied daily key ("Key: Triton 1944-06, day 19 · Grundstellung QRS", with "(modified)" after a setup change), buttons that open the operator's notebook and instructions windows, a side panel button for key sheets (its arrow points left to open and right to close), an error message for rejected operations that floats under the header and fades out after 5 seconds (also in the notebook), and the backend version.
 - SVG components: `RotorWindow`, `Thumbwheel`, `RotorDrum`, `Lamp`, `Key`, `PlugSocket`.
 - Views:
@@ -169,6 +171,17 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
   - key sheets: a side panel opened from the header. Choose (a month, grouped by year, then one of its sheets, grouped by machine, historical first), generate a year, import, export (compact JSON) and delete sheets. "Apply" on a day sets up the machine; for the other model it asks first. The applied day is marked. "Print to PDF" renders the export as typewritten A4 documents (`printSheet.ts`, with the Special Elite and Courier Prime fonts in `assets/fonts`): the Schlüsseltafel with the last day first, and optionally a second document, the same for every network, with the Zuteilungsliste, all columns (Spaltentafel), a trigram-to-column index (Suchtafel), the Tauschtafel calendar and the 9 tables as 26 × 26 grids. With both, the user picks a folder for the two PDFs. The main process prints them in a hidden window with scripts disabled.
   - operator's notebook: a separate window (the renderer with `#notebook`) that walks through sending or receiving while the operator works the machine. It looks like squared paper: instructions are printed, and cipher material (groups, indicator, keys, cipher text, plaintext, radio message) is handwritten in Kalam (`assets/fonts`), one letter per square. The Encrypt and Decrypt tabs switch freely; while a message is in progress (not yet done), the other tab asks to finish or cancel it first. Sending starts with picking the Schlüsselkenngruppe from the network's columns and the Verfahrenkenngruppe from theirs (or "Random"), and ends with the radio message and a Copy button. Receiving starts from a pasted radio message and a date (prefilled from the applied key, or today), lists the matching key sheet days to receive with (or receives with the applied key at once), writes the plaintext under each cipher letter and circles the next one. Sending likewise writes the cipher text under each plaintext letter. The numbered steps run down the page, each with its instructions and handwriting; finished steps are ticked off and keep their contents, and the notebook scrolls to the current step. Letters typed in the notebook press the machine keys. Sending needs an applied daily key; the notebook warns when the setup is modified.
   - instructions: a separate window (the renderer with `#instructions`) with the user guide from `docs/user` (Markdown, rendered with react-markdown). Links between its pages open them in the window. Inline code and plain code blocks are handwritten in Kalam, code blocks one character per square so columns stay aligned; JSON blocks stay monospaced.
+
+## Bombe
+
+The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
+
+- Cipher text: historical intercepts, pasted text and generated exercises.
+- Procedure: place a crib (crashes rejected), build a menu, run the Bombe, test the stops on the checking machine, recover the key (wheel order, rings, steckers), then decrypt the indicators with the bigram tables to read the day's other messages.
+- Welchman's diagonal board can be switched on and off (on by default).
+- Banburismus is explained in the user guide and Hut 8 mode, not simulated.
+- The frame has a header with the mode switch and the instructions button.
+- Tests: round-trip vectors (the true key stops) and vectors from primary sources.
 
 ## Testing
 
@@ -209,9 +222,10 @@ docs/{design.md, user/}
 6. Plugboard view
 7. Key sheets: historical, generated, apply daily key
 8. Navy indicator procedure and operator mode
+9. Bombe: mode switch; scrambler and diagonal board; crib and menu; runs; crib, menu and Bombe views; stops and checking; indicators; Hut 8 walkthrough
 
 ## Future work
 
 - Officer keys (Offizier)
 - Stichwort (keyword) procedure
-- Bombe simulator
+- Four-rotor Bombe (M4)

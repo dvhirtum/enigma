@@ -42,7 +42,7 @@ test('keeps its data in the temporary user data folder', async () => {
 
 test('shows the default machine and the backend version', async () => {
   await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
-  await expect(page.getByText(/^Backend v.+/)).toBeVisible();
+  await expect(page.getByRole('contentinfo')).toHaveText(/^Backend v.+/);
 });
 
 test('switches between the views', async () => {
@@ -65,6 +65,21 @@ test('shows the user guide in its own window and follows its links', async () =>
   await page.getByRole('button', { name: 'Instructions' }).click();
   expect(app.windows()).toHaveLength(2);
   await instructions.close();
+});
+
+test('switches to Bombe mode and back', async () => {
+  await page.getByRole('tab', { name: 'Plugboard' }).click();
+
+  await page.getByRole('button', { name: 'Bombe' }).click();
+
+  await expect(page.getByRole('main', { name: 'Bombe' })).toBeVisible();
+  await expect(page).toHaveTitle('Bombe');
+  await page.keyboard.press('a');
+  await page.getByRole('button', { name: 'Enigma' }).click();
+  await expect(page.getByRole('tab', { name: 'Plugboard' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveTitle('Enigma');
+  await page.getByRole('tab', { name: 'Top-down' }).click();
+  await expect(page.getByRole('spinbutton', { name: 'Right rotor' })).toHaveAttribute('aria-valuetext', 'A');
 });
 
 test('lights a lamp while a key is held on the physical keyboard', async () => {

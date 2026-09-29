@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Navy Enigma simulator (M3 + M4). Electron + React frontend, C# (.NET 10) backend. See `docs/design.md`.
+Navy Enigma simulator (M3 + M4) with a Bombe mode for breaking it. Electron + React frontend, C# (.NET 10) backend. See `docs/design.md`.
 
 ## Conventions
 
