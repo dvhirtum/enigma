@@ -4,7 +4,9 @@ import { TabbedViews } from '../components/TabbedViews';
 import { ErrorToast } from '../ErrorToast';
 import { ModeSwitch, useActive } from '../mode';
 import { useMachine } from '../store';
+import { BackView } from './BackView';
 import { CribView } from './CribView';
+import { FrontView } from './FrontView';
 import { MenuView } from './MenuView';
 import { MessageView } from './MessageView';
 
@@ -12,8 +14,28 @@ const views = [
   { id: 'bombe-message', label: 'Message', View: MessageView },
   { id: 'bombe-crib', label: 'Crib', View: CribView },
   { id: 'bombe-menu', label: 'Menu', View: MenuView },
+  { id: 'bombe-front', label: 'Front', View: FrontView },
+  { id: 'bombe-back', label: 'Back', View: BackView },
 ] as const;
 
+/** How often a running run is polled: often while paced, to turn the drums, less at full speed. */
+const pacedPoll = 100;
+const fullSpeedPoll = 250;
+
+/** Polls the run while it is running, in either mode. */
+function useRunPolling() {
+  const running = useMachine((store) => store.bombe?.run?.status === 'Running');
+  const fullSpeed = useMachine((store) => store.bombe?.run?.speed === null);
+  const pollRun = useMachine((store) => store.pollRun);
+
+  useEffect(() => {
+    if (!running) {
+      return;
+    }
+    const timer = setInterval(() => void pollRun(), fullSpeed ? fullSpeedPoll : pacedPoll);
+    return () => clearInterval(timer);
+  }, [running, fullSpeed, pollRun]);
+}
 /** The Bombe mode: breaks Enigma messages from a crib. The job loads when the mode is first shown. */
 export function BombeFrame() {
   const version = useMachine((store) => store.version);
@@ -21,6 +43,7 @@ export function BombeFrame() {
   const loadBombe = useMachine((store) => store.loadBombe);
   const loaded = useMachine((store) => store.bombe !== null);
   const active = useActive();
+  useRunPolling();
 
   useEffect(() => {
     if (active && !loaded) {

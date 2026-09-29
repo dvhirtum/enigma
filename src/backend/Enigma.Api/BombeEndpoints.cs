@@ -22,6 +22,7 @@ internal static class BombeEndpoints
         .AddSingleton<ConfigureBombeHandler>()
         .AddSingleton<StartRunHandler>()
         .AddSingleton<SetRunSpeedHandler>()
+        .AddSingleton<ContinueRunHandler>()
         .AddSingleton<CancelRunHandler>()
         .AddSingleton<GetRunHandler>()
         .AddSingleton<GetStopsHandler>();
@@ -71,6 +72,9 @@ internal static class BombeEndpoints
 
         bombe.MapPut("/run/speed", (SpeedRequest request, SetRunSpeedHandler handler) =>
             handler.Handle(new SetRunSpeed(request.Speed)));
+
+        bombe.MapPost("/run/continue", (ContinueRunHandler handler) =>
+            handler.Handle(new ContinueRun()));
 
         bombe.MapDelete("/run", (CancelRunHandler handler) =>
             handler.Handle(new CancelRun()));

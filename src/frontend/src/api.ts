@@ -160,7 +160,45 @@ export interface BombeSettings {
   wheelOrders: string[];
 }
 
-/** The Bombe job: the message, the crib, every crib position, the placed one, the menu and the run settings. */
+
+/** A stop: the wheel order, drum core positions, indicator drum reading, test register, its live wires and stecker partner. */
+export interface BombeStop {
+  wheelOrder: string;
+  position: string;
+  indicator: string;
+  testRegister: string;
+  liveWires: string;
+  stecker: string | null;
+}
+
+/**
+ * A run's progress. Speed is in positions per second, null for full speed. The wheel order and drum position in hand
+ * are known while the run is paced; a paused run gives the stop it waits at.
+ */
+export interface BombeRun {
+  status: 'Running' | 'Paused' | 'Finished' | 'Cancelled' | 'Failed';
+  speed: number | null;
+  reflector: string;
+  wheelOrders: number;
+  wheelOrdersDone: number;
+  positionsTested: number;
+  positions: number;
+  wheelOrder: string | null;
+  position: string | null;
+  pause: BombeStop | null;
+  stops: number;
+  error: string | null;
+  elapsedSeconds: number;
+}
+
+/** Run settings to change; those left out stay as they are. An empty input letter uses the default. */
+export interface BombeSettingsChange {
+  input?: string;
+  diagonalBoard?: boolean;
+  reflector?: string;
+  wheelOrders?: string[];
+}
+/** The Bombe job: the message, the crib, every crib position, the placed one, the menu, the run settings and the latest run. */
 export interface BombeState {
   source: BombeSource | null;
   cipherText: string;
@@ -169,6 +207,7 @@ export interface BombeState {
   position: number | null;
   menu: BombeMenu | null;
   settings: BombeSettings;
+  run: BombeRun | null;
 }
 
 /** A bundled historical intercept. The date is yyyy-MM-dd, or null when unknown. */
@@ -259,6 +298,14 @@ export interface BombeApi {
   setMenu: Call<[links: string[], testRegister?: string], BombeState>;
   /** Builds the menu from the placed crib again. */
   buildMenu: Call<[], BombeState>;
+  configure: Call<[settings: BombeSettingsChange], BombeState>;
+  /** Starts a run at `speed` positions per second, or at full speed when null. */
+  startRun: Call<[speed: number | null], BombeRun>;
+  setRunSpeed: Call<[speed: number | null], BombeRun>;
+  /** Continues a run paused at a stop. */
+  continueRun: Call<[], BombeRun>;
+  cancelRun: Call<[], BombeRun>;
+  getRun: Call<[], BombeRun>;
 }
 
 /** An HTML document to print to the PDF file `name`. */

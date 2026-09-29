@@ -48,6 +48,12 @@ const api: EnigmaApi = {
     placeCrib: (position) => invoke('bombe:placeCrib', position),
     setMenu: (links, testRegister) => invoke('bombe:setMenu', links, testRegister),
     buildMenu: () => invoke('bombe:buildMenu'),
+    configure: (settings) => invoke('bombe:configure', settings),
+    startRun: (speed) => invoke('bombe:startRun', speed),
+    setRunSpeed: (speed) => invoke('bombe:setRunSpeed', speed),
+    continueRun: () => invoke('bombe:continueRun'),
+    cancelRun: () => invoke('bombe:cancelRun'),
+    getRun: () => invoke('bombe:getRun'),
   },
   clipboard: {
     writeText: (text) => invoke('clipboard:writeText', text),

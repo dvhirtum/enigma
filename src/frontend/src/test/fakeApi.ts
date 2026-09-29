@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { BackendStatus, BombeState, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
+import type { BackendStatus, BombeRun, BombeState, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -118,6 +118,7 @@ export const emptyBombe: BombeState = {
   position: null,
   menu: null,
   settings: { input: 'A', diagonalBoard: true, reflector: 'B', wheelOrders: [] },
+  run: null,
 };
 
 export const carterBombe: BombeState = {
@@ -157,6 +158,23 @@ export const carterMenu: BombeState = {
   },
 };
 
+/** A paced run of Carter's menu on II V III, paused at the true stop. */
+export const carterPaused: BombeRun = {
+  status: 'Paused',
+  speed: 14.6,
+  reflector: 'B',
+  wheelOrders: 1,
+  wheelOrdersDone: 0,
+  positionsTested: 1713,
+  positions: 17576,
+  wheelOrder: 'II V III',
+  position: 'VMB',
+  pause: { wheelOrder: 'II V III', position: 'VMB', indicator: 'ENY', testRegister: 'G', liveWires: 'Q', stecker: 'Q' },
+  stops: 1,
+  error: null,
+  elapsedSeconds: 117.3,
+};
+
 export const intercepts: Intercept[] = [
   { id: 'carter', title: 'Carter weather crib', date: null, hint: 'A weather forecast.' },
   { id: 'scharnhorst', title: 'Scharnhorst', date: '1943-12-26', hint: null },
@@ -172,6 +190,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
   const keySheetListeners = new Set<() => void>();
   const ok = (value: MachineState = defaultM3) => vi.fn().mockResolvedValue({ ok: true, value });
   const bombe = (value: BombeState = emptyBombe) => vi.fn().mockResolvedValue({ ok: true, value });
+  const run = (value: BombeRun = { ...carterPaused, status: 'Running', pause: null }) => vi.fn().mockResolvedValue({ ok: true, value });
   const sheet = (value: KeySheet = generatedSheet) => vi.fn().mockResolvedValue({ ok: true, value });
 
   const api = {
@@ -218,6 +237,12 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       placeCrib: bombe(),
       setMenu: bombe(),
       buildMenu: bombe(),
+      configure: bombe(),
+      startRun: run(),
+      setRunSpeed: run(),
+      continueRun: run(),
+      cancelRun: run({ ...carterPaused, status: 'Cancelled', pause: null, wheelOrder: null, position: null }),
+      getRun: run(),
     },
     clipboard: {
       writeText: vi.fn().mockResolvedValue(undefined),

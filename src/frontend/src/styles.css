@@ -453,6 +453,197 @@ body {
   color: var(--error-fg);
 }
 
+.run-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+}
+
+.run-settings fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.9rem;
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.run-settings legend {
+  margin-bottom: 0.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.run-settings label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.run-settings .swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.speed {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.speed input {
+  width: 14rem;
+}
+
+.run-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.run-progress progress {
+  width: 100%;
+  max-width: 42rem;
+  accent-color: var(--accent);
+}
+
+.bombe-stop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  max-width: 42rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.bombe-stop p {
+  margin: 0;
+}
+
+.bombe-front,
+.bombe-back {
+  width: 100%;
+  max-width: 46rem;
+  border: 1px solid var(--line);
+  user-select: none;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+.bombe-front text,
+.bombe-back text {
+  fill: var(--fg);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.drum .rim {
+  fill: var(--bg);
+  stroke: var(--muted);
+  stroke-width: 5;
+}
+
+.drum .marker {
+  stroke: var(--fg);
+  stroke-width: 2;
+}
+
+.drum text {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.bombe-front.spinning .drum .rim {
+  stroke-dasharray: 6 4;
+  animation: drum-spin 0.25s linear infinite;
+}
+
+.bombe-front.spinning .drum .marker {
+  display: none;
+}
+
+.bombe-front.spinning .drum text {
+  opacity: 0.35;
+  filter: blur(1px);
+}
+
+@keyframes drum-spin {
+  to {
+    stroke-dashoffset: 20;
+  }
+}
+
+.scrambler.empty circle {
+  fill: var(--line);
+}
+
+.scrambler-label,
+.indicator-label,
+.bombe-back .panel-label {
+  font-size: 11px;
+}
+
+.bombe-front .scrambler-label,
+.bombe-front .indicator-label,
+.bombe-back .panel-label {
+  fill: var(--muted);
+}
+
+.bombe-back .panel-label {
+  text-anchor: start;
+}
+
+.diagonal-board rect,
+.common rect,
+.test-register rect,
+.scrambler-jacks rect {
+  fill: var(--bg);
+  stroke: var(--fg);
+}
+
+.diagonal-board circle,
+.scrambler-jacks circle {
+  fill: none;
+  stroke: var(--muted);
+}
+
+.diagonal-board text,
+.common text,
+.test-register text,
+.scrambler-jacks text {
+  font-size: 10px;
+}
+
+.common text {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.diagonal-board.off {
+  opacity: 0.35;
+}
+
+.bombe-back .cable,
+.board-cable {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.board-cable.off {
+  stroke: var(--line);
+  stroke-dasharray: 3 3;
+}
+
+.scrambler-jacks.empty rect,
+.scrambler-jacks.empty circle {
+  stroke: var(--line);
+}
+
 .frame [role='tablist'] {
   grid-area: nav;
   display: flex;

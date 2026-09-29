@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
-import { createFakeApi, defaultM3 } from './test/fakeApi';
+import { carterMenu, carterPaused, createFakeApi, defaultM3 } from './test/fakeApi';
 
 describe('App', () => {
   it('shows a starting screen while the backend starts', async () => {
@@ -85,6 +85,22 @@ describe('App', () => {
     await act(() => Promise.resolve());
 
     expect(api.bombe.getState).toHaveBeenCalledOnce();
+  });
+
+  it('polls a running Bombe run, also in Enigma mode, until it pauses', async () => {
+    const { api } = createFakeApi();
+    const running = { ...carterPaused, status: 'Running' as const, pause: null };
+    api.bombe.getState.mockResolvedValue({ ok: true, value: { ...carterMenu, run: running } });
+    api.bombe.getRun.mockResolvedValueOnce({ ok: true, value: running }).mockResolvedValue({ ok: true, value: carterPaused });
+    render(<App api={api} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Bombe' }));
+    await waitFor(() => expect(api.bombe.getState).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enigma' }));
+
+    await waitFor(() => expect(api.bombe.getRun).toHaveBeenCalledTimes(2));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(api.bombe.getRun).toHaveBeenCalledTimes(2);
   });
 
   it('opens the instructions from Bombe mode', async () => {

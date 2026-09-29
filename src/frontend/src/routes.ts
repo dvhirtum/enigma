@@ -65,4 +65,10 @@ export const bombeRoutes: Routes<BombeApi> = {
   placeCrib: (position) => ({ method: 'PUT', path: `${bombe}/placement`, body: { position } }),
   setMenu: (links, testRegister) => ({ method: 'PUT', path: `${bombe}/menu`, body: { links, testRegister } }),
   buildMenu: () => ({ method: 'POST', path: `${bombe}/menu/build` }),
+  configure: (settings) => ({ method: 'PUT', path: `${bombe}/settings`, body: settings }),
+  startRun: (speed) => ({ method: 'POST', path: `${bombe}/run`, body: { speed } }),
+  setRunSpeed: (speed) => ({ method: 'PUT', path: `${bombe}/run/speed`, body: { speed } }),
+  continueRun: () => ({ method: 'POST', path: `${bombe}/run/continue` }),
+  cancelRun: () => ({ method: 'DELETE', path: `${bombe}/run` }),
+  getRun: () => ({ method: 'GET', path: `${bombe}/run` }),
 };

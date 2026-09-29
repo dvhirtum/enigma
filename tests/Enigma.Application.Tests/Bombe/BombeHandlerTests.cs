@@ -112,7 +112,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(2000));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1000));
 
         // Act
         await Task.Delay(300, Token);
@@ -164,6 +164,87 @@ public sealed class BombeHandlerTests
         Assert.Equal(1, run.Speed);
         Assert.NotNull(run.WheelOrder);
         Assert.True(run.WheelOrdersDone < 336, $"{run.WheelOrdersDone} wheel orders done.");
+        new CancelRunHandler(_store).Handle(new CancelRun());
+    }
+
+    [Fact]
+    public async Task Should_pause_at_each_stop_When_the_run_is_paced()
+    {
+        // Arrange
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000));
+
+        // Act
+        var first = await WaitForAsync("Paused");
+        new ContinueRunHandler(_store).Handle(new ContinueRun());
+        var second = await WaitForAsync("Paused");
+        new ContinueRunHandler(_store).Handle(new ContinueRun());
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+
+        // Assert
+        Assert.Equal(1, first.Stops);
+        Assert.Equal(2, second.Stops);
+        Assert.Equal(first.Pause?.Position, first.Position);
+        Assert.Equal(Stops(), [first.Pause!, second.Pause!]);
+        Assert.Contains(Stops(), s => s.Position == "VMB" && s.Stecker == "Q");
+        var run = new GetRunHandler(_store).Handle(new GetRun());
+        Assert.Equal("Finished", run.Status);
+        Assert.Null(run.Pause);
+        Assert.Equal(DomainPositions, run.PositionsTested);
+    }
+
+    [Fact]
+    public async Task Should_stay_paused_When_a_paused_run_is_set_to_full_speed()
+    {
+        // Arrange
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000));
+        await WaitForAsync("Paused");
+
+        // Act
+        new SetRunSpeedHandler(_store).Handle(new SetRunSpeed(null));
+        await Task.Delay(100, Token);
+        var paused = new GetRunHandler(_store).Handle(new GetRun());
+        new ContinueRunHandler(_store).Handle(new ContinueRun());
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+
+        // Assert
+        Assert.Equal("Paused", paused.Status);
+        Assert.Equal(1, paused.Stops);
+        var run = new GetRunHandler(_store).Handle(new GetRun());
+        Assert.Equal("Finished", run.Status);
+        Assert.Equal(2, run.Stops);
+    }
+
+    [Fact]
+    public async Task Should_refuse_to_change_the_job_When_the_run_is_paused()
+    {
+        // Arrange
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000));
+        await WaitForAsync("Paused");
+
+        // Act
+        void Act() => new SetCribHandler(_store).Handle(new SetCrib("WETTER"));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+        new CancelRunHandler(_store).Handle(new CancelRun());
+        Assert.Equal("Cancelled", _store.Run!.Status.ToString());
+    }
+
+    [Fact]
+    public void Should_refuse_to_continue_When_the_run_is_not_paused()
+    {
+        // Arrange
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1));
+
+        // Act
+        void Act() => new ContinueRunHandler(_store).Handle(new ContinueRun());
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
         new CancelRunHandler(_store).Handle(new CancelRun());
     }
 
@@ -245,6 +326,37 @@ public sealed class BombeHandlerTests
     }
 
     [Fact]
+    public void Should_keep_the_other_settings_When_only_the_wheel_orders_are_set()
+    {
+        // Arrange
+        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe("K", false, "C", ["II V III"]));
+
+        // Act
+        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, null, null, ["I II III", "III II I"]));
+
+        // Assert
+        Assert.Equal("K", state.Settings.Input);
+        Assert.False(state.Settings.DiagonalBoard);
+        Assert.Equal("C", state.Settings.Reflector);
+        Assert.Equal(["I II III", "III II I"], state.Settings.WheelOrders);
+    }
+
+    [Fact]
+    public void Should_use_the_default_input_letter_When_the_input_is_empty()
+    {
+        // Arrange
+        SetUpCarter();
+        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe("K", null, null, null));
+
+        // Act
+        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(string.Empty, null, null, null));
+
+        // Assert
+        Assert.Equal("A", state.Settings.Input);
+        Assert.Null(_store.Job.ChosenInput);
+    }
+
+    [Fact]
     public async Task Should_report_the_error_When_the_run_fails()
     {
         // Arrange
@@ -301,6 +413,22 @@ public sealed class BombeHandlerTests
     }
 
     private IReadOnlyList<StopState> Stops() => new GetStopsHandler(_store).Handle(new GetStops(0));
+
+    private async Task<RunState> WaitForAsync(string status)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Token);
+        timeout.CancelAfter(Timeout);
+        while (true)
+        {
+            var run = new GetRunHandler(_store).Handle(new GetRun());
+            if (run.Status == status)
+            {
+                return run;
+            }
+
+            await Task.Delay(10, timeout.Token);
+        }
+    }
 
     private void SetUpCarter(bool menu = true, bool allWheelOrders = false)
     {

@@ -58,6 +58,32 @@ public sealed class BombeEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_pause_at_a_stop_and_continue_When_a_paced_run_goes_through_the_api()
+    {
+        // Arrange
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/cipher-text", new { text = "SNMKG GSTZZ UGARL V" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/crib", new { crib = "WETTERVORHERSAGE" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
+        await SendAsync<BombeState>(
+            HttpMethod.Put, "/api/bombe/settings", new { input = (string?)null, diagonalBoard = true, reflector = "B", wheelOrders = CarterWheelOrders });
+        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = 1_000_000.0 });
+        var paused = await WaitForRunAsync();
+
+        // Act
+        var continued = await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run/continue", new { });
+
+        // Assert
+        Assert.Equal("Paused", paused.Status);
+        Assert.Equal("VMB", paused.Pause?.Position);
+        Assert.Equal("ENY", paused.Pause?.Indicator);
+        Assert.Equal("Running", continued.Status);
+        Assert.Null(continued.Pause);
+        using var response = await _client.DeleteAsync(Url("/api/bombe/run"), Token);
+        response.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task Should_return_bad_request_When_the_crib_crashes()
     {
         // Arrange

@@ -115,10 +115,14 @@ public sealed class ConfigureBombeHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        Letter? input = command.Input is null ? null : Input.Letter(command.Input);
-        var reflector = Input.Reflector(command.Reflector);
-        IReadOnlyList<WheelOrder> wheelOrders = [.. (command.WheelOrders ?? []).Select(o => WheelOrder.Parse(o ?? string.Empty))];
-        return store.Update(job => job.Configure(input, command.DiagonalBoard ?? job.DiagonalBoard, reflector, wheelOrders));
+        Letter? input = string.IsNullOrEmpty(command.Input) ? null : Input.Letter(command.Input);
+        var reflector = command.Reflector is null ? null : Input.Reflector(command.Reflector);
+        IReadOnlyList<WheelOrder>? wheelOrders = command.WheelOrders?.Select(o => WheelOrder.Parse(o ?? string.Empty)).ToList();
+        return store.Update(job => job.Configure(
+            command.Input is null ? job.ChosenInput : input,
+            command.DiagonalBoard ?? job.DiagonalBoard,
+            reflector ?? job.Reflector,
+            wheelOrders ?? job.WheelOrders));
     }
 }
 
@@ -146,12 +150,22 @@ public sealed class SetRunSpeedHandler(IBombeSessionStore store)
 
         return store.Use(_ =>
         {
-            var run = store.Run is { Status: RunStatus.Running } running
+            var run = store.Run is { IsActive: true } running
                 ? running
                 : throw new DomainException("The Bombe is not running.");
             run.Speed = command.Speed;
             return RunState.From(run);
         });
+    }
+}
+
+public sealed class ContinueRunHandler(IBombeSessionStore store)
+{
+    public RunState Handle(ContinueRun command)
+    {
+        var run = store.Use(_ => store.Run) ?? throw new NotFoundException("There is no run.");
+        run.Continue();
+        return RunState.From(run);
     }
 }
 
@@ -198,7 +212,7 @@ internal static class BombeSessionStoreExtensions
 
     public static void EnsureNotRunning(this IBombeSessionStore store, string message)
     {
-        if (store.Run is { Status: RunStatus.Running })
+        if (store.Run is { IsActive: true })
         {
             throw new DomainException(message);
         }
