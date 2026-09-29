@@ -16,28 +16,16 @@ public sealed class BombeMachine
     private readonly Scrambler _scrambler;
     private readonly (int Link, int Other)[][] _linksByLetter;
 
-    public BombeMachine(
-        Scrambler scrambler, IReadOnlyList<MenuLink> menu, Letter testRegister, Letter input, bool diagonalBoard = true)
+    public BombeMachine(Scrambler scrambler, Menu menu, Letter input, bool diagonalBoard = true)
     {
         ArgumentNullException.ThrowIfNull(scrambler);
         ArgumentNullException.ThrowIfNull(menu);
 
-        if (menu.Count == 0)
-        {
-            throw new DomainException("The menu has no links.");
-        }
-
-        if (!menu.Any(link => link.First == testRegister || link.Second == testRegister))
-        {
-            throw new DomainException($"The test register letter {testRegister} is not on the menu.");
-        }
-
         _scrambler = scrambler;
         Menu = menu;
-        TestRegister = testRegister;
         Input = input;
         DiagonalBoard = diagonalBoard;
-        _linksByLetter = [.. Enumerable.Range(0, Letter.Count).Select(letter => menu
+        _linksByLetter = [.. Enumerable.Range(0, Letter.Count).Select(letter => menu.Links
             .SelectMany((link, index) => new[] { (index, link.First, link.Second), (index, link.Second, link.First) })
             .Where(end => end.Item2.Index == letter)
             .Select(end => (end.index, end.Item3.Index))
@@ -46,10 +34,10 @@ public sealed class BombeMachine
 
     public WheelOrder WheelOrder => _scrambler.WheelOrder;
 
-    public IReadOnlyList<MenuLink> Menu { get; }
+    public Menu Menu { get; }
 
     /// <summary>The menu letter whose cable the test register watches.</summary>
-    public Letter TestRegister { get; }
+    public Letter TestRegister => Menu.TestRegister;
 
     /// <summary>The wire made live on the test register cable: the hypothesis that it is the stecker partner.</summary>
     public Letter Input { get; }
@@ -59,7 +47,7 @@ public sealed class BombeMachine
     /// <summary>Tests one drum position; returns the stop, or null when all 26 test register wires are live.</summary>
     public BombeStop? Test(DrumPosition position)
     {
-        var scramblers = Menu.Select(link => position.Advance(link.Offset).Offset).ToArray();
+        var scramblers = Menu.Links.Select(link => position.Advance(link.Offset).Offset).ToArray();
         var live = new bool[Wires];
         var pending = new Stack<int>();
         var testLive = 0;
