@@ -70,6 +70,14 @@ describe('CheckingView', () => {
     await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'AD GQ' }));
   });
 
+  it('takes the new partner when it is typed in front of the old one', async () => {
+    const api = await openCarterCheck();
+
+    fireEvent.change(screen.getByLabelText('Partner of G'), { target: { value: 'XQ' } });
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'GX' }));
+  });
+
   it('turns the right ring by hand', async () => {
     const api = await openCarterCheck();
 

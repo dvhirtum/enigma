@@ -25,6 +25,7 @@ import type {
 import { shiftLetter, shiftRing } from './machine';
 import { keySheetDocument, procedureDocument, procedureName } from './printSheet';
 import { historicalSpeed } from './bombe/drums';
+import { withPartner } from './bombe/steckers';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -107,6 +108,10 @@ export interface BombeSlice {
   /** Opens the check of a stop on the Checking view. */
   openCheck: (stop: number) => Promise<boolean>;
   changeCheck: (change: CheckChange) => Promise<boolean>;
+  /** Pairs `letter` with `partner` (itself: unsteckered; null: unknown) once the queued operations are done. */
+  setPartner: (letter: string, partner: string | null) => Promise<boolean>;
+  /** Turns the right ring `steps` places on once the queued operations are done. */
+  stepRightRing: (steps: number) => Promise<boolean>;
   /** Turns a checking machine drum (0 = left) `steps` letters on once the queued operations are done. */
   stepCheckDrum: (drum: number, steps: number) => Promise<boolean>;
   /** Presses a key on the checking machine; its lamp stays lit until `releaseCheckKey`. */
@@ -175,23 +180,34 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }
       return result.ok;
     };
+    // Counters that let late replies be dropped: of stop loads, of check openings and of checking machine key presses.
+    let stopLoads = 0;
+    let checkOpenings = 0;
+    let keyPresses = 0;
     /** Forgets the stops and the check, which a changed job or a new run clears. */
-    const noStops = { stops: [], check: null, checkLamp: null, suggestion: null, ringScores: null, confirmation: null };
+    const clearStops = () => {
+      stopLoads++;
+      checkOpenings++;
+      set({ stops: [], check: null, checkLamp: null, suggestion: null, ringScores: null, confirmation: null });
+    };
     const job = async (call: Promise<ApiResult<BombeState>>) => {
       const result = await check(call);
       if (result.ok) {
-        set({ bombe: result.value, ...noStops });
+        set({ bombe: result.value });
+        clearStops();
       }
       return result.ok;
     };
-    /** A call on the open check; the check and the stop's verdict follow the result. */
+    /** Whether the check of `stop` is still the open one. */
+    const stillOpen = (stop: number) => get().check?.stop.index === stop;
+    /** A call on the open check; the check and the stop's verdict follow the result, unless another check was opened meanwhile. */
     const onCheck = async <T,>(call: (stop: number) => Promise<ApiResult<T>>, checkOf: (value: T) => BombeCheck, changes: Partial<MachineStore> = {}) => {
       const current = get().check;
       if (!current) {
         return null;
       }
       const result = await check(call(current.stop.index));
-      if (!result.ok) {
+      if (!result.ok || !stillOpen(current.stop.index)) {
         return null;
       }
       const next = checkOf(result.value);
@@ -266,7 +282,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       startRun: async (speed) => {
         const started = await run(bombe.startRun(speed));
         if (started) {
-          set(noStops);
+          clearStops();
         }
         return started;
       },
@@ -280,16 +296,20 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       },
       showBombeView: (id) => set({ bombeView: id }),
       loadStops: async (more = false) => {
+        // A first page drops the loads before it; a next page is dropped when the list changed meanwhile.
+        const load = more ? stopLoads : ++stopLoads;
         const from = more ? get().stops.length : 0;
         const result = await check(bombe.getStops(from, stopPage));
-        if (result.ok) {
+        if (result.ok && load === stopLoads && (!more || get().stops.length === from)) {
           set((state) => ({ stops: more ? [...state.stops, ...result.value] : result.value }));
         }
         return result.ok;
       },
       openCheck: async (stop) => {
+        const opening = ++checkOpenings;
         const result = await check(bombe.getCheck(stop));
-        if (result.ok) {
+        if (result.ok && opening === checkOpenings) {
+          keyPresses++;
           set({ check: result.value, checkLamp: null, suggestion: null, ringScores: null, confirmation: null, bombeView: 'bombe-checking' });
         }
         return result.ok;
@@ -308,18 +328,33 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           letters[drum] = shiftLetter(letters[drum], steps);
           return get().changeCheck({ position: letters.join('') });
         }),
+      setPartner: (letter, partner) =>
+        enqueue(async () => {
+          const steckers = get().check?.steckers;
+          return steckers !== undefined && get().changeCheck({ steckers: withPartner(steckers, letter, partner) });
+        }),
+      stepRightRing: (steps) =>
+        enqueue(async () => {
+          const ring = get().check?.rightRing;
+          return ring !== undefined && get().changeCheck({ rightRing: ((ring - 1 + steps + 26 * 26) % 26) + 1 });
+        }),
       pressCheckKey: async (key) => {
         const current = get().check;
         if (!current) {
           return false;
         }
+        const press = ++keyPresses;
         const result = await check(bombe.pressCheckKey(current.stop.index, key));
-        if (result.ok) {
+        // A key released before the lamp came back leaves it dark.
+        if (result.ok && press === keyPresses) {
           set({ checkLamp: result.value.lamp });
         }
         return result.ok;
       },
-      releaseCheckKey: () => set({ checkLamp: null }),
+      releaseCheckKey: () => {
+        keyPresses++;
+        set({ checkLamp: null });
+      },
       confirmCheck: async (verdict) => {
         const confirmation = await onCheck((stop) => bombe.confirmCheck(stop, verdict), (value) => value.check);
         if (confirmation) {
@@ -333,25 +368,26 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           return false;
         }
         const result = await check(bombe.suggestSteckers(current.stop.index));
-        if (result.ok) {
+        if (result.ok && stillOpen(current.stop.index)) {
           set({ suggestion: result.value });
         }
         return result.ok;
       },
-      acceptSuggestion: async (pairs) => {
-        const current = get().check;
-        const suggestion = get().suggestion;
-        if (!current || pairs.length === 0) {
-          return false;
-        }
-        const steckers = [current.steckers, ...pairs].filter(Boolean).join(' ');
-        const accepted = await onCheck((stop) => bombe.setCheck(stop, { steckers }), (value) => value, { ringScores: null, confirmation: null });
-        if (accepted && suggestion) {
-          const left = suggestion.pairs.filter((pair) => !pairs.includes(pair.pair));
-          set({ suggestion: left.length > 0 ? { ...suggestion, pairs: left } : null });
-        }
-        return accepted !== null;
-      },
+      acceptSuggestion: (pairs) =>
+        enqueue(async () => {
+          const current = get().check;
+          if (!current || pairs.length === 0) {
+            return false;
+          }
+          const steckers = [current.steckers, ...pairs].filter(Boolean).join(' ');
+          const accepted = await onCheck((stop) => bombe.setCheck(stop, { steckers }), (value) => value, { ringScores: null, confirmation: null });
+          const suggestion = get().suggestion;
+          if (accepted && suggestion) {
+            const left = suggestion.pairs.filter((pair) => !pairs.includes(pair.pair));
+            set({ suggestion: left.length > 0 ? { ...suggestion, pairs: left } : null });
+          }
+          return accepted !== null;
+        }),
       findRightRing: async () => {
         const found = await onCheck((stop) => bombe.findRightRing(stop), (value) => value.check, { confirmation: null });
         if (found) {

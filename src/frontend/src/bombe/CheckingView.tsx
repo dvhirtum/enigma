@@ -5,7 +5,7 @@ import { useSetMode } from '../mode';
 import { useMachine } from '../store';
 import { CheckingMachine } from './CheckingMachine';
 import { groups } from './MessageView';
-import { partnersOf, withPartner } from './steckers';
+import { partnersOf } from './steckers';
 
 const ringLetter = (ring: number) => alphabet[ring - 1];
 
@@ -38,15 +38,17 @@ function CribCheck({ check }: { check: BombeCheck }) {
 
 /** The steckers written down while checking: each letter's partner, itself when unsteckered, empty when unknown. */
 function SteckerGrid({ check }: { check: BombeCheck }) {
-  const changeCheck = useMachine((store) => store.changeCheck);
+  const setPartner = useMachine((store) => store.setPartner);
   const partners = partnersOf(check.steckers);
 
+  // The letter typed is the one that is not the old partner, wherever the cursor was.
   const onChange = (letter: string, value: string) => {
-    const partner = value.slice(-1).toUpperCase();
+    const typed = [...value.toUpperCase()];
+    const partner = typed.find((character) => character !== partners[letter]) ?? typed[0] ?? '';
     if (partner !== '' && !alphabet.includes(partner)) {
       return;
     }
-    void changeCheck({ steckers: withPartner(check.steckers, letter, partner || null) });
+    void setPartner(letter, partner || null);
   };
 
   return (
@@ -72,10 +74,10 @@ function SteckerGrid({ check }: { check: BombeCheck }) {
 
 /** The right ring, turned by hand or found, with each ring's score after Find. */
 function RightRing({ check }: { check: BombeCheck }) {
-  const changeCheck = useMachine((store) => store.changeCheck);
+  const stepRightRing = useMachine((store) => store.stepRightRing);
   const findRightRing = useMachine((store) => store.findRightRing);
   const scores = useMachine((store) => store.ringScores);
-  const turn = (steps: number) => void changeCheck({ rightRing: ((check.rightRing - 1 + steps + 26) % 26) + 1 });
+  const turn = (steps: number) => void stepRightRing(steps);
   const known = scores?.flatMap((ring) => (ring.score === null ? [] : [ring.score])) ?? [];
   const low = Math.min(0, ...known);
   const high = Math.max(...known, low + 1);
