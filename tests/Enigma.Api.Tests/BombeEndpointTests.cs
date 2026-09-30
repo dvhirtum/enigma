@@ -53,7 +53,7 @@ public sealed class BombeEndpointTests : IDisposable
         Assert.Equal(2, run.Stops);
         Assert.NotNull(stops);
         var stop = Assert.Single(stops, s => s.Position == "VMB");
-        Assert.Equal("ENY", stop.Indicator);
+        Assert.Equal("DKX", stop.Indicator);
         Assert.Equal("Q", stop.Stecker);
     }
 
@@ -76,7 +76,7 @@ public sealed class BombeEndpointTests : IDisposable
         // Assert
         Assert.Equal("Paused", paused.Status);
         Assert.Equal("VMB", paused.Pause?.Position);
-        Assert.Equal("ENY", paused.Pause?.Indicator);
+        Assert.Equal("DKX", paused.Pause?.Indicator);
         Assert.Equal("Running", continued.Status);
         Assert.Null(continued.Pause);
         using var response = await _client.DeleteAsync(Url("/api/bombe/run"), Token);

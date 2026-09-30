@@ -19,6 +19,24 @@ public sealed class WheelOrderTests
         Assert.Equal(336, distinct);
     }
 
+    [Theory]
+    [InlineData("I II III", "ZZZ", "AAA")]
+    [InlineData("VI VII VIII", "ZZZ", "AAA")]
+    [InlineData("IV V I", "ZZZ", "BCA")]
+    [InlineData("II V III", "VMB", "WPC")]
+    public void Should_show_letters_ahead_of_the_Enigma_rotors_When_read_on_the_drums(string rotors, string corePositions, string letters)
+    {
+        // Arrange
+        var order = WheelOrder.Parse(rotors);
+        var core = DrumPosition.Parse(corePositions);
+
+        // Act
+        var drums = order.DrumLetters(core);
+
+        // Assert
+        Assert.Equal(letters, drums.ToString());
+    }
+
     [Fact]
     public void Should_read_the_rotors_from_left_to_right_When_parsed()
     {

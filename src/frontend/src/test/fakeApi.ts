@@ -169,7 +169,7 @@ export const carterPaused: BombeRun = {
   positions: 17576,
   wheelOrder: 'II V III',
   position: 'VMB',
-  pause: { wheelOrder: 'II V III', position: 'VMB', indicator: 'ENY', testRegister: 'G', liveWires: 'Q', stecker: 'Q' },
+  pause: { wheelOrder: 'II V III', position: 'VMB', indicator: 'DKX', testRegister: 'G', liveWires: 'Q', stecker: 'Q' },
   stops: 1,
   error: null,
   elapsedSeconds: 117.3,

@@ -4,6 +4,7 @@ import { useMachine } from '../store';
 import {
   advance,
   drumColours,
+  drumLettersOf,
   formatSpeed,
   fullSpeedStep,
   indicatorOf,
@@ -53,8 +54,9 @@ const drumNames = ['upper', 'middle', 'lower'];
 function Front({ bombe }: { bombe: BombeState }) {
   const run = bombe.run;
   const spinning = run?.status === 'Running' && run.speed === null;
-  const position = (isActive(run) && run?.position) || 'ZZZ';
   const wheelOrder = run?.wheelOrder ?? (spinning ? null : (bombe.settings.wheelOrders[0] ?? null));
+  const core = isActive(run) && run?.position;
+  const position = core && wheelOrder ? drumLettersOf(core, wheelOrder) : 'ZZZ';
   const drumRotors = wheelOrder?.split(' ') ?? [null, null, null];
   const scramblers = scramblersOf(bombe.menu?.links ?? []);
   const indicator = indicatorOf(position);

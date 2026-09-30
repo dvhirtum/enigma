@@ -87,7 +87,7 @@ public sealed class BombeHandlerTests
         Assert.Equal(2, run.Stops);
         var stop = Assert.Single(new GetStopsHandler(_store).Handle(new GetStops(0)), s => s.Position == "VMB");
         Assert.Equal("II V III", stop.WheelOrder);
-        Assert.Equal("ENY", stop.Indicator);
+        Assert.Equal("DKX", stop.Indicator);
         Assert.Equal("Q", stop.Stecker);
     }
 
