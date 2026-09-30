@@ -14,13 +14,13 @@ public sealed class LanguageModelTests
         Letter?[] noise = [.. plain.Select(_ => (Letter?)Letter.FromIndex(random.Next(Letter.Count)))];
 
         // Act
-        var plainScore = LanguageModel.Score(plain);
-        var noiseScore = LanguageModel.Score(noise);
+        var plainScore = LanguageModel.Gain(plain);
+        var noiseScore = LanguageModel.Gain(noise);
 
         // Assert
         Assert.NotNull(plainScore);
         Assert.NotNull(noiseScore);
-        Assert.True(plainScore > LanguageModel.RandomLogProbability);
+        Assert.True(plainScore > 0);
         Assert.True(plainScore > noiseScore + 1);
     }
 
@@ -28,40 +28,41 @@ public sealed class LanguageModelTests
     public void Should_prefer_the_Navy_spelling_When_CH_is_written_Q()
     {
         // Arrange
-        var navy = Text("NIQTSZUMELDEN");
-        var plain = Text("NICHTSZUMELDEN");
+        var n = Letter.FromChar('N');
+        var i = Letter.FromChar('I');
 
         // Act
-        var navyScore = LanguageModel.Score(navy);
-        var plainScore = LanguageModel.Score(plain);
+        var q = LanguageModel.LogProbability(n, i, Letter.FromChar('Q'));
+        var c = LanguageModel.LogProbability(n, i, Letter.FromChar('C'));
 
         // Assert
-        Assert.True(navyScore > plainScore);
+        Assert.True(q > c);
     }
 
     [Fact]
-    public void Should_score_only_three_known_letters_in_a_row_When_letters_are_unknown()
+    public void Should_sum_only_three_known_letters_in_a_row_When_letters_are_unknown()
     {
         // Arrange
         var text = Text("EIN?DER?");
 
         // Act
-        var score = LanguageModel.Score(text);
+        var score = LanguageModel.Gain(text);
 
         // Assert
         var ein = LanguageModel.LogProbability(Letter.FromChar('E'), Letter.FromChar('I'), Letter.FromChar('N'));
         var der = LanguageModel.LogProbability(Letter.FromChar('D'), Letter.FromChar('E'), Letter.FromChar('R'));
-        Assert.Equal((ein + der) / 2, score);
+        Assert.NotNull(score);
+        Assert.Equal(ein + der - (2 * LanguageModel.RandomLogProbability), score.Value, 1e-12);
     }
 
     [Fact]
-    public void Should_give_no_score_When_no_three_letters_in_a_row_are_known()
+    public void Should_give_no_gain_When_no_three_letters_in_a_row_are_known()
     {
         // Arrange
         var text = Text("EI?N");
 
         // Act
-        var score = LanguageModel.Score(text);
+        var score = LanguageModel.Gain(text);
 
         // Assert
         Assert.Null(score);

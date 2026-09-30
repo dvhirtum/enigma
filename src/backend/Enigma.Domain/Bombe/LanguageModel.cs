@@ -24,8 +24,11 @@ public static class LanguageModel
     public static double LogProbability(Letter a, Letter b, Letter c) =>
         LogProbabilities[(a.Index * Pairs) + (b.Index * Letter.Count) + c.Index];
 
-    /// <summary>The mean log probability over every three known letters in a row, or null when there are none.</summary>
-    public static double? Score(IReadOnlyList<Letter?> text)
+    /// <summary>
+    /// The log likelihood against random letters, summed over every three known letters in a row, or null when there
+    /// are none.
+    /// </summary>
+    public static double? Gain(IReadOnlyList<Letter?> text)
     {
         ArgumentNullException.ThrowIfNull(text);
 
@@ -34,11 +37,11 @@ public static class LanguageModel
         {
             if (Window(text, index) is { } logProbability)
             {
-                (sum, count) = (sum + logProbability, count + 1);
+                (sum, count) = (sum + logProbability - RandomLogProbability, count + 1);
             }
         }
 
-        return count == 0 ? null : sum / count;
+        return count == 0 ? null : sum;
     }
 
     /// <summary>The log probability of the letter at <paramref name="index"/> after the two before it, or null when one is unknown.</summary>

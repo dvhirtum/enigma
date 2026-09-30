@@ -166,18 +166,23 @@ public sealed class StopCheck
     }
 
     /// <summary>
-    /// Scores the decrypt with each right ring, the core positions kept, and sets the lowest ring with the best score.
-    /// Rings that give the same decrypt tie.
+    /// Scores the decrypt with each right ring, the core positions kept, by its gain against random letters, and sets
+    /// the lowest ring with the best score. Rings that give the same decrypt tie. When no ring has three known letters
+    /// in a row, all tie and the ring stays.
     /// </summary>
     public IReadOnlyList<RingScore> FindRightRing()
     {
         var scores = Enumerable.Range(1, Letter.Count)
             .Select(RingSetting.FromNumber)
-            .Select(ring => (Ring: ring, Score: LanguageModel.Score(Decrypt(Steckers, MessageScrambles(ring)))))
+            .Select(ring => (Ring: ring, Score: LanguageModel.Gain(Decrypt(Steckers, MessageScrambles(ring)))))
             .ToArray();
         var best = scores.Max(ring => ring.Score ?? double.NegativeInfinity);
         RingScore[] rings = [.. scores.Select(ring => new RingScore(ring.Ring, ring.Score, (ring.Score ?? double.NegativeInfinity) == best))];
-        RightRing = rings.First(ring => ring.Best).Ring;
+        if (!double.IsNegativeInfinity(best))
+        {
+            RightRing = rings.First(ring => ring.Best).Ring;
+        }
+
         return rings;
     }
 

@@ -103,9 +103,9 @@ public sealed record SuggestionState(IReadOnlyList<SuggestedPairState> Pairs, st
 public sealed record SuggestedPairState(string Pair, double Gain);
 
 /// <summary>
-/// Each right ring (1–26) with its decrypt score (mean log probability; null when no three letters in a row are known)
-/// and whether it has the best score; more than one best means the ring is not determined yet. The check has the
-/// lowest best ring set.
+/// Each right ring (1–26) with its decrypt score (log likelihood against random letters; null when no three letters in
+/// a row are known) and whether it has the best score; more than one best means the ring is not determined yet. The
+/// check has the lowest best ring set, or keeps its ring when no ring has a score.
 /// </summary>
 public sealed record FindState(IReadOnlyList<RingScoreState> Rings, CheckState Check);
 

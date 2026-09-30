@@ -257,7 +257,7 @@ public sealed class StopCheckTests
     }
 
     [Fact]
-    public void Should_give_every_ring_the_best_score_When_no_three_letters_in_a_row_are_known()
+    public void Should_tie_every_ring_and_keep_the_ring_When_no_three_letters_in_a_row_are_known()
     {
         // Arrange
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
@@ -268,7 +268,7 @@ public sealed class StopCheckTests
         // Assert
         Assert.All(rings, ring => Assert.Null(ring.Score));
         Assert.All(rings, ring => Assert.True(ring.Best));
-        Assert.Equal(1, check.RightRing.Number);
+        Assert.Equal(26, check.RightRing.Number);
     }
 
     [Fact]
