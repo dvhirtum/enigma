@@ -195,7 +195,8 @@ public sealed class GetStopsHandler(IBombeSessionStore store)
 
         var run = store.Use(_ => store.Run) ?? throw new NotFoundException("There is no run.");
         var from = Math.Max(0, query.From);
-        return [.. run.Stops(from).Select((stop, i) => StopState.From(stop, from + i, run.VerdictOn(from + i)))];
+        var stops = run.Stops(from, query.Count);
+        return [.. stops.Select((stop, i) => StopState.From(stop, from + i, run.VerdictOn(from + i)))];
     }
 }
 

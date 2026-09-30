@@ -279,4 +279,48 @@ public sealed class HandlerTests
         // Assert
         Assert.Equal("STEUEREJTANAFJORDJANSTANDORTQUAAACCCVIERNEUNNEUNZWOFAHRTZWONULSMXXSCHARNHORSTHCO", plaintext);
     }
+
+    [Fact]
+    public void Should_decrypt_Scharnhorsts_signal_When_the_whole_key_is_set_up_in_one_call()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var press = new PressKeyHandler(store);
+        var release = new ReleaseKeyHandler(store);
+
+        // Act
+        var state = new SetUpMachineHandler(store).Handle(new SetUpMachine(
+            "B", ["III", "VI", "VIII"], [1, 8, 13], "AN EZ HK IJ LR MQ OT PV SW UX".Split(' '), "UZV"));
+        var plaintext = string.Concat("YKAENZAPMSCHZBFOCUVMRMDPYCOFHADZIZMEFXTHFLOLPZLFGGBOTGOXGRETDWTJIQHLMXVJWKZUASTR"
+            .Select(c =>
+            {
+                var lamp = press.Handle(new PressKey(c.ToString())).LitLamp;
+                release.Handle(new ReleaseKey());
+                return lamp;
+            }));
+
+        // Assert
+        Assert.Equal("M3", state.Model);
+        Assert.Equal(10, state.Plugs.Count);
+        Assert.Equal("STEUEREJTANAFJORDJANSTANDORTQUAAACCCVIERNEUNNEUNZWOFAHRTZWONULSMXXSCHARNHORSTHCO", plaintext);
+    }
+
+    [Theory]
+    [InlineData("B", new[] { "I", "II" }, new[] { 1, 1 }, "AA")]
+    [InlineData("B", new[] { "I", "II", "III" }, new[] { 1, 1 }, "AAA")]
+    [InlineData("B", new[] { "I", "II", "III" }, new[] { 1, 1, 1 }, "AA")]
+    [InlineData("B", new[] { "I", "I", "III" }, new[] { 1, 1, 1 }, "AAA")]
+    public void Should_keep_the_machine_When_the_key_is_not_complete(string reflector, string[] rotors, int[] rings, string positions)
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var original = store.Machine;
+
+        // Act
+        void Act() => new SetUpMachineHandler(store).Handle(new SetUpMachine(reflector, rotors, rings, [], positions));
+
+        // Assert
+        Assert.ThrowsAny<DomainException>(Act);
+        Assert.Same(original, store.Machine);
+    }
 }

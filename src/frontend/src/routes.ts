@@ -30,6 +30,7 @@ export const machineRoutes: Routes<MachineApi> = {
   pressKey: (key) => ({ method: 'POST', path: `${machine}/keyboard/press`, body: { key } }),
   releaseKey: () => ({ method: 'POST', path: `${machine}/keyboard/release` }),
   applyDailyKey: (sheetId, day) => ({ method: 'POST', path: `${machine}/daily-key`, body: { sheetId, day } }),
+  setUpMachine: (key) => ({ method: 'PUT', path: `${machine}/key`, body: key }),
   startSending: () => ({ method: 'POST', path: `${operator}/send` }),
   startReceiving: (message, sheetId, day) => ({ method: 'POST', path: `${operator}/receive`, body: { message, sheetId, day } }),
   chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) => ({
@@ -71,4 +72,11 @@ export const bombeRoutes: Routes<BombeApi> = {
   continueRun: () => ({ method: 'POST', path: `${bombe}/run/continue` }),
   cancelRun: () => ({ method: 'DELETE', path: `${bombe}/run` }),
   getRun: () => ({ method: 'GET', path: `${bombe}/run` }),
+  getStops: (from, count) => ({ method: 'GET', path: `${bombe}/run/stops?from=${from}&count=${count}` }),
+  getCheck: (stop) => ({ method: 'GET', path: `${bombe}/run/stops/${stop}/check` }),
+  setCheck: (stop, change) => ({ method: 'PUT', path: `${bombe}/run/stops/${stop}/check`, body: change }),
+  pressCheckKey: (stop, key) => ({ method: 'POST', path: `${bombe}/run/stops/${stop}/check/press`, body: { key } }),
+  confirmCheck: (stop, verdict) => ({ method: 'POST', path: `${bombe}/run/stops/${stop}/check/verdict`, body: { verdict } }),
+  suggestSteckers: (stop) => ({ method: 'POST', path: `${bombe}/run/stops/${stop}/check/suggest` }),
+  findRightRing: (stop) => ({ method: 'POST', path: `${bombe}/run/stops/${stop}/check/find` }),
 };

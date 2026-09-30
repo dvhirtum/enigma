@@ -35,8 +35,8 @@ public sealed record GetBombeState;
 
 public sealed record GetRun;
 
-/// <summary>The stops of the run from the <see cref="From"/>th on.</summary>
-public sealed record GetStops(int From);
+/// <summary>The stops of the run from the <see cref="From"/>th on, at most <see cref="Count"/> of them (null: all).</summary>
+public sealed record GetStops(int From, int? Count = null);
 
 public sealed record ListIntercepts;
 

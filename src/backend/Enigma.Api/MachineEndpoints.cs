@@ -24,7 +24,8 @@ internal static class MachineEndpoints
         .AddSingleton<TurnRotorHandler>()
         .AddSingleton<PressKeyHandler>()
         .AddSingleton<ReleaseKeyHandler>()
-        .AddSingleton<GetMachineStateHandler>();
+        .AddSingleton<GetMachineStateHandler>()
+        .AddSingleton<SetUpMachineHandler>();
 
     public static void MapMachineEndpoints(this IEndpointRouteBuilder app)
     {
@@ -34,6 +35,9 @@ internal static class MachineEndpoints
             handler.Handle(new GetMachineState()));
 
         machine.MapPost("/", (CreateMachine command, CreateMachineHandler handler) =>
+            handler.Handle(command));
+
+        machine.MapPut("/key", (SetUpMachine command, SetUpMachineHandler handler) =>
             handler.Handle(command));
 
         machine.MapPut("/rotors/{slot}", (string slot, RotorRequest request, InsertRotorHandler handler) =>

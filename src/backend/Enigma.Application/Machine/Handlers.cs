@@ -156,3 +156,49 @@ internal static class MachineSessionStoreExtensions
             return MachineState.From(machine, store.AppliedKey, store.Procedure);
         });
 }
+
+public sealed class SetUpMachineHandler(IMachineSessionStore store)
+{
+    public MachineState Handle(SetUpMachine command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(command.Rotors);
+        ArgumentNullException.ThrowIfNull(command.Rings);
+        ArgumentNullException.ThrowIfNull(command.Plugs);
+
+        var model = command.Rotors.Count switch
+        {
+            3 => MachineModel.M3,
+            4 => MachineModel.M4,
+            _ => throw new DomainException($"A machine has 3 rotors (M3) or 4 (M4), got {command.Rotors.Count}."),
+        };
+        if (command.Rings.Count != command.Rotors.Count || command.Positions?.Length != command.Rotors.Count)
+        {
+            throw new DomainException($"{command.Rotors.Count} rotors need {command.Rotors.Count} rings and window letters.");
+        }
+
+        var machine = EnigmaMachine.Create(model);
+        machine.SetReflector(Input.Reflector(command.Reflector));
+        foreach (var slot in model.Slots)
+        {
+            machine.RemoveRotor(slot);
+        }
+
+        foreach (var (slot, index) in model.Slots.Select((slot, index) => (slot, index)))
+        {
+            var rotor = Input.Rotor(command.Rotors[index]);
+            machine.SetRingSetting(rotor, RingSetting.FromNumber(command.Rings[index]));
+            machine.InsertRotor(slot, rotor);
+            machine.TurnRotor(slot, RotorPosition.FromChar(char.ToUpperInvariant(command.Positions[index])));
+        }
+
+        foreach (var pair in command.Plugs)
+        {
+            machine.ConnectPlug(Input.PlugPair(pair));
+        }
+
+        var state = MachineState.From(machine, null);
+        store.Replace(machine);
+        return state;
+    }
+}

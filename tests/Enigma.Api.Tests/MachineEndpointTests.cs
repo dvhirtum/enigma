@@ -36,6 +36,36 @@ public sealed class MachineEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_set_up_the_whole_key_When_a_key_is_put()
+    {
+        // Arrange
+        var key = new { reflector = "B", rotors = new[] { "II", "V", "III" }, rings = new[] { 26, 26, 26 }, plugs = new[] { "AD", "ET" }, positions = "ULA" };
+
+        // Act
+        var state = await SendAsync(HttpMethod.Put, "/api/machine/key", key);
+
+        // Assert
+        Assert.Equal("M3", state.Model);
+        Assert.Equal(["II", "V", "III"], state.Rotors.Select(r => r.Rotor));
+        Assert.Equal("ULA", string.Concat(state.Rotors.Select(r => r.Position)));
+        Assert.Equal([26, 26, 26], state.Rotors.Select(r => r.RingSetting));
+        Assert.Equal(2, state.Plugs.Count);
+    }
+
+    [Fact]
+    public async Task Should_return_bad_request_When_the_key_has_too_few_rings()
+    {
+        // Arrange
+        var key = new { reflector = "B", rotors = new[] { "II", "V", "III" }, rings = new[] { 26, 26 }, plugs = Array.Empty<string>(), positions = "ULA" };
+
+        // Act
+        using var response = await _client.PutAsJsonAsync(Url("/api/machine/key"), key, Token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Should_replace_the_machine_When_an_M4_is_created()
     {
         // Arrange

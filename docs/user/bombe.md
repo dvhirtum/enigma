@@ -74,3 +74,34 @@ The **Back** tab shows how the menu is plugged up. Each letter on the menu has a
 - **Input on wire** sets the wire of the test register cable that the current goes into: the guessed stecker partner of the test register letter. It is A, or B when the test register is on A.
 
 The run settings cannot change while the Bombe runs or waits at a stop.
+
+## The stops
+
+The **Stops** tab lists the stops of the run, a hundred at a time: the wheel order, the indicator reading, the core position, the stecker of the test register letter and your verdict. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it on the Checking tab. Changing the message, crib, menu or settings, or starting a new run, clears the stops and their checks.
+
+## Checking a stop
+
+Most stops are false. Hut 8 tested each one on a checking machine: an Enigma without plugboard whose rotors do not step, set by hand to the Bombe drum letters. The **Checking** tab shows it, set to the stop, with its reflector wheel, three drums and the spare drums in the rack above.
+
+- **Turn a drum** with its thumbwheel: click the top half to turn it up, the bottom half to turn it down, or drag.
+- **Press a key**, by clicking it or typing the letter; the lamp of the letter it goes to lights while the key is held.
+
+To check the stop, follow the menu from the stecker the Bombe found. For a link at offset *n*, turn the drums *n* steps on from the stop, press the stecker partner of one letter and read the lamp: that is the stecker partner of the other letter. Write each partner into the **Steckers** grid. Type a letter itself for an unsteckered letter, and clear the box when a partner is unknown. Changing one partner removes the pair the letter had before. A letter can have only one partner, so a contradiction shows the stop is false.
+
+The **Crib** row marks each crib letter green when the steckers encipher it correctly, red when they contradict it, and grey while it is still unknown. The **Decrypt** shows the whole message with the steckers found so far, with **?** where a stecker is still unknown.
+
+### Letters the menu does not reach
+
+**Suggest** proposes steckers for letters the menu does not reach, scored on how much the decrypt looks like Navy German. It proposes a pair only when the pair clearly beats every other partner for that letter, never contradicts the crib, and stops at ten plug pairs. Accept the pairs you agree with one by one, or click **Accept all**. You can change any pair afterwards in the grid.
+
+The scoring counts letters, pairs and triples of letters from the Navy messages the simulator comes with, half and half with general German from Theodor Fontane's *Effi Briest* (Project Gutenberg), written as the Navy wrote: ä as AE, ß as SZ, CH as Q, X for punctuation, no spaces.
+
+### The right ring
+
+The Bombe finds the rotor cores, not the ring settings. The **Right ring** decides when the middle rotor turns over. A wrong right ring garbles the message a letter at a time, once every 26 letters. Turn it with ◀ and ▶ (the core positions stay), or click **Find**. Find scores the decrypt with each of the 26 rings and sets the lowest ring with the best score. The bars show every ring's score, with the best ones highlighted. When several rings tie, the ring is not settled yet: find or accept more steckers, then click **Find** again. A good order is Find, Suggest, Find. The left and middle rings stay at Z until the indicators are read.
+
+### Verdict and key
+
+Mark the stop **True stop** or **False stop** (or **Unchecked** again). The verdict shows on the Stops tab. It also tells you whether the crib matches. For an intercept or exercise, it says whether the stop really is the true one, which pairs are wrong or missing, and whether the right ring is right.
+
+The **Key** gives the reflector, wheel order, rings, plugs and the message key: the rotor positions at the start of the message. **Set up Enigma** asks first, then sets up the Enigma with this key at the message key and switches to Enigma mode, ready to type the cipher text.

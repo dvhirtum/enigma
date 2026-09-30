@@ -23,6 +23,12 @@ export function useActive(): boolean {
   return useContext(ActiveContext);
 }
 
+/** Switches the mode; does nothing outside a mode provider. */
+export function useSetMode(): (mode: Mode) => void {
+  const context = useContext(ModeContext);
+  return context?.setMode ?? (() => undefined);
+}
+
 /** The header title: the active mode, next to the other mode, which switches to it. */
 export function ModeSwitch({ disabled = false }: { disabled?: boolean }) {
   const context = useContext(ModeContext);

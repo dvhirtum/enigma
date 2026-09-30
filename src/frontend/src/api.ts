@@ -215,6 +215,85 @@ export interface BombeState {
   run: BombeRun | null;
 }
 
+/** A crib letter at its offset, and whether the steckers found so far encipher it to its cipher letter. */
+export interface CribLetter {
+  offset: number;
+  plain: string;
+  cipher: string;
+  match: 'Match' | 'Mismatch' | 'Unknown';
+}
+
+/** The key a check gives: rings 1–26 (left and middle stay 26, unknown until the indicators are read). */
+export interface CheckedKey {
+  reflector: string;
+  wheelOrder: string;
+  rings: number[];
+  plugs: string[];
+  messageKey: string;
+}
+
+/**
+ * The check of a stop on the checking machine: its drum letters, the steckers found ("AD ET RR"), the right ring
+ * (1–26), the verdict, each crib letter's match, the decrypt ('?' where a stecker is unknown) and the key.
+ */
+export interface BombeCheck {
+  stop: BombeStop;
+  position: string;
+  steckers: string;
+  rightRing: number;
+  verdict: BombeStop['verdict'];
+  crib: CribLetter[];
+  decrypt: string;
+  key: CheckedKey;
+}
+
+/** Check fields to change; those left out stay as they are. */
+export interface CheckChange {
+  position?: string;
+  steckers?: string;
+  rightRing?: number;
+}
+
+/** How a verdict compares with the message's solution. */
+export interface SolutionComparison {
+  isTrueStop: boolean;
+  verdictCorrect: boolean;
+  wrongPairs: string[];
+  missingPairs: string[];
+  rightRingCorrect: boolean;
+}
+
+/** A verdict with the crib offsets that mismatch or are unknown, the comparison with the solution (when there is one) and the check. */
+export interface Confirmation {
+  verdict: BombeStop['verdict'];
+  cribMismatches: number[];
+  cribUnknown: number[];
+  solution: SolutionComparison | null;
+  check: BombeCheck;
+}
+
+/** Proposed steckers with their gain, the steckers with them all added, and the decrypt they give. */
+export interface Suggestion {
+  pairs: { pair: string; gain: number }[];
+  steckers: string;
+  decrypt: string;
+}
+
+/** Each right ring's score (null when no three letters in a row are known) and whether it is the best; the check with the ring set. */
+export interface RingFind {
+  rings: { ring: number; score: number | null; best: boolean }[];
+  check: BombeCheck;
+}
+
+/** A whole key for the Enigma: rotors left to right, rings 1–26, plug pairs and window letters. */
+export interface MachineKey {
+  reflector: string;
+  rotors: string[];
+  rings: number[];
+  plugs: string[];
+  positions: string;
+}
+
 /** A bundled historical intercept. The date is yyyy-MM-dd, or null when unknown. */
 export interface Intercept {
   id: string;
@@ -252,6 +331,8 @@ export interface MachineApi {
   pressKey: MachineCall<[key: string]>;
   releaseKey: MachineCall<[]>;
   applyDailyKey: MachineCall<[sheetId: string, day: number]>;
+  /** Replaces the machine with one set up with the whole key. */
+  setUpMachine: MachineCall<[key: MachineKey]>;
   startSending: MachineCall<[]>;
   /** Starts receiving; with a sheet and day, applies that key first, otherwise uses the applied key as it is. */
   startReceiving: MachineCall<[message: string, sheetId?: string, day?: number]>;
@@ -311,6 +392,17 @@ export interface BombeApi {
   continueRun: Call<[], BombeRun>;
   cancelRun: Call<[], BombeRun>;
   getRun: Call<[], BombeRun>;
+  /** The stops of the run from index `from` on, at most `count`. */
+  getStops: Call<[from: number, count: number], BombeStop[]>;
+  getCheck: Call<[stop: number], BombeCheck>;
+  setCheck: Call<[stop: number, change: CheckChange], BombeCheck>;
+  /** Presses a key on the checking machine; resolves to the lamp that lights. */
+  pressCheckKey: Call<[stop: number, key: string], { lamp: string }>;
+  confirmCheck: Call<[stop: number, verdict: BombeStop['verdict']], Confirmation>;
+  /** Proposes steckers for the unknown letters, without setting them. */
+  suggestSteckers: Call<[stop: number], Suggestion>;
+  /** Scores the 26 right rings and sets the lowest best. */
+  findRightRing: Call<[stop: number], RingFind>;
 }
 
 /** An HTML document to print to the PDF file `name`. */

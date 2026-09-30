@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { BackendStatus, BombeRun, BombeState, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
+import type { BackendStatus, BombeCheck, BombeRun, BombeState, BombeStop, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -175,6 +175,35 @@ export const carterPaused: BombeRun = {
   elapsedSeconds: 117.3,
 };
 
+/** The two stops of Carter's menu on II V III: the true one at VMB and a false one. */
+export const carterStops: BombeStop[] = [
+  { index: 0, wheelOrder: 'II V III', position: 'VMB', indicator: 'DKX', testRegister: 'G', liveWires: 'Q', stecker: 'Q', verdict: 'Unchecked' },
+  { index: 1, wheelOrder: 'II V III', position: 'KQF', indicator: 'NFO', testRegister: 'G', liveWires: 'ABCDEFHIJKLMNOPQRSTUVWXYZ', stecker: 'G', verdict: 'Unchecked' },
+];
+
+const carterCrib = 'WETTERVORHERSAGE';
+
+/** The check of Carter's true stop as it starts: the drums at the stop's letters, only G/Q known. */
+export const carterCheck: BombeCheck = {
+  stop: carterStops[0],
+  position: 'WPC',
+  steckers: 'GQ',
+  rightRing: 26,
+  verdict: 'Unchecked',
+  crib: [...carterCrib].map((plain, index) => ({ offset: index + 1, plain, cipher: 'SNMKGGSTZZUGARLV'[index], match: 'Unknown' })),
+  decrypt: '?'.repeat(16),
+  key: { reflector: 'B', wheelOrder: 'II V III', rings: [26, 26, 26], plugs: ['GQ'], messageKey: 'ULA' },
+};
+
+/** Carter's check with every stecker found: the crib matches and decrypts. */
+export const carterChecked: BombeCheck = {
+  ...carterCheck,
+  steckers: 'AD ET FU GQ HM IK JL NV OX PZ RR SS WW',
+  crib: carterCheck.crib.map((letter) => ({ ...letter, match: 'Match' })),
+  decrypt: carterCrib,
+  key: { ...carterCheck.key, plugs: ['AD', 'ET', 'FU', 'GQ', 'HM', 'IK', 'JL', 'NV', 'OX', 'PZ'] },
+};
+
 export const intercepts: Intercept[] = [
   { id: 'carter', title: 'Carter weather crib', date: null, hint: 'A weather forecast.' },
   { id: 'scharnhorst', title: 'Scharnhorst', date: '1943-12-26', hint: null },
@@ -209,6 +238,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       pressKey: ok(),
       releaseKey: ok(),
       applyDailyKey: ok(),
+      setUpMachine: ok(),
       startSending: ok(),
       startReceiving: ok(),
       chooseGroups: ok(),
@@ -243,6 +273,31 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       continueRun: run(),
       cancelRun: run({ ...carterPaused, status: 'Cancelled', pause: null, wheelOrder: null, position: null }),
       getRun: run(),
+      getStops: vi.fn().mockResolvedValue({ ok: true, value: carterStops }),
+      getCheck: vi.fn().mockResolvedValue({ ok: true, value: carterCheck }),
+      setCheck: vi.fn().mockResolvedValue({ ok: true, value: carterChecked }),
+      pressCheckKey: vi.fn().mockResolvedValue({ ok: true, value: { lamp: 'R' } }),
+      confirmCheck: vi.fn().mockResolvedValue({
+        ok: true,
+        value: {
+          verdict: 'True',
+          cribMismatches: [],
+          cribUnknown: [],
+          solution: { isTrueStop: true, verdictCorrect: true, wrongPairs: [], missingPairs: [], rightRingCorrect: true },
+          check: { ...carterChecked, verdict: 'True', stop: { ...carterChecked.stop, verdict: 'True' } },
+        },
+      }),
+      suggestSteckers: vi.fn().mockResolvedValue({
+        ok: true,
+        value: { pairs: [{ pair: 'IK', gain: 12.5 }, { pair: 'OX', gain: 9.1 }], steckers: 'AD ET FU GQ HM IK JL NV OX PZ RR SS WW', decrypt: carterCrib },
+      }),
+      findRightRing: vi.fn().mockResolvedValue({
+        ok: true,
+        value: {
+          rings: Array.from({ length: 26 }, (_, index) => ({ ring: index + 1, score: index < 20 ? 30 : 12 - index / 4, best: index < 20 })),
+          check: { ...carterChecked, rightRing: 1 },
+        },
+      }),
     },
     clipboard: {
       writeText: vi.fn().mockResolvedValue(undefined),
