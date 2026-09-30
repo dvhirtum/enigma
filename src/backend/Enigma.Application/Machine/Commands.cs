@@ -31,3 +31,9 @@ public sealed record PressKey(string Key);
 public sealed record ReleaseKey;
 
 public sealed record GetMachineState;
+
+/// <summary>
+/// Replaces the machine with one set up with a whole key: the reflector, the rotors left to right (three for an M3,
+/// four for an M4), their rings (1–26), plug pairs such as "AT" and the window letters.
+/// </summary>
+public sealed record SetUpMachine(string Reflector, IReadOnlyList<string> Rotors, IReadOnlyList<int> Rings, IReadOnlyList<string> Plugs, string Positions);

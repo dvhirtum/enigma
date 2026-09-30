@@ -94,8 +94,8 @@ internal static class BombeEndpoints
         bombe.MapGet("/run", (GetRunHandler handler) =>
             handler.Handle(new GetRun()));
 
-        bombe.MapGet("/run/stops", (int? from, GetStopsHandler handler) =>
-            handler.Handle(new GetStops(from ?? 0)));
+        bombe.MapGet("/run/stops", (int? from, int? count, GetStopsHandler handler) =>
+            handler.Handle(new GetStops(from ?? 0, count)));
 
         bombe.MapGet("/run/stops/{stop:int}/check", (int stop, GetCheckHandler handler) =>
             handler.Handle(new GetCheck(stop)));

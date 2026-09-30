@@ -186,12 +186,12 @@ public sealed class BombeRun
         }
     }
 
-    /// <summary>The stops found so far, from the <paramref name="from"/>th on.</summary>
-    public IReadOnlyList<BombeStop> Stops(int from)
+    /// <summary>The stops found so far, from the <paramref name="from"/>th on, at most <paramref name="count"/> (null: all).</summary>
+    public IReadOnlyList<BombeStop> Stops(int from, int? count = null)
     {
         lock (_lock)
         {
-            return [.. _stops.Skip(Math.Max(0, from))];
+            return [.. _stops.Skip(Math.Max(0, from)).Take(Math.Max(0, count ?? int.MaxValue))];
         }
     }
 

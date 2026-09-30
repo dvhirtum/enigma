@@ -128,6 +128,7 @@ Electron: Renderer (React, SVG) ⇄ preload ⇄ Main
 |---|---|---|
 | GET | `/api/machine` | |
 | POST | `/api/machine` | `{ model }` |
+| PUT | `/api/machine/key` | `{ reflector, rotors, rings, plugs, positions }` (a new machine with the whole key, all or nothing) |
 | PUT | `/api/machine/rotors/{slot}` | `{ rotor }` |
 | DELETE | `/api/machine/rotors/{slot}` | |
 | PUT | `/api/machine/rotors/{slot}/position` | `{ position }` |
@@ -187,6 +188,8 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
   - **Menu:** an SVG graph of every link of the placed crib, laid out by a force-directed layout (`menuLayout`, no library) that stays put while links change; letters can be dragged. Plugged links connected to the test register are solid, plugged but unconnected ones dashed red (also listed in a warning), the rest dotted grey; offsets label the links, and links between the same letters bow apart. Click a link, or tick it in the Links list (offset, letters, drum letters), to plug it in or out; the last link stays. Click a letter on the menu to put the test register on it (ringed); a link change keeps the test register while its letter stays on the menu, otherwise the backend chooses. The summary gives the connected links, letters and loops, and the estimated stops with and without the diagonal board. **Build menu** builds it automatically again.
   - **Front:** the reflector (B or C), rotor checkboxes (the wheel orders are every arrangement of three ticked rotors; at least three stay ticked), the speed slider (historical 14.6 positions/s up to a thousand times that, then full speed), Start, Stop, and the run's progress. The SVG shows three banks of twelve scramblers with three drums each (upper, middle, lower, rimmed in the rotor's colour); the menu's links take the first scramblers by offset and show their drum letters, the others are empty. The drums show the historical drum letters (ahead of the core positions by the rotor's offset) and the indicator drums read them reversed. The drums follow a paced run, stand at ZZZ otherwise, and spin at full speed. A run paused at a stop shows it (wheel order, indicator, core position, stecker) with **Continue**. Settings lock while the Bombe runs.
   - **Back:** the menu as plugged up: the diagonal board's 26 jacks, a common for each menu letter cabled to the board, each scrambler's two jacks cabled to their letters' commons, and the test register on its letter. The diagonal board switch and the input wire of the test register cable are set here.
+  - **Stops:** the run's stops, 100 at a time with **Load more** (`stopPage`), and each stop's verdict. A row, or its Check button, opens the stop's check on the Checking view (the store keeps the selected view, `bombeView`). The stops and the check are cleared when the job changes or a new run starts.
+  - **Checking:** the checking machine as an SVG in the style of the Hut 8 machine (black panel, spare drums in a rack, cream reflector wheel, three drums in their rotor colours with thumbwheels, 26 lamps, 26 keys; `CheckingMachine`). Keys, clicked or typed, light the lamp from the backend while held; thumbwheels turn the drum letters (queued). Below it: the crib at the stop (match, mismatch, unknown), a grid of 26 stecker partners (`steckers.ts`: a new partner removes both letters' old pairs), the right ring with ◀ ▶ and **Find** (26 score bars, the best highlighted, a note when rings tie), **Suggest** (pairs with their gain, Accept per pair or all), the decrypt, the verdict buttons with the confirmation, and the key with **Set up Enigma**, which asks inline, sets up the Enigma through `PUT /api/machine/key` at the message key and switches to Enigma mode.
 - The run is polled while it runs (every 100 ms when paced, 250 ms at full speed), in either mode. The speed is kept in the store for the next run and sent to a running one.
 - Tests: round-trip vectors (the true key stops) and vectors from primary sources.
 
@@ -238,7 +241,7 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 | POST | `/api/bombe/run/continue` | |
 | DELETE | `/api/bombe/run` | |
 | GET | `/api/bombe/run` | |
-| GET | `/api/bombe/run/stops?from=` | |
+| GET | `/api/bombe/run/stops?from=&count=` | (count left out: all) |
 | GET | `/api/bombe/run/stops/{stop}/check` | |
 | PUT | `/api/bombe/run/stops/{stop}/check` | `{ position?, steckers?, rightRing? }` (left out: unchanged) |
 | POST | `/api/bombe/run/stops/{stop}/check/press` | `{ key }` |

@@ -5,10 +5,12 @@ import { ErrorToast } from '../ErrorToast';
 import { ModeSwitch, useActive } from '../mode';
 import { useMachine } from '../store';
 import { BackView } from './BackView';
+import { CheckingView } from './CheckingView';
 import { CribView } from './CribView';
 import { FrontView } from './FrontView';
 import { MenuView } from './MenuView';
 import { MessageView } from './MessageView';
+import { StopsView } from './StopsView';
 
 const views = [
   { id: 'bombe-message', label: 'Message', View: MessageView },
@@ -16,6 +18,8 @@ const views = [
   { id: 'bombe-menu', label: 'Menu', View: MenuView },
   { id: 'bombe-front', label: 'Front', View: FrontView },
   { id: 'bombe-back', label: 'Back', View: BackView },
+  { id: 'bombe-stops', label: 'Stops', View: StopsView },
+  { id: 'bombe-checking', label: 'Checking', View: CheckingView },
 ] as const;
 
 /** How often a running run is polled: often while paced, to turn the drums, less at full speed. */
@@ -42,6 +46,8 @@ export function BombeFrame() {
   const openInstructions = useMachine((store) => store.openInstructions);
   const loadBombe = useMachine((store) => store.loadBombe);
   const loaded = useMachine((store) => store.bombe !== null);
+  const view = useMachine((store) => store.bombeView);
+  const showBombeView = useMachine((store) => store.showBombeView);
   const active = useActive();
   useRunPolling();
 
@@ -62,7 +68,7 @@ export function BombeFrame() {
         </div>
       </header>
       <ErrorToast className="error" />
-      <TabbedViews label="Bombe views" views={views} />
+      <TabbedViews label="Bombe views" views={views} selectedId={view} onSelect={showBombeView} />
       <footer>{version && `Backend v${version}`}</footer>
     </div>
   );

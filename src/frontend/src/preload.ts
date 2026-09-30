@@ -19,6 +19,7 @@ const api: EnigmaApi = {
     pressKey: (key) => invoke('machine:pressKey', key),
     releaseKey: () => invoke('machine:releaseKey'),
     applyDailyKey: (sheetId, day) => invoke('machine:applyDailyKey', sheetId, day),
+    setUpMachine: (key) => invoke('machine:setUpMachine', key),
     startSending: () => invoke('machine:startSending'),
     startReceiving: (message, sheetId, day) => invoke('machine:startReceiving', message, sheetId, day),
     chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
@@ -54,6 +55,13 @@ const api: EnigmaApi = {
     continueRun: () => invoke('bombe:continueRun'),
     cancelRun: () => invoke('bombe:cancelRun'),
     getRun: () => invoke('bombe:getRun'),
+    getStops: (from, count) => invoke('bombe:getStops', from, count),
+    getCheck: (stop) => invoke('bombe:getCheck', stop),
+    setCheck: (stop, change) => invoke('bombe:setCheck', stop, change),
+    pressCheckKey: (stop, key) => invoke('bombe:pressCheckKey', stop, key),
+    confirmCheck: (stop, verdict) => invoke('bombe:confirmCheck', stop, verdict),
+    suggestSteckers: (stop) => invoke('bombe:suggestSteckers', stop),
+    findRightRing: (stop) => invoke('bombe:findRightRing', stop),
   },
   clipboard: {
     writeText: (text) => invoke('clipboard:writeText', text),

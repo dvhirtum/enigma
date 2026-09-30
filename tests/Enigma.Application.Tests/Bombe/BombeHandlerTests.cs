@@ -108,6 +108,23 @@ public sealed class BombeHandlerTests
     }
 
     [Fact]
+    public async Task Should_return_at_most_the_count_When_stops_are_asked_with_a_count()
+    {
+        // Arrange
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+        var all = new GetStopsHandler(_store).Handle(new GetStops(0));
+
+        // Act
+        var page = new GetStopsHandler(_store).Handle(new GetStops(0, 1));
+
+        // Assert
+        Assert.True(all.Count > 1);
+        Assert.Equal(all.Take(1), page);
+    }
+
+    [Fact]
     public async Task Should_show_the_drum_position_in_hand_When_the_run_is_paced()
     {
         // Arrange
