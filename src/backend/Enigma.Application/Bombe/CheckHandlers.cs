@@ -61,6 +61,30 @@ public sealed class ConfirmCheckHandler(IBombeSessionStore store)
     }
 }
 
+public sealed class SuggestSteckersHandler(IBombeSessionStore store)
+{
+    public SuggestionState Handle(SuggestSteckers command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        return store.UseCheck(command.Stop, (_, check) => SuggestionState.From(check.Suggest()));
+    }
+}
+
+public sealed class FindRightRingHandler(IBombeSessionStore store)
+{
+    public FindState Handle(FindRightRing command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        return store.UseCheck(command.Stop, (run, check) =>
+        {
+            RingScoreState[] rings = [.. check.FindRightRing().Select(ring => new RingScoreState(ring.Ring.Number, ring.Score, ring.Best))];
+            return new FindState(rings, CheckState.From(check, command.Stop, run));
+        });
+    }
+}
+
 internal static class CheckStoreExtensions
 {
     public static T UseCheck<T>(this IBombeSessionStore store, int stop, Func<BombeRun, StopCheck, T> action) =>

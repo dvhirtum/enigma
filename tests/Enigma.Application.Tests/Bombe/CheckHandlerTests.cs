@@ -160,6 +160,41 @@ public sealed class CheckHandlerTests
         Assert.All(Stops(), s => Assert.Equal("Unchecked", s.Verdict));
     }
 
+    [Fact]
+    public async Task Should_propose_the_missing_pairs_without_setting_them_When_steckers_are_suggested()
+    {
+        // Arrange
+        var stop = await RunCarterAsync(intercept: false);
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, "AD ET HM LJ NV UF ZP GQ RR SS WW", null));
+
+        // Act
+        var suggestion = new SuggestSteckersHandler(_store).Handle(new SuggestSteckers(stop));
+
+        // Assert
+        Assert.Equal(["IK", "OX"], suggestion.Pairs.Select(pair => pair.Pair).Order());
+        Assert.All(suggestion.Pairs, pair => Assert.True(pair.Gain > 0));
+        Assert.Equal("WETTERVORHERSAGE", suggestion.Decrypt);
+        Assert.Equal("AD ET FU GQ HM IK JL NV OX PZ RR SS WW", suggestion.Steckers);
+        Assert.Equal("AD ET FU GQ HM JL NV PZ RR SS WW", new GetCheckHandler(_store).Handle(new GetCheck(stop)).Steckers);
+    }
+
+    [Fact]
+    public async Task Should_score_every_ring_and_set_the_lowest_best_When_the_right_ring_is_found()
+    {
+        // Arrange
+        var stop = await RunCarterAsync(intercept: false);
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, CarterSteckers, null));
+
+        // Act
+        var found = new FindRightRingHandler(_store).Handle(new FindRightRing(stop));
+
+        // Assert
+        Assert.Equal(Enumerable.Range(1, 26), found.Rings.Select(ring => ring.Ring));
+        Assert.Contains(found.Rings, ring => ring.Ring == 26 && ring.Best);
+        Assert.Equal(found.Rings.First(ring => ring.Best).Ring, found.Check.RightRing);
+        Assert.Equal("WETTERVORHERSAGE", found.Check.Decrypt);
+    }
+
     private IReadOnlyList<StopState> Stops() => new GetStopsHandler(_store).Handle(new GetStops(0));
 
     // Runs Carter's menu on II V III and returns the index of the true stop (core positions VMB).

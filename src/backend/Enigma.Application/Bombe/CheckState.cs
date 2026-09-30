@@ -82,3 +82,31 @@ public sealed record ConfirmationState(
 /// entered that are wrong (self pairs included), the plug pairs not entered yet, and whether the right ring is right.
 /// </summary>
 public sealed record ComparisonState(bool IsTrueStop, bool VerdictCorrect, IReadOnlyList<string> WrongPairs, IReadOnlyList<string> MissingPairs, bool RightRingCorrect);
+
+/// <summary>
+/// Proposed steckers in the order found (a letter with itself: unsteckered), each with its gain in log likelihood; the
+/// steckers with them added, to accept as they are; and the decrypt they give ('?' where still unknown).
+/// </summary>
+public sealed record SuggestionState(IReadOnlyList<SuggestedPairState> Pairs, string Steckers, string Decrypt)
+{
+    public static SuggestionState From(SteckerSuggestion suggestion)
+    {
+        ArgumentNullException.ThrowIfNull(suggestion);
+
+        return new SuggestionState(
+            [.. suggestion.Pairs.Select(pair => new SuggestedPairState(pair.ToString(), pair.Gain))],
+            suggestion.Steckers.ToString(),
+            string.Concat(suggestion.Decrypt.Select(letter => letter?.ToChar() ?? '?')));
+    }
+}
+
+public sealed record SuggestedPairState(string Pair, double Gain);
+
+/// <summary>
+/// Each right ring (1–26) with its decrypt score (mean log probability; null when no three letters in a row are known)
+/// and whether it has the best score; more than one best means the ring is not determined yet. The check has the
+/// lowest best ring set.
+/// </summary>
+public sealed record FindState(IReadOnlyList<RingScoreState> Rings, CheckState Check);
+
+public sealed record RingScoreState(int Ring, double? Score, bool Best);

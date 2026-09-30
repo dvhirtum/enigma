@@ -167,7 +167,172 @@ public sealed class StopCheckTests
         Assert.Equal(TurnoverPlain[10..26], decrypt[10..26]);
     }
 
+    [Fact]
+    public void Should_suggest_the_pairs_of_the_unused_letters_When_the_menus_steckers_of_Carters_crib_are_entered()
+    {
+        // Arrange
+        // Checking the menu gives every pair but I/K and O/X, whose letters are on the three unused links.
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
+        {
+            Steckers = Steckers.Parse("AD ET HM LJ NV UF ZP GQ RR SS WW"),
+        };
+
+        // Act
+        var suggestion = check.Suggest();
+
+        // Assert
+        Assert.Equal(["IK", "OX"], suggestion.Pairs.Select(pair => pair.ToString()).Order());
+        Assert.Equal(BombeKeys.CarterCrib, string.Concat(suggestion.Decrypt));
+    }
+
+    [Fact]
+    public void Should_leave_the_checks_steckers_as_they_are_When_suggesting()
+    {
+        // Arrange
+        var steckers = Steckers.Parse("AD ET HM LJ NV UF ZP GQ RR SS WW");
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement()) { Steckers = steckers };
+
+        // Act
+        var suggestion = check.Suggest();
+
+        // Assert
+        Assert.Equal(steckers, check.Steckers);
+        Assert.NotEqual(steckers, suggestion.Steckers);
+    }
+
+    [Fact]
+    public void Should_recover_the_right_ring_and_every_stecker_When_Find_Suggest_and_Find_run_on_a_turnover_before_the_crib()
+    {
+        // Arrange
+        var check = RoundTripCheck(out var menuSteckers);
+        check.Steckers = menuSteckers;
+
+        // Act
+        check.FindRightRing();
+        var suggestion = check.Suggest();
+        check.Steckers = suggestion.Steckers;
+        var secondFind = check.FindRightRing();
+
+        // Assert
+        Assert.All(suggestion.Pairs, pair => Assert.Contains(pair.ToString(), RoundTripAllSteckers.Split(' ')));
+        var best = Assert.Single(secondFind, ring => ring.Best);
+        Assert.Equal(RoundTripRightRing, best.Ring.Number);
+        Assert.Equal(RoundTripRightRing, check.RightRing.Number);
+        Assert.Equal(RoundTripPlain, string.Concat(check.Decrypt()));
+    }
+
+    [Fact]
+    public void Should_find_the_right_ring_When_every_stecker_is_known_and_the_middle_rotor_turns_before_the_crib()
+    {
+        // Arrange
+        var check = RoundTripCheck(out _);
+
+        // Act
+        var rings = check.FindRightRing();
+
+        // Assert
+        Assert.Equal(RoundTripRightRing, Assert.Single(rings, ring => ring.Best).Ring.Number);
+        Assert.Equal(RoundTripPlain, string.Concat(check.Decrypt()));
+    }
+
+    [Fact]
+    public void Should_mark_every_tied_ring_and_set_the_lowest_When_rings_give_the_same_decrypt()
+    {
+        // Arrange
+        // Carter's sixteen letters see no turnover with most right rings, so those rings decrypt alike.
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
+        {
+            Steckers = Steckers.Parse(CarterSteckers),
+        };
+
+        // Act
+        var rings = check.FindRightRing();
+
+        // Assert
+        var best = rings.Where(ring => ring.Best).ToArray();
+        Assert.True(best.Length > 1);
+        Assert.Contains(best, ring => ring.Ring.Number == 26);
+        Assert.Equal(best[0].Ring, check.RightRing);
+        Assert.Equal(26, rings.Count);
+    }
+
+    [Fact]
+    public void Should_give_every_ring_the_best_score_When_no_three_letters_in_a_row_are_known()
+    {
+        // Arrange
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
+
+        // Act
+        var rings = check.FindRightRing();
+
+        // Assert
+        Assert.All(rings, ring => Assert.Null(ring.Score));
+        Assert.All(rings, ring => Assert.True(ring.Best));
+        Assert.Equal(1, check.RightRing.Number);
+    }
+
+    [Fact]
+    public void Should_suggest_only_unsteckered_letters_When_ten_plug_pairs_are_known()
+    {
+        // Arrange
+        var check = RoundTripCheck(out _);
+        check.Steckers = Steckers.Parse(RoundTripSteckers);
+
+        // Act
+        var suggestion = check.Suggest();
+
+        // Assert
+        Assert.NotEmpty(suggestion.Pairs);
+        Assert.All(suggestion.Pairs, pair => Assert.Equal(pair.First, pair.Second));
+        Assert.Equal(StopCheck.MaxPlugs, suggestion.Steckers.Plugs.Count);
+    }
+
+    [Fact]
+    public void Should_never_suggest_a_pair_that_contradicts_the_crib_When_suggesting()
+    {
+        // Arrange
+        var check = RoundTripCheck(out var menuSteckers);
+        check.Steckers = menuSteckers;
+
+        // Act
+        check.Steckers = check.Suggest().Steckers;
+
+        // Assert
+        Assert.DoesNotContain(check.Crib(), letter => letter.Match == CribMatch.Mismatch);
+    }
+
     private const string TurnoverPlain = "VONXBDUXWETTERVORHERSAGEXBISKAYA";
+
+    private const string RoundTripPlain =
+        "VONXUXEINSNEUNXWETTERVORHERSAGEXBISKAYAXWINDSUEDWESTXVIERXSEEGANGXDREIXLUFTDRUCKXEINSNULLEINSZWOXSIQTXAQTSM";
+
+    private const string RoundTripSteckers = "AB CD EF GH IJ KL MN OP QR ST";
+
+    private const string RoundTripAllSteckers = RoundTripSteckers + " UU VV WW XX YY ZZ";
+
+    private const int RoundTripRightRing = 5;
+
+    // A weather message on IV I III, rings 26 26 05, from ABK, with the crib at position 15. The middle rotor turns
+    // over at the twelfth letter, before the crib, and not again within it. The check starts with every stecker and
+    // the right ring at Z; menuSteckers are those of the letters on the crib's links, as checking the menu finds them.
+    private static StopCheck RoundTripCheck(out Steckers menuSteckers)
+    {
+        const string rotors = "IV I III";
+        const string rings = "26 26 05";
+        const int position = 15;
+        var cipher = MachineBuilder.Build(MachineModel.M3, "B", rotors, rings, RoundTripSteckers, "ABK").Type(RoundTripPlain);
+        var atCrib = MachineBuilder.Build(MachineModel.M3, "B", rotors, rings, RoundTripSteckers, "ABK");
+        atCrib.Type(RoundTripPlain[..position]);
+        var core = BombeKeys.CorePosition(rings, atCrib.Positions());
+        var placement = new CribPlacement([.. cipher.Select(Letter.FromChar)], Crib.Parse("WETTERVORHERSAGE"), position);
+        var stop = new BombeStop(WheelOrder.Parse(rotors), core, Letter.FromChar('E'), [Letter.FromChar('F')]);
+
+        var all = Steckers.Parse(RoundTripAllSteckers);
+        menuSteckers = placement.Links
+            .SelectMany(link => new[] { link.First, link.Second })
+            .Aggregate(Steckers.None, (steckers, letter) => steckers.With(letter, all.PartnerOf(letter)!.Value));
+        return new StopCheck(stop, ReflectorType.B, placement) { Steckers = all };
+    }
 
     // A message on IV I III, rings 26 26 05, from ABT, with the crib at position 10. The middle rotor turns over at the
     // third letter. The check has every stecker and the right ring at Z.

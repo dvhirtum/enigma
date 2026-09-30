@@ -66,3 +66,9 @@ public sealed record PressCheckKey(int Stop, string? Key);
 
 /// <summary>Gives the verdict on a stop: True, False or Unchecked.</summary>
 public sealed record ConfirmCheck(int Stop, string? Verdict);
+
+/// <summary>Proposes steckers for the letters of a stop's check that are still unknown, without changing the check.</summary>
+public sealed record SuggestSteckers(int Stop);
+
+/// <summary>Scores the 26 right rings of a stop's check and sets the lowest with the best score.</summary>
+public sealed record FindRightRing(int Stop);

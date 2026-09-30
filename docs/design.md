@@ -203,7 +203,8 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 - `BombeMachine`: a scrambler, a menu, the input letter and the diagonal board switch. Each letter has a cable of 26 wires; a link's scrambler joins wire x of one cable to wire scrambler(x) of the other, and the diagonal board joins wire b of cable a to wire a of cable b. `Test(position)` makes the input wire live, spreads the current and stops when not all 26 test register wires are live. `Run()` tests all 17,576 positions from ZZZ, the upper drum fastest; `PositionAt(step)` gives the position of each step.
 - `BombeStop`: the wheel order, drum position, test register and live wires. `Stecker` is the only live wire, or the only dead one when 25 are live.
 - `Steckers`: the steckers found while checking: each letter's partner, itself when unsteckered, or unknown ("AD ET RR"). A letter with another partner is refused. `Plugs` gives the cables.
-- `StopCheck`: checking a stop on the Hut 8 checking machine: rotors and reflector without plugboard, set by the Bombe drum letters and not stepping (`Press`). It starts at the stop's drum letters with the stop's stecker. `Crib()` tells for each crib letter at the stop plus its offset whether the steckers match, mismatch or are unknown. The right ring (default Z) is turned with the core positions kept; left and middle stay Z. `Decrypt()` deciphers the whole message on a stepping Enigma from `MessageKey` (the windows that step to the crib's), null where a stecker is unknown. `Confirm(verdict, solution)` records the verdict and gives the crib mismatches and unknowns, and, when the message has a solution, whether the stop is the true one, whether the verdict is right, the wrong and missing pairs and whether the right ring is right.
+- `StopCheck`: checking a stop on the Hut 8 checking machine: rotors and reflector without plugboard, set by the Bombe drum letters and not stepping (`Press`). It starts at the stop's drum letters with the stop's stecker. `Crib()` tells for each crib letter at the stop plus its offset whether the steckers match, mismatch or are unknown. The right ring (default Z) is turned with the core positions kept; left and middle stay Z. `Decrypt()` deciphers the whole message on a stepping Enigma from `MessageKey` (the windows that step to the crib's), null where a stecker is unknown. `Confirm(verdict, solution)` records the verdict and gives the crib mismatches and unknowns, and, when the message has a solution, whether the stop is the true one, whether the verdict is right, the wrong and missing pairs and whether the right ring is right. `Suggest()` proposes steckers for the unknown letters without setting them: greedily, one letter at a time, each partner (itself included) that keeps every crib link consistent gains the log likelihood, against random letters, of the decrypt letters it makes known; a letter's best partner is taken when it gains and beats the runner-up by `SuggestMargin`, up to ten plug pairs in all. `FindRightRing()` scores the decrypt with each of the 26 right rings (core positions kept) and sets the lowest best; rings that decrypt alike tie. It uses the current steckers, so Find, Suggest and Find again settles a ring the menu's steckers leave open.
+- `LanguageModel`: scores a decrypt as the mean log probability of each letter after the two before it, over the windows of three known letters. The probability is 0.6 × trigram + 0.3 × bigram + 0.1 × letter frequency (a context never seen falls back to the shorter one), each half Navy, half German. `LanguageCounts` is written by `scripts/LanguageTable.cs` (`dotnet run scripts/LanguageTable.cs`): Navy counts from the intercepts' plain texts and 400 exercise plain texts (`ExerciseGenerator.PlainText`, fixed seed), German counts from `data/corpus/effi-briest.txt` (Theodor Fontane, *Effi Briest*, Project Gutenberg eBook #5323), converted to Navy style: ä → AE, ö → OE, ü → UE, ß → SZ, CH → Q, digits spelled out, punctuation → X, no spaces.
 - `MessageSource`: the message to break: kind (intercept, exercise, pasted), title, hint, transcript, the Navy `RadioMessage` when it is one, the cipher text, and for intercepts and exercises the likely crib and the `Solution` (reflector, wheel order, rings, plugs, message key, plain text, notes; exercises add the key sheet day and indicator). Pasted text is read as a radio message, or else as bare cipher text; text with digits must be a radio message.
 - `Intercepts`: compiled in, each verified against its published key: Scharnhorst's last signal (26 Dec 1943, Navy M3), both parts of the Operation Barbarossa message (7 Jul 1941, Army Enigma I, Kenngruppe group left out of the cipher text) and Carter's weather crib.
 - `ExerciseGenerator`: a Navy message from a template (weather forecast, nothing to report, own position, convoy), sent on an M3 key sheet day with the full procedure (Kenngruppen from the network's columns, bigram table, message key) at a random time. The template's phrase is the crib; it may follow a short prefix. The middle rotor may turn over under the crib.
@@ -215,7 +216,7 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 - Changing the job is refused while the Bombe runs or is paused, and clears the stops of a finished run. There is one run at a time. A run that throws ends as `Failed` with its error.
 - The menu state lists the plugged links, every link of the placed crib, the links connected to the test register, the loops and the estimated stops with and without the diagonal board.
 - Stops are fetched from an index on, as a run with a poor menu can have hundreds of thousands. Each gives its index and the verdict of its check.
-- The run keeps a `StopCheck` per stop, started when first asked for, until the run is replaced or cleared. Confirming compares with the solution of the message the run was started on.
+- The run keeps a `StopCheck` per stop, started when first asked for, until the run is replaced or cleared. Confirming compares with the solution of the message the run was started on. Suggest returns the proposed pairs with their gain, the steckers with them added (to accept through the PUT) and their decrypt; Find returns every ring's score, marks the best (more than one: not determined yet) and the check.
 - `GenerateExercise` uses a random day of a random M3 key sheet (linked through `KeySheetLinker`), and is refused when there is none. The state shows the message's hint, never its crib or solution; unknown intercepts and asking a pasted message for them give 404.
 
 | Method | Path | Body |
@@ -242,6 +243,8 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 | PUT | `/api/bombe/run/stops/{stop}/check` | `{ position?, steckers?, rightRing? }` (left out: unchanged) |
 | POST | `/api/bombe/run/stops/{stop}/check/press` | `{ key }` |
 | POST | `/api/bombe/run/stops/{stop}/check/verdict` | `{ verdict }` (True, False or Unchecked) |
+| POST | `/api/bombe/run/stops/{stop}/check/suggest` | |
+| POST | `/api/bombe/run/stops/{stop}/check/find` | |
 
 ## Testing
 
@@ -249,7 +252,7 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
   - `Enigma.Domain.Tests`, `Enigma.Application.Tests`, and `Enigma.Api.Tests` (using `WebApplicationFactory`).
   - Test names follow `Should_<expected>_When_<condition>`.
   - Tests mark `// Arrange`, `// Act` and `// Assert`.
-  - Tests include historical vectors, such as the U-264 message and Frank Carter's weather crib for the Bombe (exactly 2 stops with the diagonal board, as Carter reports; the true one at core positions VMB with G/Q, indicator DKX as Carter reads it). The bundled intercepts decrypt to their published plain text, and Barbarossa's message keys encrypt to the indicators in its preamble.
+  - Tests include historical vectors, such as the U-264 message and Frank Carter's weather crib for the Bombe (exactly 2 stops with the diagonal board, as Carter reports; the true one at core positions VMB with G/Q, indicator DKX as Carter reads it). The bundled intercepts decrypt to their published plain text, and Barbarossa's message keys encrypt to the indicators in its preamble. Suggest finds Carter's I/K and O/X from the menu's steckers, and on a message whose middle rotor turns over before the crib, Find, Suggest and Find again recover the right ring and every stecker.
 - **Frontend:** Vitest + React Testing Library, plus Playwright for end-to-end tests. They use plain JavaScript naming.
 - **CI:** GitHub Actions runs on every PR and every push to `main`.
 
@@ -267,7 +270,8 @@ The three-rotor Turing-Welchman Bombe, as Hut 8 used it against Navy traffic.
 src/backend/{Enigma.Domain, Enigma.Application, Enigma.Infrastructure, Enigma.Api}
 src/frontend/
 tests/{Enigma.Domain.Tests, Enigma.Application.Tests, Enigma.Api.Tests}
-data/keysheets/
+data/{keysheets/, corpus/}
+scripts/
 docs/{design.md, user/}
 .github/workflows/
 ```
