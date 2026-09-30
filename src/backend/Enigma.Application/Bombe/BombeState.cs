@@ -97,7 +97,7 @@ public sealed record RunState(
             (long)run.WheelOrders.Count * DrumPosition.Count,
             progress.WheelOrder?.ToString(),
             progress.Position?.ToString(),
-            progress.Pause is null ? null : StopState.From(progress.Pause),
+            progress.Pause is null ? null : StopState.From(progress.Pause, progress.Stops - 1, run.VerdictOn(progress.Stops - 1)),
             progress.Stops,
             progress.Error,
             progress.Elapsed.TotalSeconds);
@@ -105,28 +105,33 @@ public sealed record RunState(
 }
 
 /// <summary>
-/// A stop: the wheel order, the drum core positions, the indicator drum reading, the test register letter, its live
-/// wires and the stecker partner they give (null when neither 1 nor 25 wires are live).
+/// A stop: its index in the run, the wheel order, the drum core positions, the indicator drum reading, the test register
+/// letter, its live wires, the stecker partner they give (null when neither 1 nor 25 wires are live) and the verdict
+/// of its check (Unchecked, True or False).
 /// </summary>
 public sealed record StopState(
+    int Index,
     string WheelOrder,
     string Position,
     string Indicator,
     string TestRegister,
     string LiveWires,
-    string? Stecker)
+    string? Stecker,
+    string Verdict)
 {
-    public static StopState From(BombeStop stop)
+    public static StopState From(BombeStop stop, int index, StopVerdict verdict)
     {
         ArgumentNullException.ThrowIfNull(stop);
 
         return new StopState(
+            index,
             stop.WheelOrder.ToString(),
             stop.Position.ToString(),
             stop.Indicator.ToString(),
             stop.TestRegister.ToString(),
             string.Concat(stop.LiveWires),
-            stop.Stecker?.ToString());
+            stop.Stecker?.ToString(),
+            verdict.ToString());
     }
 }
 

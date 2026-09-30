@@ -161,14 +161,19 @@ export interface BombeSettings {
 }
 
 
-/** A stop: the wheel order, drum core positions, indicator drum reading, test register, its live wires and stecker partner. */
+/**
+ * A stop: its index in the run, the wheel order, drum core positions, indicator drum reading, test register, its live
+ * wires, stecker partner and the verdict of its check.
+ */
 export interface BombeStop {
+  index: number;
   wheelOrder: string;
   position: string;
   indicator: string;
   testRegister: string;
   liveWires: string;
   stecker: string | null;
+  verdict: 'Unchecked' | 'True' | 'False';
 }
 
 /**

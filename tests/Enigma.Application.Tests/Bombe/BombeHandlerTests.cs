@@ -115,8 +115,7 @@ public sealed class BombeHandlerTests
         new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1000));
 
         // Act
-        await Task.Delay(300, Token);
-        var run = new GetRunHandler(_store).Handle(new GetRun());
+        var run = await WaitForPositionAsync();
 
         // Assert
         Assert.Equal("Running", run.Status);
@@ -422,6 +421,22 @@ public sealed class BombeHandlerTests
         {
             var run = new GetRunHandler(_store).Handle(new GetRun());
             if (run.Status == status)
+            {
+                return run;
+            }
+
+            await Task.Delay(10, timeout.Token);
+        }
+    }
+
+    private async Task<RunState> WaitForPositionAsync()
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Token);
+        timeout.CancelAfter(Timeout);
+        while (true)
+        {
+            var run = new GetRunHandler(_store).Handle(new GetRun());
+            if (run.Position is not null && run.PositionsTested > 0)
             {
                 return run;
             }

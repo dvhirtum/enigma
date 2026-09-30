@@ -100,6 +100,39 @@ public sealed class BombeEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_check_Carters_stop_and_confirm_it_against_the_key_When_checked_through_the_api()
+    {
+        // Arrange
+        await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/intercept", new { id = "carter-weather" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/crib", new { crib = "WETTERVORHERSAGE" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
+        await SendAsync<BombeState>(
+            HttpMethod.Put, "/api/bombe/settings", new { input = (string?)null, diagonalBoard = true, reflector = "B", wheelOrders = CarterWheelOrders });
+        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null });
+        await WaitForRunAsync();
+        var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/run/stops?from=0"), Token);
+        var stop = stops!.Single(s => s.Position == "VMB").Index;
+
+        // Act
+        var started = await _client.GetFromJsonAsync<CheckState>(Url($"/api/bombe/run/stops/{stop}/check"), Token);
+        var lamp = await SendAsync<LampState>(HttpMethod.Post, $"/api/bombe/run/stops/{stop}/check/press", new { key = "Q" });
+        var check = await SendAsync<CheckState>(
+            HttpMethod.Put, $"/api/bombe/run/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ XO IK RR SS WW", position = (string?)null, rightRing = (int?)null });
+        var confirmation = await SendAsync<ConfirmationState>(HttpMethod.Post, $"/api/bombe/run/stops/{stop}/check/verdict", new { verdict = "True" });
+
+        // Assert
+        Assert.Equal("WPC", started?.Position);
+        Assert.Equal("GQ", started?.Steckers);
+        Assert.Matches("^[A-Z]$", lamp.Lamp);
+        Assert.Equal("WETTERVORHERSAGE", check.Decrypt);
+        Assert.Equal("ULA", check.Key.MessageKey);
+        Assert.True(confirmation.Solution?.IsTrueStop);
+        Assert.True(confirmation.Solution?.VerdictCorrect);
+        Assert.Equal("True", confirmation.Check.Stop.Verdict);
+    }
+
+    [Fact]
     public async Task Should_return_not_found_When_there_is_no_run()
     {
         // Arrange
