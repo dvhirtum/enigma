@@ -39,6 +39,13 @@ public sealed record WheelOrder
 
     public RotorType Right { get; }
 
+    /// <summary>
+    /// The letters the drums show at these core positions. The Bombe drums are ahead of the Enigma rotors: drums I, II,
+    /// III, VI, VII and VIII by one letter, IV by two and V by three.
+    /// </summary>
+    public DrumPosition DrumLetters(DrumPosition core) =>
+        new(core.Left.Shift(LetterOffset(Left)), core.Middle.Shift(LetterOffset(Middle)), core.Right.Shift(LetterOffset(Right)));
+
     /// <summary>Parses rotor names from left to right, e.g. "II V III".</summary>
     public static WheelOrder Parse(string rotors)
     {
@@ -51,4 +58,6 @@ public sealed record WheelOrder
     }
 
     public override string ToString() => $"{Left} {Middle} {Right}";
+
+    private static int LetterOffset(RotorType rotor) => rotor == RotorType.IV ? 2 : rotor == RotorType.V ? 3 : 1;
 }

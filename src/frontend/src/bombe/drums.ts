@@ -40,7 +40,16 @@ export function advance(position: string, offset: number): string {
     .join('');
 }
 
-/** The indicator drum reading of core positions: the letters reversed (A ↔ Z). */
+/** How many letters each Bombe drum is ahead of its Enigma rotor. */
+export const drumLetterOffsets: Record<string, number> = { I: 1, II: 1, III: 1, IV: 2, V: 3, VI: 1, VII: 1, VIII: 1 };
+
+/** The letters the drums of a wheel order show at core positions. */
+export function drumLettersOf(core: string, wheelOrder: string): string {
+  const offsets = wheelOrder.split(' ').map((rotor) => drumLetterOffsets[rotor]);
+  return [...core].map((letter, drum) => String.fromCharCode(65 + ((letter.charCodeAt(0) - 65 + offsets[drum]) % 26))).join('');
+}
+
+/** The indicator drum reading of drum letters: the letters reversed (A ↔ Z). */
 export function indicatorOf(position: string): string {
   return [...position].map((letter) => String.fromCharCode(155 - letter.charCodeAt(0))).join('');
 }

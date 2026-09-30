@@ -52,7 +52,9 @@ To change the menu:
 
 ## Running the Bombe
 
-The **Front** tab shows the Bombe as the operators saw it: three banks of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The menu's links take the first scramblers, in order of their offset, and each is set that many steps from the others. The three drums on the right are the indicator drums: they read the position with the letters reversed, which is the ring setting to try on the Enigma.
+The **Front** tab shows the Bombe as the operators saw it: three banks of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The menu's links take the first scramblers, in order of their offset, and each is set that many steps from the others. The three drums on the right are the indicator drums: they read the position with the letters reversed.
+
+The Bombe drums are lettered ahead of the Enigma rotors: drums I, II, III, VI, VII and VIII by one letter, IV by two and V by three. The drums and the indicator show these historical letters, so to get the ring settings to try on the Enigma, add the offsets to the indicator reading. On Carter's weather crib (wheel order II V III) the indicator reads DKX, as Carter reports; adding 1, 3 and 1 gives the ring settings ENY.
 
 Before you start:
 

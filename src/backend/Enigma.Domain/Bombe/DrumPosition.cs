@@ -4,7 +4,7 @@ namespace Enigma.Domain.Bombe;
 
 /// <summary>
 /// The positions of the left, middle and right drums: the core positions of the Enigma rotors (window letter minus
-/// ring setting). Offsets are written as the drum letters they give from ZZZ, as on Bombe menus: 1 = ZZA, 26 = ZAZ.
+/// ring setting), or the letters the drums show (see <see cref="WheelOrder.DrumLetters"/>). Offsets are written as the drum letters they give from ZZZ, as on Bombe menus: 1 = ZZA, 26 = ZAZ.
 /// </summary>
 public readonly record struct DrumPosition(Letter Left, Letter Middle, Letter Right)
 {
@@ -16,10 +16,7 @@ public readonly record struct DrumPosition(Letter Left, Letter Middle, Letter Ri
     /// <summary>The number of places after ZZZ, 0 to <see cref="Count"/> − 1.</summary>
     public int Offset => (Digit(Left) * Letter.Count * Letter.Count) + (Digit(Middle) * Letter.Count) + Digit(Right);
 
-    /// <summary>
-    /// The indicator drum reading: the Enigma ring settings that give these core positions with the rotors at ZZZ.
-    /// The indicator drums have their letters in reverse order.
-    /// </summary>
+    /// <summary>The indicator drum reading of these drum letters: the indicator drums have their letters in reverse order.</summary>
     public DrumPosition Indicator => new(Reverse(Left), Reverse(Middle), Reverse(Right));
 
     public static DrumPosition Parse(string letters)

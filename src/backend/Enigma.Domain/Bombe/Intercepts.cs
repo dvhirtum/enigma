@@ -147,8 +147,8 @@ public static class Intercepts
                     Plugs("AD ET HM LJ NV UF ZP GQ XO IK"),
                     RotorPositions.Parse("ULA"),
                     "WETTERVORHERSAGE",
-                    "Frank Carter, Rutherford Journal 3. Carter reads the stop as DKX; this key "
-                    + "is the one the crib gives on this simulator (the Bombe stops at core positions VMB)."))),
+                    "Frank Carter, Rutherford Journal 3. The Bombe stops at core positions VMB; the indicator drums "
+                    + "read DKX, as Carter reports."))),
     ];
 
     /// <summary>The intercept with <paramref name="id"/>, or null.</summary>

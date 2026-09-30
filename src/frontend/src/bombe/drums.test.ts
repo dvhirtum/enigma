@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advance, formatSpeed, fullSpeedStep, historicalSpeed, indicatorOf, rotorsOf, scramblersOf, speedAt, stepOf, wheelOrdersOf } from './drums';
+import { advance, drumLettersOf, formatSpeed, fullSpeedStep, historicalSpeed, indicatorOf, rotorsOf, scramblersOf, speedAt, stepOf, wheelOrdersOf } from './drums';
 
 describe('drums', () => {
   it('lists every wheel order of the chosen rotors', () => {
@@ -16,9 +16,15 @@ describe('drums', () => {
   });
 
   it('reads the indicator drums with the letters reversed', () => {
-    // Carter's true stop: core positions VMB read ENY on the indicator drums.
-    expect(indicatorOf('VMB')).toBe('ENY');
+    // Carter's true stop: drum letters WPC read DKX on the indicator drums.
+    expect(indicatorOf('WPC')).toBe('DKX');
     expect(indicatorOf('ZZZ')).toBe('AAA');
+  });
+
+  it('shows drum letters ahead of the Enigma rotors: IV by two, V by three, the others by one', () => {
+    expect(drumLettersOf('VMB', 'II V III')).toBe('WPC');
+    expect(drumLettersOf('ZZZ', 'IV VI VIII')).toBe('BAA');
+    expect(drumLettersOf('ZZZ', 'I VII V')).toBe('AAC');
   });
 
   it('plugs the links into the scramblers by offset', () => {

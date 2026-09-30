@@ -123,7 +123,7 @@ public sealed record StopState(
         return new StopState(
             stop.WheelOrder.ToString(),
             stop.Position.ToString(),
-            stop.Position.Indicator.ToString(),
+            stop.Indicator.ToString(),
             stop.TestRegister.ToString(),
             string.Concat(stop.LiveWires),
             stop.Stecker?.ToString());

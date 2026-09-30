@@ -16,9 +16,9 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
     public void Should_stop_at_the_true_key_When_running_Carters_weather_menu(bool diagonalBoard)
     {
         // Arrange
-        // The key is II V III, reflector B, rings ZZZ, windows ULA: core positions VMB, indicator ENY. It is the only
-        // key that enciphers the whole crib with Carter's ten stecker pairs. Carter prints the stop as DKX, which does
-        // not encipher the crib; the reason is not known.
+        // The key is II V III, reflector B, rings ZZZ, windows ULA: core positions VMB. It is the only key that
+        // enciphers the whole crib with Carter's ten stecker pairs. The drums show WPC and the indicator drums DKX, as
+        // Carter reports.
         var bombe = new BombeMachine(
             new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), BombeKeys.CarterMenu, A, diagonalBoard);
 
@@ -29,7 +29,7 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
         output.WriteLine($"Diagonal board {diagonalBoard}: {stops.Count} stops.");
         var stop = Assert.Single(stops, stop => stop.Position == DrumPosition.Parse("VMB"));
         Assert.Equal(Q, stop.Stecker);
-        Assert.Equal("ENY", stop.Position.Indicator.ToString());
+        Assert.Equal("DKX", stop.Indicator.ToString());
     }
 
     [Fact]

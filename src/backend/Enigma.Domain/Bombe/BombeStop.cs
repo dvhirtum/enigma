@@ -5,6 +5,12 @@ namespace Enigma.Domain.Bombe;
 /// <summary>A drum position at which the test register did not show all 26 wires live.</summary>
 public sealed record BombeStop(WheelOrder WheelOrder, DrumPosition Position, Letter TestRegister, IReadOnlyList<Letter> LiveWires)
 {
+    /// <summary>The letters the drums show at the stop.</summary>
+    public DrumPosition DrumLetters => WheelOrder.DrumLetters(Position);
+
+    /// <summary>The indicator drum reading at the stop.</summary>
+    public DrumPosition Indicator => DrumLetters.Indicator;
+
     /// <summary>
     /// The stecker partner of the test register letter: the only live wire, or the only dead wire when 25 are live.
     /// Null for any other count.
