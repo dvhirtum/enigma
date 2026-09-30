@@ -62,9 +62,10 @@ public sealed record SteckerSuggestion(IReadOnlyList<SuggestedPair> Pairs, Steck
 public sealed record RingScore(RingSetting Ring, double? Score, bool Best);
 
 /// <summary>
-/// The checking of a Bombe stop, as on the Hut 8 checking machine: rotors and reflector without plugboard, which do not
-/// step and are set by the Bombe drum letters. The checker writes down the steckers, turns the right ring (the core
-/// positions stay) to find the middle rotor's turnover, and gives a verdict.
+/// The checking of a Bombe stop, as on the Hut 8 checking machine: drums with Bombe drum letters and a ring each, and a
+/// reflector, without plugboard or stepping. With the rings set to the stop's indicator, the windows read ZZZ at the
+/// stop and each menu link's drum position (ZZA, ZZB, ...) at its offset. The checker writes down the steckers, turns
+/// the right ring (the core positions stay) to find the middle rotor's turnover, and gives a verdict.
 /// </summary>
 public sealed class StopCheck
 {
@@ -83,7 +84,7 @@ public sealed class StopCheck
         Stop = stop;
         Reflector = reflector;
         Placement = placement;
-        MachinePosition = stop.DrumLetters;
+        MachineRings = stop.Indicator;
         Steckers = stop.Stecker is { } partner ? Steckers.None.With(stop.TestRegister, partner) : Steckers.None;
     }
 
@@ -95,8 +96,17 @@ public sealed class StopCheck
 
     public WheelOrder WheelOrder => Stop.WheelOrder;
 
-    /// <summary>The drum letters the checking machine is set to.</summary>
-    public DrumPosition MachinePosition { get; set; }
+    /// <summary>The letters in the checking machine's windows.</summary>
+    public DrumPosition MachineWindows { get; set; } = DrumPosition.ZZZ;
+
+    /// <summary>The checking machine's ring settings, at first the stop's indicator.</summary>
+    public DrumPosition MachineRings { get; set; }
+
+    /// <summary>The drum letters the checking machine is at: each window letter less its ring letter.</summary>
+    public DrumPosition MachineDrumLetters => new(
+        MachineWindows.Left.Shift(-MachineRings.Left.Index),
+        MachineWindows.Middle.Shift(-MachineRings.Middle.Index),
+        MachineWindows.Right.Shift(-MachineRings.Right.Index));
 
     public Steckers Steckers { get; set; }
 
@@ -109,7 +119,7 @@ public sealed class StopCheck
 
     /// <summary>Presses <paramref name="key"/> on the checking machine and returns the lamp that lights.</summary>
     public Letter Press(Letter key) =>
-        Scrambler.Encipher(WheelOrder, Reflector, WheelOrder.CorePositions(MachinePosition), key);
+        Scrambler.Encipher(WheelOrder, Reflector, WheelOrder.CorePositions(MachineDrumLetters), key);
 
     /// <summary>Each crib letter at the stop's core positions plus its offset, as the Bombe tested it.</summary>
     public IReadOnlyList<CribLetterCheck> Crib() =>

@@ -118,11 +118,12 @@ public sealed class BombeEndpointTests : IDisposable
         var started = await _client.GetFromJsonAsync<CheckState>(Url($"/api/bombe/run/stops/{stop}/check"), Token);
         var lamp = await SendAsync<LampState>(HttpMethod.Post, $"/api/bombe/run/stops/{stop}/check/press", new { key = "Q" });
         var check = await SendAsync<CheckState>(
-            HttpMethod.Put, $"/api/bombe/run/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ XO IK RR SS WW", position = (string?)null, rightRing = (int?)null });
+            HttpMethod.Put, $"/api/bombe/run/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ XO IK RR SS WW", machineWindows = (string?)null, machineRings = (string?)null, rightRing = (int?)null });
         var confirmation = await SendAsync<ConfirmationState>(HttpMethod.Post, $"/api/bombe/run/stops/{stop}/check/verdict", new { verdict = "True" });
 
         // Assert
-        Assert.Equal("WPC", started?.Position);
+        Assert.Equal("ZZZ", started?.MachineWindows);
+        Assert.Equal("DKX", started?.MachineRings);
         Assert.Equal("GQ", started?.Steckers);
         Assert.Matches("^[A-Z]$", lamp.Lamp);
         Assert.Equal("WETTERVORHERSAGE", check.Decrypt);
@@ -147,7 +148,7 @@ public sealed class BombeEndpointTests : IDisposable
         var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/run/stops?from=0"), Token);
         var stop = stops!.Single(s => s.Position == "VMB").Index;
         await SendAsync<CheckState>(
-            HttpMethod.Put, $"/api/bombe/run/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ RR SS WW", position = (string?)null, rightRing = (int?)null });
+            HttpMethod.Put, $"/api/bombe/run/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ RR SS WW", machineWindows = (string?)null, machineRings = (string?)null, rightRing = (int?)null });
 
         // Act
         using var suggestResponse = await _client.PostAsync(Url($"/api/bombe/run/stops/{stop}/check/suggest"), null, Token);

@@ -233,12 +233,14 @@ export interface CheckedKey {
 }
 
 /**
- * The check of a stop on the checking machine: its drum letters, the steckers found ("AD ET RR"), the right ring
- * (1–26), the verdict, each crib letter's match, the decrypt ('?' where a stecker is unknown) and the key.
+ * The check of a stop on the checking machine: its window letters and ring settings (at first ZZZ and the stop's
+ * indicator), the steckers found ("AD ET RR"), the right ring (1–26), the verdict, each crib letter's match, the
+ * decrypt ('?' where a stecker is unknown) and the key.
  */
 export interface BombeCheck {
   stop: BombeStop;
-  position: string;
+  machineWindows: string;
+  machineRings: string;
   steckers: string;
   rightRing: number;
   verdict: BombeStop['verdict'];
@@ -249,7 +251,8 @@ export interface BombeCheck {
 
 /** Check fields to change; those left out stay as they are. */
 export interface CheckChange {
-  position?: string;
+  machineWindows?: string;
+  machineRings?: string;
   steckers?: string;
   rightRing?: number;
 }

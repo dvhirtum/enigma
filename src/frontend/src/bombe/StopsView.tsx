@@ -42,7 +42,6 @@ export function StopsView() {
               <th scope="col">#</th>
               <th scope="col">Wheel order</th>
               <th scope="col">Indicator</th>
-              <th scope="col">Core</th>
               <th scope="col">Stecker</th>
               <th scope="col">Verdict</th>
               <th scope="col">
@@ -56,7 +55,6 @@ export function StopsView() {
                 <td>{stop.index + 1}</td>
                 <td>{stop.wheelOrder}</td>
                 <td className="letters">{stop.indicator}</td>
-                <td className="letters">{stop.position}</td>
                 <td className="letters">{stop.stecker ? `${stop.testRegister}/${stop.stecker}` : '—'}</td>
                 <td>{verdicts[stop.verdict]}</td>
                 <td>

@@ -26,7 +26,8 @@ public sealed class CheckHandlerTests
         var check = new GetCheckHandler(_store).Handle(new GetCheck(stop));
 
         // Assert
-        Assert.Equal("WPC", check.Position);
+        Assert.Equal("ZZZ", check.MachineWindows);
+        Assert.Equal("DKX", check.MachineRings);
         Assert.Equal("GQ", check.Steckers);
         Assert.Equal(26, check.RightRing);
         Assert.Equal("Unchecked", check.Verdict);
@@ -42,7 +43,7 @@ public sealed class CheckHandlerTests
         var stop = await RunCarterAsync(intercept: false);
 
         // Act
-        var check = new SetCheckHandler(_store).Handle(new SetCheck(stop, null, CarterSteckers, null));
+        var check = new SetCheckHandler(_store).Handle(new SetCheck(stop, null, null, CarterSteckers, null));
 
         // Assert
         Assert.Equal("WETTERVORHERSAGE", check.Decrypt);
@@ -53,11 +54,11 @@ public sealed class CheckHandlerTests
     }
 
     [Fact]
-    public async Task Should_light_R_When_Q_is_pressed_at_link_GR6()
+    public async Task Should_light_R_When_Q_is_pressed_at_link_GR6_on_ZZF()
     {
         // Arrange
         var stop = await RunCarterAsync(intercept: false);
-        new SetCheckHandler(_store).Handle(new SetCheck(stop, "WPI", null, null));
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, "zzf", null, null, null));
 
         // Act
         var lamp = new PressCheckKeyHandler(_store).Handle(new PressCheckKey(stop, "q"));
@@ -71,7 +72,7 @@ public sealed class CheckHandlerTests
     {
         // Arrange
         var stop = await RunCarterAsync(intercept: true);
-        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, CarterSteckers, null));
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, null, CarterSteckers, null));
 
         // Act
         var confirmation = new ConfirmCheckHandler(_store).Handle(new ConfirmCheck(stop, "true"));
@@ -101,16 +102,17 @@ public sealed class CheckHandlerTests
     }
 
     [Theory]
-    [InlineData(null, "AD AE", null)]
-    [InlineData("WP", null, null)]
-    [InlineData(null, null, 27)]
-    public async Task Should_refuse_the_change_When_it_is_not_valid(string? position, string? steckers, int? ring)
+    [InlineData(null, null, "AD AE", null)]
+    [InlineData("ZZ", null, null, null)]
+    [InlineData(null, "DK1", null, null)]
+    [InlineData(null, null, null, 27)]
+    public async Task Should_refuse_the_change_When_it_is_not_valid(string? windows, string? rings, string? steckers, int? ring)
     {
         // Arrange
         var stop = await RunCarterAsync(intercept: false);
 
         // Act
-        void Act() => new SetCheckHandler(_store).Handle(new SetCheck(stop, position, steckers, ring));
+        void Act() => new SetCheckHandler(_store).Handle(new SetCheck(stop, windows, rings, steckers, ring));
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -165,7 +167,7 @@ public sealed class CheckHandlerTests
     {
         // Arrange
         var stop = await RunCarterAsync(intercept: false);
-        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, "AD ET HM LJ NV UF ZP GQ RR SS WW", null));
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, null, "AD ET HM LJ NV UF ZP GQ RR SS WW", null));
 
         // Act
         var suggestion = new SuggestSteckersHandler(_store).Handle(new SuggestSteckers(stop));
@@ -183,7 +185,7 @@ public sealed class CheckHandlerTests
     {
         // Arrange
         var stop = await RunCarterAsync(intercept: false);
-        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, CarterSteckers, null));
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, null, CarterSteckers, null));
 
         // Act
         var found = new FindRightRingHandler(_store).Handle(new FindRightRing(stop));

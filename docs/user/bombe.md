@@ -77,16 +77,17 @@ The run settings cannot change while the Bombe runs or waits at a stop.
 
 ## The stops
 
-The **Stops** tab lists the stops of the run, a hundred at a time: the wheel order, the indicator reading, the core position, the stecker of the test register letter and your verdict. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it on the Checking tab. Changing the message, crib, menu or settings, or starting a new run, clears the stops and their checks.
+The **Stops** tab lists the stops of the run, a hundred at a time: the wheel order, the indicator reading, the stecker of the test register letter and your verdict. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it on the Checking tab. Changing the message, crib, menu or settings, or starting a new run, clears the stops and their checks.
 
 ## Checking a stop
 
-Most stops are false. Hut 8 tested each one on a checking machine: an Enigma without plugboard whose rotors do not step, set by hand to the Bombe drum letters. The **Checking** tab shows it, set to the stop, with its reflector wheel, three drums and the spare drums in the rack above.
+Most stops are false. Hut 8 tested each one on a checking machine: an Enigma without plugboard whose rotors do not step, with Bombe drums. The **Checking** tab shows it with its reflector wheel, three drums and the spare drums in the rack above. Each drum has its letters round the face, the window letter at the mark on top, and a coloured ring with a black dot at the ring letter. The machine starts with the rings set to the stop's indicator and the windows at ZZZ.
 
-- **Turn a drum** with its thumbwheel: click the top half to turn it up, the bottom half to turn it down, or drag.
+- **Turn a drum** with its thumbwheel: click the top half to turn it up, the bottom half to turn it down, or drag. The ring turns with it.
+- **Set a ring** by dragging the coloured ring round the drum, or with Arrow Up/Down on it.
 - **Press a key**, by clicking it or typing the letter; the lamp of the letter it goes to lights while the key is held.
 
-To check the stop, follow the menu from the stecker the Bombe found. For a link at offset *n*, turn the drums *n* steps on from the stop, press the stecker partner of one letter and read the lamp: that is the stecker partner of the other letter. Write each partner into the **Steckers** grid. Type a letter itself for an unsteckered letter, and clear the box when a partner is unknown. Changing one partner removes the pair the letter had before. A letter can have only one partner, so a contradiction shows the stop is false.
+To check the stop, follow the menu from the stecker the Bombe found. The **Menu links** list gives each link with its drum position. For a link at ZZE, turn the drums to ZZE, press the stecker partner of one letter and read the lamp: that is the stecker partner of the other letter. For example, for a stop with indicator SNY and G/D, turn the drums to ZZE for link G–E and press D: lamp P lights, so E/P. Write each partner into the **Steckers** grid. Type a letter itself for an unsteckered letter, and clear the box when a partner is unknown. Changing one partner removes the pair the letter had before. A letter can have only one partner, so a contradiction shows the stop is false.
 
 The **Crib** row marks each crib letter green when the steckers encipher it correctly, red when they contradict it, and grey while it is still unknown. The **Decrypt** shows the whole message with the steckers found so far, with **?** where a stecker is still unknown.
 

@@ -6,7 +6,7 @@ internal sealed record PlacementRequest(int Position);
 
 internal sealed record SpeedRequest(double? Speed);
 
-internal sealed record CheckRequest(string? Position, string? Steckers, int? RightRing);
+internal sealed record CheckRequest(string? MachineWindows, string? MachineRings, string? Steckers, int? RightRing);
 
 internal sealed record KeyRequest(string? Key);
 
@@ -101,7 +101,7 @@ internal static class BombeEndpoints
             handler.Handle(new GetCheck(stop)));
 
         bombe.MapPut("/run/stops/{stop:int}/check", (int stop, CheckRequest request, SetCheckHandler handler) =>
-            handler.Handle(new SetCheck(stop, request.Position, request.Steckers, request.RightRing)));
+            handler.Handle(new SetCheck(stop, request.MachineWindows, request.MachineRings, request.Steckers, request.RightRing)));
 
         bombe.MapPost("/run/stops/{stop:int}/check/press", (int stop, KeyRequest request, PressCheckKeyHandler handler) =>
             handler.Handle(new PressCheckKey(stop, request.Key)));

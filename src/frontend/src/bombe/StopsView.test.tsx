@@ -25,7 +25,7 @@ describe('StopsView', () => {
 
     const rows = await screen.findAllByRole('row');
     expect(rows).toHaveLength(3);
-    expect(rows[1]).toHaveTextContent('1II V IIIDKXVMBG/Q');
+    expect(rows[1]).toHaveTextContent('1II V IIIDKXG/Q');
     expect(screen.getByText('2 stops')).toBeInTheDocument();
     expect(api.bombe.getStops).toHaveBeenCalledWith(0, stopPage);
   });

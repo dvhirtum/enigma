@@ -656,17 +656,47 @@ body {
 }
 
 .check-drum .rim {
-  stroke: #000;
-  stroke-width: 2;
+  fill: none;
+  stroke-width: 16;
+  pointer-events: stroke;
+  cursor: grab;
+}
+
+.check-drum .rim:active {
+  cursor: grabbing;
+}
+
+.check-drum .rim:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 3px #ffd76a);
 }
 
 .check-drum .face {
   fill: #efe6cf;
+  stroke: #000;
+  stroke-width: 1;
 }
 
-.check-drum .marker {
+.check-drum .face-letter {
+  fill: #6b665b;
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.check-drum .face-letter.at-index {
+  fill: #1c1c1a;
+  font-weight: bold;
+}
+
+.check-drum .ring-dot {
+  fill: #000;
   stroke: #efe6cf;
-  stroke-width: 3;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.check-drum .index-mark {
+  fill: #efe6cf;
 }
 
 .check-drum .drum-window {
@@ -678,6 +708,26 @@ body {
 .check-drum .drum-name {
   fill: #ece8df;
   font-size: 14px;
+}
+
+.menu-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+.menu-links li {
+  display: grid;
+  grid-template-columns: 2ch 3ch 3ch;
+  gap: 0.75rem;
+}
+
+.menu-links li > span:first-child {
+  text-align: right;
 }
 
 .check-crib {

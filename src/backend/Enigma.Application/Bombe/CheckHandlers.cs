@@ -22,10 +22,11 @@ public sealed class SetCheckHandler(IBombeSessionStore store)
 
         return store.UseCheck(command.Stop, (run, check) =>
         {
-            var position = command.Position is { } letters ? DrumPosition.Parse(letters.ToUpperInvariant()) : check.MachinePosition;
+            var windows = command.MachineWindows is { } window ? DrumPosition.Parse(window.ToUpperInvariant()) : check.MachineWindows;
+            var rings = command.MachineRings is { } setting ? DrumPosition.Parse(setting.ToUpperInvariant()) : check.MachineRings;
             var steckers = command.Steckers is { } pairs ? Steckers.Parse(pairs.ToUpperInvariant()) : check.Steckers;
             var ring = command.RightRing is { } number ? RingSetting.FromNumber(number) : check.RightRing;
-            (check.MachinePosition, check.Steckers, check.RightRing) = (position, steckers, ring);
+            (check.MachineWindows, check.MachineRings, check.Steckers, check.RightRing) = (windows, rings, steckers, ring);
             return CheckState.From(check, command.Stop, run);
         });
     }

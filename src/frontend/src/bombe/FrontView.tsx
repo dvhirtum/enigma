@@ -220,7 +220,7 @@ function RunProgress({ run }: { run: BombeRun }) {
       {stop && (
         <div className="bombe-stop" role="status">
           <p>
-            Stop on wheel order {stop.wheelOrder}: indicator <strong>{stop.indicator}</strong> (core {stop.position}). Test register {stop.testRegister}:{' '}
+            Stop on wheel order {stop.wheelOrder}: indicator <strong>{stop.indicator}</strong>. Test register {stop.testRegister}:{' '}
             {stop.stecker ? (
               <>
                 stecker{' '}

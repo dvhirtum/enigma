@@ -33,9 +33,9 @@ describe('CheckingView', () => {
   it('sets the checking machine to the stop and shows the crib and steckers', async () => {
     await openCarterCheck();
 
-    expect(screen.getByText(/Stop 1: II V III, indicator/)).toHaveTextContent('Stop 1: II V III, indicator DKX, core VMB, G/Q');
-    expect(screen.getByRole('img', { name: 'left drum II at W' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'right drum III at C' })).toBeInTheDocument();
+    expect(screen.getByText(/Stop 1: II V III, indicator/)).toHaveTextContent('Stop 1: II V III, indicator DKX, G/Q');
+    expect(screen.getByRole('img', { name: 'left drum II at Z, ring D' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'right drum III at Z, ring X' })).toBeInTheDocument();
     expect(screen.getByLabelText('Partner of G')).toHaveValue('Q');
     expect(screen.getByLabelText('Partner of A')).toHaveValue('');
     expect(screen.getByLabelText('Decrypt')).toHaveTextContent('????? ????? ????? ?');
@@ -59,7 +59,25 @@ describe('CheckingView', () => {
 
     fireEvent.click(screen.getByTestId('thumbwheel-right-up'));
 
-    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { position: 'WPD' }));
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { machineWindows: 'ZZA' }));
+  });
+
+  it('starts with the rings at the indicator and turns a ring with the arrow keys', async () => {
+    const api = await openCarterCheck();
+    const ring = screen.getByRole('spinbutton', { name: 'middle ring' });
+    expect(ring).toHaveAttribute('aria-valuetext', 'K');
+
+    fireEvent.keyDown(ring, { key: 'ArrowDown' });
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { machineRings: 'DJX' }));
+  });
+
+  it('lists the menu links with the drum position of each', async () => {
+    await openCarterCheck();
+
+    const links = within(screen.getByRole('region', { name: 'Menu links' })).getAllByRole('listitem');
+    expect(links[0]).toHaveTextContent(/1\s*S–W\s*ZZA/);
+    expect(links.map((link) => link.textContent)).toContain('5G–EZZE');
   });
 
   it('writes a pair into the steckers when a partner is typed', async () => {
@@ -100,7 +118,7 @@ describe('CheckingView', () => {
   it('accepts a suggested pair on its own or all of them', async () => {
     const api = await openCarterCheck();
     fireEvent.click(screen.getByRole('button', { name: 'Suggest' }));
-    const suggestions = await screen.findByRole('list');
+    const suggestions = await within(screen.getByRole('region', { name: 'Suggestions' })).findByRole('list');
     expect(within(suggestions).getByText('I/K')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Accept IK' }));

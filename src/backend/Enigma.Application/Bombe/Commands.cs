@@ -56,10 +56,11 @@ public sealed record GetSolution;
 public sealed record GetCheck(int Stop);
 
 /// <summary>
-/// Changes a check; each field left out (null) stays as it is. Position is the checking machine's drum letters, such
-/// as "WPC"; steckers are pairs such as "AD ET RR" (empty clears them); the right ring is 1–26.
+/// Changes a check; each field left out (null) stays as it is. The machine windows and rings are the checking
+/// machine's window letters and ring settings, such as "ZZE" and "SNY"; steckers are pairs such as "AD ET RR" (empty
+/// clears them); the right ring is 1–26.
 /// </summary>
-public sealed record SetCheck(int Stop, string? Position, string? Steckers, int? RightRing);
+public sealed record SetCheck(int Stop, string? MachineWindows, string? MachineRings, string? Steckers, int? RightRing);
 
 /// <summary>Presses a key on the checking machine of a stop's check.</summary>
 public sealed record PressCheckKey(int Stop, string? Key);

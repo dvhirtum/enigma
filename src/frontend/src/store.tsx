@@ -114,6 +114,8 @@ export interface BombeSlice {
   stepRightRing: (steps: number) => Promise<boolean>;
   /** Turns a checking machine drum (0 = left) `steps` letters on once the queued operations are done. */
   stepCheckDrum: (drum: number, steps: number) => Promise<boolean>;
+  /** Turns a checking machine ring (0 = left) `steps` letters on once the queued operations are done. */
+  stepCheckRing: (drum: number, steps: number) => Promise<boolean>;
   /** Presses a key on the checking machine; its lamp stays lit until `releaseCheckKey`. */
   pressCheckKey: (key: string) => Promise<boolean>;
   releaseCheckKey: () => void;
@@ -218,6 +220,16 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }));
       return result.value;
     };
+    /** Turns one drum's window letter or ring setting on the checking machine `steps` letters on. */
+    const stepCheckMachine = async (field: 'machineWindows' | 'machineRings', drum: number, steps: number) => {
+      const letters = get().check?.[field];
+      if (!letters) {
+        return false;
+      }
+      const turned = [...letters];
+      turned[drum] = shiftLetter(turned[drum], steps);
+      return get().changeCheck({ [field]: turned.join('') });
+    };
     /** A run call; a poll leaves the error as it is unless the poll fails. A run the backend no longer has is dropped. */
     const run = async (call: Promise<ApiResult<BombeRun>>, poll = false) => {
       const result = poll ? await settle(call) : await check(call);
@@ -318,16 +330,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         const steckers = change.steckers !== undefined ? { suggestion: null, ringScores: null } : {};
         return (await onCheck((stop) => bombe.setCheck(stop, change), (value) => value, { ...steckers, confirmation: null })) !== null;
       },
-      stepCheckDrum: (drum, steps) =>
-        enqueue(async () => {
-          const position = get().check?.position;
-          if (!position) {
-            return false;
-          }
-          const letters = [...position];
-          letters[drum] = shiftLetter(letters[drum], steps);
-          return get().changeCheck({ position: letters.join('') });
-        }),
+      stepCheckDrum: (drum, steps) => enqueue(() => stepCheckMachine('machineWindows', drum, steps)),
+      stepCheckRing: (drum, steps) => enqueue(() => stepCheckMachine('machineRings', drum, steps)),
       setPartner: (letter, partner) =>
         enqueue(async () => {
           const steckers = get().check?.steckers;

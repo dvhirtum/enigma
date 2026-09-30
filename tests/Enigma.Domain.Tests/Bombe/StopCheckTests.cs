@@ -23,7 +23,9 @@ public sealed class StopCheckTests
 
         // Assert
         Assert.Equal("GQ", check.Steckers.ToString());
-        Assert.Equal("WPC", check.MachinePosition.ToString());
+        Assert.Equal("ZZZ", check.MachineWindows.ToString());
+        Assert.Equal("DKX", check.MachineRings.ToString());
+        Assert.Equal("WPC", check.MachineDrumLetters.ToString());
         Assert.Equal(StopVerdict.Unchecked, check.Verdict);
     }
 
@@ -31,15 +33,53 @@ public sealed class StopCheckTests
     public void Should_light_the_partner_of_the_other_letter_When_the_checking_machine_is_set_to_a_link()
     {
         // Arrange
-        // Link G–R at offset 6: with G/Q, Q on the machine at the stop plus 6 lights R's partner, R itself.
-        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
-        check.MachinePosition = check.MachinePosition.Advance(6);
+        // Link G–R at offset 6: with G/Q, Q on the machine at ZZF lights R's partner, R itself.
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
+        {
+            MachineWindows = DrumPosition.Parse("ZZF"),
+        };
 
         // Act
         var lamp = check.Press(Q);
 
         // Assert
         Assert.Equal(Letter.FromChar('R'), lamp);
+    }
+
+    [Theory]
+    [InlineData("ZZE", 'D', 'P')]
+    [InlineData("ZZK", 'P', 'W')]
+    public void Should_light_the_Virtual_Colossus_lamps_When_the_SNY_stop_is_followed_along_the_menu(string windows, char key, char lamp)
+    {
+        // Arrange
+        // bombe.virtualcolossus.co.uk/simulation.html: the stop SNY with G/D, rings SNY, links G–E at ZZE and E–U at ZZK.
+        var stop = new BombeStop(WheelOrder.Parse("II V III"), DrumPosition.Parse("GJA"), G, [Letter.FromChar('D')]);
+        var check = new StopCheck(stop, ReflectorType.B, CarterPlacement())
+        {
+            MachineWindows = DrumPosition.Parse(windows),
+        };
+
+        // Act
+        var lit = check.Press(Letter.FromChar(key));
+
+        // Assert
+        Assert.Equal("SNY", check.MachineRings.ToString());
+        Assert.Equal(Letter.FromChar(lamp), lit);
+    }
+
+    [Fact]
+    public void Should_press_at_the_same_drum_letters_When_the_rings_and_windows_turn_together()
+    {
+        // Arrange
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
+        var atStop = check.Press(Q);
+
+        // Act
+        (check.MachineRings, check.MachineWindows) = (DrumPosition.Parse("EKY"), DrumPosition.Parse("AZA"));
+
+        // Assert
+        Assert.Equal("WPC", check.MachineDrumLetters.ToString());
+        Assert.Equal(atStop, check.Press(Q));
     }
 
     [Fact]

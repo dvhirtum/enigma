@@ -25,7 +25,7 @@ describe('FrontView', () => {
     expect(await screen.findByRole('group', { name: 'Indicator DKX' })).toBeInTheDocument();
     const scramblers = screen.getAllByRole('group', { name: /^Scrambler/ });
     expect(within(scramblers[0]).getByRole('img', { name: 'lower drum D' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Stop on wheel order II V III: indicator DKX (core VMB). Test register G: stecker G/Q.');
+    expect(screen.getByRole('status')).toHaveTextContent('Stop on wheel order II V III: indicator DKX. Test register G: stecker G/Q.');
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 

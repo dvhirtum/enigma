@@ -4,6 +4,8 @@ import { alphabet } from '../machine';
 import { useSetMode } from '../mode';
 import { useMachine } from '../store';
 import { CheckingMachine } from './CheckingMachine';
+import { scramblersOf } from './drums';
+import { drumLetters } from './MenuView';
 import { groups } from './MessageView';
 import { partnersOf } from './steckers';
 
@@ -13,9 +15,34 @@ function StopSummary({ check }: { check: BombeCheck }) {
   const { stop } = check;
   return (
     <p className="summary">
-      Stop {stop.index + 1}: {stop.wheelOrder}, indicator <span className="letters">{stop.indicator}</span>, core{' '}
-      <span className="letters">{stop.position}</span>, {stop.stecker ? `${stop.testRegister}/${stop.stecker}` : 'no stecker'}
+      Stop {stop.index + 1}: {stop.wheelOrder}, indicator <span className="letters">{stop.indicator}</span>,{' '}
+      {stop.stecker ? `${stop.testRegister}/${stop.stecker}` : 'no stecker'}
     </p>
+  );
+}
+
+/** The menu's links by offset, each with the drum position to turn the checking machine to. */
+function MenuLinks() {
+  const links = useMachine((store) => store.bombe?.menu?.links);
+  if (!links?.length) {
+    return null;
+  }
+
+  return (
+    <section aria-label="Menu links">
+      <h3>Menu links</h3>
+      <ol className="menu-links">
+        {scramblersOf(links).map((link) => (
+          <li key={link.id}>
+            <span>{link.offset}</span>
+            <span className="letters">
+              {link.first}–{link.second}
+            </span>
+            <span className="letters">{drumLetters(link.offset)}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
@@ -288,6 +315,7 @@ export function CheckingView() {
     <div className="bombe-view checking">
       <StopSummary check={check} />
       <CheckingMachine />
+      <MenuLinks />
       <CribCheck check={check} />
       <SteckerGrid check={check} />
       <RightRing check={check} />

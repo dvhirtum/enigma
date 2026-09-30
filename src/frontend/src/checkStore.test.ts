@@ -56,16 +56,16 @@ describe('checking in the machine store', () => {
     const { api, store } = await openStore();
     const late = deferred<ApiResult<BombeCheck>>();
     api.bombe.setCheck.mockReturnValueOnce(late.promise);
-    const second: BombeCheck = { ...carterCheck, stop: carterStops[1], position: 'LRG' };
+    const second: BombeCheck = { ...carterCheck, stop: carterStops[1], machineRings: 'MUL' };
     api.bombe.getCheck.mockResolvedValueOnce({ ok: true, value: second });
 
     const turned = store.getState().stepCheckDrum(2, 1);
     await store.getState().openCheck(1);
-    late.resolve({ ok: true, value: { ...carterCheck, position: 'WPD' } });
+    late.resolve({ ok: true, value: { ...carterCheck, machineWindows: 'ZZA' } });
     await turned;
 
     expect(store.getState().check?.stop.index).toBe(1);
-    expect(store.getState().check?.position).toBe('LRG');
+    expect(store.getState().check?.machineRings).toBe('MUL');
   });
 
   it('drops a next page when the first page was loaded again meanwhile', async () => {

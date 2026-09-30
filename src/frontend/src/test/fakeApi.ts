@@ -183,10 +183,11 @@ export const carterStops: BombeStop[] = [
 
 const carterCrib = 'WETTERVORHERSAGE';
 
-/** The check of Carter's true stop as it starts: the drums at the stop's letters, only G/Q known. */
+/** The check of Carter's true stop as it starts: the rings at the indicator, the windows at ZZZ, only G/Q known. */
 export const carterCheck: BombeCheck = {
   stop: carterStops[0],
-  position: 'WPC',
+  machineWindows: 'ZZZ',
+  machineRings: 'DKX',
   steckers: 'GQ',
   rightRing: 26,
   verdict: 'Unchecked',
