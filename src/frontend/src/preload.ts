@@ -101,6 +101,12 @@ const api: EnigmaApi = {
       ipcRenderer.on('machine:state', handler);
       return () => ipcRenderer.removeListener('machine:state', handler);
     },
+    releaseCheckerKey: () => invoke('windows:releaseCheckerKey'),
+    onCheckerKeyReleased: (listener) => {
+      const handler = () => listener();
+      ipcRenderer.on('windows:checkerKeyReleased', handler);
+      return () => ipcRenderer.removeListener('windows:checkerKeyReleased', handler);
+    },
     onBombeResult: (listener) => {
       const handler = (_event: IpcRendererEvent, result: BombeResult) => listener(result);
       ipcRenderer.on('bombe:result', handler);

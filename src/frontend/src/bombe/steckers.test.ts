@@ -1,28 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { pairsOf, partnersOf, withPartner } from './steckers';
+import { contradictionsOf, partnersOf, withoutLetter } from './steckers';
 
 describe('steckers', () => {
-  it('reads each letter of a pair as the partner of the other', () => {
-    expect(partnersOf('AD RR')).toEqual({ A: 'D', D: 'A', R: 'R' });
+  it('reads each letter of a pair as a partner of the other', () => {
+    expect(partnersOf('AD RR')).toEqual({ A: ['D'], D: ['A'], R: ['R'] });
   });
 
-  it('writes pairs lower letter first in alphabetical order', () => {
-    expect(pairsOf({ T: 'E', E: 'T', A: 'D', D: 'A', R: 'R' })).toBe('AD ET RR');
+  it('keeps every partner written for a letter', () => {
+    expect(partnersOf('AD EP EX')).toMatchObject({ E: ['P', 'X'], P: ['E'], X: ['E'] });
   });
 
-  it('adds a pair', () => {
-    expect(withPartner('GQ', 'D', 'A')).toBe('AD GQ');
+  it('marks a letter with two partners and its partners as contradicted', () => {
+    expect([...contradictionsOf('AD EP EX RR')].sort()).toEqual(['E', 'P', 'X']);
+    expect(contradictionsOf('AD RR').size).toBe(0);
   });
 
-  it('marks a letter unsteckered when paired with itself', () => {
-    expect(withPartner('GQ', 'R', 'R')).toBe('GQ RR');
-  });
-
-  it('removes the pairs both letters had before', () => {
-    expect(withPartner('AD ET GQ', 'A', 'E')).toBe('AE GQ');
-  });
-
-  it('makes a letter and its partner unknown when cleared', () => {
-    expect(withPartner('AD GQ', 'D', null)).toBe('GQ');
+  it('rubs out every pair of a letter', () => {
+    expect(withoutLetter('AD EP EX RR', 'E')).toBe('AD RR');
   });
 });

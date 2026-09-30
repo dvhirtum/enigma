@@ -45,7 +45,19 @@ public sealed class PressCheckingKeyHandler(IBombeSessionStore store)
         var key = command.Key is { Length: 1 } && char.IsAsciiLetter(command.Key[0])
             ? Letter.FromChar(char.ToUpperInvariant(command.Key[0]))
             : throw new DomainException($"'{command.Key}' is not a key.");
-        return store.Use(job => new LampState(job.Checker.Press(key).ToString()));
+        return store.Use(job =>
+        {
+            var checker = job.Checker;
+            var lamp = checker.Press(key);
+            if (checker is not { Stop: { } stop, CorePositions: { } core } || stop >= store.Stops.Count)
+            {
+                return new LampState(lamp.ToString(), null);
+            }
+
+            var check = store.Stops.Check(stop);
+            check.Record(core, key, lamp);
+            return new LampState(lamp.ToString(), CheckState.From(check, stop));
+        });
     }
 }
 
@@ -82,9 +94,9 @@ public sealed class SetCheckHandler(IBombeSessionStore store)
 
         return store.UseCheck(command.Stop, (_, check) =>
         {
-            var steckers = command.Steckers is { } pairs ? Steckers.Parse(pairs.ToUpperInvariant()) : check.Steckers;
+            var sheet = command.Steckers is { } pairs ? SteckerSheet.Parse(pairs.ToUpperInvariant()) : check.Sheet;
             var ring = command.RightRing is { } number ? RingSetting.FromNumber(number) : check.RightRing;
-            (check.Steckers, check.RightRing) = (steckers, ring);
+            (check.Sheet, check.RightRing) = (sheet, ring);
             return CheckState.From(check, command.Stop);
         });
     }

@@ -31,6 +31,9 @@ public sealed class CheckingMachine
         Windows.Middle.Shift(-Rings.Middle.Index),
         Windows.Right.Shift(-Rings.Right.Index));
 
+    /// <summary>The core positions of the drums, or null until all three are fitted.</summary>
+    public DrumPosition? CorePositions => WheelOrder?.CorePositions(DrumLetters);
+
     /// <summary>The stop it was set up for, until its drums or reflector are changed.</summary>
     public int? Stop { get; private set; }
 

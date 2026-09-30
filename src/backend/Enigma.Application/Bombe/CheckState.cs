@@ -3,13 +3,14 @@ using Enigma.Domain.Bombe;
 namespace Enigma.Application.Bombe;
 
 /// <summary>
-/// The check of a stop: the stop, the steckers found (pairs such as "AD ET RR"), the right ring (1–26), the verdict,
-/// each crib letter with its match (Match, Mismatch or Unknown), the decrypt of the whole message ('?' where a stecker
-/// is not known yet) and the key it gives.
+/// The check of a stop: the stop, the stecker sheet as written (pairs such as "AD ET EX RR"), the letters it
+/// contradicts (more than one partner), the right ring (1–26), the verdict, each crib letter with its match (Match,
+/// Mismatch or Unknown), the decrypt of the whole message ('?' where a stecker is not known yet) and the key it gives.
 /// </summary>
 public sealed record CheckState(
     StopState Stop,
     string Steckers,
+    string Contradicted,
     int RightRing,
     string Verdict,
     IReadOnlyList<CribLetterState> Crib,
@@ -23,7 +24,8 @@ public sealed record CheckState(
         var key = check.Key;
         return new CheckState(
             StopState.From(check.Stop, index, check.Verdict),
-            check.Steckers.ToString(),
+            check.Sheet.ToString(),
+            string.Concat(check.Sheet.Contradicted),
             check.RightRing.Number,
             check.Verdict.ToString(),
             [.. check.Crib().Select(letter => new CribLetterState(
@@ -46,7 +48,8 @@ public sealed record CribLetterState(int Offset, string Plain, string Cipher, st
 /// </summary>
 public sealed record CheckedKeyState(string Reflector, string WheelOrder, IReadOnlyList<int> Rings, IReadOnlyList<string> Plugs, string MessageKey);
 
-public sealed record LampState(string Lamp);
+/// <summary>The lamp a key lit, and the check of the stop the checking machine is set up for, with what the lamp wrote down.</summary>
+public sealed record LampState(string Lamp, CheckState? Check);
 
 /// <summary>
 /// The confirmation of a verdict: the crib offsets that do not match and those still unknown, the comparison with the

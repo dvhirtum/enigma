@@ -1,11 +1,12 @@
-import { useCallback, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Key } from '../components/Key';
 import { Lamp } from '../components/Lamp';
 import { Thumbwheel } from '../components/Thumbwheel';
 import { usePlugDrag } from '../components/usePlugDrag';
 import { alphabet } from '../machine';
 import { useMachine } from '../store';
-import { usePhysicalKeyboard, type Keys } from '../useKeys';
+import { usePhysicalKeyboard } from '../useKeys';
+import { useCheckKeys } from './checkKeys';
 import { drumColours, rotors } from './drums';
 
 const pitch = 50;
@@ -25,33 +26,6 @@ const slots = ['left', 'middle', 'right'];
 /** Drums light enough to need dark lettering. */
 const lightDrums = new Set(['IV', 'VIII']);
 
-/** Presses one key at a time on the checking machine, once its drums are fitted; the lamp stays lit while the key is held. */
-function useCheckKeys(ready: boolean): { keys: Keys; down: string | null } {
-  const pressCheckKey = useMachine((store) => store.pressCheckKey);
-  const releaseCheckKey = useMachine((store) => store.releaseCheckKey);
-  const held = useRef<string | null>(null);
-  const [down, setDown] = useState<string | null>(null);
-
-  const press = useCallback(
-    (letter: string) => {
-      if (held.current || !ready) {
-        return false;
-      }
-      held.current = letter;
-      setDown(letter);
-      void pressCheckKey(letter);
-      return true;
-    },
-    [pressCheckKey, ready],
-  );
-  const release = useCallback(() => {
-    held.current = null;
-    setDown(null);
-    releaseCheckKey();
-  }, [releaseCheckKey]);
-
-  return { keys: { press, release }, down };
-}
 
 const letterIndex = (letter: string) => letter.charCodeAt(0) - 65;
 const degreesPerLetter = 360 / 26;
@@ -208,8 +182,8 @@ export function CheckingMachine() {
   const stepCheckRing = useMachine((store) => store.stepCheckRing);
   const [picked, setPicked] = useState<string | null>(null);
   const svg = useRef<SVGSVGElement>(null);
-  const ready = checker?.drums.every(Boolean) ?? false;
-  const { keys, down } = useCheckKeys(ready);
+  const keys = useCheckKeys();
+  const down = useMachine((store) => store.checkKey);
   usePhysicalKeyboard(keys);
 
   const drums = checker?.drums ?? [null, null, null];

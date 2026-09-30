@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { BombeState } from '../api';
 import { useMachine } from '../store';
-import { carterMenu, carterPaused, emptyChecker } from '../test/fakeApi';
+import { carterCheck, carterMenu, carterPaused, emptyChecker } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
 import { CheckStep, KeyStep } from './CheckStep';
 
@@ -22,8 +22,8 @@ function OpenCheck({ step }: { step: 'check' | 'key' }) {
   return step === 'check' ? <CheckStep check={check} /> : <KeyStep check={check} />;
 }
 
-async function openCarterCheck(step: 'check' | 'key' = 'check', state: BombeState = carter) {
-  const api = renderBombe(<OpenCheck step={step} />, state);
+async function openCarterCheck(step: 'check' | 'key' = 'check', state: BombeState = carter, setup?: Parameters<typeof renderBombe>[2]) {
+  const api = renderBombe(<OpenCheck step={step} />, state, setup);
   await screen.findByText(step === 'check' ? /Test the stop/ : 'Reflector');
   return api;
 }
@@ -49,8 +49,8 @@ describe('CheckStep', () => {
   it('shows the crib, steckers and decrypt of the stop', async () => {
     await openCarterCheck();
 
-    expect(screen.getByLabelText('Partner of G')).toHaveValue('Q');
-    expect(screen.getByLabelText('Partner of A')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Partner of G: Q' })).toHaveTextContent('Q');
+    expect(screen.getByRole('button', { name: 'Partner of A: unknown' })).toBeDisabled();
     expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('?????');
   });
 
@@ -62,20 +62,32 @@ describe('CheckStep', () => {
     expect(links.map((link) => link.textContent)).toContain('5G–EZZE');
   });
 
-  it('writes a pair into the steckers when a partner is typed', async () => {
+  it('presses the checking machine when a letter is typed, and writes down what its lamp says', async () => {
     const api = await openCarterCheck();
+    api.bombe.pressCheckerKey.mockResolvedValue({ ok: true, value: { lamp: 'R', check: { ...carterCheck, steckers: 'GQ RR' } } });
+    await waitFor(() => expect(api.bombe.setUpChecker).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText('Partner of A'), { target: { value: 'd' } });
+    fireEvent.keyDown(window, { key: 'q', code: 'KeyQ' });
 
-    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'AD GQ' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Partner of R: R' })).toBeInTheDocument());
+    expect(api.bombe.pressCheckerKey).toHaveBeenCalledWith('Q');
+    fireEvent.keyUp(window, { key: 'q', code: 'KeyQ' });
+    await waitFor(() => expect(api.windows.releaseCheckerKey).toHaveBeenCalled());
   });
 
-  it('takes the new partner when it is typed in front of the old one', async () => {
-    const api = await openCarterCheck();
+  it('marks contradictions in red and rubs out a letter that is clicked', async () => {
+    const api = await openCarterCheck('check', carter, (fake) =>
+      fake.bombe.getCheck.mockResolvedValue({ ok: true, value: { ...carterCheck, steckers: 'GQ RR RX', contradicted: 'R' } }),
+    );
 
-    fireEvent.change(screen.getByLabelText('Partner of G'), { target: { value: 'XQ' } });
+    const box = screen.getByRole('button', { name: 'Partner of R: R X, contradicted' });
+    expect(box.parentElement).toHaveClass('contradicted');
+    expect(screen.getByRole('button', { name: 'Partner of X: R, contradicted' })).toBeInTheDocument();
+    expect(screen.getByText(/The lamps contradict each other at R/)).toBeInTheDocument();
 
-    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'GX' }));
+    fireEvent.click(box);
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'GQ' }));
   });
 
   it('turns the right ring by hand', async () => {

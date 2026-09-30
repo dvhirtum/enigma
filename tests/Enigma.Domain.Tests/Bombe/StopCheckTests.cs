@@ -27,6 +27,55 @@ public sealed class StopCheckTests
     }
 
     [Fact]
+    public void Should_write_the_lamp_as_the_other_letters_partner_When_a_key_is_pressed_at_a_link()
+    {
+        // Arrange
+        // Link G–R at offset 6: with G/Q, Q at the link's position lights R, so R is unsteckered.
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
+        var link = CarterStop("VMB").Position.Advance(6);
+
+        // Act
+        var written = check.Record(link, Q, Letter.FromChar('R'));
+
+        // Assert
+        Assert.True(written);
+        Assert.Equal("GQ RR", check.Sheet.ToString());
+    }
+
+    [Fact]
+    public void Should_write_a_contradiction_and_leave_the_letter_unknown_When_a_lamp_gives_another_partner()
+    {
+        // Arrange
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
+        var link = CarterStop("VMB").Position.Advance(6);
+        check.Record(link, Q, Letter.FromChar('R'));
+
+        // Act
+        check.Record(link, Q, Letter.FromChar('X'));
+
+        // Assert
+        Assert.Equal("GQ RR RX", check.Sheet.ToString());
+        Assert.Null(check.Steckers.PartnerOf(Letter.FromChar('R')));
+    }
+
+    [Fact]
+    public void Should_write_nothing_When_the_key_is_no_known_partner_or_the_drums_are_at_no_link()
+    {
+        // Arrange
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
+        var link = CarterStop("VMB").Position.Advance(6);
+
+        // Act
+        var unknownKey = check.Record(link, Letter.FromChar('A'), Letter.FromChar('B'));
+        var noLink = check.Record(CarterStop("VMB").Position.Advance(100), Q, Letter.FromChar('B'));
+
+        // Assert
+        Assert.False(unknownKey);
+        Assert.False(noLink);
+        Assert.Equal("GQ", check.Sheet.ToString());
+    }
+
+    [Fact]
     public void Should_match_the_whole_crib_and_decrypt_it_When_Carters_steckers_are_entered()
     {
         // Arrange

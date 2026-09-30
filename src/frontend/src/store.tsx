@@ -9,6 +9,7 @@ import type {
   BombeState,
   BombeStop,
   CheckChange,
+  CheckerPress,
   CheckerChange,
   PrintedStop,
   TestRegisterChange,
@@ -29,7 +30,7 @@ import type {
 import { shiftLetter, shiftRing } from './machine';
 import { keySheetDocument, procedureDocument, procedureName } from './printSheet';
 import { historicalSpeed } from './bombe/drums';
-import { withPartner } from './bombe/steckers';
+import { withoutLetter } from './bombe/steckers';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -126,6 +127,8 @@ export interface BombeSlice {
   check: BombeCheck | null;
   /** The lamp lit on the checking machine. */
   checkLamp: string | null;
+  /** The key held down on the checking machine, in this window or another. */
+  checkKey: string | null;
   suggestion: Suggestion | null;
   ringScores: RingFind['rings'] | null;
   confirmation: Confirmation | null;
@@ -134,8 +137,8 @@ export interface BombeSlice {
   /** Follows a Bombe call another window made. */
   receiveBombe: (result: BombeResult) => void;
   changeCheck: (change: CheckChange) => Promise<boolean>;
-  /** Pairs `letter` with `partner` (itself: unsteckered; null: unknown) once the queued operations are done. */
-  setPartner: (letter: string, partner: string | null) => Promise<boolean>;
+  /** Rubs out every pair of `letter` on the stecker sheet once the queued operations are done. */
+  eraseLetter: (letter: string) => Promise<boolean>;
   /** Turns the right ring `steps` places on once the queued operations are done. */
   stepRightRing: (steps: number) => Promise<boolean>;
   /** Changes the checking machine once the queued operations are done. */
@@ -149,6 +152,8 @@ export interface BombeSlice {
   /** Presses a key on the checking machine; its lamp stays lit until `releaseCheckKey`. */
   pressCheckKey: (key: string) => Promise<boolean>;
   releaseCheckKey: () => void;
+  /** Follows a key released on the checking machine in another window. */
+  receiveCheckKeyRelease: () => void;
   confirmCheck: (verdict: BombeStop['verdict']) => Promise<boolean>;
   suggestSteckers: () => Promise<boolean>;
   /** Adds proposed pairs, such as "IK", to the check's steckers. */
@@ -339,6 +344,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       printout: [],
       check: null,
       checkLamp: null,
+      checkKey: null,
       suggestion: null,
       ringScores: null,
       confirmation: null,
@@ -424,6 +430,15 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
             }
             return;
           }
+          case 'pressCheckerKey': {
+            const pressed = value as CheckerPress;
+            keyPresses++;
+            set({ checkKey: args[0] as string, checkLamp: pressed.lamp });
+            if (pressed.check) {
+              followCheck(pressed.check, { suggestion: null, ringScores: null, confirmation: null });
+            }
+            return;
+          }
           case 'setUpChecker':
             showChecker(value as BombeState);
             return;
@@ -455,7 +470,6 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           case 'intercepts':
           case 'getStops':
           case 'getPrintout':
-          case 'pressCheckerKey':
             return;
           default:
             applyJob(value as BombeState);
@@ -475,10 +489,10 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       },
       stepCheckDrum: (drum, steps) => enqueue(() => stepChecker('windows', drum, steps)),
       stepCheckRing: (drum, steps) => enqueue(() => stepChecker('rings', drum, steps)),
-      setPartner: (letter, partner) =>
+      eraseLetter: (letter) =>
         enqueue(async () => {
           const steckers = get().check?.steckers;
-          return steckers !== undefined && get().changeCheck({ steckers: withPartner(steckers, letter, partner) });
+          return steckers !== undefined && get().changeCheck({ steckers: withoutLetter(steckers, letter) });
         }),
       stepRightRing: (steps) =>
         enqueue(async () => {
@@ -487,16 +501,28 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         }),
       pressCheckKey: async (key) => {
         const press = ++keyPresses;
+        set({ checkKey: key });
         const result = await check(bombe.pressCheckerKey(key));
-        // A key released before the lamp came back leaves it dark.
-        if (result.ok && press === keyPresses) {
+        if (!result.ok) {
+          return false;
+        }
+        // A key released before the lamp came back leaves it dark; what the lamp wrote down stays.
+        if (press === keyPresses) {
           set({ checkLamp: result.value.lamp });
         }
-        return result.ok;
+        if (result.value.check) {
+          followCheck(result.value.check, { suggestion: null, ringScores: null, confirmation: null });
+        }
+        return true;
       },
       releaseCheckKey: () => {
         keyPresses++;
-        set({ checkLamp: null });
+        set({ checkKey: null, checkLamp: null });
+        void windows.releaseCheckerKey();
+      },
+      receiveCheckKeyRelease: () => {
+        keyPresses++;
+        set({ checkKey: null, checkLamp: null });
       },
       confirmCheck: async (verdict) => {
         const confirmation = await onCheck((stop) => bombe.confirmCheck(stop, verdict), (value) => value.check);
@@ -707,6 +733,7 @@ export function MachineStoreProvider({ api, children }: { api: EnigmaApi; childr
   const [store] = useState(() => createMachineStore(api));
   useEffect(() => api.windows.onMachineState((machine) => store.setState({ machine })), [api, store]);
   useEffect(() => api.windows.onBombeResult((result) => store.getState().receiveBombe(result)), [api, store]);
+  useEffect(() => api.windows.onCheckerKeyReleased(() => store.getState().receiveCheckKeyRelease()), [api, store]);
   useEffect(
     () =>
       api.windows.onKeySheetsChanged(() => {

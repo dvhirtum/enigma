@@ -306,17 +306,25 @@ export interface CheckedKey {
 }
 
 /**
- * The check of a stop: the steckers found ("AD ET RR"), the right ring (1–26), the verdict, each crib letter's match,
- * the decrypt ('?' where a stecker is unknown) and the key.
+ * The check of a stop: the stecker sheet as written ("AD ET EX RR", contradictions and all), the right ring (1–26),
+ * the verdict, each crib letter's match, the decrypt ('?' where a stecker is unknown) and the key.
  */
 export interface BombeCheck {
   stop: BombeStop;
   steckers: string;
+  /** The letters with more than one partner written. */
+  contradicted: string;
   rightRing: number;
   verdict: BombeStop['verdict'];
   crib: CribLetter[];
   decrypt: string;
   key: CheckedKey;
+}
+
+/** The lamp a key lit, and the check of the stop the checking machine is set up for, with what the lamp wrote down. */
+export interface CheckerPress {
+  lamp: string;
+  check: BombeCheck | null;
 }
 
 /** Check fields to change; those left out stay as they are. */
@@ -487,8 +495,8 @@ export interface BombeApi {
   getPrintout: Call<[from: number, count: number], PrintedStop[]>;
   clearPrintout: Call<[], BombeState>;
   setChecker: Call<[change: CheckerChange], BombeState>;
-  /** Presses a key on the checking machine; resolves to the lamp that lights. */
-  pressCheckerKey: Call<[key: string], { lamp: string }>;
+  /** Presses a key on the checking machine; resolves to the lamp that lights and the check it wrote the lamp into. */
+  pressCheckerKey: Call<[key: string], CheckerPress>;
   /** Sets the checking machine up for a logged stop: its reflector and drums, the rings at its indicator, the windows at ZZZ. */
   setUpChecker: Call<[stop: number], BombeState>;
   getCheck: Call<[stop: number], BombeCheck>;
@@ -543,6 +551,10 @@ export interface WindowsApi {
   onShowMode: (listener: (mode: 'enigma' | 'bombe') => void) => () => void;
   /** Listens for machine states changed by another window. */
   onMachineState: (listener: (state: MachineState) => void) => () => void;
+  /** Tells the other windows that the checking machine key held here was released. */
+  releaseCheckerKey: () => Promise<void>;
+  /** Listens for checking machine keys released in another window. */
+  onCheckerKeyReleased: (listener: () => void) => () => void;
   /** Listens for the results of Bombe calls made by another window. */
   onBombeResult: (listener: (result: BombeResult) => void) => () => void;
   /** Listens for key sheets generated, imported or deleted by another window. */

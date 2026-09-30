@@ -359,29 +359,6 @@ input.hand-input.crib-input {
   grid-template-columns: repeat(13, calc(var(--sq) * 2));
 }
 
-.stecker-sheet label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: var(--print-muted);
-}
-
-.stecker-sheet label > span {
-  height: var(--sq);
-}
-
-.stecker-sheet input.hand-input {
-  width: var(--sq);
-  height: var(--sq);
-  text-align: center;
-  letter-spacing: 0;
-  box-shadow: inset 0 0 0 1px var(--grid);
-}
-
-.stecker-sheet .self input.hand-input {
-  color: var(--print-muted);
-}
-
 .hut8 output.hand {
   min-width: calc(var(--sq) * 3);
   text-align: center;
@@ -446,4 +423,45 @@ input.hand-input.crib-input {
 .checked-key dd.hand {
   font-size: 19px;
   letter-spacing: 0.12em;
+}
+
+.stecker-sheet > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--print-muted);
+}
+
+.stecker-sheet > div > span {
+  height: var(--sq);
+}
+
+.stecker-sheet .hand-box {
+  min-width: var(--sq);
+  height: var(--sq);
+  padding: 0 2px;
+  border: none;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--grid);
+  color: var(--pencil);
+  font-family: 'Kalam', cursive;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.stecker-sheet .hand-box:disabled {
+  cursor: default;
+}
+
+.stecker-sheet .self .hand-box {
+  color: var(--print-muted);
+}
+
+.stecker-sheet .contradicted,
+.stecker-sheet .contradicted .hand-box {
+  color: var(--red-pencil);
+}
+
+.stecker-sheet .contradicted .hand-box {
+  box-shadow: inset 0 0 0 2px var(--red-pencil);
 }

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { BombeCheck, BombeStop } from '../api';
 import { drumLetters, scramblersOf } from '../bombe/drums';
-import { partnersOf } from '../bombe/steckers';
+import { useCheckKeys } from '../bombe/checkKeys';
+import { contradictionsOf, partnersOf } from '../bombe/steckers';
+import { usePhysicalKeyboard } from '../useKeys';
 import { alphabet } from '../machine';
 import { Hand, Squares } from '../notebook/paper';
 import { useMachine } from '../store';
@@ -51,39 +53,45 @@ function CribCheck({ check }: { check: BombeCheck }) {
   );
 }
 
-/** The stecker sheet: each letter's partner, itself when unsteckered, empty when unknown. */
+/**
+ * The stecker sheet, filled in by the checking machine's lamps: every partner written for each letter, itself when
+ * unsteckered, empty when unknown. A letter with more than one partner, and its partners, are marked in red. Click a
+ * box to rub out its letter's pairs.
+ */
 function SteckerSheet({ check }: { check: BombeCheck }) {
-  const setPartner = useMachine((store) => store.setPartner);
+  const eraseLetter = useMachine((store) => store.eraseLetter);
   const partners = partnersOf(check.steckers);
-
-  // The letter typed is the one that is not the old partner, wherever the cursor was.
-  const onChange = (letter: string, value: string) => {
-    const typed = [...value.toUpperCase()];
-    const partner = typed.find((character) => character !== partners[letter]) ?? typed[0] ?? '';
-    if (partner !== '' && !alphabet.includes(partner)) {
-      return;
-    }
-    void setPartner(letter, partner || null);
-  };
+  const contradicted = contradictionsOf(check.steckers);
 
   return (
     <section className="notebook-section" aria-label="Steckers">
       <h4>Steckers</h4>
       <div className="stecker-sheet">
-        {[...alphabet].map((letter) => (
-          <label key={letter} className={partners[letter] === letter ? 'self' : undefined}>
-            <span>{letter}</span>
-            <input
-              className="hand-input"
-              value={partners[letter] ?? ''}
-              aria-label={`Partner of ${letter}`}
-              maxLength={2}
-              spellCheck={false}
-              onChange={(event) => onChange(letter, event.target.value)}
-            />
-          </label>
-        ))}
+        {[...alphabet].map((letter) => {
+          const own = partners[letter] ?? [];
+          const red = contradicted.has(letter);
+          return (
+            <div key={letter} className={[own.length === 1 && own[0] === letter ? 'self' : '', red ? 'contradicted' : ''].filter(Boolean).join(' ') || undefined}>
+              <span>{letter}</span>
+              <button
+                type="button"
+                className="hand-box"
+                aria-label={`Partner of ${letter}: ${own.length > 0 ? own.join(' ') : 'unknown'}${red ? ', contradicted' : ''}`}
+                title={own.length > 0 ? `Rub out ${letter}` : undefined}
+                disabled={own.length === 0}
+                onClick={() => void eraseLetter(letter)}
+              >
+                {own.join('')}
+              </button>
+            </div>
+          );
+        })}
       </div>
+      {check.contradicted && (
+        <p className="notebook-warning">
+          The lamps contradict each other at {[...check.contradicted].join(', ')}: a sign of a false stop. Click a box to rub it out.
+        </p>
+      )}
     </section>
   );
 }
@@ -283,15 +291,17 @@ export function CheckSummary({ check }: { check: BombeCheck }) {
 }
 
 /**
- * Checks the stop: the steckers the Bombe gave are tried on the checking machine in the machine window, and the others
- * are found by hand, with Suggest, until the crib and the rest of the message read right.
+ * Checks the stop: typed letters press the checking machine, whose lamps fill in the stecker sheet by following the
+ * menu, and the rest is found with Suggest and Find until the crib and the rest of the message read right.
  */
 export function CheckStep({ check }: { check: BombeCheck }) {
+  usePhysicalKeyboard(useCheckKeys());
   return (
     <>
       <p>
-        Test the stop on the checking machine on the <strong>Checking</strong> tab of the machine window: set the drums to each link's position, press
-        a letter and write down the stecker its lamp gives. Fill in the rest with Suggest and Find until the message reads as German.
+        Test the stop on the checking machine on the <strong>Checking</strong> tab of the machine window: turn the drums to a link's position and type
+        the partner of one of its letters, here or in the machine window. The lamp is written down as the partner of the other letter. Fill in the rest
+        with Suggest and Find until the message reads as German.
       </p>
       <CheckerSetup check={check} />
       <MenuLinks />

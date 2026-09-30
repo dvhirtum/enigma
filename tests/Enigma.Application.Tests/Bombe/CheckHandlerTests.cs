@@ -67,6 +67,7 @@ public sealed class CheckHandlerTests
         Assert.Equal("DKX", state.Checker.Rings);
         Assert.Equal(stop, state.Checker.Stop?.Index);
         Assert.Equal("R", lamp.Lamp);
+        Assert.Equal("GQ RR", lamp.Check?.Steckers);
     }
 
     [Fact]
@@ -104,7 +105,7 @@ public sealed class CheckHandlerTests
     }
 
     [Theory]
-    [InlineData("AD AE", null)]
+    [InlineData("AD AEX", null)]
     [InlineData(null, 27)]
     public async Task Should_refuse_the_change_When_it_is_not_valid(string? steckers, int? ring)
     {

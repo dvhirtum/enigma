@@ -71,8 +71,8 @@ export function registerIpc(backend: Backend, windows: Windows): void {
     ipcMain.handle(`procedure:${name}`, (_event, ...args: unknown[]) => call(route(...args)));
   }
 
-  // Reads, and the checking machine's lamps, which only the window pressing the key shows.
-  const unshared = new Set(['getState', 'intercepts', 'getStops', 'getPrintout', 'pressCheckerKey']);
+  // Reads, which change nothing.
+  const unshared = new Set(['getState', 'intercepts', 'getStops', 'getPrintout']);
   for (const [name, toRoute] of Object.entries(bombeRoutes)) {
     const route = toRoute as (...args: unknown[]) => Route;
     ipcMain.handle(`bombe:${name}`, async (event, ...args: unknown[]) => {
@@ -98,6 +98,7 @@ export function registerIpc(backend: Backend, windows: Windows): void {
   ipcMain.handle('windows:openNotebook', () => windows.openNotebook());
   ipcMain.handle('windows:openHut8Notebook', () => windows.openHut8Notebook());
   ipcMain.handle('windows:openInstructions', () => windows.openInstructions());
+  ipcMain.handle('windows:releaseCheckerKey', (event) => broadcast(event.sender, 'windows:checkerKeyReleased'));
   ipcMain.handle('windows:showMode', (event, mode: unknown) => {
     if (mode !== 'enigma' && mode !== 'bombe') {
       throw new Error('Unknown mode.');

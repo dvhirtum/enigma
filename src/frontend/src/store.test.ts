@@ -291,6 +291,19 @@ describe('bombe results from other windows', () => {
     expect(store.getState().bombeView).toBe('bombe-front');
   });
 
+  it('lights the lamp and follows the sheet when another window presses a checking machine key, until it is released', () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+    store.setState({ check: carterCheck });
+    const written = { ...carterCheck, steckers: 'GQ RR' };
+
+    store.getState().receiveBombe({ name: 'pressCheckerKey', args: ['Q'], value: { lamp: 'R', check: written } });
+
+    expect(store.getState()).toMatchObject({ checkKey: 'Q', checkLamp: 'R', check: written });
+    store.getState().receiveCheckKeyRelease();
+    expect(store.getState()).toMatchObject({ checkKey: null, checkLamp: null });
+  });
+
   it('shows the checking machine another window set up for a stop', () => {
     const { api } = createFakeApi();
     const store = createMachineStore(api);

@@ -83,7 +83,7 @@ public sealed class StopCheck
         Stop = stop;
         Reflector = reflector;
         Placement = placement;
-        Steckers = stop.Stecker is { } partner ? Steckers.None.With(stop.TestRegister, partner) : Steckers.None;
+        Sheet = stop.Stecker is { } partner ? SteckerSheet.Empty.With(stop.TestRegister, partner) : SteckerSheet.Empty;
     }
 
     public BombeStop Stop { get; }
@@ -94,7 +94,15 @@ public sealed class StopCheck
 
     public WheelOrder WheelOrder => Stop.WheelOrder;
 
-    public Steckers Steckers { get; set; }
+    /// <summary>The stecker sheet as written, contradictions and all.</summary>
+    public SteckerSheet Sheet { get; set; }
+
+    /// <summary>The steckers the sheet gives; a contradicted letter and its partners are unknown.</summary>
+    public Steckers Steckers
+    {
+        get => Sheet.Steckers;
+        set => Sheet = SteckerSheet.Of(value);
+    }
 
     public RingSetting RightRing { get; set; } = RingSetting.FromChar('Z');
 
@@ -102,6 +110,30 @@ public sealed class StopCheck
 
     /// <summary>The ring settings: left and middle at Z, the right one as turned.</summary>
     public IReadOnlyList<RingSetting> Rings => [RingSetting.FromChar('Z'), RingSetting.FromChar('Z'), RightRing];
+
+    /// <summary>
+    /// Writes down what a lamp of the checking machine says at <paramref name="core"/>: at a crib link's position, when
+    /// <paramref name="key"/> is a partner written for one of its letters, the lamp is written as a partner of the
+    /// other, even when that contradicts the sheet. Returns whether anything was written.
+    /// </summary>
+    public bool Record(DrumPosition core, Letter key, Letter lamp)
+    {
+        if (Placement.Links.FirstOrDefault(link => Stop.Position.Advance(link.Offset) == core) is not { } link)
+        {
+            return false;
+        }
+
+        Letter? other = Sheet.PartnersOf(link.First).Contains(key) ? link.Second
+            : Sheet.PartnersOf(link.Second).Contains(key) ? link.First
+            : null;
+        if (other is not { } letter)
+        {
+            return false;
+        }
+
+        Sheet = Sheet.With(letter, lamp);
+        return true;
+    }
 
     /// <summary>Each crib letter at the stop's core positions plus its offset, as the Bombe tested it.</summary>
     public IReadOnlyList<CribLetterCheck> Crib() =>
@@ -250,7 +282,7 @@ public sealed class StopCheck
 
     private SuggestedPair? BestPair(Steckers steckers, Letter[][] scrambles, (MenuLink Link, Letter[] Scramble)[] crib)
     {
-        Letter[] unknown = [.. Enumerable.Range(0, Letter.Count).Select(Letter.FromIndex).Where(letter => steckers.PartnerOf(letter) is null)];
+        Letter[] unknown = [.. Enumerable.Range(0, Letter.Count).Select(Letter.FromIndex).Where(letter => steckers.PartnerOf(letter) is null && Sheet.PartnersOf(letter).Count == 0)];
         var plugsFull = steckers.Plugs.Count >= MaxPlugs;
         var decrypt = Decrypt(steckers, scrambles);
         SuggestedPair? best = null;

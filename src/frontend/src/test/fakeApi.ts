@@ -230,6 +230,7 @@ const carterCrib = 'WETTERVORHERSAGE';
 export const carterCheck: BombeCheck = {
   stop: carterStops[0],
   steckers: 'GQ',
+  contradicted: '',
   rightRing: 26,
   verdict: 'Unchecked',
   crib: [...carterCrib].map((plain, index) => ({ offset: index + 1, plain, cipher: 'SNMKGGSTZZUGARLV'[index], match: 'Unknown' })),
@@ -261,6 +262,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
   const keySheetListeners = new Set<() => void>();
   const modeListeners = new Set<(mode: 'enigma' | 'bombe') => void>();
   const bombeListeners = new Set<(result: BombeResult) => void>();
+  const releaseListeners = new Set<() => void>();
   const ok = (value: MachineState = defaultM3) => vi.fn().mockResolvedValue({ ok: true, value });
   const bombe = (value: BombeState = emptyBombe) => vi.fn().mockResolvedValue({ ok: true, value });
   const run = (value: BombeRun = { ...carterPaused, status: 'Running', pause: null }) => vi.fn().mockResolvedValue({ ok: true, value });
@@ -323,7 +325,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       getPrintout: vi.fn().mockResolvedValue({ ok: true, value: [carterPrinted] }),
       clearPrintout: bombe(),
       setChecker: bombe(),
-      pressCheckerKey: vi.fn().mockResolvedValue({ ok: true, value: { lamp: 'R' } }),
+      pressCheckerKey: vi.fn().mockResolvedValue({ ok: true, value: { lamp: 'R', check: null } }),
       setUpChecker: bombe({ ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 }, stops: 2, checker: carterChecker }),
       startRun: run(),
       setRunSpeed: run(),
@@ -376,6 +378,11 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       onMachineState: vi.fn((listener: (state: MachineState) => void) => {
         stateListeners.add(listener);
         return () => stateListeners.delete(listener);
+      }),
+      releaseCheckerKey: vi.fn().mockResolvedValue(undefined),
+      onCheckerKeyReleased: vi.fn((listener: () => void) => {
+        releaseListeners.add(listener);
+        return () => releaseListeners.delete(listener);
       }),
       onBombeResult: vi.fn((listener: (result: BombeResult) => void) => {
         bombeListeners.add(listener);

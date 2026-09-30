@@ -1,38 +1,26 @@
-/** Each known letter's partner from pairs such as "AD ET RR" (RR: R is unsteckered). */
-export function partnersOf(steckers: string): Record<string, string> {
-  const partners: Record<string, string> = {};
-  for (const [a, b] of steckers.split(' ').filter((pair) => pair.length === 2)) {
-    partners[a] = b;
-    partners[b] = a;
+/** Every partner written for each letter on a stecker sheet such as "AD EP EX RR" (RR: R is unsteckered). */
+export function partnersOf(sheet: string): Record<string, string[]> {
+  const partners: Record<string, string[]> = {};
+  const add = (letter: string, partner: string) => {
+    partners[letter] = [...(partners[letter] ?? []), partner].filter((own, index, all) => all.indexOf(own) === index).sort();
+  };
+  for (const [a, b] of sheet.split(' ').filter((pair) => pair.length === 2)) {
+    add(a, b);
+    add(b, a);
   }
   return partners;
 }
 
-/** Writes partners as pairs, lower letter first, in alphabetical order. */
-export function pairsOf(partners: Record<string, string>): string {
-  return Object.entries(partners)
-    .filter(([letter, partner]) => letter <= partner)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([letter, partner]) => letter + partner)
+/** The sheet with every pair of `letter` rubbed out. */
+export function withoutLetter(sheet: string, letter: string): string {
+  return sheet
+    .split(' ')
+    .filter((pair) => pair.length === 2 && !pair.includes(letter))
     .join(' ');
 }
 
-/**
- * The steckers with `letter` paired to `partner` (itself: unsteckered), or unknown when `partner` is null. The pairs
- * either letter had before are removed, so their old partners become unknown.
- */
-export function withPartner(steckers: string, letter: string, partner: string | null): string {
-  const partners = partnersOf(steckers);
-  for (const changed of partner === null ? [letter] : [letter, partner]) {
-    const old = partners[changed];
-    if (old !== undefined) {
-      delete partners[old];
-      delete partners[changed];
-    }
-  }
-  if (partner !== null) {
-    partners[letter] = partner;
-    partners[partner] = letter;
-  }
-  return pairsOf(partners);
+/** The letters in contradiction: those with more than one partner, and their partners. */
+export function contradictionsOf(sheet: string): Set<string> {
+  const partners = partnersOf(sheet);
+  return new Set(Object.entries(partners).flatMap(([letter, own]) => (own.length > 1 ? [letter, ...own] : [])));
 }
