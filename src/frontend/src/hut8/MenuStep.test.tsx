@@ -108,11 +108,28 @@ describe('MenuStep', () => {
 
   it('sends the menu to the Bombe', async () => {
     const onDone = vi.fn();
-    renderBombe(<MenuStep onDone={onDone} />, carterMenu);
+    const api = renderBombe(<MenuStep onDone={onDone} />, carterMenu);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Send the menu to the Bombe' }));
 
-    expect(onDone).toHaveBeenCalledOnce();
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(api.bombe.plugUpMenu).toHaveBeenCalled();
+  });
+
+  it('asks before replacing a Bombe plugged up by hand', async () => {
+    const onDone = vi.fn();
+    const api = renderBombe(<MenuStep onDone={onDone} />, { ...carterMenu, machine: { ...carterMenu.machine, pluggedForMenu: false, pluggedByHand: true } });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Send the menu to the Bombe' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('The Bombe is plugged up by hand.');
+    fireEvent.click(screen.getByRole('button', { name: 'Keep the Bombe as it is' }));
+    expect(api.bombe.plugUpMenu).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send the menu to the Bombe' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Plug up the menu' }));
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(api.bombe.plugUpMenu).toHaveBeenCalledOnce();
   });
 
   it('writes offsets as drum letters from ZZZ', () => {

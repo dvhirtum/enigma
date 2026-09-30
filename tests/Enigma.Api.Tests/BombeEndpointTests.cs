@@ -37,16 +37,17 @@ public sealed class BombeEndpointTests : IDisposable
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
         var state = await SendAsync<BombeState>(
-            HttpMethod.Put, "/api/bombe/settings", new { input = (string?)null, diagonalBoard = true, reflector = "B" });
-        await FitCarterDrumsAsync();
+            HttpMethod.Put, "/api/bombe/settings", new { diagonalBoard = true, reflector = "B" });
+        var machine = await FitCarterDrumsAsync();
 
         // Act
-        var started = await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null });
+        var started = await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null, notebook = true });
         var run = await WaitForRunAsync();
         var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=0"), Token);
 
         // Assert
-        Assert.Equal("A", state.Settings.Input);
+        Assert.Equal("A", machine.Machine.Chains[0].Input);
+        Assert.True(state.Settings.DiagonalBoard);
         Assert.Equal("G", state.Menu?.TestRegister);
         Assert.Equal("Running", started.Status);
         Assert.Equal("Finished", run.Status);
@@ -66,9 +67,9 @@ public sealed class BombeEndpointTests : IDisposable
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
         await SendAsync<BombeState>(
-            HttpMethod.Put, "/api/bombe/settings", new { input = (string?)null, diagonalBoard = true, reflector = "B" });
-        await FitCarterDrumsAsync();
-        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = 1_000_000.0 });
+            HttpMethod.Put, "/api/bombe/settings", new { diagonalBoard = true, reflector = "B" });
+        var machine = await FitCarterDrumsAsync();
+        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = 1_000_000.0, notebook = true });
         var paused = await WaitForRunAsync();
 
         // Act
@@ -76,7 +77,7 @@ public sealed class BombeEndpointTests : IDisposable
 
         // Assert
         Assert.Equal("Paused", paused.Status);
-        Assert.Equal("VMB", paused.Pause?.Position);
+        Assert.Equal("WPC", paused.Pause?.DrumLetters);
         Assert.Equal("DKX", paused.Pause?.Indicator);
         Assert.Equal("Running", continued.Status);
         Assert.Null(continued.Pause);
@@ -109,23 +110,24 @@ public sealed class BombeEndpointTests : IDisposable
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
         await SendAsync<BombeState>(
-            HttpMethod.Put, "/api/bombe/settings", new { input = (string?)null, diagonalBoard = true, reflector = "B" });
-        await FitCarterDrumsAsync();
-        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null });
+            HttpMethod.Put, "/api/bombe/settings", new { diagonalBoard = true, reflector = "B" });
+        var machine = await FitCarterDrumsAsync();
+        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null, notebook = true });
         await WaitForRunAsync();
         var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=0"), Token);
         var stop = stops!.Single(s => s.Position == "VMB").Index;
 
         // Act
         var started = await _client.GetFromJsonAsync<CheckState>(Url($"/api/bombe/stops/{stop}/check"), Token);
-        var lamp = await SendAsync<LampState>(HttpMethod.Post, $"/api/bombe/stops/{stop}/check/press", new { key = "Q" });
+        var checker = await SendAsync<BombeState>(HttpMethod.Post, $"/api/bombe/stops/{stop}/checking", new { });
+        var lamp = await SendAsync<LampState>(HttpMethod.Post, "/api/bombe/checking/press", new { key = "Q" });
         var check = await SendAsync<CheckState>(
-            HttpMethod.Put, $"/api/bombe/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ XO IK RR SS WW", machineWindows = (string?)null, machineRings = (string?)null, rightRing = (int?)null });
+            HttpMethod.Put, $"/api/bombe/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ XO IK RR SS WW", rightRing = (int?)null });
         var confirmation = await SendAsync<ConfirmationState>(HttpMethod.Post, $"/api/bombe/stops/{stop}/check/verdict", new { verdict = "True" });
 
         // Assert
-        Assert.Equal("ZZZ", started?.MachineWindows);
-        Assert.Equal("DKX", started?.MachineRings);
+        Assert.Equal("ZZZ", checker.Checker.Windows);
+        Assert.Equal("DKX", checker.Checker.Rings);
         Assert.Equal("GQ", started?.Steckers);
         Assert.Matches("^[A-Z]$", lamp.Lamp);
         Assert.Equal("WETTERVORHERSAGE", check.Decrypt);
@@ -144,9 +146,9 @@ public sealed class BombeEndpointTests : IDisposable
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
         await SendAsync<BombeState>(
-            HttpMethod.Put, "/api/bombe/settings", new { input = (string?)null, diagonalBoard = true, reflector = "B" });
-        await FitCarterDrumsAsync();
-        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null });
+            HttpMethod.Put, "/api/bombe/settings", new { diagonalBoard = true, reflector = "B" });
+        var machine = await FitCarterDrumsAsync();
+        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null, notebook = true });
         await WaitForRunAsync();
         var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=0"), Token);
         var stop = stops!.Single(s => s.Position == "VMB").Index;
@@ -236,16 +238,15 @@ public sealed class BombeEndpointTests : IDisposable
 
     private static Uri Url(string path) => new(path, UriKind.Relative);
 
-    // Fits drums II, V and III in the rows of the first copy of the menu.
+    // Fits drums II, V and III in the rows of chain 1 and plugs up the menu.
     private async Task<BombeState> FitCarterDrumsAsync()
     {
-        BombeState? state = null;
         foreach (var (row, rotor) in "II V III".Split(' ').Index())
         {
-            state = await SendAsync<BombeState>(HttpMethod.Put, $"/api/bombe/machine/copies/0/drums/{row}", new { rotor });
+            await SendAsync<BombeState>(HttpMethod.Put, $"/api/bombe/machine/chains/0/rows/{row}", new { rotor, upTo = 11 });
         }
 
-        return state!;
+        return await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/machine/plug-up", new { });
     }
 
     private async Task<RunState> WaitForRunAsync()

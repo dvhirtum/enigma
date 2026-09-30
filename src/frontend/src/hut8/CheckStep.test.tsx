@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { BombeState } from '../api';
 import { useMachine } from '../store';
-import { carterMenu, carterPaused } from '../test/fakeApi';
+import { carterMenu, carterPaused, emptyChecker } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
 import { CheckStep, KeyStep } from './CheckStep';
 
@@ -22,13 +22,30 @@ function OpenCheck({ step }: { step: 'check' | 'key' }) {
   return step === 'check' ? <CheckStep check={check} /> : <KeyStep check={check} />;
 }
 
-async function openCarterCheck(step: 'check' | 'key' = 'check') {
-  const api = renderBombe(<OpenCheck step={step} />, carter);
+async function openCarterCheck(step: 'check' | 'key' = 'check', state: BombeState = carter) {
+  const api = renderBombe(<OpenCheck step={step} />, state);
   await screen.findByText(step === 'check' ? /Test the stop/ : 'Reflector');
   return api;
 }
 
 describe('CheckStep', () => {
+  it('sets up the checking machine for the stop', async () => {
+    const api = await openCarterCheck();
+
+    await waitFor(() => expect(api.bombe.setUpChecker).toHaveBeenCalledWith(0));
+  });
+
+  it('asks before replacing a checking machine set up by hand', async () => {
+    const api = await openCarterCheck('check', { ...carter, checker: { ...emptyChecker, drums: ['I', 'II', 'III'] } });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('The checking machine is set up by hand.');
+    expect(api.bombe.setUpChecker).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Keep it as it is' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Set up the checking machine for this stop' }));
+
+    await waitFor(() => expect(api.bombe.setUpChecker).toHaveBeenCalledWith(0));
+  });
+
   it('shows the crib, steckers and decrypt of the stop', async () => {
     await openCarterCheck();
 

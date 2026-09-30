@@ -112,20 +112,44 @@ test('places a crib and draws the menu in the Hut 8 notebook', async () => {
   await expect(notebook.getByText('Placed at position 4, no crashes.')).toBeVisible();
   await expect(notebook.getByLabel('Menu size')).toHaveText('4 links, 4 letters, 1 loop · test register on T');
   await page.getByRole('tab', { name: 'Back' }).click();
-  await expect(page.getByRole('img', { name: /^Test register on T/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Chain 1 test register' })).toBeVisible();
 
   await notebook.getByRole('checkbox', { name: 'Link K–W at 1 (ZZA)' }).click();
   await expect(notebook.getByRole('checkbox', { name: 'Link K–W at 1 (ZZA)' })).toBeChecked();
   await expect(notebook.getByRole('status')).toHaveText(/KW1/);
   await notebook.getByRole('button', { name: 'Letter G' }).click();
   await expect(notebook.getByLabel('Menu size')).toHaveText('4 links, 4 letters, 1 loop · test register on G');
-  await expect(page.getByRole('img', { name: /^Test register on G/ })).toBeVisible();
   await notebook.getByRole('button', { name: 'Build menu again' }).click();
   await expect(notebook.getByLabel('Menu size')).toHaveText(/test register on T/);
 
   await notebook.getByRole('button', { name: 'Send the menu to the Bombe' }).click();
   await expect(step.getByRole('heading')).toHaveText('Run the Bombe');
+  await expect(page.getByRole('button', { name: 'Chain 1 test register, plugged to T' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Chain 3 test register, plugged to T' })).toBeVisible();
   await notebook.close();
+  await page.getByRole('tab', { name: 'Front' }).click();
+  await page.getByRole('button', { name: 'Enigma' }).click();
+});
+
+test('plugs a scrambler and fits drums on the Bombe by hand', async () => {
+  await page.getByRole('button', { name: 'Bombe' }).click();
+  await page.getByRole('tab', { name: 'Back' }).click();
+
+  await page.getByRole('button', { name: 'Chain 3 scrambler 12 jack 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Chain 3 common Z' }).click();
+  await expect(page.getByRole('button', { name: 'Chain 3 scrambler 12 jack 1, plugged to Z' })).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Front' }).click();
+  await page.getByRole('button', { name: 'Drums VIII' }).click();
+  const scrambler = page.getByRole('group', { name: /^Chain 3 scrambler 12:/ });
+  await scrambler.getByRole('spinbutton', { name: 'upper drum empty' }).click();
+  await expect(scrambler.getByRole('spinbutton', { name: 'upper drum VIII at Z' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Warnings' })).toContainText('Chain 3, scrambler 12 has only one jack cabled.');
+
+  await page.getByRole('tab', { name: 'Checking' }).click();
+  await page.getByRole('button', { name: 'Drum II', exact: true }).click();
+  await page.getByRole('button', { name: 'left drum place, empty' }).click();
+  await expect(page.getByRole('img', { name: 'left drum II at Z, ring Z' })).toBeVisible();
   await page.getByRole('tab', { name: 'Front' }).click();
   await page.getByRole('button', { name: 'Enigma' }).click();
 });

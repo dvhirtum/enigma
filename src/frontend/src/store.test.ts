@@ -182,7 +182,7 @@ describe('bombe runs', () => {
     await store.getState().startRun(null);
 
     expect(api.bombe.startRun).toHaveBeenCalledWith(null);
-    expect(store.getState().bombe).toEqual({ ...carterMenu, run: carterPaused, stops: 1 });
+    expect(store.getState().bombe).toEqual({ ...carterMenu, run: carterPaused, stops: 1, printed: 1 });
   });
 
   it('leaves the error alone when a poll succeeds', async () => {
@@ -281,13 +281,24 @@ describe('bombe results from other windows', () => {
     expect(store.getState().speed).toBeNull();
   });
 
-  it('opens a check another window opened on the Checking view', () => {
+  it('opens a check another window opened', () => {
     const { api } = createFakeApi();
     const store = createMachineStore(api);
 
     store.getState().receiveBombe({ name: 'getCheck', args: [0], value: carterCheck });
 
     expect(store.getState().check).toEqual(carterCheck);
+    expect(store.getState().bombeView).toBe('bombe-front');
+  });
+
+  it('shows the checking machine another window set up for a stop', () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+    const checker = { reflector: 'B', drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterCheck.stop };
+
+    store.getState().receiveBombe({ name: 'setUpChecker', args: [0], value: { ...carterMenu, checker } });
+
+    expect(store.getState().bombe?.checker).toEqual(checker);
     expect(store.getState().bombeView).toBe('bombe-checking');
   });
 

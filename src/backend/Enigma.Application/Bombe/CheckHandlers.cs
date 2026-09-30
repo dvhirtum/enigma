@@ -1,8 +1,68 @@
+using Enigma.Application.Machine;
 using Enigma.Application.Procedure;
 using Enigma.Domain.Bombe;
 using Enigma.Domain.Machine;
 
 namespace Enigma.Application.Bombe;
+
+public sealed class SetCheckingMachineHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(SetCheckingMachine command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var reflector = command.Reflector is null ? null : Input.Reflector(command.Reflector);
+        IReadOnlyList<RotorType?>? drums = command.Drums is null
+            ? null
+            : [.. command.Drums.Select(rotor => string.IsNullOrEmpty(rotor) ? null : Input.Rotor(rotor))];
+        var rings = command.Rings is { } ring ? DrumPosition.Parse(ring.ToUpperInvariant()) : (DrumPosition?)null;
+        var windows = command.Windows is { } window ? DrumPosition.Parse(window.ToUpperInvariant()) : (DrumPosition?)null;
+        return store.Use(job =>
+        {
+            var checker = job.Checker;
+            if (reflector is not null)
+            {
+                checker.SetReflector(reflector);
+            }
+
+            if (drums is not null)
+            {
+                checker.Fit(drums);
+            }
+
+            (checker.Rings, checker.Windows) = (rings ?? checker.Rings, windows ?? checker.Windows);
+            return BombeState.From(job, store.Run, store);
+        });
+    }
+}
+
+public sealed class PressCheckingKeyHandler(IBombeSessionStore store)
+{
+    public LampState Handle(PressCheckingKey command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var key = command.Key is { Length: 1 } && char.IsAsciiLetter(command.Key[0])
+            ? Letter.FromChar(char.ToUpperInvariant(command.Key[0]))
+            : throw new DomainException($"'{command.Key}' is not a key.");
+        return store.Use(job => new LampState(job.Checker.Press(key).ToString()));
+    }
+}
+
+public sealed class SetUpCheckingMachineHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(SetUpCheckingMachine command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        return store.Use(job =>
+        {
+            var check = store.Stops.Check(command.Stop);
+            job.Checker.SetUp(command.Stop, check.Stop, check.Reflector);
+            return BombeState.From(job, store.Run, store);
+        });
+    }
+}
 
 public sealed class GetCheckHandler(IBombeSessionStore store)
 {
@@ -22,30 +82,12 @@ public sealed class SetCheckHandler(IBombeSessionStore store)
 
         return store.UseCheck(command.Stop, (_, check) =>
         {
-            var windows = command.MachineWindows is { } window ? DrumPosition.Parse(window.ToUpperInvariant()) : check.MachineWindows;
-            var rings = command.MachineRings is { } setting ? DrumPosition.Parse(setting.ToUpperInvariant()) : check.MachineRings;
             var steckers = command.Steckers is { } pairs ? Steckers.Parse(pairs.ToUpperInvariant()) : check.Steckers;
             var ring = command.RightRing is { } number ? RingSetting.FromNumber(number) : check.RightRing;
-            (check.MachineWindows, check.MachineRings, check.Steckers, check.RightRing) = (windows, rings, steckers, ring);
+            (check.Steckers, check.RightRing) = (steckers, ring);
             return CheckState.From(check, command.Stop);
         });
     }
-}
-
-public sealed class PressCheckKeyHandler(IBombeSessionStore store)
-{
-    public LampState Handle(PressCheckKey command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-
-        return store.UseCheck(command.Stop, (_, check) =>
-            new LampState(check.Press(ParseKey(command.Key)).ToString()));
-    }
-
-    private static Letter ParseKey(string? key) =>
-        key is { Length: 1 } && char.IsAsciiLetter(key[0])
-            ? Letter.FromChar(char.ToUpperInvariant(key[0]))
-            : throw new DomainException($"'{key}' is not a key.");
 }
 
 public sealed class ConfirmCheckHandler(IBombeSessionStore store)

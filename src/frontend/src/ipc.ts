@@ -9,6 +9,8 @@ import { bombeRoutes, healthRoute, keySheetRoutes, machineRoutes, procedureRoute
 export interface Windows {
   openNotebook: () => void;
   openHut8Notebook: () => void;
+  /** Whether the Hut 8 notebook window is open. */
+  isHut8Open: () => boolean;
   openInstructions: () => void;
 }
 
@@ -70,11 +72,13 @@ export function registerIpc(backend: Backend, windows: Windows): void {
   }
 
   // Reads, and the checking machine's lamps, which only the window pressing the key shows.
-  const unshared = new Set(['getState', 'intercepts', 'getStops', 'pressCheckKey']);
+  const unshared = new Set(['getState', 'intercepts', 'getStops', 'getPrintout', 'pressCheckerKey']);
   for (const [name, toRoute] of Object.entries(bombeRoutes)) {
     const route = toRoute as (...args: unknown[]) => Route;
     ipcMain.handle(`bombe:${name}`, async (event, ...args: unknown[]) => {
-      const result = await call(route(...args));
+      // A run logs its stops for the notebook while the notebook window is open.
+      const sent = name === 'startRun' ? [args[0], windows.isHut8Open()] : args;
+      const result = await call(route(...sent));
       if (result.ok && !unshared.has(name)) {
         broadcast(event.sender, 'bombe:result', { name, args, value: result.value });
       }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { BombeCheck, BombeStop } from '../api';
 import { drumLetters, scramblersOf } from '../bombe/drums';
 import { partnersOf } from '../bombe/steckers';
@@ -233,6 +233,46 @@ function Verdict({ check }: { check: BombeCheck }) {
   );
 }
 
+/**
+ * Sets the checking machine up for the stop: at once when it is empty or set up for another stop, after asking when it
+ * was set up by hand.
+ */
+function CheckerSetup({ check }: { check: BombeCheck }) {
+  const checker = useMachine((store) => store.bombe?.checker);
+  const setUpChecker = useMachine((store) => store.setUpChecker);
+  const [kept, setKept] = useState<number | null>(null);
+  const stop = check.stop.index;
+  const ready = checker?.stop?.index === stop;
+  const byHand = !ready && checker !== undefined && checker.stop === null && checker.drums.some(Boolean);
+
+  useEffect(() => {
+    if (checker && !ready && !byHand) {
+      void setUpChecker(stop);
+    }
+  }, [checker, ready, byHand, stop, setUpChecker]);
+
+  if (!byHand) {
+    return null;
+  }
+  return kept === stop ? (
+    <p className="notebook-actions">
+      <button type="button" onClick={() => void setUpChecker(stop)}>
+        Set up the checking machine for this stop
+      </button>
+    </p>
+  ) : (
+    <p className="notebook-warning" role="alert">
+      The checking machine is set up by hand. Set it up for this stop?{' '}
+      <button type="button" onClick={() => void setUpChecker(stop)}>
+        Set it up
+      </button>{' '}
+      <button type="button" onClick={() => setKept(stop)}>
+        Keep it as it is
+      </button>
+    </p>
+  );
+}
+
 /** The checked steckers and right ring, in one line each. */
 export function CheckSummary({ check }: { check: BombeCheck }) {
   return (
@@ -253,6 +293,7 @@ export function CheckStep({ check }: { check: BombeCheck }) {
         Test the stop on the checking machine on the <strong>Checking</strong> tab of the machine window: set the drums to each link's position, press
         a letter and write down the stecker its lamp gives. Fill in the rest with Suggest and Find until the message reads as German.
       </p>
+      <CheckerSetup check={check} />
       <MenuLinks />
       <CribCheck check={check} />
       <SteckerSheet check={check} />

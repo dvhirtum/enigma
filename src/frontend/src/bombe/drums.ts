@@ -1,4 +1,4 @@
-import type { BombeState } from '../api';
+import type { BombeMachine } from '../api';
 import { parseLink, type Link } from './menuLayout';
 
 /** The drum letters of an offset: its digits in base 26, with Z as 0 and A as 1 (1 = ZZA, 26 = ZAZ). */
@@ -35,29 +35,6 @@ export function advanceBy(position: string, start: string): string {
     .join('');
 }
 
-/** A menu link on a scrambler of the machine: its copy, its index in the menu links, its slot (0–35) and start letters. */
-export interface ScramblerSlot extends Link {
-  copy: number;
-  scrambler: number;
-  slot: number;
-  start: string;
-}
-
-/**
- * The scramblers of each copy of the menu: copy `k` takes the chains from `k × chainsPerCopy`, its links in offset
- * order along them, 12 to a chain.
- */
-export function slotsOf(bombe: BombeState): ScramblerSlot[] {
-  const { menu, machine } = bombe;
-  if (!menu || !machine) {
-    return [];
-  }
-  const links = menu.links.map((id, scrambler) => ({ ...parseLink(id), scrambler })).sort((a, b) => a.offset - b.offset);
-  return machine.copies.flatMap((copy, index) =>
-    links.map((link, order) => ({ ...link, copy: index, slot: index * machine.chainsPerCopy * chainLength + order, start: copy.starts[link.scrambler] })),
-  );
-}
-
 /** The scramblers of a chain (a bank of 12). */
 export const chainLength = 12;
 
@@ -91,4 +68,31 @@ export function formatSpeed(speed: number | null): string {
   }
   const rounded = speed < 100 ? speed.toFixed(1) : Math.round(speed).toLocaleString('en-US');
   return `${rounded} positions/s${stepOf(speed) === 0 ? ' (historical)' : ''}`;
+}
+
+/** The chains joined into one Bombe each: chain n is joined to the one before when `joins[n - 1]`. */
+export function groupsOf(machine: BombeMachine): number[][] {
+  return machine.chains.reduce<number[][]>((groups, _, chain) => {
+    if (chain > 0 && machine.joins[chain - 1]) {
+      groups[groups.length - 1].push(chain);
+    } else {
+      groups.push([chain]);
+    }
+    return groups;
+  }, []);
+}
+
+/** "Chain 1" or "Chains 1–2". */
+export function chainNames(chains: readonly number[]): string {
+  return chains.length === 1 ? `Chain ${chains[0] + 1}` : `Chains ${chains[0] + 1}–${chains[chains.length - 1] + 1}`;
+}
+
+/** The rotor in each row of a chain (upper, middle, lower), or null where the row has no drums. */
+export function rowsOf(machine: BombeMachine, chain: number): (string | null)[] {
+  return [0, 1, 2].map((row) => machine.chains[chain].scramblers.map((scrambler) => scrambler.drums[row]).find(Boolean) ?? null);
+}
+
+/** The live wires of a test register as 26 letters, a dot for each dead wire. */
+export function wiresOf(liveWires: string): string {
+  return [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map((letter) => (liveWires.includes(letter) ? letter : '·')).join('');
 }

@@ -12,7 +12,7 @@ In Bombe mode, the book button opens these instructions.
 
 ## The Hut 8 notebook
 
-Breaking a message is worked in the Hut 8 notebook, a separate window on squared paper, opened with the notebook button at the top right of Bombe mode. The machine window keeps the machines: the **Front** and **Back** of the Bombe and the **Checking** machine.
+Breaking a message is worked in the Hut 8 notebook, a separate window on squared paper, opened with the notebook button at the top right of Bombe mode. The machine window keeps the machines: the **Front** and **Back** of the Bombe and the **Checking** machine. You set them up by hand, or let the notebook set them up for you.
 
 The notebook walks through the steps one by one: choose the message, place the crib, draw the menu, run the Bombe, choose a stop, check the stop and read the message. The current step is highlighted. A finished step is ticked off in the margin with what it wrote down. Click **Change** to reopen it: change it, and the steps after it start again, or click **Keep as it is**. Both windows show the same job, so what you do in one shows in the other.
 
@@ -58,52 +58,67 @@ To change the menu:
 
 ## Running the Bombe
 
-When the menu is ready, click **Send the menu to the Bombe**. The Bombe is plugged up and run in the machine window; the notebook follows the run and writes down the stops.
+When the menu is ready, click **Send the menu to the Bombe**. The notebook plugs up the Bombe in the machine window with the menu and follows the run. If you plugged the Bombe by hand, it asks first. When you change the Bombe by hand afterwards, the notebook says so and offers **Plug it up again**.
 
+You can also leave the notebook closed and work with pen and paper: plug up the Bombe, run it, write down the stops and set up the checking machine yourself. The machines work the same either way.
 
-The **Front** tab shows the Bombe as the operators saw it: three banks (chains) of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The three drums on the right are the indicator drums: they read the position with the letters reversed.
+The **Front** tab shows the Bombe as the operators saw it: a rack of drums, then three banks (chains) of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The three drums on the right are the indicator drums: they read the position with the letters reversed. Under each scrambler are the letters its jacks are cabled to on the back.
 
-The menu is plugged up once on each chain it fits: a menu of up to 12 links fits three times, so the Bombe tests three wheel orders in one run. A longer menu takes two or three chains and fits once. **Build menu again** keeps menus to 12 links; a menu edited by hand can be longer. Each copy's links take its scramblers in order of their offset, and each scrambler starts at its link's offset (ZZA, ZZB, ...). The label above each chain gives its wheel order; a menu on two or three chains is labelled once, such as "Chains 1–2 · II V III".
+Each chain is a Bombe of its own, with its own drums, so a menu of up to 12 links plugged up on all three chains tests three wheel orders in one run. A longer menu takes two or three chains joined together. The notebook plugs up the menu this way: each chain's scramblers in order of the links' offsets, each scrambler set to its link's offset (ZZA, ZZB, ...).
 
-Set up each copy as a Wren did:
+Set up the drums as a Wren did:
 
-- **Fit drums**: click a drum and pick a rotor. The rotor goes into that row of every scrambler of the copy. A rotor already in another row of the copy cannot be picked; **Empty** takes the drums out.
+- **Fit drums**: drag a drum from the rack onto a drum place, or click it in the rack and then click the place. The drums fill that row of the chain from the first scrambler up to the place, so dropping them on scrambler 9 fits nine drums. A rotor can be in only one row of a chain.
+- **Take a drum out**: click it, or drag it off the machine.
 - **Turn a drum** with the mouse wheel over it, or Arrow Up/Down on it. The run uses the letters on the machine, so a drum set wrong makes the Bombe miss the key.
 
-Copies without drums are not tested. A copy with drums in only some rows must be finished or emptied before the Bombe can start.
+The label above each chain gives its wheel order. The Bombe runs with whatever is set up: a scrambler cabled without all its drums passes no current, and drums without cables do nothing. The list above the machine says what a run will not use, and when a chain with a test register will stop at every position.
 
 The Bombe drums are lettered ahead of the Enigma rotors: drums I, II, III, VI, VII and VIII by one letter, IV by two and V by three. The drums and the indicator show these historical letters, so to get the ring settings to try on the Enigma, add the offsets to the indicator reading. On Carter's weather crib (wheel order II V III) the indicator reads DKX, as Carter reports; adding 1, 3 and 1 gives the ring settings ENY.
 
 Before you start:
 
 - choose reflector **B** or **C**,
-- fit the drums of at least one copy,
+- plug a test register onto a common on the **Back** tab,
 - set the speed. At the left end the Bombe runs at its historical speed, a run of all 17,576 positions in about 20 minutes; further right it runs faster, and at the right end at full speed, which takes a second or so.
 
-Click **Start**. The drums turn through every position once, and each copy with drums is tested with its wheel order. The bar and the line under it show the wheel orders, how far the run has got, the stops found and the time taken. You can change the speed while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes, or close the notebook.
+Click **Start**. The drums turn through every position once, and each chain (or group of joined chains) with a test register is tested. The bar and the line under it show the chains and their wheel orders, how far the run has got, the stops found and the time taken. You can change the speed while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes.
 
-At a set speed the drums turn with the run, and the Bombe halts at each stop, as the real one did. It shows the wheel order, the indicator reading, and the stecker partner of the test register letter. Click **Continue** to run on. At full speed the Bombe does not halt; it counts the stops.
+At a set speed the drums turn with the run, and the Bombe halts at each stop, as the real one did. It shows the chains, the indicator reading, the 26 wires of the test register with the live ones lit, and the stecker partner of the test register letter. Click **Continue** to run on. At full speed the Bombe does not halt.
 
 ## The back of the Bombe
 
-The **Back** tab shows how the menu is plugged up. Each letter on the menu has a common, and each scrambler's two jacks are cabled to the commons of its link's letters. The commons are also cabled to the diagonal board, and the test register sits on the test register letter.
+The **Back** tab shows each chain's commons (one per letter, the letters above them), the two jacks of each of its twelve scramblers, and its test register. Cable them as on the plugboard:
+
+- drag a jack onto a common, or a common onto a jack,
+- or click one and then the other,
+- click a plugged jack to pull its cable out, or drag its end to another common or off the commons.
+
+A jack plugs into the commons of its own chain. The test register is plugged onto a common the same way: it watches that letter's cable.
 
 - **Diagonal board** switches Welchman's diagonal board on or off. It is on by default; without it a menu gives many more false stops.
-- **Input on wire** sets the wire of the test register cable that the current goes into: the guessed stecker partner of the test register letter. It is A, or B when the test register is on A.
+- **Join chains 1–2** and **Join chains 2–3** cable a chain to the next, for menus of more than 12 links. Joined chains share their commons and the first chain's test register.
+- **Input wire** sets the wire of each test register cable that the current goes into: the guessed stecker partner of the test register letter. It is A, or B when the test register is on A.
 
-The run settings cannot change while the Bombe runs or waits at a stop.
+Nothing on the Bombe can change while it runs or waits at a stop.
 
 ## The stops
 
-Once the run has ended, the notebook lists the stops of every run on the menu, a hundred at a time: the wheel order, the indicator reading, the stecker of the test register letter and your verdict. Fit other drums and run again to add the stops of more wheel orders. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it. To check stops while the run goes on, click **Check the stops found so far**. Changing the message, crib or menu clears the stops and their checks, and so does **Clear stops**.
+The Bombe prints every stop on the **Printout** under the Front: the chains, the wheel order, the indicator reading, the test register letter, its live wires (a dot for each dead wire) and the stecker they give. It shows a hundred at a time, with **Load more**, and keeps them until you click **Clear printout**.
+
+While the Hut 8 notebook is open, a run also writes its stops in the notebook, with the placed crib, a hundred at a time: the wheel order, the indicator reading, the stecker of the test register letter and your verdict. Fit other drums and run again to add the stops of more wheel orders. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it. To check stops while the run goes on, click **Check the stops found so far**. Changing the message, crib or menu clears the notebook's stops and their checks, and so does **Clear stops**.
 
 ## Checking a stop
 
-Most stops are false. Hut 8 tested each one on a checking machine: an Enigma without plugboard whose rotors do not step, with Bombe drums. The **Checking** tab of the machine window shows it, set up for the stop you picked, with its reflector wheel, three drums and the spare drums in the rack above. Each drum has its letters round the face, the window letter at the mark on top, and a coloured ring with a black dot at the ring letter. The machine starts with the rings set to the stop's indicator and the windows at ZZZ.
+Most stops are false. Hut 8 tested each one on a checking machine: an Enigma without plugboard whose rotors do not step, with Bombe drums. The **Checking** tab of the machine window shows it, with its reflector wheel, three drum places and the spare drums in the rack above. Each drum has its letters round the face, the window letter at the mark on top, and a coloured ring with a black dot at the ring letter.
 
+Checking a stop in the notebook sets the machine up for it: the stop's reflector and drums, the rings at the stop's indicator and the windows at ZZZ. If you set the machine up by hand, the notebook asks first. To check a stop from the printout, set it up yourself:
+
+- **Choose the reflector**, B or C, above the machine.
+- **Fit a drum**: drag it from the rack onto a drum place, or click it in the rack and then the place. Click a fitted drum, or drag it off, to put it back.
 - **Turn a drum** with its thumbwheel: click the top half to turn it up, the bottom half to turn it down, or drag. The ring turns with it.
 - **Set a ring** by dragging the coloured ring round the drum, or with Arrow Up/Down on it.
-- **Press a key**, by clicking it or typing the letter; the lamp of the letter it goes to lights while the key is held.
+- **Press a key**, by clicking it or typing the letter; once all three drums are fitted, the lamp of the letter it goes to lights while the key is held.
 
 To check the stop, follow the menu from the stecker the Bombe found. The notebook's **Menu links** list gives each link with its drum position. For a link at ZZE, turn the drums to ZZE, press the stecker partner of one letter and read the lamp: that is the stecker partner of the other letter. For example, for a stop with indicator SNY and G/D, turn the drums to ZZE for link G–E and press D: lamp P lights, so E/P. Write each partner on the **Steckers** sheet in the notebook. Type a letter itself for an unsteckered letter, and clear the box when a partner is unknown. Changing one partner removes the pair the letter had before. A letter can have only one partner, so a contradiction shows the stop is false.
 

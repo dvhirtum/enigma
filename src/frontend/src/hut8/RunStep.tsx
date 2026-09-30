@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { BombeRun, BombeStop } from '../api';
-import { isActive, notReady } from '../bombe/FrontView';
+import { groupsLine, isActive, notReady } from '../bombe/FrontView';
 import { Hand } from '../notebook/paper';
 import { stopPage, useMachine } from '../store';
 import { plural } from './letters';
@@ -11,15 +11,16 @@ const states: Record<BombeRun['status'], string> = { Running: 'Running', Paused:
 export function RunReport({ run }: { run: BombeRun }) {
   return (
     <p aria-label="Run progress">
-      {states[run.status]} · {run.wheelOrders.join(', ')} · {run.positionsTested.toLocaleString('en-US')} of {plural(run.positions, 'position')} ·{' '}
+      {states[run.status]} · {groupsLine(run)} · {run.positionsTested.toLocaleString('en-US')} of {plural(run.positions, 'position')} ·{' '}
       {plural(run.allStops, 'stop')}
     </p>
   );
 }
 
-/** Sends the menu to the Bombe, which is plugged up and run in the machine window, and follows the run. */
+/** Follows the run of the Bombe plugged up with the menu, and plugs it up again when it was changed by hand. */
 export function RunStep({ onDone }: { onDone: () => void }) {
   const bombe = useMachine((store) => store.bombe);
+  const plugUpMenu = useMachine((store) => store.plugUpMenu);
   if (!bombe) {
     return null;
   }
@@ -29,9 +30,17 @@ export function RunStep({ onDone }: { onDone: () => void }) {
   return (
     <>
       <p>
-        Plug up the Bombe in the machine window: fit the drums on the <strong>Front</strong> tab, check the cables and the diagonal board on the{' '}
-        <strong>Back</strong> tab, then Start. Each stop is written down here.
+        The Bombe in the machine window is plugged up with the menu. Fit the drums on the <strong>Front</strong> tab, check the cables and the diagonal
+        board on the <strong>Back</strong> tab, then Start. While this notebook is open, each stop is written down here.
       </p>
+      {!bombe.machine.pluggedForMenu && !isActive(run) && (
+        <p className="notebook-warning">
+          The Bombe is no longer plugged up for this menu.{' '}
+          <button type="button" onClick={() => void plugUpMenu()}>
+            Plug it up again
+          </button>
+        </p>
+      )}
       {!isActive(run) && waiting && <p className="hut8-note">{waiting}</p>}
       {run && <RunReport run={run} />}
       {run?.error && <p className="notebook-warning">{run.error}</p>}

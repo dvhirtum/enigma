@@ -4,8 +4,9 @@ using Enigma.Domain.Bombe;
 namespace Enigma.Application.Bombe;
 
 /// <summary>
-/// The Bombe job, with the loaded message, the copies of the menu on the machine (null without a menu), a summary of
-/// its latest run and the number of stops found. Positions count from 0; crashes are crib indexes.
+/// The Bombe job, with the loaded message, the menu, the Bombe and the checking machine as set up, the run settings, a
+/// summary of its latest run, the number of stops logged for the notebook and the number printed. Positions count from
+/// 0; crashes are crib indexes.
 /// </summary>
 public sealed record BombeState(
     SourceState? Source,
@@ -14,15 +15,17 @@ public sealed record BombeState(
     IReadOnlyList<PlacementState> Placements,
     int? Position,
     MenuState? Menu,
-    BombeMachineState? Machine,
+    BombeMachineState Machine,
+    CheckingMachineState Checker,
     BombeSettings Settings,
     RunState? Run,
-    int Stops)
+    int Stops,
+    int Printed)
 {
-    public static BombeState From(BombeJob job, BombeRun? run, StopLog stops)
+    public static BombeState From(BombeJob job, BombeRun? run, IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(job);
-        ArgumentNullException.ThrowIfNull(stops);
+        ArgumentNullException.ThrowIfNull(store);
 
         return new BombeState(
             job.Source is null ? null : SourceState.From(job.Source),
@@ -40,16 +43,12 @@ public sealed record BombeState(
                     menu.EstimatedStops(diagonalBoard: true),
                     menu.EstimatedStops(diagonalBoard: false))
                 : null,
-            job.Menu is { } plugged
-                ? new BombeMachineState(
-                    plugged.ChainsPerCopy,
-                    [.. job.Copies.Select(copy => new CopyState(
-                        [.. copy.Drums.Select(rotor => rotor?.Name)],
-                        [.. copy.Starts.Select(start => start.ToString())]))])
-                : null,
-            new BombeSettings(job.Input.ToString(), job.DiagonalBoard, job.Reflector.Name),
-            run is null ? null : RunState.From(run, stops),
-            stops.Count);
+            BombeMachineState.From(job),
+            CheckingMachineState.From(job.Checker, store.Stops),
+            new BombeSettings(job.DiagonalBoard, job.Reflector.Name),
+            run is null ? null : RunState.From(run, store),
+            store.Stops.Count,
+            store.Printout.Count);
     }
 }
 
@@ -69,60 +68,153 @@ public sealed record MenuState(
     double StopsWithoutBoard);
 
 /// <summary>
-/// The machine plugged up with the menu: the chains (banks of 12 scramblers) one copy takes, and each copy with the
-/// rotor of each row (upper, middle, lower; null when empty) and each scrambler's start letters, by menu link.
+/// The Bombe as set up: its three chains, whether each chain is joined to the next, whether it is plugged up with the
+/// job's menu, whether it was plugged by hand (cables that no menu plugged), and what a run will not use.
 /// </summary>
-public sealed record BombeMachineState(int ChainsPerCopy, IReadOnlyList<CopyState> Copies);
+public sealed record BombeMachineState(
+    IReadOnlyList<ChainState> Chains,
+    IReadOnlyList<bool> Joins,
+    bool PluggedForMenu,
+    bool PluggedByHand,
+    IReadOnlyList<string> Warnings)
+{
+    public static BombeMachineState From(BombeJob job)
+    {
+        ArgumentNullException.ThrowIfNull(job);
 
-public sealed record CopyState(IReadOnlyList<string?> Drums, IReadOnlyList<string> Starts);
+        var machine = job.Machine;
+        return new BombeMachineState(
+            [.. machine.ChainSetups.Select(chain => new ChainState(
+                chain.TestRegister?.ToString(),
+                chain.Input.ToString(),
+                [.. chain.Scramblers.Select(scrambler => new ScramblerState(
+                    [.. scrambler.Cables.Select(letter => letter?.ToString())],
+                    [.. scrambler.Rotors.Select(rotor => rotor?.Name)],
+                    scrambler.Start.ToString()))]))],
+            [.. machine.Joins],
+            job.Menu is not null && ReferenceEquals(machine.PluggedMenu, job.Menu),
+            machine.PluggedMenu is null && machine.ChainSetups.Any(chain =>
+                chain.TestRegister is not null || chain.Scramblers.Any(scrambler => scrambler.HasCable)),
+            machine.Warnings());
+    }
+}
 
-public sealed record BombeSettings(string Input, bool DiagonalBoard, string Reflector);
+/// <summary>A chain: the letter its test register is plugged onto (null: none), its input wire, and its 12 scramblers.</summary>
+public sealed record ChainState(string? TestRegister, string Input, IReadOnlyList<ScramblerState> Scramblers);
+
+/// <summary>A scrambler: the letters its two jacks are cabled to, its drums' rotors (upper, middle, lower) and start letters.</summary>
+public sealed record ScramblerState(IReadOnlyList<string?> Jacks, IReadOnlyList<string?> Drums, string Start);
 
 /// <summary>
-/// A run's progress: the wheel orders of the copies tested, the positions tested of the 17,576, the letters the upper
-/// drums show while it runs, the stop a paused run waits at, the stops it found and all stops found so far. Speed is in
-/// positions per second, null for full speed. Error is set when the run failed.
+/// The checking machine: reflector, rotor of each drum left to right (null: none), ring and window letters, and the
+/// logged stop it was set up for (null when set by hand).
+/// </summary>
+public sealed record CheckingMachineState(string Reflector, IReadOnlyList<string?> Drums, string Rings, string Windows, StopState? Stop)
+{
+    public static CheckingMachineState From(CheckingMachine checker, StopLog stops)
+    {
+        ArgumentNullException.ThrowIfNull(checker);
+        ArgumentNullException.ThrowIfNull(stops);
+
+        var stop = checker.Stop is { } index && stops.Stops(index, 1) is [{ } found]
+            ? StopState.From(found, index, stops.VerdictOn(index))
+            : null;
+        return new CheckingMachineState(
+            checker.Reflector.Name,
+            [.. checker.Drums.Select(rotor => rotor?.Name)],
+            checker.Rings.ToString(),
+            checker.Windows.ToString(),
+            stop);
+    }
+}
+
+public sealed record BombeSettings(bool DiagonalBoard, string Reflector);
+
+/// <summary>
+/// A run's progress: the groups of chains tested, whether the stops are logged for the notebook, the positions tested
+/// of the 17,576, the letters the upper drums show while it runs, the stop a paused run waits at, the stops it found,
+/// all stops logged and all printed so far. Speed is in positions per second, null for full speed. Error is set when
+/// the run failed.
 /// </summary>
 public sealed record RunState(
     string Status,
     double? Speed,
     string Reflector,
-    IReadOnlyList<string> WheelOrders,
+    IReadOnlyList<RunGroupState> Groups,
+    bool Logged,
     long PositionsTested,
     long Positions,
     string? Position,
-    StopState? Pause,
+    PrintedStopState? Pause,
     int Stops,
     int AllStops,
+    int Printed,
     string? Error,
     double ElapsedSeconds)
 {
-    public static RunState From(BombeRun run, StopLog stops)
+    public static RunState From(BombeRun run, IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(run);
-        ArgumentNullException.ThrowIfNull(stops);
+        ArgumentNullException.ThrowIfNull(store);
 
         var progress = run.Progress();
         return new RunState(
             progress.Status.ToString(),
             progress.Speed,
             run.Reflector.Name,
-            [.. run.WheelOrders.Select(order => order.ToString())],
+            [.. run.Groups.Select(group => new RunGroupState(
+                [.. group.Chains], group.WheelOrder?.ToString(), group.TestRegister?.ToString() ?? string.Empty, group.Input.ToString()))],
+            run.Logged,
             progress.PositionsTested,
             DrumPosition.Count,
             progress.Position?.ToString(),
-            progress is { Pause: { } pause, PauseIndex: { } index } ? StopState.From(pause, index, stops.VerdictOn(index)) : null,
+            progress is { Pause: { } pause, PauseIndex: { } index } ? PrintedStopState.From(pause, index) : null,
             progress.Stops,
-            stops.Count,
+            store.Stops.Count,
+            store.Printout.Count,
             progress.Error,
             progress.Elapsed.TotalSeconds);
     }
 }
 
+/// <summary>A group of chains a run tests (0 = chain 1), its wheel order (null when a row is empty), test register and input.</summary>
+public sealed record RunGroupState(IReadOnlyList<int> Chains, string? WheelOrder, string TestRegister, string Input);
+
 /// <summary>
-/// A stop: its index among the stops found, the wheel order, the drum core positions, the indicator drum reading, the test register
-/// letter, its live wires, the stecker partner they give (null when neither 1 nor 25 wires are live) and the verdict
-/// of its check (Unchecked, True or False).
+/// A printed stop: its index on the printout, the chains (0 = chain 1), their wheel order (null when a row is empty),
+/// the upper drums' letters, the indicator drum reading, the test register letter, its live wires and the stecker
+/// partner they give (null when neither 1 nor 25 wires are live).
+/// </summary>
+public sealed record PrintedStopState(
+    int Index,
+    IReadOnlyList<int> Chains,
+    string? WheelOrder,
+    string DrumLetters,
+    string Indicator,
+    string TestRegister,
+    string LiveWires,
+    string? Stecker)
+{
+    public static PrintedStopState From(PrintedStop stop, int index)
+    {
+        ArgumentNullException.ThrowIfNull(stop);
+
+        return new PrintedStopState(
+            index,
+            [.. stop.Chains],
+            stop.WheelOrder?.ToString(),
+            stop.DrumLetters.ToString(),
+            stop.Indicator.ToString(),
+            stop.TestRegister.ToString(),
+            string.Concat(stop.LiveWires),
+            stop.Stecker?.ToString());
+    }
+}
+
+/// <summary>
+/// A logged stop: its index among the stops logged, the wheel order, the drum core positions, the indicator drum
+/// reading, the test register letter, its live wires, the stecker partner they give (null when neither 1 nor 25 wires
+/// are live) and the verdict of its check (Unchecked, True or False).
 /// </summary>
 public sealed record StopState(
     int Index,

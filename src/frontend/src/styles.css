@@ -163,13 +163,6 @@ body {
   gap: 0.3rem;
 }
 
-.rotor-picker .swatch {
-  width: 0.7rem;
-  height: 0.7rem;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-}
-
 .speed {
   display: flex;
   align-items: center;
@@ -402,10 +395,6 @@ body {
   }
 }
 
-.scrambler.empty circle {
-  fill: var(--line);
-}
-
 .bombe-front-frame {
   position: relative;
   max-width: 46rem;
@@ -435,34 +424,98 @@ body {
   outline: none;
 }
 
-.rotor-picker {
-  position: absolute;
-  z-index: 1;
-  padding: 0.5rem;
-  background: var(--bg);
-  border: 1px solid var(--fg);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+.bombe-front .drum-rack rect {
+  fill: color-mix(in srgb, var(--muted) 15%, var(--bg));
+  stroke: var(--line);
 }
 
-.rotor-picker p {
-  margin: 0 0 0.25rem;
+.bombe-front .rack-drum,
+.checking-machine .rack-drum,
+.checking-machine .drum-body,
+.checking-machine .drum-place {
+  cursor: grab;
 }
 
-.rotor-choices {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 0.25rem;
+.bombe-front .rack-drum circle {
+  stroke: var(--line);
+  stroke-width: 2;
 }
 
-.rotor-choices button {
+.bombe-front .rack-drum text {
+  fill: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.bombe-front .rack-drum.selected circle,
+.checking-machine .rack-drum.selected circle,
+.drum.selected .rim {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.bombe-front .rack-drum:focus-visible,
+.checking-machine .rack-drum:focus-visible,
+.checking-machine .drum-body:focus-visible,
+.checking-machine .drum-place:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 3px var(--accent));
+}
+
+.held-drum {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.bombe-warnings {
+  max-width: 42rem;
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.register-lamps {
   display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+  margin: 0 0.25rem;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.8em;
 }
 
-.rotor-choices button[aria-pressed='true'] {
-  outline: 2px solid var(--accent);
+.register-lamps .lit {
+  color: var(--fg);
+  font-weight: bold;
+}
+
+.register-lamps .dark {
+  color: var(--line);
+}
+
+.printout {
+  max-width: 46rem;
+}
+
+.printout h3 {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}
+
+.printout table {
+  width: 100%;
+  border-collapse: collapse;
+  background: color-mix(in srgb, #f4efe1 60%, var(--bg));
+  font-size: 0.85rem;
+}
+
+.printout th,
+.printout td {
+  padding: 0.15rem 0.5rem;
+  border-bottom: 1px dashed var(--line);
+  text-align: left;
+}
+
+.printout .wires {
+  letter-spacing: 0.05em;
 }
 
 .scrambler-label,
@@ -481,22 +534,17 @@ body {
   text-anchor: start;
 }
 
-.diagonal-board rect,
-.common rect,
+.bombe-back .chain-panel .panel {
+  fill: none;
+  stroke: var(--line);
+}
+
 .test-register rect,
 .scrambler-jacks rect {
   fill: var(--bg);
   stroke: var(--fg);
 }
 
-.diagonal-board circle,
-.scrambler-jacks circle {
-  fill: none;
-  stroke: var(--muted);
-}
-
-.diagonal-board text,
-.common text,
 .test-register text,
 .scrambler-jacks text {
   font-size: 10px;
@@ -507,25 +555,69 @@ body {
   font-weight: bold;
 }
 
-.diagonal-board.off {
-  opacity: 0.35;
+.bombe-back .jack {
+  cursor: pointer;
 }
 
-.bombe-back .cable,
-.board-cable {
-  fill: none;
-  stroke: var(--accent);
+.bombe-back .jack circle {
+  fill: var(--bg);
+  stroke: var(--muted);
   stroke-width: 1.5;
 }
 
-.board-cable.off {
+.bombe-back .jack .jack-area {
+  fill: transparent;
+  stroke: none;
+}
+
+.bombe-back .jack.selected circle:not(.jack-area),
+.bombe-back .jack:focus-visible circle:not(.jack-area) {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.bombe-back .jack:focus-visible {
+  outline: none;
+}
+
+.bombe-back .jack[aria-disabled='true'] {
+  cursor: default;
+}
+
+.board-bar {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.board-bar.off {
   stroke: var(--line);
   stroke-dasharray: 3 3;
 }
 
-.scrambler-jacks.empty rect,
-.scrambler-jacks.empty circle {
-  stroke: var(--line);
+.bombe-back .cable {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.bombe-back .cable.join {
+  stroke-width: 3;
+}
+
+.bombe-back .cable.held {
+  stroke-dasharray: 4 3;
+}
+
+.checking-machine .drum-place circle {
+  fill: transparent;
+  stroke: #45433d;
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+}
+
+.checking-machine .drum-place.ready circle {
+  stroke: #ffd76a;
 }
 
 .frame [role='tablist'] {
@@ -1318,4 +1410,12 @@ button {
 .error-fading {
   opacity: 0;
   transition: opacity 0.5s ease;
+}
+
+.bombe-front .rack-drum.light text {
+  fill: #1c1c1a;
+}
+
+.bombe-back {
+  max-width: 70rem;
 }

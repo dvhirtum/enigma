@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { BackendStatus, BombeCheck, BombeResult, BombeRun, BombeState, BombeStop, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
+import type { BackendStatus, BombeCheck, BombeMachine, BombeResult, BombeRun, BombeState, BombeStop, CheckingMachine, EnigmaApi, PrintedStop, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -110,6 +110,23 @@ export const exportedFile = {
   tauschtafeln: fakeTables,
 };
 
+/** A Bombe with nothing plugged in and no drums. */
+export function emptyMachine(): BombeMachine {
+  return {
+    chains: Array.from({ length: 3 }, () => ({
+      testRegister: null,
+      input: 'A',
+      scramblers: Array.from({ length: 12 }, () => ({ jacks: [null, null], drums: [null, null, null], start: 'ZZZ' })),
+    })),
+    joins: [false, false],
+    pluggedForMenu: false,
+    pluggedByHand: false,
+    warnings: [],
+  };
+}
+
+export const emptyChecker: CheckingMachine = { reflector: 'B', drums: [null, null, null], rings: 'ZZZ', windows: 'ZZZ', stop: null };
+
 export const emptyBombe: BombeState = {
   source: null,
   cipherText: '',
@@ -117,10 +134,12 @@ export const emptyBombe: BombeState = {
   placements: [],
   position: null,
   menu: null,
-  machine: null,
-  settings: { input: 'A', diagonalBoard: true, reflector: 'B' },
+  machine: emptyMachine(),
+  checker: emptyChecker,
+  settings: { diagonalBoard: true, reflector: 'B' },
   run: null,
   stops: 0,
+  printed: 0,
 };
 
 export const carterBombe: BombeState = {
@@ -146,6 +165,24 @@ export function withCrib(state: BombeState, crib: string, position: number | nul
   return { ...state, crib, placements, position };
 }
 
+/** The Bombe plugged up with Carter's menu: 13 links on chain 1 and the first scrambler of chain 2, joined, drums II V III, test register on G. */
+export function carterMachine(): BombeMachine {
+  const machine = emptyMachine();
+  const links = ['SW1', 'NE2', 'GE5', 'GR6', 'SV7', 'ZR9', 'ZH10', 'UE11', 'GR12', 'AS13', 'RA14', 'LG15', 'VE16'];
+  links.forEach((link, index) => {
+    const offset = Number(link.slice(2));
+    machine.chains[Math.floor(index / 12)].scramblers[index % 12] = {
+      jacks: [link[0], link[1]],
+      drums: ['II', 'V', 'III'],
+      start: `ZZ${String.fromCharCode(64 + offset)}`,
+    };
+  });
+  machine.chains[0].testRegister = 'G';
+  machine.joins = [true, false];
+  machine.pluggedForMenu = true;
+  return machine;
+}
+
 /** Carter's crib placed at the start, with his training menu (positions 3, 4 and 8 left out) and the test register on G. */
 export const carterMenu: BombeState = {
   ...withCrib(carterBombe, 'WETTERVORHERSAGE', 0),
@@ -158,25 +195,24 @@ export const carterMenu: BombeState = {
     stopsWithBoard: 0.4,
     stopsWithoutBoard: 721.3,
   },
-  // 13 links take two chains: one copy, with drums II V III fitted.
-  machine: {
-    chainsPerCopy: 2,
-    copies: [{ drums: ['II', 'V', 'III'], starts: ['ZZA', 'ZZB', 'ZZE', 'ZZF', 'ZZG', 'ZZI', 'ZZJ', 'ZZK', 'ZZL', 'ZZM', 'ZZN', 'ZZO', 'ZZP'] }],
-  },
+  machine: carterMachine(),
 };
 
+/** Carter's true stop as the Bombe prints it. */export const carterPrinted: PrintedStop = {  index: 0,  chains: [0, 1],  wheelOrder: 'II V III',  drumLetters: 'WPC',  indicator: 'DKX',  testRegister: 'G',  liveWires: 'ABCDEFGHIJKLMNOPRSTUVWXYZ',  stecker: 'Q',};
 /** A paced run of Carter's menu on II V III, paused at the true stop. */
 export const carterPaused: BombeRun = {
   status: 'Paused',
   speed: 14.6,
   reflector: 'B',
-  wheelOrders: ['II V III'],
+  groups: [{ chains: [0, 1], wheelOrder: 'II V III', testRegister: 'G', input: 'A' }],
+  logged: true,
   positionsTested: 1713,
   positions: 17576,
   position: 'WPD',
-  pause: { index: 0, wheelOrder: 'II V III', position: 'VMB', indicator: 'DKX', testRegister: 'G', liveWires: 'Q', stecker: 'Q', verdict: 'Unchecked' },
+  pause: carterPrinted,
   stops: 1,
   allStops: 1,
+  printed: 1,
   error: null,
   elapsedSeconds: 117.3,
 };
@@ -187,13 +223,12 @@ export const carterStops: BombeStop[] = [
   { index: 1, wheelOrder: 'II V III', position: 'KQF', indicator: 'NFO', testRegister: 'G', liveWires: 'ABCDEFHIJKLMNOPQRSTUVWXYZ', stecker: 'G', verdict: 'Unchecked' },
 ];
 
+/** The checking machine as the notebook sets it up for Carter's true stop. */export const carterChecker: CheckingMachine = { reflector: 'B', drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterStops[0] };
 const carterCrib = 'WETTERVORHERSAGE';
 
 /** The check of Carter's true stop as it starts: the rings at the indicator, the windows at ZZZ, only G/Q known. */
 export const carterCheck: BombeCheck = {
   stop: carterStops[0],
-  machineWindows: 'ZZZ',
-  machineRings: 'DKX',
   steckers: 'GQ',
   rightRing: 26,
   verdict: 'Unchecked',
@@ -277,9 +312,19 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       setMenu: bombe(),
       buildMenu: bombe(),
       configure: bombe(),
-      fitDrums: bombe(),
+      plugUpMenu: bombe(carterMenu),
+      plugJack: bombe(),
+      fitRow: bombe(),
+      removeDrum: bombe(),
+      setTestRegister: bombe(),
+      joinChains: bombe(),
       turnScrambler: bombe(),
       clearStops: bombe(),
+      getPrintout: vi.fn().mockResolvedValue({ ok: true, value: [carterPrinted] }),
+      clearPrintout: bombe(),
+      setChecker: bombe(),
+      pressCheckerKey: vi.fn().mockResolvedValue({ ok: true, value: { lamp: 'R' } }),
+      setUpChecker: bombe({ ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 }, stops: 2, checker: carterChecker }),
       startRun: run(),
       setRunSpeed: run(),
       continueRun: run(),
@@ -288,7 +333,6 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       getStops: vi.fn().mockResolvedValue({ ok: true, value: carterStops }),
       getCheck: vi.fn().mockResolvedValue({ ok: true, value: carterCheck }),
       setCheck: vi.fn().mockResolvedValue({ ok: true, value: carterChecked }),
-      pressCheckKey: vi.fn().mockResolvedValue({ ok: true, value: { lamp: 'R' } }),
       confirmCheck: vi.fn().mockResolvedValue({
         ok: true,
         value: {

@@ -1,29 +1,26 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BombeRun, BombeState } from '../api';
-import { stopPage, useMachine } from '../store';
-import { carterMenu, carterPaused, carterStops } from '../test/fakeApi';
+import { stopPage } from '../store';
+import { carterMenu, carterPaused, carterStops, emptyMachine } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
 import { RunStep, StopsStep } from './RunStep';
 
 const finished: BombeRun = { ...carterPaused, status: 'Finished', pause: null, position: null, stops: 2, allStops: 2 };
 const carter: BombeState = { ...carterMenu, run: finished, stops: 2 };
 
-function ShownView() {
-  return <output aria-label="Shown view">{useMachine((store) => store.bombeView)}</output>;
-}
-
 describe('RunStep', () => {
   it('says what the Bombe still needs', async () => {
-    renderBombe(<RunStep onDone={vi.fn()} />, { ...carterMenu, machine: { chainsPerCopy: 2, copies: [{ ...carterMenu.machine!.copies[0], drums: [null, null, null] }] } });
+    renderBombe(<RunStep onDone={vi.fn()} />, { ...carterMenu, machine: { ...emptyMachine(), pluggedForMenu: true } });
 
-    expect(await screen.findByText('Click a drum to fit drums in its row.')).toBeInTheDocument();
+    expect(await screen.findByText('Plug a test register onto a common on the Back tab.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Plug it up again' })).not.toBeInTheDocument();
   });
 
   it('follows the run', async () => {
     renderBombe(<RunStep onDone={vi.fn()} />, { ...carterMenu, run: carterPaused, stops: 1 });
 
-    expect(await screen.findByLabelText('Run progress')).toHaveTextContent(/^Stopped · II V III/);
+    expect(await screen.findByLabelText('Run progress')).toHaveTextContent(/^Stopped · Chains 1–2 II V III/);
   });
 
   it('lets the stops be checked while the run goes on', async () => {
@@ -33,6 +30,15 @@ describe('RunStep', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Check the stops found so far' }));
 
     expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it('plugs up the menu again when the Bombe was changed by hand', async () => {
+    const api = renderBombe(<RunStep onDone={vi.fn()} />, { ...carterMenu, machine: { ...carterMenu.machine, pluggedForMenu: false, pluggedByHand: true } });
+
+    expect(await screen.findByText(/The Bombe is no longer plugged up for this menu/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Plug it up again' }));
+
+    await waitFor(() => expect(api.bombe.plugUpMenu).toHaveBeenCalled());
   });
 
   it('says when a run found no stops', async () => {
@@ -80,18 +86,11 @@ describe('StopsStep', () => {
     await waitFor(() => expect(api.bombe.getStops).toHaveBeenLastCalledWith(stopPage, stopPage));
   });
 
-  it('opens the check of a stop on the Checking view', async () => {
-    const api = renderBombe(
-      <>
-        <StopsStep />
-        <ShownView />
-      </>,
-      carter,
-    );
+  it('opens the check of a stop', async () => {
+    const api = renderBombe(<StopsStep />, carter);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Check stop 2' }));
 
-    await waitFor(() => expect(screen.getByLabelText('Shown view')).toHaveTextContent('bombe-checking'));
-    expect(api.bombe.getCheck).toHaveBeenCalledWith(1);
+    await waitFor(() => expect(api.bombe.getCheck).toHaveBeenCalledWith(1));
   });
 });

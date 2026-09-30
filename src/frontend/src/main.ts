@@ -63,6 +63,7 @@ const run = () => {
   registerIpc(backend, {
     openNotebook: () => openPage('notebook'),
     openHut8Notebook: () => openPage('hut8'),
+    isHut8Open: () => pageWindows.has('hut8'),
     openInstructions: () => openPage('instructions'),
   });
 

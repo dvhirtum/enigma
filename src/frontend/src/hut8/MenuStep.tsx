@@ -213,12 +213,15 @@ function LinkList({ menu, busy, onToggle }: { menu: BombeMenu; busy: boolean; on
 
 /**
  * The menu of the placed crib: built when the crib is placed, and edited by hand here. The controls are locked while a
- * change is on its way to the backend. `onDone` marks the menu ready for the Bombe.
+ * change is on its way to the backend. Sending the menu plugs up the Bombe, after asking when it was plugged by hand;
+ * `onDone` follows.
  */
 export function MenuStep({ onDone }: { onDone: () => void }) {
   const bombe = useMachine((store) => store.bombe);
   const setMenu = useMachine((store) => store.setMenu);
   const buildMenu = useMachine((store) => store.buildMenu);
+  const plugUpMenu = useMachine((store) => store.plugUpMenu);
+  const [asking, setAsking] = useState(false);
   const pending = useRef(false);
   const [busy, setBusy] = useState(false);
   const menu = bombe?.menu;
@@ -235,6 +238,17 @@ export function MenuStep({ onDone }: { onDone: () => void }) {
     void change().finally(() => {
       pending.current = false;
       setBusy(false);
+    });
+  };
+
+  const sendMenu = () => {
+    setAsking(false);
+    send(async () => {
+      const plugged = await plugUpMenu();
+      if (plugged) {
+        onDone();
+      }
+      return plugged;
     });
   };
 
@@ -266,10 +280,21 @@ export function MenuStep({ onDone }: { onDone: () => void }) {
         <button type="button" disabled={busy} onClick={() => send(buildMenu)}>
           Build menu again
         </button>
-        <button type="button" disabled={busy} onClick={onDone}>
+        <button type="button" disabled={busy || asking} onClick={() => (bombe.machine.pluggedByHand ? setAsking(true) : sendMenu())}>
           Send the menu to the Bombe
         </button>
       </p>
+      {asking && (
+        <p className="notebook-warning" role="alert">
+          The Bombe is plugged up by hand. Pull out its cables and plug up this menu?{' '}
+          <button type="button" onClick={sendMenu}>
+            Plug up the menu
+          </button>{' '}
+          <button type="button" onClick={() => setAsking(false)}>
+            Keep the Bombe as it is
+          </button>
+        </p>
+      )}
     </div>
   );
 }

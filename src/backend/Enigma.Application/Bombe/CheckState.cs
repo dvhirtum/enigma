@@ -3,14 +3,12 @@ using Enigma.Domain.Bombe;
 namespace Enigma.Application.Bombe;
 
 /// <summary>
-/// The check of a stop: the stop, the checking machine's window letters and ring settings, the steckers found (pairs
-/// such as "AD ET RR"), the right ring (1–26), the verdict, each crib letter with its match (Match, Mismatch or
-/// Unknown), the decrypt of the whole message ('?' where a stecker is not known yet) and the key it gives.
+/// The check of a stop: the stop, the steckers found (pairs such as "AD ET RR"), the right ring (1–26), the verdict,
+/// each crib letter with its match (Match, Mismatch or Unknown), the decrypt of the whole message ('?' where a stecker
+/// is not known yet) and the key it gives.
 /// </summary>
 public sealed record CheckState(
     StopState Stop,
-    string MachineWindows,
-    string MachineRings,
     string Steckers,
     int RightRing,
     string Verdict,
@@ -25,8 +23,6 @@ public sealed record CheckState(
         var key = check.Key;
         return new CheckState(
             StopState.From(check.Stop, index, check.Verdict),
-            check.MachineWindows.ToString(),
-            check.MachineRings.ToString(),
             check.Steckers.ToString(),
             check.RightRing.Number,
             check.Verdict.ToString(),

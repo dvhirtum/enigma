@@ -6,13 +6,19 @@ internal sealed record PlacementRequest(int Position);
 
 internal sealed record SpeedRequest(double? Speed);
 
-internal sealed record DrumsRequest(string? Rotor);
+internal sealed record RunRequest(double? Speed, bool Notebook);
+
+internal sealed record JackRequest(string? Letter);
+
+internal sealed record RowRequest(string? Rotor, int UpTo);
 
 internal sealed record StartRequest(string? Start);
 
-internal sealed record CheckRequest(string? MachineWindows, string? MachineRings, string? Steckers, int? RightRing);
+internal sealed record TestRegisterRequest(string? Letter, string? Input);
 
-internal sealed record KeyRequest(string? Key);
+internal sealed record JoinRequest(bool Joined);
+
+internal sealed record CheckRequest(string? Steckers, int? RightRing);
 
 internal sealed record VerdictRequest(string? Verdict);
 
@@ -29,19 +35,28 @@ internal static class BombeEndpoints
         .AddSingleton<PlaceCribHandler>()
         .AddSingleton<SetMenuHandler>()
         .AddSingleton<BuildMenuHandler>()
+        .AddSingleton<PlugUpMenuHandler>()
         .AddSingleton<ConfigureBombeHandler>()
-        .AddSingleton<FitDrumsHandler>()
+        .AddSingleton<PlugJackHandler>()
+        .AddSingleton<FitRowHandler>()
+        .AddSingleton<RemoveDrumHandler>()
         .AddSingleton<TurnScramblerHandler>()
+        .AddSingleton<SetTestRegisterHandler>()
+        .AddSingleton<JoinChainsHandler>()
         .AddSingleton<ClearStopsHandler>()
+        .AddSingleton<ClearPrintoutHandler>()
         .AddSingleton<StartRunHandler>()
         .AddSingleton<SetRunSpeedHandler>()
         .AddSingleton<ContinueRunHandler>()
         .AddSingleton<CancelRunHandler>()
         .AddSingleton<GetRunHandler>()
         .AddSingleton<GetStopsHandler>()
+        .AddSingleton<GetPrintoutHandler>()
+        .AddSingleton<SetCheckingMachineHandler>()
+        .AddSingleton<PressCheckingKeyHandler>()
+        .AddSingleton<SetUpCheckingMachineHandler>()
         .AddSingleton<GetCheckHandler>()
         .AddSingleton<SetCheckHandler>()
-        .AddSingleton<PressCheckKeyHandler>()
         .AddSingleton<ConfirmCheckHandler>()
         .AddSingleton<SuggestSteckersHandler>()
         .AddSingleton<FindRightRingHandler>();
@@ -86,14 +101,31 @@ internal static class BombeEndpoints
         bombe.MapPut("/settings", (ConfigureBombe command, ConfigureBombeHandler handler) =>
             handler.Handle(command));
 
-        bombe.MapPut("/machine/copies/{copy:int}/drums/{row:int}", (int copy, int row, DrumsRequest request, FitDrumsHandler handler) =>
-            handler.Handle(new FitDrums(copy, row, request.Rotor)));
+        var machine = bombe.MapGroup("/machine");
 
-        bombe.MapPut("/machine/copies/{copy:int}/scramblers/{scrambler:int}", (int copy, int scrambler, StartRequest request, TurnScramblerHandler handler) =>
-            handler.Handle(new TurnScrambler(copy, scrambler, request.Start)));
+        machine.MapPost("/plug-up", (PlugUpMenuHandler handler) =>
+            handler.Handle(new PlugUpMenu()));
 
-        bombe.MapPost("/run", (SpeedRequest request, StartRunHandler handler) =>
-            handler.Handle(new StartRun(request.Speed)));
+        machine.MapPut("/chains/{chain:int}/scramblers/{scrambler:int}/jacks/{jack:int}", (int chain, int scrambler, int jack, JackRequest request, PlugJackHandler handler) =>
+            handler.Handle(new PlugJack(chain, scrambler, jack, request.Letter)));
+
+        machine.MapPut("/chains/{chain:int}/rows/{row:int}", (int chain, int row, RowRequest request, FitRowHandler handler) =>
+            handler.Handle(new FitRow(chain, row, request.UpTo, request.Rotor)));
+
+        machine.MapDelete("/chains/{chain:int}/scramblers/{scrambler:int}/drums/{row:int}", (int chain, int scrambler, int row, RemoveDrumHandler handler) =>
+            handler.Handle(new RemoveDrum(chain, scrambler, row)));
+
+        machine.MapPut("/chains/{chain:int}/scramblers/{scrambler:int}/start", (int chain, int scrambler, StartRequest request, TurnScramblerHandler handler) =>
+            handler.Handle(new TurnScrambler(chain, scrambler, request.Start)));
+
+        machine.MapPut("/chains/{chain:int}/test-register", (int chain, TestRegisterRequest request, SetTestRegisterHandler handler) =>
+            handler.Handle(new SetTestRegister(chain, request.Letter, request.Input)));
+
+        machine.MapPut("/joins/{join:int}", (int join, JoinRequest request, JoinChainsHandler handler) =>
+            handler.Handle(new JoinChains(join, request.Joined)));
+
+        bombe.MapPost("/run", (RunRequest request, StartRunHandler handler) =>
+            handler.Handle(new StartRun(request.Speed, request.Notebook)));
 
         bombe.MapPut("/run/speed", (SpeedRequest request, SetRunSpeedHandler handler) =>
             handler.Handle(new SetRunSpeed(request.Speed)));
@@ -107,20 +139,32 @@ internal static class BombeEndpoints
         bombe.MapGet("/run", (GetRunHandler handler) =>
             handler.Handle(new GetRun()));
 
+        bombe.MapGet("/printout", (int? from, int? count, GetPrintoutHandler handler) =>
+            handler.Handle(new GetPrintout(from ?? 0, count)));
+
+        bombe.MapDelete("/printout", (ClearPrintoutHandler handler) =>
+            handler.Handle(new ClearPrintout()));
+
+        bombe.MapPut("/checking", (SetCheckingMachine command, SetCheckingMachineHandler handler) =>
+            handler.Handle(command));
+
+        bombe.MapPost("/checking/press", (PressCheckingKey command, PressCheckingKeyHandler handler) =>
+            handler.Handle(command));
+
         bombe.MapGet("/stops", (int? from, int? count, GetStopsHandler handler) =>
             handler.Handle(new GetStops(from ?? 0, count)));
 
         bombe.MapDelete("/stops", (ClearStopsHandler handler) =>
             handler.Handle(new ClearStops()));
 
+        bombe.MapPost("/stops/{stop:int}/checking", (int stop, SetUpCheckingMachineHandler handler) =>
+            handler.Handle(new SetUpCheckingMachine(stop)));
+
         bombe.MapGet("/stops/{stop:int}/check", (int stop, GetCheckHandler handler) =>
             handler.Handle(new GetCheck(stop)));
 
         bombe.MapPut("/stops/{stop:int}/check", (int stop, CheckRequest request, SetCheckHandler handler) =>
-            handler.Handle(new SetCheck(stop, request.MachineWindows, request.MachineRings, request.Steckers, request.RightRing)));
-
-        bombe.MapPost("/stops/{stop:int}/check/press", (int stop, KeyRequest request, PressCheckKeyHandler handler) =>
-            handler.Handle(new PressCheckKey(stop, request.Key)));
+            handler.Handle(new SetCheck(stop, request.Steckers, request.RightRing)));
 
         bombe.MapPost("/stops/{stop:int}/check/verdict", (int stop, VerdictRequest request, ConfirmCheckHandler handler) =>
             handler.Handle(new ConfirmCheck(stop, request.Verdict)));

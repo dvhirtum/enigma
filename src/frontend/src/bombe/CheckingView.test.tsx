@@ -1,78 +1,102 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { BombeState } from '../api';
-import { useMachine } from '../store';
-import { carterMenu, carterPaused } from '../test/fakeApi';
+import { carterMenu, carterStops, emptyBombe, emptyChecker } from '../test/fakeApi';
+import { click, dragTo } from '../test/pointer';
 import { renderBombe } from '../test/renderBombe';
 import { CheckingView } from './CheckingView';
 
-const carter: BombeState = { ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 }, stops: 2 };
-
-function OpenCheck() {
-  const openCheck = useMachine((store) => store.openCheck);
-  useEffect(() => {
-    void openCheck(0);
-  }, [openCheck]);
-  return null;
-}
-
-/** Renders the Checking view with the check of Carter's true stop open. */
-async function openCarterCheck() {
-  const api = renderBombe(
-    <>
-      <OpenCheck />
-      <CheckingView />
-    </>,
-    carter,
-  );
-  await screen.findByRole('group', { name: 'Checking machine' });
-  return api;
-}
+/** The checking machine as the notebook sets it up for Carter's true stop. */
+const carter: BombeState = { ...carterMenu, checker: { reflector: 'B', drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterStops[0] } };
 
 describe('CheckingView', () => {
-  it('asks for a stop when none is picked', async () => {
+  it('shows the stop the notebook set it up for', async () => {
     renderBombe(<CheckingView />, carter);
 
-    expect(await screen.findByText('No stop picked. Choose one in the Hut 8 notebook.')).toBeInTheDocument();
-  });
-
-  it('sets the checking machine to the stop', async () => {
-    await openCarterCheck();
-
-    expect(screen.getByText(/Stop 1: II V III, indicator/)).toHaveTextContent('Stop 1: II V III, indicator DKX, G/Q.');
+    expect(await screen.findByText(/Set up for stop 1/)).toHaveTextContent('Set up for stop 1: II V III, indicator DKX, G/Q.');
     expect(screen.getByRole('img', { name: 'left drum II at Z, ring D' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'right drum III at Z, ring X' })).toBeInTheDocument();
   });
 
+  it('starts empty, to be set up by hand', async () => {
+    renderBombe(<CheckingView />, emptyBombe);
+
+    expect(await screen.findByRole('button', { name: 'left drum place, empty' })).toBeInTheDocument();
+    expect(screen.getByText(/Drag drums from the rack onto the machine/)).toBeInTheDocument();
+  });
+
+  it('fits a drum dragged from the rack', async () => {
+    const api = renderBombe(<CheckingView />, emptyBombe);
+
+    dragTo(await screen.findByRole('button', { name: 'Drum IV' }), screen.getByRole('button', { name: 'middle drum place, empty' }));
+
+    await waitFor(() => expect(api.bombe.setChecker).toHaveBeenCalledWith({ drums: [null, 'IV', null] }));
+  });
+
+  it('fits a drum picked in the rack, then its place', async () => {
+    const api = renderBombe(<CheckingView />, { ...emptyBombe, checker: { ...emptyChecker, drums: ['I', null, null] } });
+
+    expect(await screen.findByRole('button', { name: 'Drum I, fitted' })).toHaveAttribute('aria-disabled', 'true');
+    click(screen.getByRole('button', { name: 'Drum VI' }));
+    click(screen.getByRole('button', { name: 'right drum place, empty' }));
+
+    await waitFor(() => expect(api.bombe.setChecker).toHaveBeenCalledWith({ drums: ['I', null, 'VI'] }));
+  });
+
+  it('puts a clicked drum back in the rack', async () => {
+    const api = renderBombe(<CheckingView />, carter);
+
+    click(await screen.findByRole('button', { name: 'Take the middle drum V out' }));
+
+    await waitFor(() => expect(api.bombe.setChecker).toHaveBeenCalledWith({ drums: ['II', null, 'III'] }));
+  });
+
+  it('chooses the reflector', async () => {
+    const api = renderBombe(<CheckingView />, carter);
+
+    fireEvent.click(await screen.findByRole('radio', { name: 'C' }));
+
+    await waitFor(() => expect(api.bombe.setChecker).toHaveBeenCalledWith({ reflector: 'C' }));
+  });
+
   it('lights the lamp of a pressed key while it is held', async () => {
-    const api = await openCarterCheck();
+    const api = renderBombe(<CheckingView />, carter);
+    await screen.findByRole('group', { name: 'Checking machine' });
 
     fireEvent.keyDown(window, { key: 'q', code: 'KeyQ' });
 
     await waitFor(() => expect(screen.getByRole('img', { name: 'Lamp R, lit' })).toBeInTheDocument());
-    expect(api.bombe.pressCheckKey).toHaveBeenCalledWith(0, 'Q');
+    expect(api.bombe.pressCheckerKey).toHaveBeenCalledWith('Q');
 
     fireEvent.keyUp(window, { key: 'q', code: 'KeyQ' });
 
     await waitFor(() => expect(screen.queryByRole('img', { name: 'Lamp R, lit' })).not.toBeInTheDocument());
   });
 
-  it('turns a drum by its thumbwheel', async () => {
-    const api = await openCarterCheck();
+  it('presses no key while a drum is missing', async () => {
+    const api = renderBombe(<CheckingView />, { ...emptyBombe, checker: { ...emptyChecker, drums: ['I', null, 'III'] } });
+    await screen.findByRole('group', { name: 'Checking machine' });
 
-    fireEvent.click(screen.getByTestId('thumbwheel-right-up'));
+    fireEvent.keyDown(window, { key: 'q', code: 'KeyQ' });
 
-    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { machineWindows: 'ZZA' }));
+    expect(api.bombe.pressCheckerKey).not.toHaveBeenCalled();
   });
 
-  it('starts with the rings at the indicator and turns a ring with the arrow keys', async () => {
-    const api = await openCarterCheck();
-    const ring = screen.getByRole('spinbutton', { name: 'middle ring' });
+  it('turns a drum by its thumbwheel', async () => {
+    const api = renderBombe(<CheckingView />, carter);
+
+    fireEvent.click(await screen.findByTestId('thumbwheel-right-up'));
+
+    await waitFor(() => expect(api.bombe.setChecker).toHaveBeenCalledWith({ windows: 'ZZA' }));
+  });
+
+  it('turns a ring with the arrow keys', async () => {
+    const api = renderBombe(<CheckingView />, carter);
+    const ring = await screen.findByRole('spinbutton', { name: 'middle ring' });
     expect(ring).toHaveAttribute('aria-valuetext', 'K');
 
     fireEvent.keyDown(ring, { key: 'ArrowDown' });
 
-    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { machineRings: 'DJX' }));
+    await waitFor(() => expect(api.bombe.setChecker).toHaveBeenCalledWith({ rings: 'DJX' }));
   });
 });

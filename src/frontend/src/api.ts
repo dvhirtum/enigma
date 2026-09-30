@@ -154,23 +154,51 @@ export interface BombeMenu {
 }
 
 export interface BombeSettings {
-  input: string;
   diagonalBoard: boolean;
   reflector: string;
 }
 
-/**
- * The machine plugged up with the menu: the chains (banks of 12) one copy takes, and each copy with the rotor of each
- * row (upper, middle, lower; null when empty) and each scrambler's start letters, in the order of the menu links.
- */
-export interface BombeMachine {
-  chainsPerCopy: number;
-  copies: { drums: (string | null)[]; starts: string[] }[];
+/** A scrambler: the letters its two jacks are cabled to, its drums' rotors (upper, middle, lower) and start letters. */
+export interface ScramblerSetup {
+  jacks: (string | null)[];
+  drums: (string | null)[];
+  start: string;
+}
+
+/** A chain of 12 scramblers, with the letter its test register is plugged onto (null: none) and its input wire. */
+export interface ChainSetup {
+  testRegister: string | null;
+  input: string;
+  scramblers: ScramblerSetup[];
 }
 
 /**
- * A stop: its index among the stops found, the wheel order, drum core positions, indicator drum reading, test register, its live
- * wires, stecker partner and the verdict of its check.
+ * The Bombe as set up by hand: its three chains, whether each is joined to the next, whether it is plugged up with the
+ * notebook's menu or by hand, and what a run will not use.
+ */
+export interface BombeMachine {
+  chains: ChainSetup[];
+  joins: boolean[];
+  pluggedForMenu: boolean;
+  pluggedByHand: boolean;
+  warnings: string[];
+}
+
+/**
+ * The checking machine: reflector, rotor of each drum left to right (null: none), ring and window letters, and the
+ * stop the notebook set it up for (null when set by hand).
+ */
+export interface CheckingMachine {
+  reflector: string;
+  drums: (string | null)[];
+  rings: string;
+  windows: string;
+  stop: BombeStop | null;
+}
+
+/**
+ * A stop logged for the notebook: its index, the wheel order, drum core positions, indicator drum reading, test
+ * register, its live wires, stecker partner and the verdict of its check.
  */
 export interface BombeStop {
   index: number;
@@ -184,34 +212,66 @@ export interface BombeStop {
 }
 
 /**
- * A run's progress: the wheel orders of the copies tested, the positions tested of the 17,576, the letters the upper
- * drums show while it runs, the stop a paused run waits at, the stops it found and all stops found so far. Speed is in
- * positions per second, null for full speed.
+ * A stop as the Bombe prints it: its index on the printout, the chains (0 = chain 1), their wheel order (null when a
+ * row is empty), the upper drums' letters, the indicator drum reading, the test register, its live wires and the
+ * stecker they give.
+ */
+export interface PrintedStop {
+  index: number;
+  chains: number[];
+  wheelOrder: string | null;
+  drumLetters: string;
+  indicator: string;
+  testRegister: string;
+  liveWires: string;
+  stecker: string | null;
+}
+
+/**
+ * A run's progress: the groups of chains tested, whether its stops go to the notebook, the positions tested of the
+ * 17,576, the letters the upper drums show while it runs, the stop a paused run waits at, the stops it found, all
+ * stops logged and all printed. Speed is in positions per second, null for full speed.
  */
 export interface BombeRun {
   status: 'Running' | 'Paused' | 'Finished' | 'Cancelled' | 'Failed';
   speed: number | null;
   reflector: string;
-  wheelOrders: string[];
+  groups: { chains: number[]; wheelOrder: string | null; testRegister: string; input: string }[];
+  logged: boolean;
   positionsTested: number;
   positions: number;
   position: string | null;
-  pause: BombeStop | null;
+  pause: PrintedStop | null;
   stops: number;
   allStops: number;
+  printed: number;
   error: string | null;
   elapsedSeconds: number;
 }
 
-/** Run settings to change; those left out stay as they are. An empty input letter uses the default. */
+/** Run settings to change; those left out stay as they are. */
 export interface BombeSettingsChange {
-  input?: string;
   diagonalBoard?: boolean;
   reflector?: string;
 }
+
+/** A test register change: an empty letter unplugs it, an empty input uses the default; those left out stay. */
+export interface TestRegisterChange {
+  letter?: string;
+  input?: string;
+}
+
+/** Checking machine fields to change; those left out stay as they are. */
+export interface CheckerChange {
+  reflector?: string;
+  drums?: (string | null)[];
+  rings?: string;
+  windows?: string;
+}
+
 /**
- * The Bombe job: the message, the crib, every crib position, the placed one, the menu, the machine plugged up with it,
- * the run settings, the latest run and the number of stops found.
+ * The Bombe job: the message, the crib, every crib position, the placed one, the menu, the Bombe and the checking
+ * machine as set up, the run settings, the latest run, the stops logged for the notebook and the stops printed.
  */
 export interface BombeState {
   source: BombeSource | null;
@@ -220,10 +280,12 @@ export interface BombeState {
   placements: Placement[];
   position: number | null;
   menu: BombeMenu | null;
-  machine: BombeMachine | null;
+  machine: BombeMachine;
+  checker: CheckingMachine;
   settings: BombeSettings;
   run: BombeRun | null;
   stops: number;
+  printed: number;
 }
 
 /** A crib letter at its offset, and whether the steckers found so far encipher it to its cipher letter. */
@@ -244,14 +306,11 @@ export interface CheckedKey {
 }
 
 /**
- * The check of a stop on the checking machine: its window letters and ring settings (at first ZZZ and the stop's
- * indicator), the steckers found ("AD ET RR"), the right ring (1–26), the verdict, each crib letter's match, the
- * decrypt ('?' where a stecker is unknown) and the key.
+ * The check of a stop: the steckers found ("AD ET RR"), the right ring (1–26), the verdict, each crib letter's match,
+ * the decrypt ('?' where a stecker is unknown) and the key.
  */
 export interface BombeCheck {
   stop: BombeStop;
-  machineWindows: string;
-  machineRings: string;
   steckers: string;
   rightRing: number;
   verdict: BombeStop['verdict'];
@@ -262,8 +321,6 @@ export interface BombeCheck {
 
 /** Check fields to change; those left out stay as they are. */
 export interface CheckChange {
-  machineWindows?: string;
-  machineRings?: string;
   steckers?: string;
   rightRing?: number;
 }
@@ -399,12 +456,24 @@ export interface BombeApi {
   /** Builds the menu from the placed crib again. */
   buildMenu: Call<[], BombeState>;
   configure: Call<[settings: BombeSettingsChange], BombeState>;
-  /** Fits drums of a rotor in a row (0 = upper) of a copy of the menu; null takes them out. */
-  fitDrums: Call<[copy: number, row: number, rotor: string | null], BombeState>;
-  /** Sets the start letters of a scrambler (its index in the menu links) of a copy. */
-  turnScrambler: Call<[copy: number, scrambler: number, start: string], BombeState>;
-  /** Starts a run at `speed` positions per second, or at full speed when null. */
-  startRun: Call<[speed: number | null], BombeRun>;
+  /** Plugs up the Bombe with the menu. */
+  plugUpMenu: Call<[], BombeState>;
+  /** Cables a jack (0 or 1) of a scrambler (0 = the first of the chain) to a letter's common; null unplugs it. */
+  plugJack: Call<[chain: number, scrambler: number, jack: number, letter: string | null], BombeState>;
+  /** Fits drums of a rotor in a row (0 = upper) of a chain on its scramblers 0 up to `upTo`, and takes the rest of the row out. */
+  fitRow: Call<[chain: number, row: number, upTo: number, rotor: string], BombeState>;
+  /** Takes one drum (row 0 = upper) of a scrambler back to the rack. */
+  removeDrum: Call<[chain: number, scrambler: number, row: number], BombeState>;
+  /** Sets the start letters of a scrambler of a chain. */
+  turnScrambler: Call<[chain: number, scrambler: number, start: string], BombeState>;
+  setTestRegister: Call<[chain: number, change: TestRegisterChange], BombeState>;
+  /** Joins chain `join` + 1 to the next one, or parts them. */
+  joinChains: Call<[join: number, joined: boolean], BombeState>;
+  /**
+   * Starts a run at `speed` positions per second, or at full speed when null. The main process adds `notebook`: whether
+   * the Hut 8 notebook is open, so the stops are logged for it.
+   */
+  startRun: Call<[speed: number | null, notebook?: boolean], BombeRun>;
   setRunSpeed: Call<[speed: number | null], BombeRun>;
   /** Continues a run paused at a stop. */
   continueRun: Call<[], BombeRun>;
@@ -414,10 +483,16 @@ export interface BombeApi {
   getStops: Call<[from: number, count: number], BombeStop[]>;
   /** Clears the stops found and their checks. */
   clearStops: Call<[], BombeState>;
+  /** The printed stops from index `from` on, at most `count`. */
+  getPrintout: Call<[from: number, count: number], PrintedStop[]>;
+  clearPrintout: Call<[], BombeState>;
+  setChecker: Call<[change: CheckerChange], BombeState>;
+  /** Presses a key on the checking machine; resolves to the lamp that lights. */
+  pressCheckerKey: Call<[key: string], { lamp: string }>;
+  /** Sets the checking machine up for a logged stop: its reflector and drums, the rings at its indicator, the windows at ZZZ. */
+  setUpChecker: Call<[stop: number], BombeState>;
   getCheck: Call<[stop: number], BombeCheck>;
   setCheck: Call<[stop: number, change: CheckChange], BombeCheck>;
-  /** Presses a key on the checking machine; resolves to the lamp that lights. */
-  pressCheckKey: Call<[stop: number, key: string], { lamp: string }>;
   confirmCheck: Call<[stop: number, verdict: BombeStop['verdict']], Confirmation>;
   /** Proposes steckers for the unknown letters, without setting them. */
   suggestSteckers: Call<[stop: number], Suggestion>;

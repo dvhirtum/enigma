@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { carterMenu } from '../test/fakeApi';
-import { advance, advanceBy, formatSpeed, fullSpeedStep, historicalSpeed, indicatorOf, scramblersOf, slotsOf, speedAt, stepOf } from './drums';
+import { carterMachine, emptyMachine } from '../test/fakeApi';
+import { advance, advanceBy, chainNames, formatSpeed, fullSpeedStep, groupsOf, historicalSpeed, indicatorOf, rowsOf, scramblersOf, speedAt, stepOf, wiresOf } from './drums';
 
 describe('drums', () => {
   it('turns each drum on by its letter of the offset, without carrying', () => {
@@ -22,20 +22,21 @@ describe('drums', () => {
     expect(advanceBy('WPC', 'ABZ')).toBe('XRC');
   });
 
-  it('puts each copy of the menu on its own chains, the links by offset', () => {
-    const twoChains = slotsOf(carterMenu);
-    expect(twoChains).toHaveLength(13);
-    expect(twoChains.map((slot) => slot.slot)).toEqual([...Array(13).keys()]);
+  it('groups the chains joined to the one before', () => {
+    expect(groupsOf(carterMachine())).toEqual([[0, 1], [2]]);
+    expect(groupsOf(emptyMachine())).toEqual([[0], [1], [2]]);
+    expect(chainNames([0, 1])).toBe('Chains 1–2');
+    expect(chainNames([2])).toBe('Chain 3');
+  });
 
-    const oneChain = {
-      ...carterMenu,
-      menu: { ...carterMenu.menu!, links: ['NE2', 'SW1'] },
-      machine: { chainsPerCopy: 1, copies: [0, 1, 2].map(() => ({ drums: [null, null, null], starts: ['ZZB', 'ZZA'] })) },
-    };
-    const slots = slotsOf(oneChain);
-    expect(slots.map((slot) => slot.slot)).toEqual([0, 1, 12, 13, 24, 25]);
-    expect(slots[0]).toMatchObject({ id: 'SW1', copy: 0, scrambler: 1, start: 'ZZA' });
-    expect(slots[5]).toMatchObject({ id: 'NE2', copy: 2, scrambler: 0, start: 'ZZB' });
+  it('reads the rotor of each row of a chain', () => {
+    expect(rowsOf(carterMachine(), 1)).toEqual(['II', 'V', 'III']);
+    expect(rowsOf(carterMachine(), 2)).toEqual([null, null, null]);
+  });
+
+  it('writes the dead wires of a test register as dots', () => {
+    expect(wiresOf('Q')).toBe('················Q·········');
+    expect(wiresOf('ABCDEFGHIJKLMNOPRSTUVWXYZ')).toBe('ABCDEFGHIJKLMNOP·RSTUVWXYZ');
   });
 
   it('plugs the links into the scramblers by offset', () => {

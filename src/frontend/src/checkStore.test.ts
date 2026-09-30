@@ -25,7 +25,7 @@ describe('checking in the machine store', () => {
   it('leaves the lamp dark when the key is released before the lamp comes back', async () => {
     const { api, store } = await openStore();
     const lamp = deferred<ApiResult<{ lamp: string }>>();
-    api.bombe.pressCheckKey.mockReturnValueOnce(lamp.promise);
+    api.bombe.pressCheckerKey.mockReturnValueOnce(lamp.promise);
 
     const pressed = store.getState().pressCheckKey('Q');
     store.getState().releaseCheckKey();
@@ -56,16 +56,16 @@ describe('checking in the machine store', () => {
     const { api, store } = await openStore();
     const late = deferred<ApiResult<BombeCheck>>();
     api.bombe.setCheck.mockReturnValueOnce(late.promise);
-    const second: BombeCheck = { ...carterCheck, stop: carterStops[1], machineRings: 'MUL' };
+    const second: BombeCheck = { ...carterCheck, stop: carterStops[1], steckers: 'GX' };
     api.bombe.getCheck.mockResolvedValueOnce({ ok: true, value: second });
 
-    const turned = store.getState().stepCheckDrum(2, 1);
+    const changed = store.getState().setPartner('A', 'D');
     await store.getState().openCheck(1);
-    late.resolve({ ok: true, value: { ...carterCheck, machineWindows: 'ZZA' } });
-    await turned;
+    late.resolve({ ok: true, value: { ...carterCheck, steckers: 'AD GQ' } });
+    await changed;
 
     expect(store.getState().check?.stop.index).toBe(1);
-    expect(store.getState().check?.machineRings).toBe('MUL');
+    expect(store.getState().check?.steckers).toBe('GX');
   });
 
   it('drops a next page when the first page was loaded again meanwhile', async () => {

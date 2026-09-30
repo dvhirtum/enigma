@@ -9,6 +9,9 @@ import type {
   BombeState,
   BombeStop,
   CheckChange,
+  CheckerChange,
+  PrintedStop,
+  TestRegisterChange,
   Confirmation,
   RingFind,
   Suggestion,
@@ -83,10 +86,23 @@ export interface BombeSlice {
   buildMenu: () => Promise<boolean>;
   /** Changes run settings; those left out stay as they are. */
   configureBombe: (settings: BombeSettingsChange) => Promise<boolean>;
-  /** Fits drums of a rotor in a row (0 = upper) of a copy of the menu; null takes them out. */
-  fitDrums: (copy: number, row: number, rotor: string | null) => Promise<boolean>;
-  /** Sets the start letters of a scrambler (its index in the menu links) of a copy. */
-  turnScrambler: (copy: number, scrambler: number, start: string) => Promise<boolean>;
+  /** Plugs up the Bombe with the menu. */
+  plugUpMenu: () => Promise<boolean>;
+  /** Cables a jack (0 or 1) of a scrambler to a letter's common; null unplugs it. */
+  plugJack: (chain: number, scrambler: number, jack: number, letter: string | null) => Promise<boolean>;
+  /** Fits drums of a rotor in a row (0 = upper) of a chain on its scramblers 0 up to `upTo`. */
+  fitRow: (chain: number, row: number, upTo: number, rotor: string) => Promise<boolean>;
+  /** Takes one drum (row 0 = upper) of a scrambler back to the rack. */
+  removeDrum: (chain: number, scrambler: number, row: number) => Promise<boolean>;
+  /** Sets the start letters of a scrambler of a chain. */
+  turnScrambler: (chain: number, scrambler: number, start: string) => Promise<boolean>;
+  setTestRegister: (chain: number, change: TestRegisterChange) => Promise<boolean>;
+  joinChains: (join: number, joined: boolean) => Promise<boolean>;
+  /** The printed stops fetched so far, from the first. */
+  printout: PrintedStop[];
+  /** Fetches the first page of the printout again, or with `more` the next page. */
+  loadPrintout: (more?: boolean) => Promise<boolean>;
+  clearPrintout: () => Promise<boolean>;
   /** Clears the stops found and their checks. */
   clearStops: () => Promise<boolean>;
   /** Starts a run at `speed` positions per second, or at full speed when null. */
@@ -106,8 +122,9 @@ export interface BombeSlice {
   stops: BombeStop[];
   /** Fetches the first page of stops again, or with `more` the next page. */
   loadStops: (more?: boolean) => Promise<boolean>;
-  /** The check on the Checking view, the lamp lit on its machine, and its last suggestion, ring scores and confirmation. */
+  /** The check open in the notebook, and its last suggestion, ring scores and confirmation. */
   check: BombeCheck | null;
+  /** The lamp lit on the checking machine. */
   checkLamp: string | null;
   suggestion: Suggestion | null;
   ringScores: RingFind['rings'] | null;
@@ -121,6 +138,10 @@ export interface BombeSlice {
   setPartner: (letter: string, partner: string | null) => Promise<boolean>;
   /** Turns the right ring `steps` places on once the queued operations are done. */
   stepRightRing: (steps: number) => Promise<boolean>;
+  /** Changes the checking machine once the queued operations are done. */
+  setChecker: (change: CheckerChange) => Promise<boolean>;
+  /** Sets the checking machine up for a logged stop, and shows it. */
+  setUpChecker: (stop: number) => Promise<boolean>;
   /** Turns a checking machine drum (0 = left) `steps` letters on once the queued operations are done. */
   stepCheckDrum: (drum: number, steps: number) => Promise<boolean>;
   /** Turns a checking machine ring (0 = left) `steps` letters on once the queued operations are done. */
@@ -195,21 +216,30 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }
       return result.ok;
     };
-    // Counters that let late replies be dropped: of stop loads, of check openings and of checking machine key presses.
+    // Counters that let late replies be dropped: of stop and printout loads, of check openings and of checking machine key presses.
     let stopLoads = 0;
+    let printoutLoads = 0;
     let checkOpenings = 0;
     let keyPresses = 0;
     /** Forgets the stops and the check, when the backend cleared them. */
     const forgetStops = () => {
       stopLoads++;
       checkOpenings++;
-      set({ stops: [], check: null, checkLamp: null, suggestion: null, ringScores: null, confirmation: null });
+      set({ stops: [], check: null, suggestion: null, ringScores: null, confirmation: null });
+    };
+    /** Forgets the printout fetched when the backend has fewer stops printed. */
+    const followPrinted = (printed: number) => {
+      if (printed < get().printout.length || printed === 0) {
+        printoutLoads++;
+        set({ printout: [] });
+      }
     };
     const applyJob = (value: BombeState) => {
       set({ bombe: value });
       if (value.stops < get().stops.length || value.stops === 0) {
         forgetStops();
       }
+      followPrinted(value.printed);
     };
     const job = async (call: Promise<ApiResult<BombeState>>) => {
       const result = await check(call);
@@ -221,8 +251,13 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
     /** Shows a check that was just opened, here or in another window. */
     const showCheck = (value: BombeCheck) => {
       checkOpenings++;
+      set({ check: value, suggestion: null, ringScores: null, confirmation: null });
+    };
+    /** Shows the checking machine once it is set up for a stop, here or in another window. */
+    const showChecker = (value: BombeState) => {
+      applyJob(value);
       keyPresses++;
-      set({ check: value, checkLamp: null, suggestion: null, ringScores: null, confirmation: null, bombeView: 'bombe-checking' });
+      set({ checkLamp: null, bombeView: 'bombe-checking' });
     };
     /** Follows a check changed in another window, when it is the open one. */
     const followCheck = (next: BombeCheck, changes: Partial<MachineStore> = {}) => {
@@ -251,21 +286,21 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }));
       return result.value;
     };
-    /** Turns one drum's window letter or ring setting on the checking machine `steps` letters on. */
-    const stepCheckMachine = async (field: 'machineWindows' | 'machineRings', drum: number, steps: number) => {
-      const letters = get().check?.[field];
+    /** Turns one drum's window letter or ring letter on the checking machine `steps` letters on. */
+    const stepChecker = async (field: 'windows' | 'rings', drum: number, steps: number) => {
+      const letters = get().bombe?.checker[field];
       if (!letters) {
         return false;
       }
       const turned = [...letters];
       turned[drum] = shiftLetter(turned[drum], steps);
-      return get().changeCheck({ [field]: turned.join('') });
+      return job(bombe.setChecker({ [field]: turned.join('') }));
     };
     /** Follows a run, or its end when the backend no longer has it. */
     const applyRun = (value: BombeRun | null) => {
       const current = get().bombe;
       if (current) {
-        set({ bombe: { ...current, run: value, stops: value ? value.allStops : current.stops } });
+        set({ bombe: { ...current, run: value, stops: value ? value.allStops : current.stops, printed: value ? value.printed : current.printed } });
       }
     };
     /** A run call; a poll leaves the error as it is unless the poll fails. A run the backend no longer has is dropped. */
@@ -301,6 +336,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       speed: historicalSpeed,
       bombeView: 'bombe-front',
       stops: [],
+      printout: [],
       check: null,
       checkLamp: null,
       suggestion: null,
@@ -328,8 +364,14 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       setMenu: (links, testRegister) => job(bombe.setMenu(links, testRegister)),
       buildMenu: () => job(bombe.buildMenu()),
       configureBombe: (settings) => job(bombe.configure(settings)),
-      fitDrums: (copy, row, rotor) => job(bombe.fitDrums(copy, row, rotor)),
-      turnScrambler: (copy, scrambler, start) => job(bombe.turnScrambler(copy, scrambler, start)),
+      plugUpMenu: () => job(bombe.plugUpMenu()),
+      plugJack: (chain, scrambler, jack, letter) => job(bombe.plugJack(chain, scrambler, jack, letter)),
+      fitRow: (chain, row, upTo, rotor) => job(bombe.fitRow(chain, row, upTo, rotor)),
+      removeDrum: (chain, scrambler, row) => job(bombe.removeDrum(chain, scrambler, row)),
+      turnScrambler: (chain, scrambler, start) => enqueue(() => job(bombe.turnScrambler(chain, scrambler, start))),
+      setTestRegister: (chain, change) => job(bombe.setTestRegister(chain, change)),
+      joinChains: (join, joined) => job(bombe.joinChains(join, joined)),
+      clearPrintout: () => job(bombe.clearPrintout()),
       clearStops: () => job(bombe.clearStops()),
       startRun: (speed) => run(bombe.startRun(speed)),
       continueRun: () => run(bombe.continueRun()),
@@ -348,6 +390,15 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         const result = await check(bombe.getStops(from, stopPage));
         if (result.ok && load === stopLoads && (!more || get().stops.length === from)) {
           set((state) => ({ stops: more ? [...state.stops, ...result.value] : result.value }));
+        }
+        return result.ok;
+      },
+      loadPrintout: async (more = false) => {
+        const load = more ? printoutLoads : ++printoutLoads;
+        const from = more ? get().printout.length : 0;
+        const result = await check(bombe.getPrintout(from, stopPage));
+        if (result.ok && load === printoutLoads && (!more || get().printout.length === from)) {
+          set((state) => ({ printout: more ? [...state.printout, ...result.value] : result.value }));
         }
         return result.ok;
       },
@@ -373,6 +424,9 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
             }
             return;
           }
+          case 'setUpChecker':
+            showChecker(value as BombeState);
+            return;
           case 'getCheck':
             showCheck(value as BombeCheck);
             return;
@@ -400,7 +454,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           case 'getState':
           case 'intercepts':
           case 'getStops':
-          case 'pressCheckKey':
+          case 'getPrintout':
+          case 'pressCheckerKey':
             return;
           default:
             applyJob(value as BombeState);
@@ -410,8 +465,16 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         const steckers = change.steckers !== undefined ? { suggestion: null, ringScores: null } : {};
         return (await onCheck((stop) => bombe.setCheck(stop, change), (value) => value, { ...steckers, confirmation: null })) !== null;
       },
-      stepCheckDrum: (drum, steps) => enqueue(() => stepCheckMachine('machineWindows', drum, steps)),
-      stepCheckRing: (drum, steps) => enqueue(() => stepCheckMachine('machineRings', drum, steps)),
+      setChecker: (change) => enqueue(() => job(bombe.setChecker(change))),
+      setUpChecker: async (stop) => {
+        const result = await check(bombe.setUpChecker(stop));
+        if (result.ok) {
+          showChecker(result.value);
+        }
+        return result.ok;
+      },
+      stepCheckDrum: (drum, steps) => enqueue(() => stepChecker('windows', drum, steps)),
+      stepCheckRing: (drum, steps) => enqueue(() => stepChecker('rings', drum, steps)),
       setPartner: (letter, partner) =>
         enqueue(async () => {
           const steckers = get().check?.steckers;
@@ -423,12 +486,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           return ring !== undefined && get().changeCheck({ rightRing: ((ring - 1 + steps + 26 * 26) % 26) + 1 });
         }),
       pressCheckKey: async (key) => {
-        const current = get().check;
-        if (!current) {
-          return false;
-        }
         const press = ++keyPresses;
-        const result = await check(bombe.pressCheckKey(current.stop.index, key));
+        const result = await check(bombe.pressCheckerKey(key));
         // A key released before the lamp came back leaves it dark.
         if (result.ok && press === keyPresses) {
           set({ checkLamp: result.value.lamp });

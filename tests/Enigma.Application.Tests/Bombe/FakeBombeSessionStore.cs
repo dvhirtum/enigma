@@ -11,5 +11,7 @@ internal sealed class FakeBombeSessionStore : IBombeSessionStore
 
     public StopLog Stops { get; } = new();
 
+    public Printout Printout { get; } = new();
+
     public T Use<T>(Func<BombeJob, T> action) => action(Job);
 }
