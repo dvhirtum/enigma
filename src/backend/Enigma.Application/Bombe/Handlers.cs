@@ -7,7 +7,7 @@ namespace Enigma.Application.Bombe;
 
 public sealed class GetBombeStateHandler(IBombeSessionStore store)
 {
-    public BombeState Handle(GetBombeState query) => store.Use(job => BombeState.From(job, store.Run));
+    public BombeState Handle(GetBombeState query) => store.Use(job => BombeState.From(job, store.Run, store.Stops));
 }
 
 public sealed class SetCipherTextHandler(IBombeSessionStore store)
@@ -17,7 +17,7 @@ public sealed class SetCipherTextHandler(IBombeSessionStore store)
         ArgumentNullException.ThrowIfNull(command);
 
         var source = string.IsNullOrWhiteSpace(command.Text) ? null : MessageSource.Pasted(command.Text);
-        return store.Update(job => job.Load(source));
+        return store.Update(job => job.Load(source), clearStops: true);
     }
 }
 
@@ -34,7 +34,7 @@ public sealed class LoadInterceptHandler(IBombeSessionStore store)
 
         var intercept = Intercepts.Find(command.Id ?? string.Empty)
             ?? throw new NotFoundException($"No intercept has id '{command.Id}'.");
-        return store.Update(job => job.Load(intercept.Source));
+        return store.Update(job => job.Load(intercept.Source), clearStops: true);
     }
 }
 
@@ -52,7 +52,7 @@ public sealed class GenerateExerciseHandler(IBombeSessionStore store, KeySheetLi
         var day = sheet.DailyKeys[random.Next(sheet.DailyKeys.Count)].Day;
         var source = ExerciseGenerator.Generate(
             sheet, day, linker.Book(sheet.KenngruppenbuchId!), linker.Tables(sheet.TauschtafelSetId!), random);
-        return store.Update(job => job.Load(source));
+        return store.Update(job => job.Load(source), clearStops: true);
     }
 }
 
@@ -78,7 +78,7 @@ public sealed class SetCribHandler(IBombeSessionStore store)
         ArgumentNullException.ThrowIfNull(command);
 
         var crib = string.IsNullOrWhiteSpace(command.Crib) ? null : Crib.Parse(command.Crib.Trim());
-        return store.Update(job => job.SetCrib(crib));
+        return store.Update(job => job.SetCrib(crib), clearStops: true);
     }
 }
 
@@ -88,7 +88,7 @@ public sealed class PlaceCribHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        return store.Update(job => job.Place(command.Position));
+        return store.Update(job => job.Place(command.Position), clearStops: true);
     }
 }
 
@@ -100,13 +100,13 @@ public sealed class SetMenuHandler(IBombeSessionStore store)
 
         IReadOnlyList<MenuLink> links = [.. (command.Links ?? []).Select(link => MenuLink.Parse(link ?? string.Empty))];
         Letter? testRegister = command.TestRegister is null ? null : Input.Letter(command.TestRegister);
-        return store.Update(job => job.SetMenu(links, testRegister));
+        return store.Update(job => job.SetMenu(links, testRegister), clearStops: true);
     }
 }
 
 public sealed class BuildMenuHandler(IBombeSessionStore store)
 {
-    public BombeState Handle(BuildMenu command) => store.Update(job => job.BuildMenu());
+    public BombeState Handle(BuildMenu command) => store.Update(job => job.BuildMenu(), clearStops: true);
 }
 
 public sealed class ConfigureBombeHandler(IBombeSessionStore store)
@@ -117,12 +117,10 @@ public sealed class ConfigureBombeHandler(IBombeSessionStore store)
 
         Letter? input = string.IsNullOrEmpty(command.Input) ? null : Input.Letter(command.Input);
         var reflector = command.Reflector is null ? null : Input.Reflector(command.Reflector);
-        IReadOnlyList<WheelOrder>? wheelOrders = command.WheelOrders?.Select(o => WheelOrder.Parse(o ?? string.Empty)).ToList();
         return store.Update(job => job.Configure(
             command.Input is null ? job.ChosenInput : input,
             command.DiagonalBoard ?? job.DiagonalBoard,
-            reflector ?? job.Reflector,
-            wheelOrders ?? job.WheelOrders));
+            reflector ?? job.Reflector));
     }
 }
 
@@ -135,9 +133,9 @@ public sealed class StartRunHandler(IBombeSessionStore store, TimeProvider time)
         return store.Use(job =>
         {
             store.EnsureNotRunning("The Bombe is already running.");
-            var run = BombeRun.Start(job, command.Speed, time);
+            var run = BombeRun.Start(job, command.Speed, time, store.Stops);
             store.Run = run;
-            return RunState.From(run);
+            return RunState.From(run, store.Stops);
         });
     }
 }
@@ -154,7 +152,7 @@ public sealed class SetRunSpeedHandler(IBombeSessionStore store)
                 ? running
                 : throw new DomainException("The Bombe is not running.");
             run.Speed = command.Speed;
-            return RunState.From(run);
+            return RunState.From(run, store.Stops);
         });
     }
 }
@@ -165,7 +163,7 @@ public sealed class ContinueRunHandler(IBombeSessionStore store)
     {
         var run = store.Use(_ => store.Run) ?? throw new NotFoundException("There is no run.");
         run.Continue();
-        return RunState.From(run);
+        return RunState.From(run, store.Stops);
     }
 }
 
@@ -177,14 +175,14 @@ public sealed class CancelRunHandler(IBombeSessionStore store)
         var run = store.Use(_ => store.Run) ?? throw new NotFoundException("There is no run.");
         run.Cancel();
         run.Completion.Wait();
-        return RunState.From(run);
+        return RunState.From(run, store.Stops);
     }
 }
 
 public sealed class GetRunHandler(IBombeSessionStore store)
 {
     public RunState Handle(GetRun query) =>
-        RunState.From(store.Use(_ => store.Run) ?? throw new NotFoundException("There is no run."));
+        RunState.From(store.Use(_ => store.Run) ?? throw new NotFoundException("There is no run."), store.Stops);
 }
 
 public sealed class GetStopsHandler(IBombeSessionStore store)
@@ -193,23 +191,63 @@ public sealed class GetStopsHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var run = store.Use(_ => store.Run) ?? throw new NotFoundException("There is no run.");
         var from = Math.Max(0, query.From);
-        var stops = run.Stops(from, query.Count);
-        return [.. stops.Select((stop, i) => StopState.From(stop, from + i, run.VerdictOn(from + i)))];
+        var stops = store.Stops.Stops(from, query.Count);
+        return [.. stops.Select((stop, i) => StopState.From(stop, from + i, store.Stops.VerdictOn(from + i)))];
     }
+}
+
+public sealed class FitDrumsHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(FitDrums command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var rotor = string.IsNullOrEmpty(command.Rotor) ? null : Input.Rotor(command.Rotor);
+        return store.Update(job => job.FitDrums(command.Copy, command.Row, rotor));
+    }
+}
+
+public sealed class TurnScramblerHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(TurnScrambler command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var start = DrumPosition.Parse((command.Start ?? string.Empty).ToUpperInvariant());
+        return store.Update(job => job.TurnScrambler(command.Copy, command.Scrambler, start));
+    }
+}
+
+public sealed class ClearStopsHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(ClearStops command) =>
+        store.Use(job =>
+        {
+            store.EnsureNotRunning("Cancel the run before clearing the stops.");
+            store.Stops.Clear();
+            return BombeState.From(job, store.Run, store.Stops);
+        });
 }
 
 internal static class BombeSessionStoreExtensions
 {
-    /// <summary>Changes the job, which is refused while the Bombe runs, and clears the stops of a finished run.</summary>
-    public static BombeState Update(this IBombeSessionStore store, Action<BombeJob> action) =>
+    /// <summary>
+    /// Changes the job, which is refused while the Bombe runs, and drops the finished run. A change to the message, crib
+    /// or menu also clears the stops.
+    /// </summary>
+    public static BombeState Update(this IBombeSessionStore store, Action<BombeJob> action, bool clearStops = false) =>
         store.Use(job =>
         {
             store.EnsureNotRunning("Cancel the run before changing the job.");
             action(job);
             store.Run = null;
-            return BombeState.From(job, null);
+            if (clearStops)
+            {
+                store.Stops.Clear();
+            }
+
+            return BombeState.From(job, null, store.Stops);
         });
 
     public static void EnsureNotRunning(this IBombeSessionStore store, string message)

@@ -14,11 +14,19 @@ public sealed record SetMenu(IReadOnlyList<string>? Links, string? TestRegister)
 
 public sealed record BuildMenu;
 
+/// <summary>The run settings; each one left out (null) stays as it is. An empty input letter uses the default.</summary>
+public sealed record ConfigureBombe(string? Input, bool? DiagonalBoard, string? Reflector);
+
 /// <summary>
-/// The run settings; each one left out (null) stays as it is. An empty input letter uses the default. Wheel orders are
-/// written as "II V III".
+/// Fits drums of a rotor, such as "II", in a row (0 = upper) of a copy of the menu (0 = the first); empty takes them out.
 /// </summary>
-public sealed record ConfigureBombe(string? Input, bool? DiagonalBoard, string? Reflector, IReadOnlyList<string>? WheelOrders);
+public sealed record FitDrums(int Copy, int Row, string? Rotor);
+
+/// <summary>Sets the start letters, such as "ZZB", of a scrambler (0 = the first menu link) of a copy of the menu.</summary>
+public sealed record TurnScrambler(int Copy, int Scrambler, string? Start);
+
+/// <summary>Clears the stops found and their checks.</summary>
+public sealed record ClearStops;
 
 /// <summary>Starts a run at <see cref="Speed"/> positions per second, or at full speed when null.</summary>
 public sealed record StartRun(double? Speed);

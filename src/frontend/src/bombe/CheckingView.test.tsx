@@ -7,7 +7,7 @@ import { renderBombe } from '../test/renderBombe';
 import { CheckingView } from './CheckingView';
 import { StopsView } from './StopsView';
 
-const carter: BombeState = { ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2 } };
+const carter: BombeState = { ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 }, stops: 2 };
 
 /** Renders the Stops and Checking views and opens the check of Carter's true stop. */
 async function openCarterCheck(setMode = vi.fn()) {

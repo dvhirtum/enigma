@@ -1,9 +1,10 @@
+import type { BombeState } from '../api';
 import { drumLetters } from './MenuView';
 import { parseLink, type Link } from './menuLayout';
 
 export const rotors = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'] as const;
 
-/** A wheel order in 20 minutes, as on a real Bombe, in positions per second. */
+/** A run in 20 minutes, as on a real Bombe, in positions per second. */
 export const historicalSpeed = 17_576 / (20 * 60);
 
 /** The colours of the Bombe drums, by rotor. */
@@ -18,36 +19,43 @@ export const drumColours: Record<string, string> = {
   VIII: '#b8bcc2',
 };
 
-/** Every wheel order of three different rotors from `chosen`, in the catalogue order, written as "II V III". */
-export function wheelOrdersOf(chosen: readonly string[]): string[] {
-  const picked = rotors.filter((rotor) => chosen.includes(rotor));
-  return picked.flatMap((upper) =>
-    picked.flatMap((middle) => picked.flatMap((lower) => (new Set([upper, middle, lower]).size === 3 ? [`${upper} ${middle} ${lower}`] : []))),
-  );
-}
-
-/** The rotors the wheel orders use. */
-export function rotorsOf(wheelOrders: readonly string[]): string[] {
-  const used = new Set(wheelOrders.flatMap((order) => order.split(' ')));
-  return rotors.filter((rotor) => used.has(rotor));
-}
-
 /** Turns each drum of `position` on by its letter of the offset, without carrying (1 = ZZA turns the lower drum one on). */
 export function advance(position: string, offset: number): string {
-  const steps = drumLetters(offset);
+  return advanceBy(position, drumLetters(offset));
+}
+
+/** Turns each drum of `position` on by its letter of `start` (Z = 0, A = 1), without carrying: a scrambler set to `start`. */
+export function advanceBy(position: string, start: string): string {
   return [...position]
-    .map((letter, drum) => String.fromCharCode(65 + ((letter.charCodeAt(0) - 65 + ((steps.charCodeAt(drum) - 64) % 26)) % 26)))
+    .map((letter, drum) => String.fromCharCode(65 + ((letter.charCodeAt(0) - 65 + ((start.charCodeAt(drum) - 64) % 26)) % 26)))
     .join('');
 }
 
-/** How many letters each Bombe drum is ahead of its Enigma rotor. */
-export const drumLetterOffsets: Record<string, number> = { I: 1, II: 1, III: 1, IV: 2, V: 3, VI: 1, VII: 1, VIII: 1 };
-
-/** The letters the drums of a wheel order show at core positions. */
-export function drumLettersOf(core: string, wheelOrder: string): string {
-  const offsets = wheelOrder.split(' ').map((rotor) => drumLetterOffsets[rotor]);
-  return [...core].map((letter, drum) => String.fromCharCode(65 + ((letter.charCodeAt(0) - 65 + offsets[drum]) % 26))).join('');
+/** A menu link on a scrambler of the machine: its copy, its index in the menu links, its slot (0–35) and start letters. */
+export interface ScramblerSlot extends Link {
+  copy: number;
+  scrambler: number;
+  slot: number;
+  start: string;
 }
+
+/**
+ * The scramblers of each copy of the menu: copy `k` takes the chains from `k × chainsPerCopy`, its links in offset
+ * order along them, 12 to a chain.
+ */
+export function slotsOf(bombe: BombeState): ScramblerSlot[] {
+  const { menu, machine } = bombe;
+  if (!menu || !machine) {
+    return [];
+  }
+  const links = menu.links.map((id, scrambler) => ({ ...parseLink(id), scrambler })).sort((a, b) => a.offset - b.offset);
+  return machine.copies.flatMap((copy, index) =>
+    links.map((link, order) => ({ ...link, copy: index, slot: index * machine.chainsPerCopy * chainLength + order, start: copy.starts[link.scrambler] })),
+  );
+}
+
+/** The scramblers of a chain (a bank of 12). */
+export const chainLength = 12;
 
 /** The indicator drum reading of drum letters: the letters reversed (A ↔ Z). */
 export function indicatorOf(position: string): string {

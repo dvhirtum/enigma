@@ -82,6 +82,12 @@ export interface BombeSlice {
   buildMenu: () => Promise<boolean>;
   /** Changes run settings; those left out stay as they are. */
   configureBombe: (settings: BombeSettingsChange) => Promise<boolean>;
+  /** Fits drums of a rotor in a row (0 = upper) of a copy of the menu; null takes them out. */
+  fitDrums: (copy: number, row: number, rotor: string | null) => Promise<boolean>;
+  /** Sets the start letters of a scrambler (its index in the menu links) of a copy. */
+  turnScrambler: (copy: number, scrambler: number, start: string) => Promise<boolean>;
+  /** Clears the stops found and their checks. */
+  clearStops: () => Promise<boolean>;
   /** Starts a run at `speed` positions per second, or at full speed when null. */
   startRun: (speed: number | null) => Promise<boolean>;
   /** Continues a run paused at a stop. */
@@ -95,7 +101,7 @@ export interface BombeSlice {
   /** The Bombe view shown. */
   bombeView: string;
   showBombeView: (id: string) => void;
-  /** The stops of the run fetched so far, from the first. */
+  /** The stops fetched so far, from the first. */
   stops: BombeStop[];
   /** Fetches the first page of stops again, or with `more` the next page. */
   loadStops: (more?: boolean) => Promise<boolean>;
@@ -186,8 +192,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
     let stopLoads = 0;
     let checkOpenings = 0;
     let keyPresses = 0;
-    /** Forgets the stops and the check, which a changed job or a new run clears. */
-    const clearStops = () => {
+    /** Forgets the stops and the check, when the backend cleared them. */
+    const forgetStops = () => {
       stopLoads++;
       checkOpenings++;
       set({ stops: [], check: null, checkLamp: null, suggestion: null, ringScores: null, confirmation: null });
@@ -196,7 +202,9 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       const result = await check(call);
       if (result.ok) {
         set({ bombe: result.value });
-        clearStops();
+        if (result.value.stops < get().stops.length || result.value.stops === 0) {
+          forgetStops();
+        }
       }
       return result.ok;
     };
@@ -238,7 +246,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }
       const current = get().bombe;
       if (current && (result.ok || result.problem.status === 404)) {
-        set({ bombe: { ...current, run: result.ok ? result.value : null } });
+        set({ bombe: { ...current, run: result.ok ? result.value : null, stops: result.ok ? result.value.allStops : current.stops } });
       }
       return result.ok;
     };
@@ -291,13 +299,10 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       setMenu: (links, testRegister) => job(bombe.setMenu(links, testRegister)),
       buildMenu: () => job(bombe.buildMenu()),
       configureBombe: (settings) => job(bombe.configure(settings)),
-      startRun: async (speed) => {
-        const started = await run(bombe.startRun(speed));
-        if (started) {
-          clearStops();
-        }
-        return started;
-      },
+      fitDrums: (copy, row, rotor) => job(bombe.fitDrums(copy, row, rotor)),
+      turnScrambler: (copy, scrambler, start) => job(bombe.turnScrambler(copy, scrambler, start)),
+      clearStops: () => job(bombe.clearStops()),
+      startRun: (speed) => run(bombe.startRun(speed)),
       continueRun: () => run(bombe.continueRun()),
       cancelRun: () => run(bombe.cancelRun()),
       pollRun: () => run(bombe.getRun(), true),

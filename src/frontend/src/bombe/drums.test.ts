@@ -1,13 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { advance, drumLettersOf, formatSpeed, fullSpeedStep, historicalSpeed, indicatorOf, rotorsOf, scramblersOf, speedAt, stepOf, wheelOrdersOf } from './drums';
+import { carterMenu } from '../test/fakeApi';
+import { advance, advanceBy, formatSpeed, fullSpeedStep, historicalSpeed, indicatorOf, scramblersOf, slotsOf, speedAt, stepOf } from './drums';
 
 describe('drums', () => {
-  it('lists every wheel order of the chosen rotors', () => {
-    expect(wheelOrdersOf(rotorsOf(['II V III']))).toEqual(['II III V', 'II V III', 'III II V', 'III V II', 'V II III', 'V III II']);
-    expect(wheelOrdersOf(['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'])).toHaveLength(336);
-    expect(wheelOrdersOf(['I', 'II'])).toEqual([]);
-  });
-
   it('turns each drum on by its letter of the offset, without carrying', () => {
     expect(advance('ZZZ', 1)).toBe('ZZA');
     expect(advance('ZZZ', 26)).toBe('ZAZ');
@@ -21,10 +16,26 @@ describe('drums', () => {
     expect(indicatorOf('ZZZ')).toBe('AAA');
   });
 
-  it('shows drum letters ahead of the Enigma rotors: IV by two, V by three, the others by one', () => {
-    expect(drumLettersOf('VMB', 'II V III')).toBe('WPC');
-    expect(drumLettersOf('ZZZ', 'IV VI VIII')).toBe('BAA');
-    expect(drumLettersOf('ZZZ', 'I VII V')).toBe('AAC');
+  it('turns each drum on by its letter of the start letters, Z counting as nought', () => {
+    expect(advanceBy('ZZZ', 'ZZF')).toBe('ZZF');
+    expect(advanceBy('WPC', 'ZZA')).toBe('WPD');
+    expect(advanceBy('WPC', 'ABZ')).toBe('XRC');
+  });
+
+  it('puts each copy of the menu on its own chains, the links by offset', () => {
+    const twoChains = slotsOf(carterMenu);
+    expect(twoChains).toHaveLength(13);
+    expect(twoChains.map((slot) => slot.slot)).toEqual([...Array(13).keys()]);
+
+    const oneChain = {
+      ...carterMenu,
+      menu: { ...carterMenu.menu!, links: ['NE2', 'SW1'] },
+      machine: { chainsPerCopy: 1, copies: [0, 1, 2].map(() => ({ drums: [null, null, null], starts: ['ZZB', 'ZZA'] })) },
+    };
+    const slots = slotsOf(oneChain);
+    expect(slots.map((slot) => slot.slot)).toEqual([0, 1, 12, 13, 24, 25]);
+    expect(slots[0]).toMatchObject({ id: 'SW1', copy: 0, scrambler: 1, start: 'ZZA' });
+    expect(slots[5]).toMatchObject({ id: 'NE2', copy: 2, scrambler: 0, start: 'ZZB' });
   });
 
   it('plugs the links into the scramblers by offset', () => {

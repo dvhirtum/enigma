@@ -33,6 +33,37 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void Should_miss_the_true_key_When_a_scrambler_is_set_to_the_wrong_letters()
+    {
+        // Arrange
+        var menu = BombeKeys.CarterMenu;
+        DrumPosition[] starts = [.. menu.Links.Select(link => DrumPosition.FromOffset(link.Offset))];
+        starts[3] = DrumPosition.Parse("ZZX");
+        var bombe = new BombeMachine(new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), menu, A, starts: starts);
+
+        // Act
+        var stop = bombe.Test(DrumPosition.Parse("VMB"));
+
+        // Assert
+        Assert.Null(stop);
+    }
+
+    [Fact]
+    public void Should_stop_at_the_true_key_When_the_scramblers_are_set_to_the_link_offsets_by_hand()
+    {
+        // Arrange
+        var menu = BombeKeys.CarterMenu;
+        DrumPosition[] starts = [.. menu.Links.Select(link => DrumPosition.Parse("ZZ" + (char)('A' + link.Offset - 1)))];
+        var bombe = new BombeMachine(new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), menu, A, starts: starts);
+
+        // Act
+        var stop = bombe.Test(DrumPosition.Parse("VMB"));
+
+        // Assert
+        Assert.Equal(Q, stop?.Stecker);
+    }
+
+    [Fact]
     public void Should_give_two_stops_as_Carter_reports_When_running_his_weather_menu_with_the_diagonal_board()
     {
         // Arrange

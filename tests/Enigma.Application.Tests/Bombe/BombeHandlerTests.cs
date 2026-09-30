@@ -136,7 +136,7 @@ public sealed class BombeHandlerTests
 
         // Assert
         Assert.Equal("Running", run.Status);
-        Assert.Equal("II V III", run.WheelOrder);
+        Assert.Equal(["II V III"], run.WheelOrders);
         Assert.NotNull(run.Position);
         Assert.InRange(run.PositionsTested, 1, DomainPositions - 1);
         new CancelRunHandler(_store).Handle(new CancelRun());
@@ -164,23 +164,107 @@ public sealed class BombeHandlerTests
     }
 
     [Fact]
-    public async Task Should_run_one_wheel_order_at_a_time_When_a_full_speed_run_is_given_a_speed()
+    public async Task Should_test_each_copy_with_its_own_wheel_order_When_the_menu_fits_three_times()
     {
         // Arrange
-        SetUpCarter(allWheelOrders: true);
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+        SetUpCarter(menu: false);
+        new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
+        new SetMenuHandler(_store).Handle(new SetMenu(CarterLinks[..12], "G"));
+        FitDrums(0, "I II III");
+        FitDrums(1, "II V III");
+        FitDrums(2, "V III II");
 
         // Act
-        new SetRunSpeedHandler(_store).Handle(new SetRunSpeed(1));
-        await Task.Delay(2000, Token);
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
         var run = new GetRunHandler(_store).Handle(new GetRun());
-        Assert.Equal("Running", run.Status);
-        Assert.Equal(1, run.Speed);
-        Assert.NotNull(run.WheelOrder);
-        Assert.True(run.WheelOrdersDone < 336, $"{run.WheelOrdersDone} wheel orders done.");
-        new CancelRunHandler(_store).Handle(new CancelRun());
+        Assert.Equal(["I II III", "II V III", "V III II"], run.WheelOrders);
+        Assert.Equal(DomainPositions, run.PositionsTested);
+        Assert.Contains(Stops(), s => s.WheelOrder == "II V III" && s.Position == "VMB" && s.Stecker == "Q");
+        Assert.All(Stops(), s => Assert.Contains(s.WheelOrder, run.WheelOrders));
+    }
+
+    [Fact]
+    public void Should_refuse_the_run_When_a_copy_has_drums_in_only_some_rows()
+    {
+        // Arrange
+        SetUpCarter();
+        new FitDrumsHandler(_store).Handle(new FitDrums(0, 1, null));
+
+        // Act
+        void Act() => new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+    }
+
+    [Fact]
+    public void Should_show_the_drums_and_start_letters_When_drums_are_fitted_and_a_scrambler_is_turned()
+    {
+        // Arrange
+        SetUpCarter();
+
+        // Act
+        var state = new TurnScramblerHandler(_store).Handle(new TurnScrambler(0, 2, "zzf"));
+
+        // Assert
+        Assert.NotNull(state.Machine);
+        Assert.Equal(2, state.Machine.ChainsPerCopy);
+        var copy = Assert.Single(state.Machine.Copies);
+        Assert.Equal(["II", "V", "III"], copy.Drums);
+        Assert.Equal(["ZZA", "ZZB", "ZZF", "ZZF"], copy.Starts.Take(4));
+    }
+
+    [Fact]
+    public async Task Should_keep_the_stops_of_earlier_runs_When_the_Bombe_runs_again()
+    {
+        // Arrange
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, null, "C"));
+
+        // Act
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+
+        // Assert
+        var state = new GetBombeStateHandler(_store).Handle(new GetBombeState());
+        Assert.Equal(2 + state.Run!.Stops, state.Stops);
+        Assert.Equal(Enumerable.Range(0, state.Stops), Stops().Select(s => s.Index));    }
+
+    [Fact]
+    public async Task Should_clear_the_stops_When_the_menu_changes()
+    {
+        // Arrange
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+
+        // Act
+        var state = new BuildMenuHandler(_store).Handle(new BuildMenu());
+
+        // Assert
+        Assert.Equal(0, state.Stops);
+        Assert.Empty(Stops());
+    }
+
+    [Fact]
+    public async Task Should_clear_the_stops_When_asked()
+    {
+        // Arrange
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+
+        // Act
+        var state = new ClearStopsHandler(_store).Handle(new ClearStops());
+
+        // Assert
+        Assert.Equal(0, state.Stops);
+        Assert.Empty(Stops());
     }
 
     [Fact]
@@ -200,7 +284,6 @@ public sealed class BombeHandlerTests
         // Assert
         Assert.Equal(1, first.Stops);
         Assert.Equal(2, second.Stops);
-        Assert.Equal(first.Pause?.Position, first.Position);
         Assert.Equal(Stops(), [first.Pause!, second.Pause!]);
         Assert.Contains(Stops(), s => s.Position == "VMB" && s.Stecker == "Q");
         var run = new GetRunHandler(_store).Handle(new GetRun());
@@ -268,16 +351,16 @@ public sealed class BombeHandlerTests
     public void Should_stop_the_run_When_it_is_cancelled()
     {
         // Arrange
-        SetUpCarter(allWheelOrders: true);
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
+        SetUpCarter();
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1));
 
         // Act
         var run = new CancelRunHandler(_store).Handle(new CancelRun());
 
         // Assert
         Assert.Equal("Cancelled", run.Status);
-        Assert.True(run.WheelOrdersDone < 336, $"{run.WheelOrdersDone} wheel orders done.");
-        Assert.Null(run.WheelOrder);
+        Assert.True(run.PositionsTested < DomainPositions, $"{run.PositionsTested} positions tested.");
+        Assert.Null(run.Position);
     }
 
     [Fact]
@@ -312,7 +395,7 @@ public sealed class BombeHandlerTests
     }
 
     [Fact]
-    public async Task Should_clear_the_stops_When_the_job_changes_after_a_run()
+    public async Task Should_drop_the_run_but_keep_its_stops_When_the_settings_change_after_it()
     {
         // Arrange
         SetUpCarter();
@@ -320,21 +403,22 @@ public sealed class BombeHandlerTests
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Act
-        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, false, "B", ["II V III"]));
+        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, false, "B"));
 
         // Assert
         Assert.Null(state.Run);
         Assert.Null(_store.Run);
+        Assert.Equal(2, state.Stops);
     }
 
     [Fact]
     public void Should_keep_the_diagonal_board_When_the_settings_leave_it_out()
     {
         // Arrange
-        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, false, "B", ["II V III"]));
+        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, false, "B"));
 
         // Act
-        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, null, "C", ["II V III"]));
+        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, null, "C"));
 
         // Assert
         Assert.False(state.Settings.DiagonalBoard);
@@ -342,19 +426,18 @@ public sealed class BombeHandlerTests
     }
 
     [Fact]
-    public void Should_keep_the_other_settings_When_only_the_wheel_orders_are_set()
+    public void Should_keep_the_settings_When_they_are_left_out()
     {
         // Arrange
-        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe("K", false, "C", ["II V III"]));
+        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe("K", false, "C"));
 
         // Act
-        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, null, null, ["I II III", "III II I"]));
+        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, null, null));
 
         // Assert
         Assert.Equal("K", state.Settings.Input);
         Assert.False(state.Settings.DiagonalBoard);
         Assert.Equal("C", state.Settings.Reflector);
-        Assert.Equal(["I II III", "III II I"], state.Settings.WheelOrders);
     }
 
     [Fact]
@@ -362,10 +445,10 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe("K", null, null, null));
+        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe("K", null, null));
 
         // Act
-        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(string.Empty, null, null, null));
+        var state = new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(string.Empty, null, null));
 
         // Assert
         Assert.Equal("A", state.Settings.Input);
@@ -386,7 +469,7 @@ public sealed class BombeHandlerTests
         var run = new GetRunHandler(_store).Handle(new GetRun());
         Assert.Equal("Failed", run.Status);
         Assert.Equal(FailingClock.Message, run.Error);
-        Assert.Null(run.WheelOrder);
+        Assert.Null(run.Position);
     }
 
     [Theory]
@@ -430,6 +513,14 @@ public sealed class BombeHandlerTests
 
     private IReadOnlyList<StopState> Stops() => new GetStopsHandler(_store).Handle(new GetStops(0));
 
+    private void FitDrums(int copy, string wheelOrder)
+    {
+        foreach (var (row, rotor) in wheelOrder.Split(' ').Index())
+        {
+            new FitDrumsHandler(_store).Handle(new FitDrums(copy, row, rotor));
+        }
+    }
+
     private async Task<RunState> WaitForAsync(string status)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Token);
@@ -462,7 +553,7 @@ public sealed class BombeHandlerTests
         }
     }
 
-    private void SetUpCarter(bool menu = true, bool allWheelOrders = false)
+    private void SetUpCarter(bool menu = true)
     {
         new SetCipherTextHandler(_store).Handle(new SetCipherText(CarterCipher));
         new SetCribHandler(_store).Handle(new SetCrib(CarterCrib));
@@ -473,9 +564,6 @@ public sealed class BombeHandlerTests
 
         new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
         new SetMenuHandler(_store).Handle(new SetMenu(CarterLinks, "G"));
-        if (!allWheelOrders)
-        {
-            new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, true, "B", ["II V III"]));
-        }
+        FitDrums(0, "II V III");
     }
 }

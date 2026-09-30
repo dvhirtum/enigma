@@ -18,10 +18,9 @@ public sealed record CheckState(
     string Decrypt,
     CheckedKeyState Key)
 {
-    public static CheckState From(StopCheck check, int index, BombeRun run)
+    public static CheckState From(StopCheck check, int index)
     {
         ArgumentNullException.ThrowIfNull(check);
-        ArgumentNullException.ThrowIfNull(run);
 
         var key = check.Key;
         return new CheckState(

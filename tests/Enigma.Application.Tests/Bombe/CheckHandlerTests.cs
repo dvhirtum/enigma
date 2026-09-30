@@ -148,7 +148,7 @@ public sealed class CheckHandlerTests
     }
 
     [Fact]
-    public async Task Should_clear_the_checks_When_the_run_starts_again()
+    public async Task Should_keep_the_checks_When_the_Bombe_runs_again()
     {
         // Arrange
         var stop = await RunCarterAsync(intercept: false);
@@ -159,7 +159,8 @@ public sealed class CheckHandlerTests
         await _store.Run!.Completion.WaitAsync(TimeSpan.FromSeconds(60), Token);
 
         // Assert
-        Assert.All(Stops(), s => Assert.Equal("Unchecked", s.Verdict));
+        Assert.Equal("True", Stops()[stop].Verdict);
+        Assert.All(Stops().Skip(2), s => Assert.Equal("Unchecked", s.Verdict));
     }
 
     [Fact]
@@ -214,7 +215,11 @@ public sealed class CheckHandlerTests
         new SetCribHandler(_store).Handle(new SetCrib("WETTERVORHERSAGE"));
         new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
         new SetMenuHandler(_store).Handle(new SetMenu(CarterLinks, "G"));
-        new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, true, "B", ["II V III"]));
+        foreach (var (row, rotor) in "II V III".Split(' ').Index())
+        {
+            new FitDrumsHandler(_store).Handle(new FitDrums(0, row, rotor));
+        }
+
         new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null));
         await _store.Run!.Completion.WaitAsync(TimeSpan.FromSeconds(60), Token);
         return Stops().Single(s => s.Position == "VMB").Index;

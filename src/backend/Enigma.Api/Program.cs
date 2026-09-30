@@ -83,6 +83,8 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(SetMenu))]
 [JsonSerializable(typeof(ConfigureBombe))]
 [JsonSerializable(typeof(SpeedRequest))]
+[JsonSerializable(typeof(DrumsRequest))]
+[JsonSerializable(typeof(StartRequest))]
 [JsonSerializable(typeof(IReadOnlyList<InterceptState>))]
 [JsonSerializable(typeof(LoadIntercept))]
 [JsonSerializable(typeof(CribState))]

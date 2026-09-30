@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { BombeState } from '../api';
 import { useMachine } from '../store';
-import { scramblersOf } from './drums';
+import { scramblersOf, slotsOf } from './drums';
 import { isActive } from './FrontView';
 import { lettersOf } from './menuLayout';
 
@@ -27,12 +27,13 @@ function cable(x: number, y: number, letter: string): string {
 }
 
 /**
- * The back of the Bombe, as plugged up for the menu: each scrambler's two jacks cabled to the commons of its letters,
+ * The back of the Bombe, as plugged up for the menu once per copy: each scrambler's two jacks cabled to the commons of its letters,
  * the commons cabled to the diagonal board, and the test register on the test register letter's common.
  */
 function Back({ bombe }: { bombe: BombeState }) {
   const menu = bombe.menu;
   const scramblers = scramblersOf(menu?.links ?? []);
+  const slots = new Map(slotsOf(bombe).map((slot) => [slot.slot, slot]));
   const letters = new Set(lettersOf(scramblers));
   const board = bombe.settings.diagonalBoard;
 
@@ -76,13 +77,13 @@ function Back({ bombe }: { bombe: BombeState }) {
       {Array.from({ length: 3 * columns }, (_, index) => {
         const x = margin + (index % columns) * pitch + pitch / 2;
         const y = bankY + Math.floor(index / columns) * bankHeight + 20;
-        const link = scramblers[index];
+        const link = slots.get(index);
         return (
           <g
             key={index}
             className={link ? 'scrambler-jacks' : 'scrambler-jacks empty'}
             role={link ? 'img' : undefined}
-            aria-label={link ? `Scrambler ${index + 1} jacks ${link.first} and ${link.second}` : undefined}
+            aria-label={link ? `Copy ${link.copy + 1} scrambler ${index + 1} jacks ${link.first} and ${link.second}` : undefined}
             aria-hidden={link ? undefined : true}
           >
             {link && <path className="cable" d={cable(x - 8, y, link.first)} />}

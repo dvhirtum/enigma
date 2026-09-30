@@ -4,7 +4,7 @@ namespace Enigma.Domain.Bombe;
 
 /// <summary>
 /// A Bombe job: the message and its cipher text, the crib and where it is placed, the menu, and the settings a run
-/// uses (input letter, diagonal board, reflector and wheel orders).
+/// uses (input letter, diagonal board and reflector), and the copies of the menu on the machine with their drums.
 /// </summary>
 public sealed class BombeJob
 {
@@ -31,7 +31,8 @@ public sealed class BombeJob
 
     public ReflectorType Reflector { get; private set; } = ReflectorType.B;
 
-    public IReadOnlyList<WheelOrder> WheelOrders { get; private set; } = WheelOrder.All;
+    /// <summary>The copies of the menu on the machine; none without a menu.</summary>
+    public IReadOnlyList<MenuCopy> Copies { get; private set; } = [];
 
     /// <summary>Every position the crib fits under the cipher text, crashed or not.</summary>
     public IReadOnlyList<CribPlacement> Placements => Crib is null ? [] : CribPlacement.All(CipherText, Crib);
@@ -62,7 +63,7 @@ public sealed class BombeJob
         }
 
         Placement = placement;
-        Menu = Menu.Build(placement);
+        PlugUp(Menu.Build(placement));
     }
 
     /// <summary>
@@ -76,47 +77,79 @@ public sealed class BombeJob
         var placement = Placement ?? throw new DomainException("Place the crib first.");
         IReadOnlyList<MenuLink> chosen = [.. links.Select(link => placement.Links.FirstOrDefault(own => Same(own, link))
             ?? throw new DomainException($"{link} is not a link of the crib at position {placement.Position}."))];
-        Menu = testRegister is { } letter ? new Menu(chosen, letter) : Menu.Create(chosen);
+        PlugUp(testRegister is { } letter ? new Menu(chosen, letter) : Menu.Create(chosen));
     }
 
     /// <summary>Builds the menu from the placement again.</summary>
     public void BuildMenu() =>
-        Menu = Menu.Build(Placement ?? throw new DomainException("Place the crib first."));
+        PlugUp(Menu.Build(Placement ?? throw new DomainException("Place the crib first.")));
 
     /// <summary>Sets the run settings. A null input letter uses the default (see <see cref="Input"/>).</summary>
-    public void Configure(Letter? input, bool diagonalBoard, ReflectorType reflector, IReadOnlyList<WheelOrder> wheelOrders)
+    public void Configure(Letter? input, bool diagonalBoard, ReflectorType reflector)
     {
         ArgumentNullException.ThrowIfNull(reflector);
-        ArgumentNullException.ThrowIfNull(wheelOrders);
 
         if (reflector.IsThin)
         {
             throw new DomainException("The three-rotor Bombe takes reflector B or C.");
         }
 
-        if (wheelOrders.Count == 0)
-        {
-            throw new DomainException("Choose at least one wheel order.");
-        }
-
-        if (wheelOrders.Distinct().Count() < wheelOrders.Count)
-        {
-            throw new DomainException("A wheel order is chosen more than once.");
-        }
-
         _input = input;
         DiagonalBoard = diagonalBoard;
         Reflector = reflector;
-        WheelOrders = [.. wheelOrders];
+    }
+
+    /// <summary>Fits drums of <paramref name="rotor"/> in a row (0 = upper) of a copy, or takes them out when null.</summary>
+    public void FitDrums(int copy, int row, RotorType? rotor) => CopyAt(copy).Fit(row, rotor);
+
+    /// <summary>Sets the start letters of a scrambler (0 = the first menu link) of a copy.</summary>
+    public void TurnScrambler(int copy, int scrambler, DrumPosition start) => CopyAt(copy).Turn(scrambler, start);
+
+    /// <summary>
+    /// The copies a run tests: those with drums in all three rows. Refused when a copy has drums in only some rows, or
+    /// when no copy has drums.
+    /// </summary>
+    public IReadOnlyList<MenuCopy> FittedCopies()
+    {
+        if (Menu is null)
+        {
+            throw new DomainException("Build a menu first.");
+        }
+
+        if (Copies.Select((copy, index) => (copy, index)).FirstOrDefault(c => c.copy is { IsEmpty: false, WheelOrder: null }) is { copy: not null } partial)
+        {
+            throw new DomainException($"Fit drums in all three rows of copy {partial.index + 1}, or take them all out.");
+        }
+
+        IReadOnlyList<MenuCopy> fitted = [.. Copies.Where(copy => copy.WheelOrder is not null)];
+        return fitted.Count > 0 ? fitted : throw new DomainException("Fit the drums of at least one copy of the menu.");
     }
 
     private static bool Same(MenuLink a, MenuLink b) =>
         a.Offset == b.Offset
         && ((a.First == b.First && a.Second == b.Second) || (a.First == b.Second && a.Second == b.First));
 
+    private MenuCopy CopyAt(int copy) =>
+        copy >= 0 && copy < Copies.Count
+            ? Copies[copy]
+            : throw new DomainException(Menu is null ? "Build a menu first." : $"The menu fits {Copies.Count} times on the Bombe; there is no copy {copy + 1}.");
+
     private void ClearPlacement()
     {
         Placement = null;
-        Menu = null;
+        PlugUp(null);
+    }
+
+    // Plugs up the menu once per copy that fits. Copies that stay keep their drums; the start letters follow the menu.
+    private void PlugUp(Menu? menu)
+    {
+        MenuCopy[] copies = menu is null ? [] : Enumerable.Range(0, menu.Copies).Select(_ => new MenuCopy(menu)).ToArray();
+        foreach (var (copy, old) in copies.Zip(Copies))
+        {
+            copy.FitLike(old);
+        }
+
+        Menu = menu;
+        Copies = copies;
     }
 }

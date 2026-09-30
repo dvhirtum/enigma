@@ -6,18 +6,34 @@ import { carterMenu, carterPaused, carterStops } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
 import { StopsView } from './StopsView';
 
-const finished: BombeRun = { ...carterPaused, status: 'Finished', pause: null, wheelOrder: null, position: null, stops: 2 };
-const carter: BombeState = { ...carterMenu, run: finished };
+const finished: BombeRun = { ...carterPaused, status: 'Finished', pause: null, position: null, stops: 2, allStops: 2 };
+const carter: BombeState = { ...carterMenu, run: finished, stops: 2 };
 
 function ShownView() {
   return <output aria-label="Shown view">{useMachine((store) => store.bombeView)}</output>;
 }
 
 describe('StopsView', () => {
-  it('asks for a run when there is none', async () => {
+  it('asks for a run when there are no stops', async () => {
     renderBombe(<StopsView />, carterMenu);
 
-    expect(await screen.findByText('No run yet. Start the Bombe on the Front tab.')).toBeInTheDocument();
+    expect(await screen.findByText('No stops yet. Start the Bombe on the Front tab.')).toBeInTheDocument();
+  });
+
+  it('lists the stops of earlier runs when the latest run is gone', async () => {
+    renderBombe(<StopsView />, { ...carter, run: null });
+
+    expect(await screen.findAllByRole('row')).toHaveLength(3);
+  });
+
+  it('clears the stops', async () => {
+    const api = renderBombe(<StopsView />, carter);
+    await screen.findAllByRole('row');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear stops' }));
+
+    await waitFor(() => expect(api.bombe.clearStops).toHaveBeenCalled());
+    expect(await screen.findByText('No stops yet. Start the Bombe on the Front tab.')).toBeInTheDocument();
   });
 
   it('lists the stops of the run', async () => {
@@ -31,7 +47,7 @@ describe('StopsView', () => {
   });
 
   it('loads more stops when not all are shown', async () => {
-    const api = renderBombe(<StopsView />, { ...carter, run: { ...finished, stops: 250 } }, (fake) =>
+    const api = renderBombe(<StopsView />, { ...carter, run: { ...finished, stops: 250, allStops: 250 }, stops: 250 }, (fake) =>
       fake.bombe.getStops.mockResolvedValueOnce({ ok: true, value: Array.from({ length: stopPage }, (_, index) => ({ ...carterStops[0], index })) }),
     );
     expect(await screen.findByText('250 stops, 100 shown')).toBeInTheDocument();

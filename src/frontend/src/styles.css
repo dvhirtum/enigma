@@ -481,7 +481,7 @@ body {
   gap: 0.3rem;
 }
 
-.run-settings .swatch {
+.rotor-picker .swatch {
   width: 0.7rem;
   height: 0.7rem;
   border: 1px solid var(--line);
@@ -899,16 +899,16 @@ body {
   font-weight: bold;
 }
 
-.bombe-front.spinning .drum .rim {
+.bombe-front.spinning .drum:not(.idle) .rim {
   stroke-dasharray: 6 4;
   animation: drum-spin 0.25s linear infinite;
 }
 
-.bombe-front.spinning .drum .marker {
+.bombe-front.spinning .drum:not(.idle) .marker {
   display: none;
 }
 
-.bombe-front.spinning .drum text {
+.bombe-front.spinning .drum:not(.idle) text {
   opacity: 0.35;
   filter: blur(1px);
 }
@@ -921,6 +921,65 @@ body {
 
 .scrambler.empty circle {
   fill: var(--line);
+}
+
+.bombe-front-frame {
+  position: relative;
+  max-width: 46rem;
+}
+
+.bombe-front .chain-label {
+  fill: var(--muted);
+  font-size: 11px;
+  text-anchor: start;
+}
+
+.drum.empty .rim {
+  stroke: var(--line);
+  stroke-dasharray: 3 3;
+}
+
+.drum.settable {
+  cursor: pointer;
+}
+
+.drum.settable:hover .rim,
+.drum.settable:focus-visible .rim {
+  stroke-width: 7;
+}
+
+.drum.settable:focus-visible {
+  outline: none;
+}
+
+.rotor-picker {
+  position: absolute;
+  z-index: 1;
+  padding: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--fg);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+}
+
+.rotor-picker p {
+  margin: 0 0 0.25rem;
+}
+
+.rotor-choices {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.rotor-choices button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rotor-choices button[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
 }
 
 .scrambler-label,

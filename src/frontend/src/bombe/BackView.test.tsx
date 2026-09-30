@@ -5,11 +5,11 @@ import { renderBombe } from '../test/renderBombe';
 import { BackView } from './BackView';
 
 describe('BackView', () => {
-  it('cables each scrambler to the commons of its letters', async () => {
+  it('cables each scrambler of the copy to the commons of its letters', async () => {
     renderBombe(<BackView />, carterMenu);
 
-    expect(await screen.findAllByRole('img', { name: /^Scrambler \d+ jacks/ })).toHaveLength(13);
-    expect(screen.getByRole('img', { name: 'Scrambler 1 jacks S and W' })).toBeInTheDocument();
+    expect(await screen.findAllByRole('img', { name: /^Copy 1 scrambler \d+ jacks/ })).toHaveLength(13);
+    expect(screen.getByRole('img', { name: 'Copy 1 scrambler 1 jacks S and W' })).toBeInTheDocument();
     expect(screen.getAllByRole('img', { name: /^Common/ })).toHaveLength(12);
     expect(screen.getByRole('img', { name: 'Test register on G, input A' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Diagonal board on' })).toBeInTheDocument();

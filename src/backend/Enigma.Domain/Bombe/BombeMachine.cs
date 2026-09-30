@@ -15,8 +15,13 @@ public sealed class BombeMachine
 
     private readonly Scrambler _scrambler;
     private readonly (int Link, int Other)[][] _linksByLetter;
+    private readonly DrumPosition[] _starts;
 
-    public BombeMachine(Scrambler scrambler, Menu menu, Letter input, bool diagonalBoard = true)
+    /// <summary>
+    /// A Bombe with a scrambler per menu link, each set to <paramref name="starts"/> (by default the letters of its
+    /// link's offset: ZZA, ZZB, ...) when the run starts.
+    /// </summary>
+    public BombeMachine(Scrambler scrambler, Menu menu, Letter input, bool diagonalBoard = true, IReadOnlyList<DrumPosition>? starts = null)
     {
         ArgumentNullException.ThrowIfNull(scrambler);
         ArgumentNullException.ThrowIfNull(menu);
@@ -25,6 +30,12 @@ public sealed class BombeMachine
         Menu = menu;
         Input = input;
         DiagonalBoard = diagonalBoard;
+        _starts = [.. starts ?? menu.Links.Select(link => DrumPosition.FromOffset(link.Offset))];
+        if (_starts.Length != menu.Links.Count)
+        {
+            throw new DomainException($"The menu has {menu.Links.Count} links but {_starts.Length} scramblers are set.");
+        }
+
         _linksByLetter = [.. Enumerable.Range(0, Letter.Count).Select(letter => menu.Links
             .SelectMany((link, index) => new[] { (index, link.First, link.Second), (index, link.Second, link.First) })
             .Where(end => end.Item2.Index == letter)
@@ -47,7 +58,7 @@ public sealed class BombeMachine
     /// <summary>Tests one drum position; returns the stop, or null when all 26 test register wires are live.</summary>
     public BombeStop? Test(DrumPosition position)
     {
-        var scramblers = Menu.Links.Select(link => position.Advance(link.Offset).Offset).ToArray();
+        var scramblers = _starts.Select(start => position.Advance(start).Offset).ToArray();
         var live = new bool[Wires];
         var pending = new Stack<int>();
         var testLive = 0;
@@ -97,21 +108,21 @@ public sealed class BombeMachine
     }
 
     /// <summary>
-    /// Tests all 17,576 drum positions from ZZZ, in the order the Bombe runs through them: the upper (left) drum
-    /// turns fastest, and the middle and lower drums move on once per turn of the drum above.
+    /// Tests all 17,576 drum positions, with the upper drums from ZZZ, in the order the Bombe runs through them: the
+    /// upper (left) drum turns fastest, and the middle and lower drums move on once per turn of the drum above.
     /// </summary>
     public IEnumerable<BombeStop> Run()
     {
         for (var step = 0; step < DrumPosition.Count; step++)
         {
-            if (Test(PositionAt(step)) is { } stop)
+            if (Test(WheelOrder.CorePositions(PositionAt(step))) is { } stop)
             {
                 yield return stop;
             }
         }
     }
 
-    /// <summary>The drum position tested at <paramref name="step"/> (0 to 17,575) of a run.</summary>
+    /// <summary>The letters the upper drums show at <paramref name="step"/> (0 to 17,575) of a run.</summary>
     public static DrumPosition PositionAt(int step)
     {
         const int Square = Letter.Count * Letter.Count;

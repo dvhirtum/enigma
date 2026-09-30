@@ -182,7 +182,7 @@ describe('bombe runs', () => {
     await store.getState().startRun(null);
 
     expect(api.bombe.startRun).toHaveBeenCalledWith(null);
-    expect(store.getState().bombe).toEqual({ ...carterMenu, run: carterPaused });
+    expect(store.getState().bombe).toEqual({ ...carterMenu, run: carterPaused, stops: 1 });
   });
 
   it('leaves the error alone when a poll succeeds', async () => {

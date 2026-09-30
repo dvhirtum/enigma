@@ -1,40 +1,48 @@
 import { useEffect } from 'react';
 import type { BombeStop } from '../api';
 import { stopPage, useMachine } from '../store';
+import { isActive } from './FrontView';
 
 const verdicts: Record<BombeStop['verdict'], string> = { Unchecked: '', True: 'True', False: 'False' };
 
-/** The stops of the run, a hundred at a time. A row opens its check on the Checking view. */
+/** The stops of the runs on the menu, a hundred at a time. A row opens its check on the Checking view. */
 export function StopsView() {
   const run = useMachine((store) => store.bombe?.run ?? null);
+  const total = useMachine((store) => store.bombe?.stops ?? 0);
   const stops = useMachine((store) => store.stops);
   const loadStops = useMachine((store) => store.loadStops);
   const openCheck = useMachine((store) => store.openCheck);
-  const total = run?.stops ?? 0;
+  const clearStops = useMachine((store) => store.clearStops);
   const shown = stops.length;
+  const active = isActive(run);
 
-  // A new run, or stops found while the first page is not full yet, reload the first page.
+  // Stops found while the first page is not full yet reload the first page.
   useEffect(() => {
-    if (run && shown < Math.min(total, stopPage)) {
+    if (shown < Math.min(total, stopPage)) {
       void loadStops();
     }
-  }, [run, total, shown, loadStops]);
+  }, [total, shown, loadStops]);
 
-  if (!run) {
+  if (total === 0) {
     return (
       <div className="bombe-view">
-        <p className="bombe-empty">No run yet. Start the Bombe on the Front tab.</p>
+        <p className="bombe-empty">No stops yet. Start the Bombe on the Front tab.</p>
       </div>
     );
   }
 
   return (
     <div className="bombe-view">
-      <p className="summary">
-        {total === 1 ? '1 stop' : `${total.toLocaleString('en-US')} stops`}
-        {run.status === 'Running' || run.status === 'Paused' ? ' so far' : ''}
-        {shown < total && `, ${shown.toLocaleString('en-US')} shown`}
-      </p>
+      <div className="check-actions">
+        <p className="summary">
+          {total === 1 ? '1 stop' : `${total.toLocaleString('en-US')} stops`}
+          {active ? ' so far' : ''}
+          {shown < total && `, ${shown.toLocaleString('en-US')} shown`}
+        </p>
+        <button type="button" disabled={active} onClick={() => void clearStops()}>
+          Clear stops
+        </button>
+      </div>
       {shown > 0 && (
         <table className="bombe-stops">
           <thead>

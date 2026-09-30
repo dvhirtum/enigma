@@ -10,7 +10,7 @@ public sealed class GetCheckHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        return store.UseCheck(query.Stop, (run, check) => CheckState.From(check, query.Stop, run));
+        return store.UseCheck(query.Stop, (_, check) => CheckState.From(check, query.Stop));
     }
 }
 
@@ -20,14 +20,14 @@ public sealed class SetCheckHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        return store.UseCheck(command.Stop, (run, check) =>
+        return store.UseCheck(command.Stop, (_, check) =>
         {
             var windows = command.MachineWindows is { } window ? DrumPosition.Parse(window.ToUpperInvariant()) : check.MachineWindows;
             var rings = command.MachineRings is { } setting ? DrumPosition.Parse(setting.ToUpperInvariant()) : check.MachineRings;
             var steckers = command.Steckers is { } pairs ? Steckers.Parse(pairs.ToUpperInvariant()) : check.Steckers;
             var ring = command.RightRing is { } number ? RingSetting.FromNumber(number) : check.RightRing;
             (check.MachineWindows, check.MachineRings, check.Steckers, check.RightRing) = (windows, rings, steckers, ring);
-            return CheckState.From(check, command.Stop, run);
+            return CheckState.From(check, command.Stop);
         });
     }
 }
@@ -57,8 +57,8 @@ public sealed class ConfirmCheckHandler(IBombeSessionStore store)
         var verdict = Enum.TryParse<StopVerdict>(command.Verdict, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed)
             ? parsed
             : throw new DomainException($"'{command.Verdict}' is not a verdict: True, False or Unchecked.");
-        return store.UseCheck(command.Stop, (run, check) =>
-            ConfirmationState.From(check.Confirm(verdict, run.Solution), CheckState.From(check, command.Stop, run)));
+        return store.UseCheck(command.Stop, (log, check) =>
+            ConfirmationState.From(check.Confirm(verdict, log.SolutionOf(command.Stop)), CheckState.From(check, command.Stop)));
     }
 }
 
@@ -78,20 +78,16 @@ public sealed class FindRightRingHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        return store.UseCheck(command.Stop, (run, check) =>
+        return store.UseCheck(command.Stop, (_, check) =>
         {
             RingScoreState[] rings = [.. check.FindRightRing().Select(ring => new RingScoreState(ring.Ring.Number, ring.Score, ring.Best))];
-            return new FindState(rings, CheckState.From(check, command.Stop, run));
+            return new FindState(rings, CheckState.From(check, command.Stop));
         });
     }
 }
 
 internal static class CheckStoreExtensions
 {
-    public static T UseCheck<T>(this IBombeSessionStore store, int stop, Func<BombeRun, StopCheck, T> action) =>
-        store.Use(_ =>
-        {
-            var run = store.Run ?? throw new NotFoundException("There is no run.");
-            return action(run, run.Check(stop));
-        });
+    public static T UseCheck<T>(this IBombeSessionStore store, int stop, Func<StopLog, StopCheck, T> action) =>
+        store.Use(_ => action(store.Stops, store.Stops.Check(stop)));
 }

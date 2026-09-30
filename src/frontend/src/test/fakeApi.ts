@@ -117,8 +117,10 @@ export const emptyBombe: BombeState = {
   placements: [],
   position: null,
   menu: null,
-  settings: { input: 'A', diagonalBoard: true, reflector: 'B', wheelOrders: [] },
+  machine: null,
+  settings: { input: 'A', diagonalBoard: true, reflector: 'B' },
   run: null,
+  stops: 0,
 };
 
 export const carterBombe: BombeState = {
@@ -156,6 +158,11 @@ export const carterMenu: BombeState = {
     stopsWithBoard: 0.4,
     stopsWithoutBoard: 721.3,
   },
+  // 13 links take two chains: one copy, with drums II V III fitted.
+  machine: {
+    chainsPerCopy: 2,
+    copies: [{ drums: ['II', 'V', 'III'], starts: ['ZZA', 'ZZB', 'ZZE', 'ZZF', 'ZZG', 'ZZI', 'ZZJ', 'ZZK', 'ZZL', 'ZZM', 'ZZN', 'ZZO', 'ZZP'] }],
+  },
 };
 
 /** A paced run of Carter's menu on II V III, paused at the true stop. */
@@ -163,14 +170,13 @@ export const carterPaused: BombeRun = {
   status: 'Paused',
   speed: 14.6,
   reflector: 'B',
-  wheelOrders: 1,
-  wheelOrdersDone: 0,
+  wheelOrders: ['II V III'],
   positionsTested: 1713,
   positions: 17576,
-  wheelOrder: 'II V III',
-  position: 'VMB',
+  position: 'WPD',
   pause: { index: 0, wheelOrder: 'II V III', position: 'VMB', indicator: 'DKX', testRegister: 'G', liveWires: 'Q', stecker: 'Q', verdict: 'Unchecked' },
   stops: 1,
+  allStops: 1,
   error: null,
   elapsedSeconds: 117.3,
 };
@@ -269,10 +275,13 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       setMenu: bombe(),
       buildMenu: bombe(),
       configure: bombe(),
+      fitDrums: bombe(),
+      turnScrambler: bombe(),
+      clearStops: bombe(),
       startRun: run(),
       setRunSpeed: run(),
       continueRun: run(),
-      cancelRun: run({ ...carterPaused, status: 'Cancelled', pause: null, wheelOrder: null, position: null }),
+      cancelRun: run({ ...carterPaused, status: 'Cancelled', pause: null, position: null }),
       getRun: run(),
       getStops: vi.fn().mockResolvedValue({ ok: true, value: carterStops }),
       getCheck: vi.fn().mockResolvedValue({ ok: true, value: carterCheck }),

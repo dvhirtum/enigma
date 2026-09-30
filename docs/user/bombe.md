@@ -52,17 +52,26 @@ To change the menu:
 
 ## Running the Bombe
 
-The **Front** tab shows the Bombe as the operators saw it: three banks of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The menu's links take the first scramblers, in order of their offset, and each is set that many steps from the others. The three drums on the right are the indicator drums: they read the position with the letters reversed.
+The **Front** tab shows the Bombe as the operators saw it: three banks (chains) of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The three drums on the right are the indicator drums: they read the position with the letters reversed.
+
+The menu is plugged up once on each chain it fits: a menu of up to 12 links fits three times, so the Bombe tests three wheel orders in one run. A longer menu takes two or three chains and fits once. **Build menu** keeps menus to 12 links; a menu edited by hand can be longer. Each copy's links take its scramblers in order of their offset, and each scrambler starts at its link's offset (ZZA, ZZB, ...). The label above each chain gives its wheel order; a menu on two or three chains is labelled once, such as "Chains 1–2 · II V III".
+
+Set up each copy as a Wren did:
+
+- **Fit drums**: click a drum and pick a rotor. The rotor goes into that row of every scrambler of the copy. A rotor already in another row of the copy cannot be picked; **Empty** takes the drums out.
+- **Turn a drum** with the mouse wheel over it, or Arrow Up/Down on it. The run uses the letters on the machine, so a drum set wrong makes the Bombe miss the key.
+
+Copies without drums are not tested. A copy with drums in only some rows must be finished or emptied before the Bombe can start.
 
 The Bombe drums are lettered ahead of the Enigma rotors: drums I, II, III, VI, VII and VIII by one letter, IV by two and V by three. The drums and the indicator show these historical letters, so to get the ring settings to try on the Enigma, add the offsets to the indicator reading. On Carter's weather crib (wheel order II V III) the indicator reads DKX, as Carter reports; adding 1, 3 and 1 gives the ring settings ENY.
 
 Before you start:
 
 - choose reflector **B** or **C**,
-- tick the rotors the Bombe may use; it runs every order of three of them (all eight give 336 wheel orders),
-- set the speed. At the left end the Bombe runs at its historical speed, a wheel order in about 20 minutes; further right it runs faster, and at the right end at full speed, which runs all wheel orders at once in seconds.
+- fit the drums of at least one copy,
+- set the speed. At the left end the Bombe runs at its historical speed, a run of all 17,576 positions in about 20 minutes; further right it runs faster, and at the right end at full speed, which takes a second or so.
 
-Click **Start**. The bar and the line under it show how far the run has got, the stops found and the time taken. You can change the speed while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes.
+Click **Start**. The drums turn through every position once, and each copy with drums is tested with its wheel order. The bar and the line under it show the wheel orders, how far the run has got, the stops found and the time taken. You can change the speed while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes.
 
 At a set speed the drums turn with the run, and the Bombe halts at each stop, as the real one did. It shows the wheel order, the indicator reading, and the stecker partner of the test register letter. Click **Continue** to run on. At full speed the Bombe does not halt; it counts the stops.
 
@@ -77,7 +86,7 @@ The run settings cannot change while the Bombe runs or waits at a stop.
 
 ## The stops
 
-The **Stops** tab lists the stops of the run, a hundred at a time: the wheel order, the indicator reading, the stecker of the test register letter and your verdict. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it on the Checking tab. Changing the message, crib, menu or settings, or starting a new run, clears the stops and their checks.
+The **Stops** tab lists the stops of every run on the menu, a hundred at a time: the wheel order, the indicator reading, the stecker of the test register letter and your verdict. Fit other drums and run again to add the stops of more wheel orders. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it on the Checking tab. Changing the message, crib or menu clears the stops and their checks, and so does **Clear stops**.
 
 ## Checking a stop
 

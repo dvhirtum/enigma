@@ -40,9 +40,14 @@ public readonly record struct DrumPosition(Letter Left, Letter Middle, Letter Ri
     /// Turns each drum on by its letter of the offset <paramref name="offset"/> places after ZZZ, without carrying from
     /// one drum to the next: the drums of all scramblers turn together, so each scrambler keeps its offset.
     /// </summary>
-    public DrumPosition Advance(int offset)
+    public DrumPosition Advance(int offset) => Advance(FromOffset(offset));
+
+    /// <summary>
+    /// Turns each drum on by its letter of <paramref name="steps"/> (Z = 0, A = 1), without carrying: where a scrambler
+    /// set to <paramref name="steps"/> at the start of a run is when the run is at this position.
+    /// </summary>
+    public DrumPosition Advance(DrumPosition steps)
     {
-        var steps = FromOffset(offset);
         return new DrumPosition(
             Left.Shift(Digit(steps.Left)), Middle.Shift(Digit(steps.Middle)), Right.Shift(Digit(steps.Right)));
     }

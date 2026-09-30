@@ -157,12 +157,19 @@ export interface BombeSettings {
   input: string;
   diagonalBoard: boolean;
   reflector: string;
-  wheelOrders: string[];
 }
 
+/**
+ * The machine plugged up with the menu: the chains (banks of 12) one copy takes, and each copy with the rotor of each
+ * row (upper, middle, lower; null when empty) and each scrambler's start letters, in the order of the menu links.
+ */
+export interface BombeMachine {
+  chainsPerCopy: number;
+  copies: { drums: (string | null)[]; starts: string[] }[];
+}
 
 /**
- * A stop: its index in the run, the wheel order, drum core positions, indicator drum reading, test register, its live
+ * A stop: its index among the stops found, the wheel order, drum core positions, indicator drum reading, test register, its live
  * wires, stecker partner and the verdict of its check.
  */
 export interface BombeStop {
@@ -177,21 +184,21 @@ export interface BombeStop {
 }
 
 /**
- * A run's progress. Speed is in positions per second, null for full speed. The wheel order and drum position in hand
- * are known while the run is paced; a paused run gives the stop it waits at.
+ * A run's progress: the wheel orders of the copies tested, the positions tested of the 17,576, the letters the upper
+ * drums show while it runs, the stop a paused run waits at, the stops it found and all stops found so far. Speed is in
+ * positions per second, null for full speed.
  */
 export interface BombeRun {
   status: 'Running' | 'Paused' | 'Finished' | 'Cancelled' | 'Failed';
   speed: number | null;
   reflector: string;
-  wheelOrders: number;
-  wheelOrdersDone: number;
+  wheelOrders: string[];
   positionsTested: number;
   positions: number;
-  wheelOrder: string | null;
   position: string | null;
   pause: BombeStop | null;
   stops: number;
+  allStops: number;
   error: string | null;
   elapsedSeconds: number;
 }
@@ -201,9 +208,11 @@ export interface BombeSettingsChange {
   input?: string;
   diagonalBoard?: boolean;
   reflector?: string;
-  wheelOrders?: string[];
 }
-/** The Bombe job: the message, the crib, every crib position, the placed one, the menu, the run settings and the latest run. */
+/**
+ * The Bombe job: the message, the crib, every crib position, the placed one, the menu, the machine plugged up with it,
+ * the run settings, the latest run and the number of stops found.
+ */
 export interface BombeState {
   source: BombeSource | null;
   cipherText: string;
@@ -211,8 +220,10 @@ export interface BombeState {
   placements: Placement[];
   position: number | null;
   menu: BombeMenu | null;
+  machine: BombeMachine | null;
   settings: BombeSettings;
   run: BombeRun | null;
+  stops: number;
 }
 
 /** A crib letter at its offset, and whether the steckers found so far encipher it to its cipher letter. */
@@ -388,6 +399,10 @@ export interface BombeApi {
   /** Builds the menu from the placed crib again. */
   buildMenu: Call<[], BombeState>;
   configure: Call<[settings: BombeSettingsChange], BombeState>;
+  /** Fits drums of a rotor in a row (0 = upper) of a copy of the menu; null takes them out. */
+  fitDrums: Call<[copy: number, row: number, rotor: string | null], BombeState>;
+  /** Sets the start letters of a scrambler (its index in the menu links) of a copy. */
+  turnScrambler: Call<[copy: number, scrambler: number, start: string], BombeState>;
   /** Starts a run at `speed` positions per second, or at full speed when null. */
   startRun: Call<[speed: number | null], BombeRun>;
   setRunSpeed: Call<[speed: number | null], BombeRun>;
@@ -395,8 +410,10 @@ export interface BombeApi {
   continueRun: Call<[], BombeRun>;
   cancelRun: Call<[], BombeRun>;
   getRun: Call<[], BombeRun>;
-  /** The stops of the run from index `from` on, at most `count`. */
+  /** The stops found from index `from` on, at most `count`. */
   getStops: Call<[from: number, count: number], BombeStop[]>;
+  /** Clears the stops found and their checks. */
+  clearStops: Call<[], BombeState>;
   getCheck: Call<[stop: number], BombeCheck>;
   setCheck: Call<[stop: number, change: CheckChange], BombeCheck>;
   /** Presses a key on the checking machine; resolves to the lamp that lights. */

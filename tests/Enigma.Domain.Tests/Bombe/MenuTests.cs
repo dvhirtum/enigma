@@ -13,10 +13,12 @@ public sealed class MenuTests(ITestOutputHelper output)
     private static readonly Letter W = Letter.FromChar('W');
 
     [Fact]
-    public void Should_give_Carters_menu_When_building_from_his_weather_crib()
+    public void Should_give_Carters_menu_on_one_chain_When_building_from_his_weather_crib()
     {
         // Arrange
-        // The crib's pairs 3, 4 and 8 (MT, KT, TO) form a separate part without loops, which Carter left off.
+        // The crib's pairs 3, 4 and 8 (MT, KT, TO) form a separate part without loops, which Carter left off. To fit
+        // one chain of 12, a link at the end of a chain goes too. Each leaves the same estimate, so the lowest offset
+        // goes: S–W, as in the Virtual Colossus menu (bombe.virtualcolossus.co.uk/simulation.html).
         var placement = new CribPlacement(
             [.. BombeKeys.CarterCipher.Select(Letter.FromChar)], Crib.Parse(BombeKeys.CarterCrib), 0);
 
@@ -25,7 +27,7 @@ public sealed class MenuTests(ITestOutputHelper output)
 
         // Assert
         Assert.Equal(
-            BombeKeys.CarterMenu.Links.Select(link => link.Offset),
+            BombeKeys.CarterMenu.Links.Select(link => link.Offset).Where(offset => offset != 1),
             menu.Links.Select(link => link.Offset));
         Assert.Equal(G, menu.TestRegister);
     }
@@ -108,7 +110,7 @@ public sealed class MenuTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void Should_keep_one_connected_part_of_36_links_When_the_crib_gives_more()
+    public void Should_keep_one_connected_part_of_12_links_When_the_crib_gives_more()
     {
         // Arrange
         const string plain = "WETTERVORHERSAGEBISKAYAXWINDSUEDWESTSTAERKEDREIXSEEGANGVIERXSICHTZWOSEEMEILEN";
@@ -119,8 +121,9 @@ public sealed class MenuTests(ITestOutputHelper output)
         var menu = Menu.Build(placement);
 
         // Assert
-        Assert.Equal(Menu.MaxLinks, menu.Links.Count);
+        Assert.Equal(Menu.ChainLinks, menu.Links.Count);
         Assert.Equal(menu.Links, menu.ConnectedLinks);
+        Assert.Equal(3, menu.Copies);
     }
 
     [Fact]
