@@ -86,4 +86,10 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(LoadIntercept))]
 [JsonSerializable(typeof(CribState))]
 [JsonSerializable(typeof(SolutionState))]
+[JsonSerializable(typeof(CheckState))]
+[JsonSerializable(typeof(CheckRequest))]
+[JsonSerializable(typeof(KeyRequest))]
+[JsonSerializable(typeof(LampState))]
+[JsonSerializable(typeof(VerdictRequest))]
+[JsonSerializable(typeof(ConfirmationState))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;

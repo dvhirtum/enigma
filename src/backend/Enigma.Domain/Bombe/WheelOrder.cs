@@ -46,6 +46,13 @@ public sealed record WheelOrder
     public DrumPosition DrumLetters(DrumPosition core) =>
         new(core.Left.Shift(LetterOffset(Left)), core.Middle.Shift(LetterOffset(Middle)), core.Right.Shift(LetterOffset(Right)));
 
+    /// <summary>The core positions at which the drums show <paramref name="drumLetters"/>.</summary>
+    public DrumPosition CorePositions(DrumPosition drumLetters) =>
+        new(
+            drumLetters.Left.Shift(-LetterOffset(Left)),
+            drumLetters.Middle.Shift(-LetterOffset(Middle)),
+            drumLetters.Right.Shift(-LetterOffset(Right)));
+
     /// <summary>Parses rotor names from left to right, e.g. "II V III".</summary>
     public static WheelOrder Parse(string rotors)
     {

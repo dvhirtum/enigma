@@ -6,6 +6,12 @@ internal sealed record PlacementRequest(int Position);
 
 internal sealed record SpeedRequest(double? Speed);
 
+internal sealed record CheckRequest(string? Position, string? Steckers, int? RightRing);
+
+internal sealed record KeyRequest(string? Key);
+
+internal sealed record VerdictRequest(string? Verdict);
+
 internal static class BombeEndpoints
 {
     public static IServiceCollection AddBombeHandlers(this IServiceCollection services) => services
@@ -25,7 +31,11 @@ internal static class BombeEndpoints
         .AddSingleton<ContinueRunHandler>()
         .AddSingleton<CancelRunHandler>()
         .AddSingleton<GetRunHandler>()
-        .AddSingleton<GetStopsHandler>();
+        .AddSingleton<GetStopsHandler>()
+        .AddSingleton<GetCheckHandler>()
+        .AddSingleton<SetCheckHandler>()
+        .AddSingleton<PressCheckKeyHandler>()
+        .AddSingleton<ConfirmCheckHandler>();
 
     public static void MapBombeEndpoints(this IEndpointRouteBuilder app)
     {
@@ -84,5 +94,17 @@ internal static class BombeEndpoints
 
         bombe.MapGet("/run/stops", (int? from, GetStopsHandler handler) =>
             handler.Handle(new GetStops(from ?? 0)));
+
+        bombe.MapGet("/run/stops/{stop:int}/check", (int stop, GetCheckHandler handler) =>
+            handler.Handle(new GetCheck(stop)));
+
+        bombe.MapPut("/run/stops/{stop:int}/check", (int stop, CheckRequest request, SetCheckHandler handler) =>
+            handler.Handle(new SetCheck(stop, request.Position, request.Steckers, request.RightRing)));
+
+        bombe.MapPost("/run/stops/{stop:int}/check/press", (int stop, KeyRequest request, PressCheckKeyHandler handler) =>
+            handler.Handle(new PressCheckKey(stop, request.Key)));
+
+        bombe.MapPost("/run/stops/{stop:int}/check/verdict", (int stop, VerdictRequest request, ConfirmCheckHandler handler) =>
+            handler.Handle(new ConfirmCheck(stop, request.Verdict)));
     }
 }

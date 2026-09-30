@@ -1,3 +1,4 @@
+using Enigma.Application.Procedure;
 using Enigma.Domain.Bombe;
 using Enigma.Domain.Machine;
 
@@ -28,6 +29,7 @@ public sealed class BombeRun
     private readonly Func<WheelOrder, BombeMachine> _machine;
     private readonly bool[] _done;
     private readonly List<BombeStop> _stops = [];
+    private readonly Dictionary<int, StopCheck> _checks = [];
     private readonly TimeProvider _time;
     private readonly long _started;
     private volatile bool _cancelled;
@@ -42,6 +44,8 @@ public sealed class BombeRun
     private BombeRun(BombeJob job, double? speed, TimeProvider time)
     {
         var menu = job.Menu ?? throw new DomainException("Build a menu first.");
+        Placement = job.Placement ?? throw new DomainException("Place the crib first.");
+        Solution = job.Source?.Solution;
         var (reflector, input, diagonalBoard) = (job.Reflector, job.Input, job.DiagonalBoard);
         _machine = order => new BombeMachine(new Scrambler(order, reflector), menu, input, diagonalBoard);
         WheelOrders = job.WheelOrders;
@@ -56,6 +60,12 @@ public sealed class BombeRun
     public IReadOnlyList<WheelOrder> WheelOrders { get; }
 
     public ReflectorType Reflector { get; }
+
+    /// <summary>The crib placement the menu was built from.</summary>
+    public CribPlacement Placement { get; }
+
+    /// <summary>The solution of the message, when it has one.</summary>
+    public Solution? Solution { get; }
 
     /// <summary>Completes when the run has finished, was cancelled or failed.</summary>
     public Task Completion { get; }
@@ -144,6 +154,35 @@ public sealed class BombeRun
                 _stops.Count,
                 _error,
                 _time.GetElapsedTime(_started, _ended ?? _time.GetTimestamp()));
+        }
+    }
+
+    /// <summary>The check of the <paramref name="index"/>th stop (0 = the first), started when first asked for.</summary>
+    public StopCheck Check(int index)
+    {
+        lock (_lock)
+        {
+            if (index < 0 || index >= _stops.Count)
+            {
+                throw new NotFoundException($"There is no stop {index}.");
+            }
+
+            if (!_checks.TryGetValue(index, out var check))
+            {
+                check = new StopCheck(_stops[index], Reflector, Placement);
+                _checks[index] = check;
+            }
+
+            return check;
+        }
+    }
+
+    /// <summary>The verdict given on the <paramref name="index"/>th stop.</summary>
+    public StopVerdict VerdictOn(int index)
+    {
+        lock (_lock)
+        {
+            return _checks.TryGetValue(index, out var check) ? check.Verdict : StopVerdict.Unchecked;
         }
     }
 

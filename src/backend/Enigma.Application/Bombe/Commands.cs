@@ -51,3 +51,18 @@ public sealed record GetSourceCrib;
 
 /// <summary>The key and plain text of the loaded intercept or exercise.</summary>
 public sealed record GetSolution;
+
+/// <summary>The check of the <see cref="Stop"/>th stop of the run (0 = the first).</summary>
+public sealed record GetCheck(int Stop);
+
+/// <summary>
+/// Changes a check; each field left out (null) stays as it is. Position is the checking machine's drum letters, such
+/// as "WPC"; steckers are pairs such as "AD ET RR" (empty clears them); the right ring is 1–26.
+/// </summary>
+public sealed record SetCheck(int Stop, string? Position, string? Steckers, int? RightRing);
+
+/// <summary>Presses a key on the checking machine of a stop's check.</summary>
+public sealed record PressCheckKey(int Stop, string? Key);
+
+/// <summary>Gives the verdict on a stop: True, False or Unchecked.</summary>
+public sealed record ConfirmCheck(int Stop, string? Verdict);

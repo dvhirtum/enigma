@@ -32,6 +32,19 @@ public sealed class Scrambler
     public Letter Encipher(Letter input, DrumPosition position) =>
         Letter.FromIndex(_table[(position.Offset * Letter.Count) + input.Index]);
 
+    /// <summary>Enciphers one letter at one drum position, without building the table.</summary>
+    public static Letter Encipher(WheelOrder wheelOrder, ReflectorType reflector, DrumPosition position, Letter input)
+    {
+        ArgumentNullException.ThrowIfNull(wheelOrder);
+        ArgumentNullException.ThrowIfNull(reflector);
+
+        return Encipher(
+            [wheelOrder.Left.Wiring, wheelOrder.Middle.Wiring, wheelOrder.Right.Wiring],
+            reflector.Wiring,
+            [position.Left.Index, position.Middle.Index, position.Right.Index],
+            input);
+    }
+
     /// <summary>The 26 outputs at a drum position, by input letter index.</summary>
     internal ReadOnlySpan<byte> At(int offset) => _table.AsSpan(offset * Letter.Count, Letter.Count);
 
@@ -45,22 +58,27 @@ public sealed class Scrambler
             int[] cores = [position.Left.Index, position.Middle.Index, position.Right.Index];
             for (var input = 0; input < Letter.Count; input++)
             {
-                var letter = Letter.FromIndex(input);
-                for (var i = 2; i >= 0; i--)
-                {
-                    letter = wirings[i].Forward(letter.Shift(cores[i])).Shift(-cores[i]);
-                }
-
-                letter = reflector.Wiring.Forward(letter);
-                for (var i = 0; i < 3; i++)
-                {
-                    letter = wirings[i].Backward(letter.Shift(cores[i])).Shift(-cores[i]);
-                }
-
-                table[(offset * Letter.Count) + input] = (byte)letter.Index;
+                table[(offset * Letter.Count) + input] =
+                    (byte)Encipher(wirings, reflector.Wiring, cores, Letter.FromIndex(input)).Index;
             }
         }
 
         return table;
+    }
+
+    private static Letter Encipher(Wiring[] wirings, Wiring reflector, int[] cores, Letter letter)
+    {
+        for (var i = 2; i >= 0; i--)
+        {
+            letter = wirings[i].Forward(letter.Shift(cores[i])).Shift(-cores[i]);
+        }
+
+        letter = reflector.Forward(letter);
+        for (var i = 0; i < 3; i++)
+        {
+            letter = wirings[i].Backward(letter.Shift(cores[i])).Shift(-cores[i]);
+        }
+
+        return letter;
     }
 }
