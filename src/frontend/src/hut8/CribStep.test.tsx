@@ -1,33 +1,21 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ActiveContext } from '../mode';
-import { carterBombe, emptyBombe, withCrib } from '../test/fakeApi';
+import { carterBombe, withCrib } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
-import { cribLetters, CribView } from './CribView';
+import { CribStep, CribSummary } from './CribStep';
+import { cribLetters } from './letters';
 
 // WETTER under SNMKGGSTZZUGARLV crashes at positions 5, 6 and 9 (counting from 1).
 const carterWetter = withCrib(carterBombe, 'WETTER');
 
-describe('CribView', () => {
+describe('CribStep', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
   });
 
-  it('asks for a message first', async () => {
-    renderBombe(<CribView />, emptyBombe);
-
-    expect(await screen.findByText('Load a message in the Message view first.')).toBeInTheDocument();
-  });
-
-  it('asks for a crib when there is none', async () => {
-    renderBombe(<CribView />, carterBombe);
-
-    expect(await screen.findByText(/Type the plain text you expect/)).toBeInTheDocument();
-  });
-
   it('sets the crib in capitals, letters only', async () => {
-    const api = renderBombe(<CribView />, carterBombe);
+    const api = renderBombe(<CribStep />, carterBombe);
     const input = await screen.findByRole('textbox', { name: 'Crib' });
 
     fireEvent.change(input, { target: { value: 'wetter vor' } });
@@ -38,22 +26,21 @@ describe('CribView', () => {
   });
 
   it('says when the crib is longer than the cipher text', async () => {
-    renderBombe(<CribView />, withCrib(carterBombe, 'WETTERVORHERSAGEXX'));
+    renderBombe(<CribStep />, withCrib(carterBombe, 'WETTERVORHERSAGEXX'));
 
     expect(await screen.findByText('The crib is longer than the cipher text.')).toBeInTheDocument();
   });
 
   it('starts at the first position when the crib is not placed', async () => {
-    renderBombe(<CribView />, carterWetter);
+    renderBombe(<CribStep />, carterWetter);
 
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
     expect(slider).toHaveAttribute('aria-valuenow', '1');
     expect(slider).toHaveAttribute('aria-valuemax', '11');
-    expect(screen.getByLabelText('Placed')).toHaveTextContent('Not placed');
   });
 
   it('slides the crib with the arrow keys and the buttons', async () => {
-    renderBombe(<CribView />, carterWetter);
+    renderBombe(<CribStep />, carterWetter);
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
 
     fireEvent.keyDown(window, { key: 'ArrowRight' });
@@ -70,7 +57,7 @@ describe('CribView', () => {
   });
 
   it('leaves the arrow keys to the crib field', async () => {
-    renderBombe(<CribView />, carterWetter);
+    renderBombe(<CribStep />, carterWetter);
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
 
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Crib' }), { key: 'ArrowRight' });
@@ -78,22 +65,8 @@ describe('CribView', () => {
     expect(slider).toHaveAttribute('aria-valuenow', '1');
   });
 
-  it('leaves the arrow keys alone while Enigma mode is shown', async () => {
-    renderBombe(
-      <ActiveContext.Provider value={false}>
-        <CribView />
-      </ActiveContext.Provider>,
-      carterWetter,
-    );
-    const slider = await screen.findByRole('slider', { name: 'Crib position' });
-
-    fireEvent.keyDown(window, { key: 'ArrowRight' });
-
-    expect(slider).toHaveAttribute('aria-valuenow', '1');
-  });
-
-  it('marks the crashes and will not place a crashed crib', async () => {
-    renderBombe(<CribView />, carterWetter);
+  it('crosses out the crashes and will not place a crashed crib', async () => {
+    renderBombe(<CribStep />, carterWetter);
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
 
     // GGSTZZ over WETTER: the second T crashes.
@@ -108,7 +81,7 @@ describe('CribView', () => {
   });
 
   it('places the crib where it has no crashes', async () => {
-    const api = renderBombe(<CribView />, carterWetter, (fake) =>
+    const api = renderBombe(<CribStep />, carterWetter, (fake) =>
       fake.bombe.placeCrib.mockResolvedValue({ ok: true, value: withCrib(carterBombe, 'WETTER', 1) }),
     );
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
@@ -118,12 +91,11 @@ describe('CribView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Place crib' }));
 
     await waitFor(() => expect(api.bombe.placeCrib).toHaveBeenCalledWith(1));
-    expect(await screen.findByLabelText('Placed')).toHaveTextContent('Placed at position 2');
-    expect(screen.getByRole('button', { name: 'Place crib' })).toBeDisabled();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Place crib' })).toBeDisabled());
   });
 
   it('starts at the placed position', async () => {
-    renderBombe(<CribView />, withCrib(carterBombe, 'WETTER', 1));
+    renderBombe(<CribStep />, withCrib(carterBombe, 'WETTER', 1));
 
     expect(await screen.findByRole('slider', { name: 'Crib position' })).toHaveAttribute('aria-valuenow', '2');
   });
@@ -131,7 +103,7 @@ describe('CribView', () => {
   it('slides the crib by dragging it a letter width at a time', async () => {
     // Letters 10 pixels wide, the first at 0.
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 10 } as DOMRect);
-    renderBombe(<CribView />, carterWetter);
+    renderBombe(<CribStep />, carterWetter);
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
     const crib = document.querySelector('.crib-letters')!;
 
@@ -146,7 +118,7 @@ describe('CribView', () => {
 
   it('keeps the crib under the pointer when the strip scrolls during a drag', async () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 10 } as DOMRect);
-    renderBombe(<CribView />, carterWetter);
+    renderBombe(<CribStep />, carterWetter);
     const slider = await screen.findByRole('slider', { name: 'Crib position' });
     const crib = document.querySelector('.crib-letters')!;
 
@@ -162,7 +134,7 @@ describe('CribView', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 10 } as DOMRect);
     const scroll = vi.fn();
     HTMLElement.prototype.scrollIntoView = scroll;
-    renderBombe(<CribView />, carterWetter);
+    renderBombe(<CribStep />, carterWetter);
     await screen.findByRole('slider', { name: 'Crib position' });
     const crib = document.querySelector('.crib-letters')!;
     scroll.mockClear();
@@ -174,6 +146,15 @@ describe('CribView', () => {
     fireEvent.pointerUp(crib, { pointerId: 1 });
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     expect(scroll).toHaveBeenCalled();
+  });
+});
+
+describe('CribSummary', () => {
+  it('writes the crib under the cipher letters it covers', async () => {
+    renderBombe(<CribSummary />, withCrib(carterBombe, 'WETTER', 1));
+
+    expect(await screen.findByText('Placed at position 2, no crashes.')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Crib under the cipher text' })).toHaveTextContent('NMKGGSWETTER');
   });
 });
 

@@ -48,6 +48,6 @@ describe('BackView', () => {
   it('asks for a menu before plugging up', async () => {
     renderBombe(<BackView />, carterBombe);
 
-    expect(await screen.findByText('Build a menu to plug up the Bombe.')).toBeInTheDocument();
+    expect(await screen.findByText('Draw a menu in the Hut 8 notebook to plug up the Bombe.')).toBeInTheDocument();
   });
 });

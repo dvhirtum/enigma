@@ -3,6 +3,7 @@ import type { AppliedKey, Kenngruppenbuch, OperatorState, OperatorStep, Receivin
 import { ErrorToast } from '../ErrorToast';
 import { useMachine } from '../store';
 import { useKeys, usePhysicalKeyboard } from '../useKeys';
+import { Field, Hand, Squares } from './paper';
 
 type Direction = OperatorState['direction'];
 
@@ -29,43 +30,6 @@ const rotorHint = 'Turn the rotors in the machine window.';
 /** Splits letters into groups of 4. */
 function groups(letters: string): string[] {
   return letters.match(/.{1,4}/g) ?? [];
-}
-
-/** Handwriting inside printed text. */
-function Hand({ children }: { children: ReactNode }) {
-  return <span className="hand">{children}</span>;
-}
-
-/**
- * Writes `text` by hand, one character per square. Each space leaves an empty square, and groups do not break across lines.
- * `stacked` writes each group on a line of its own.
- */
-function Squares({ text, label, stacked = false }: { text: string; label?: string; stacked?: boolean }) {
-  const words = text.split(' ').filter(Boolean);
-  return (
-    <span className={stacked ? 'squares squares-stacked' : 'squares'} role={label ? 'group' : undefined} aria-label={label}>
-      {words.map((word, wordIndex) => (
-        <span key={wordIndex} className="squares-group">
-          {[...word].map((letter, index) => (
-            <span key={index} className="square">
-              {letter}
-            </span>
-          ))}
-          {wordIndex < words.length - 1 && <span className="square"> </span>}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-/** A printed label with handwritten squares after it. */
-function Field({ label, value, stacked }: { label: string; value: string; stacked?: boolean }) {
-  return (
-    <p className="field">
-      <span className="field-label">{label}</span>
-      <Squares text={value} label={label} stacked={stacked} />
-    </p>
-  );
 }
 
 /**

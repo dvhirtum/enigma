@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { BackendStatus, BombeCheck, BombeRun, BombeState, BombeStop, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
+import type { BackendStatus, BombeCheck, BombeResult, BombeRun, BombeState, BombeStop, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -224,6 +224,8 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
   const listeners = new Set<(status: BackendStatus) => void>();
   const stateListeners = new Set<(state: MachineState) => void>();
   const keySheetListeners = new Set<() => void>();
+  const modeListeners = new Set<(mode: 'enigma' | 'bombe') => void>();
+  const bombeListeners = new Set<(result: BombeResult) => void>();
   const ok = (value: MachineState = defaultM3) => vi.fn().mockResolvedValue({ ok: true, value });
   const bombe = (value: BombeState = emptyBombe) => vi.fn().mockResolvedValue({ ok: true, value });
   const run = (value: BombeRun = { ...carterPaused, status: 'Running', pause: null }) => vi.fn().mockResolvedValue({ ok: true, value });
@@ -320,10 +322,20 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     },
     windows: {
       openNotebook: vi.fn().mockResolvedValue(undefined),
+      openHut8Notebook: vi.fn().mockResolvedValue(undefined),
       openInstructions: vi.fn().mockResolvedValue(undefined),
+      showMode: vi.fn().mockResolvedValue(undefined),
+      onShowMode: vi.fn((listener: (mode: 'enigma' | 'bombe') => void) => {
+        modeListeners.add(listener);
+        return () => modeListeners.delete(listener);
+      }),
       onMachineState: vi.fn((listener: (state: MachineState) => void) => {
         stateListeners.add(listener);
         return () => stateListeners.delete(listener);
+      }),
+      onBombeResult: vi.fn((listener: (result: BombeResult) => void) => {
+        bombeListeners.add(listener);
+        return () => bombeListeners.delete(listener);
       }),
       onKeySheetsChanged: vi.fn((listener: () => void) => {
         keySheetListeners.add(listener);
@@ -344,5 +356,8 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
   const pushState = (next: MachineState) => stateListeners.forEach((listener) => listener(next));
   const pushKeySheetsChanged = () => keySheetListeners.forEach((listener) => listener());
 
-  return { api, pushStatus, pushState, pushKeySheetsChanged };
+  const pushMode = (mode: 'enigma' | 'bombe') => modeListeners.forEach((listener) => listener(mode));
+  const pushBombeResult = (result: BombeResult) => bombeListeners.forEach((listener) => listener(result));
+
+  return { api, pushStatus, pushState, pushKeySheetsChanged, pushMode, pushBombeResult };
 }

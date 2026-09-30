@@ -31,3 +31,14 @@ export function InstructionsIcon() {
     </svg>
   );
 }
+
+/** A squared notebook with a spiral binding. */
+export function Hut8Icon() {
+  return (
+    <svg className="panel-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <rect className="panel-icon-strip" x="5" y="3" width="15" height="18" rx="1.5" />
+      <rect x="5" y="3" width="15" height="18" rx="1.5" />
+      <path d="M3 6.5h4M3 10.5h4M3 14.5h4M3 18.5h4M10 8h7M10 12h7M10 16h4" />
+    </svg>
+  );
+}

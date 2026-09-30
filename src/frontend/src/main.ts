@@ -60,7 +60,11 @@ const openPage = (page: string) => {
 
 const run = () => {
   const backend = createBackend();
-  registerIpc(backend, { openNotebook: () => openPage('notebook'), openInstructions: () => openPage('instructions') });
+  registerIpc(backend, {
+    openNotebook: () => openPage('notebook'),
+    openHut8Notebook: () => openPage('hut8'),
+    openInstructions: () => openPage('instructions'),
+  });
 
   void app.whenReady().then(() => {
     harden(MAIN_WINDOW_VITE_DEV_SERVER_URL);

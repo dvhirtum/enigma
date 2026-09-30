@@ -426,6 +426,13 @@ export interface BombeApi {
 }
 
 /** An HTML document to print to the PDF file `name`. */
+/** A Bombe call another window made: the operation, its arguments and the value it returned. */
+export interface BombeResult {
+  name: keyof BombeApi;
+  args: unknown[];
+  value: unknown;
+}
+
 export interface PrintDocument {
   name: string;
   html: string;
@@ -451,10 +458,18 @@ export interface ClipboardApi {
 export interface WindowsApi {
   /** Opens the operator's notebook window, or brings it to the front. */
   openNotebook: () => Promise<void>;
+  /** Opens the Hut 8 notebook window, or brings it to the front. */
+  openHut8Notebook: () => Promise<void>;
   /** Opens the instructions window, or brings it to the front. */
   openInstructions: () => Promise<void>;
+  /** Shows a mode in the machine window. */
+  showMode: (mode: 'enigma' | 'bombe') => Promise<void>;
+  /** Listens for requests from another window to show a mode. */
+  onShowMode: (listener: (mode: 'enigma' | 'bombe') => void) => () => void;
   /** Listens for machine states changed by another window. */
   onMachineState: (listener: (state: MachineState) => void) => () => void;
+  /** Listens for the results of Bombe calls made by another window. */
+  onBombeResult: (listener: (result: BombeResult) => void) => () => void;
   /** Listens for key sheets generated, imported or deleted by another window. */
   onKeySheetsChanged: (listener: () => void) => () => void;
 }

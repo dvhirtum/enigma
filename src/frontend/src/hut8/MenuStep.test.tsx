@@ -1,28 +1,22 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { carterBombe, carterMenu } from '../test/fakeApi';
+import { describe, expect, it, vi } from 'vitest';
+import { drumLetters } from '../bombe/drums';
+import { carterMenu } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
-import { drumLetters, formatStops, MenuView } from './MenuView';
+import { formatStops, MenuStep } from './MenuStep';
 
 const carterLinks = carterMenu.menu!.links;
 
-describe('MenuView', () => {
-  it('asks for the crib to be placed first', async () => {
-    renderBombe(<MenuView />, carterBombe);
-
-    expect(await screen.findByText('Place the crib in the Crib view first.')).toBeInTheDocument();
-  });
-
+describe('MenuStep', () => {
   it('sums up the part connected to the test register', async () => {
-    renderBombe(<MenuView />, carterMenu);
+    renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu);
 
     expect(await screen.findByLabelText('Menu size')).toHaveTextContent('13 links, 12 letters, 2 loops · test register on G');
-    expect(screen.getByText(/With the diagonal board/)).toHaveTextContent('With the diagonal board: 0.4 (on)');
-    expect(screen.getByText(/Without/)).toHaveTextContent('Without: 721');
+    expect(screen.getByLabelText('Estimated false stops')).toHaveTextContent('Expect 0.4 false stops per wheel order with the diagonal board, 721 without (the board is on).');
   });
 
-  it('lists every crib link, the plugged ones checked', async () => {
-    renderBombe(<MenuView />, carterMenu);
+  it('lists every crib link, the plugged ones ticked', async () => {
+    renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu);
     const list = await screen.findByRole('group', { name: 'Links' });
 
     const boxes = within(list).getAllByRole('checkbox');
@@ -32,7 +26,7 @@ describe('MenuView', () => {
   });
 
   it('plugs a link in, keeping the test register', async () => {
-    const api = renderBombe(<MenuView />, carterMenu);
+    const api = renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu);
 
     fireEvent.click(await screen.findByRole('checkbox', { name: /T–O at 8/ }));
 
@@ -42,7 +36,7 @@ describe('MenuView', () => {
 
   it('lets the backend choose the test register when its letter leaves the menu', async () => {
     const menu = { ...carterMenu.menu!, links: ['SW1', 'NE2'], connectedLinks: ['SW1'], testRegister: 'S' };
-    const api = renderBombe(<MenuView />, { ...carterMenu, menu });
+    const api = renderBombe(<MenuStep onDone={vi.fn()} />, { ...carterMenu, menu });
 
     fireEvent.click(await screen.findByRole('checkbox', { name: /S–W at 1/ }));
 
@@ -51,32 +45,32 @@ describe('MenuView', () => {
 
   it('keeps the last link plugged', async () => {
     const menu = { ...carterMenu.menu!, links: ['SW1'], connectedLinks: ['SW1'], testRegister: 'S' };
-    renderBombe(<MenuView />, { ...carterMenu, menu });
+    renderBombe(<MenuStep onDone={vi.fn()} />, { ...carterMenu, menu });
 
     expect(await screen.findByRole('checkbox', { name: /S–W at 1/ })).toBeDisabled();
   });
 
   it('warns about links that are not connected to the test register', async () => {
     const menu = { ...carterMenu.menu!, links: [...carterLinks, 'MT3'] };
-    renderBombe(<MenuView />, { ...carterMenu, menu });
+    renderBombe(<MenuStep onDone={vi.fn()} />, { ...carterMenu, menu });
 
     expect(await screen.findByRole('status')).toHaveTextContent('1 link is not connected to the test register letter G and tests nothing: MT3.');
   });
 
   it('puts the test register on a clicked letter', async () => {
-    const api = renderBombe(<MenuView />, carterMenu);
-    const graph = await screen.findByRole('group', { name: 'Menu graph' });
+    const api = renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu);
+    const sketch = await screen.findByRole('group', { name: 'Menu sketch' });
 
-    const letter = within(graph).getByRole('button', { name: 'Letter E' });
+    const letter = within(sketch).getByRole('button', { name: 'Letter E' });
     fireEvent.pointerDown(letter);
     fireEvent.pointerUp(letter);
 
     await waitFor(() => expect(api.bombe.setMenu).toHaveBeenCalledWith(carterLinks, 'E'));
-    expect(within(graph).getByRole('button', { name: 'Letter G' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(sketch).getByRole('button', { name: 'Letter G' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('does not put the test register on a letter off the menu', async () => {
-    const api = renderBombe(<MenuView />, carterMenu);
+    const api = renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu);
     const letter = await screen.findByRole('button', { name: 'Letter T' });
 
     fireEvent.pointerDown(letter);
@@ -88,28 +82,37 @@ describe('MenuView', () => {
 
   it('locks the menu until the backend has answered a change', async () => {
     let answer: (value: unknown) => void = () => undefined;
-    const api = renderBombe(<MenuView />, carterMenu, (fake) => fake.bombe.setMenu.mockReturnValue(new Promise((resolve) => (answer = resolve))));
+    const api = renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu, (fake) => fake.bombe.setMenu.mockReturnValue(new Promise((resolve) => (answer = resolve))));
 
     fireEvent.click(await screen.findByRole('checkbox', { name: /T–O at 8/ }));
     fireEvent.click(screen.getByRole('checkbox', { name: /M–T at 3/ }));
-    const letter = within(screen.getByRole('group', { name: 'Menu graph' })).getByRole('button', { name: 'Letter E' });
+    const letter = within(screen.getByRole('group', { name: 'Menu sketch' })).getByRole('button', { name: 'Letter E' });
     fireEvent.pointerDown(letter);
     fireEvent.pointerUp(letter);
 
     expect(api.bombe.setMenu).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('checkbox', { name: /M–T at 3/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Build menu' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Build menu again' })).toBeDisabled();
 
     answer({ ok: true, value: carterMenu });
     await waitFor(() => expect(screen.getByRole('checkbox', { name: /M–T at 3/ })).toBeEnabled());
   });
 
   it('builds the menu again', async () => {
-    const api = renderBombe(<MenuView />, carterMenu);
+    const api = renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Build menu' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Build menu again' }));
 
     await waitFor(() => expect(api.bombe.buildMenu).toHaveBeenCalled());
+  });
+
+  it('sends the menu to the Bombe', async () => {
+    const onDone = vi.fn();
+    renderBombe(<MenuStep onDone={onDone} />, carterMenu);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Send the menu to the Bombe' }));
+
+    expect(onDone).toHaveBeenCalledOnce();
   });
 
   it('writes offsets as drum letters from ZZZ', () => {

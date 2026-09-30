@@ -142,6 +142,6 @@ describe('FrontView', () => {
     renderBombe(<FrontView />, carterBombe);
 
     expect(await screen.findByRole('button', { name: 'Start' })).toBeDisabled();
-    expect(screen.getByText('Build a menu first.')).toBeInTheDocument();
+    expect(screen.getByText('Draw a menu in the Hut 8 notebook first.')).toBeInTheDocument();
   });
 });

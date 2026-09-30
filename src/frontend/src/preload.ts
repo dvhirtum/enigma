@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { BackendStatus, EnigmaApi, MachineState } from './api';
+import type { BackendStatus, BombeResult, EnigmaApi, MachineState } from './api';
+
+type Mode = 'enigma' | 'bombe';
 
 const invoke = <T>(channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args) as Promise<T>;
 
@@ -77,11 +79,23 @@ const api: EnigmaApi = {
   },
   windows: {
     openNotebook: () => invoke('windows:openNotebook'),
+    openHut8Notebook: () => invoke('windows:openHut8Notebook'),
     openInstructions: () => invoke('windows:openInstructions'),
+    showMode: (mode) => invoke('windows:showMode', mode),
+    onShowMode: (listener) => {
+      const handler = (_event: IpcRendererEvent, mode: Mode) => listener(mode);
+      ipcRenderer.on('windows:mode', handler);
+      return () => ipcRenderer.removeListener('windows:mode', handler);
+    },
     onMachineState: (listener) => {
       const handler = (_event: IpcRendererEvent, state: MachineState) => listener(state);
       ipcRenderer.on('machine:state', handler);
       return () => ipcRenderer.removeListener('machine:state', handler);
+    },
+    onBombeResult: (listener) => {
+      const handler = (_event: IpcRendererEvent, result: BombeResult) => listener(result);
+      ipcRenderer.on('bombe:result', handler);
+      return () => ipcRenderer.removeListener('bombe:result', handler);
     },
     onKeySheetsChanged: (listener) => {
       const handler = () => listener();

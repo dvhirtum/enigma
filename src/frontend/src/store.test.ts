@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { createMachineStore, MachineStoreProvider, useMachine } from './store';
-import { carterBombe, carterMenu, carterPaused, createFakeApi, defaultM3, intercepts, withCrib } from './test/fakeApi';
+import { carterBombe, carterCheck, carterMenu, carterPaused, createFakeApi, defaultM3, intercepts, withCrib } from './test/fakeApi';
 
 describe('machine store', () => {
   it('loads the machine state and backend version', async () => {
@@ -256,5 +256,70 @@ describe('bombe slice loading', () => {
     await store.getState().loadBombe();
 
     expect(store.getState().error).toEqual(problem);
+  });
+});
+
+describe('bombe results from other windows', () => {
+  it('follows a job another window changed', () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+
+    store.getState().receiveBombe({ name: 'placeCrib', args: [1], value: carterMenu });
+
+    expect(store.getState().bombe).toEqual(carterMenu);
+  });
+
+  it('follows a run another window polled, and its speed when it started one', () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+    store.setState({ bombe: carterMenu });
+
+    store.getState().receiveBombe({ name: 'startRun', args: [null], value: { ...carterPaused, speed: null } });
+
+    expect(store.getState().bombe?.run?.status).toBe('Paused');
+    expect(store.getState().bombe?.stops).toBe(carterPaused.allStops);
+    expect(store.getState().speed).toBeNull();
+  });
+
+  it('opens a check another window opened on the Checking view', () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+
+    store.getState().receiveBombe({ name: 'getCheck', args: [0], value: carterCheck });
+
+    expect(store.getState().check).toEqual(carterCheck);
+    expect(store.getState().bombeView).toBe('bombe-checking');
+  });
+
+  it('follows changes to the open check and drops a suggestion when the steckers change', () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+    store.setState({ check: carterCheck, suggestion: { pairs: [], steckers: '', decrypt: '' } });
+
+    store.getState().receiveBombe({ name: 'setCheck', args: [0, { steckers: 'AD GQ' }], value: { ...carterCheck, steckers: 'AD GQ' } });
+
+    expect(store.getState().check?.steckers).toBe('AD GQ');
+    expect(store.getState().suggestion).toBeNull();
+  });
+
+  it('leaves the open check alone when another stop changes', () => {
+    const { api } = createFakeApi();
+    const store = createMachineStore(api);
+    store.setState({ check: carterCheck });
+
+    store.getState().receiveBombe({ name: 'setCheck', args: [1], value: { ...carterCheck, stop: { ...carterCheck.stop, index: 1 }, steckers: 'AD' } });
+
+    expect(store.getState().check).toEqual(carterCheck);
+  });
+
+  it('follows results pushed by the main process', async () => {
+    const { api, pushBombeResult } = createFakeApi();
+    const { result } = renderHook(() => useMachine((store) => store.bombe), {
+      wrapper: ({ children }: { children: ReactNode }) => createElement(MachineStoreProvider, { api, children }),
+    });
+
+    act(() => pushBombeResult({ name: 'loadIntercept', args: ['carter'], value: carterBombe }));
+
+    await waitFor(() => expect(result.current).toEqual(carterBombe));
   });
 });

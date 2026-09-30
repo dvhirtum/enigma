@@ -1,0 +1,121 @@
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { useEffect } from 'react';
+import { describe, expect, it } from 'vitest';
+import type { BombeState } from '../api';
+import { useMachine } from '../store';
+import { carterMenu, carterPaused } from '../test/fakeApi';
+import { renderBombe } from '../test/renderBombe';
+import { CheckStep, KeyStep } from './CheckStep';
+
+const carter: BombeState = { ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 }, stops: 2 };
+
+/** Opens the check of Carter's true stop and shows it in the step. */
+function OpenCheck({ step }: { step: 'check' | 'key' }) {
+  const openCheck = useMachine((store) => store.openCheck);
+  const check = useMachine((store) => store.check);
+  useEffect(() => {
+    void openCheck(0);
+  }, [openCheck]);
+  if (!check) {
+    return null;
+  }
+  return step === 'check' ? <CheckStep check={check} /> : <KeyStep check={check} />;
+}
+
+async function openCarterCheck(step: 'check' | 'key' = 'check') {
+  const api = renderBombe(<OpenCheck step={step} />, carter);
+  await screen.findByText(step === 'check' ? /Test the stop/ : 'Reflector');
+  return api;
+}
+
+describe('CheckStep', () => {
+  it('shows the crib, steckers and decrypt of the stop', async () => {
+    await openCarterCheck();
+
+    expect(screen.getByLabelText('Partner of G')).toHaveValue('Q');
+    expect(screen.getByLabelText('Partner of A')).toHaveValue('');
+    expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('?????');
+  });
+
+  it('lists the menu links with the drum position of each', async () => {
+    await openCarterCheck();
+
+    const links = within(screen.getByRole('region', { name: 'Menu links' })).getAllByRole('listitem');
+    expect(links[0]).toHaveTextContent(/1\s*S–W\s*ZZA/);
+    expect(links.map((link) => link.textContent)).toContain('5G–EZZE');
+  });
+
+  it('writes a pair into the steckers when a partner is typed', async () => {
+    const api = await openCarterCheck();
+
+    fireEvent.change(screen.getByLabelText('Partner of A'), { target: { value: 'd' } });
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'AD GQ' }));
+  });
+
+  it('takes the new partner when it is typed in front of the old one', async () => {
+    const api = await openCarterCheck();
+
+    fireEvent.change(screen.getByLabelText('Partner of G'), { target: { value: 'XQ' } });
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'GX' }));
+  });
+
+  it('turns the right ring by hand', async () => {
+    const api = await openCarterCheck();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next ring' }));
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { rightRing: 1 }));
+  });
+
+  it('finds the right ring and says when the rings tie', async () => {
+    const api = await openCarterCheck();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Find' }));
+
+    expect(await screen.findByRole('img', { name: 'Scores of the right rings' })).toBeInTheDocument();
+    expect(api.bombe.findRightRing).toHaveBeenCalledWith(0);
+    expect(screen.getByLabelText('Right ring setting')).toHaveTextContent('A (01)');
+    expect(screen.getByText(/Not determined yet: rings A, B/)).toBeInTheDocument();
+  });
+
+  it('accepts a suggested pair on its own or all of them', async () => {
+    const api = await openCarterCheck();
+    fireEvent.click(screen.getByRole('button', { name: 'Suggest' }));
+    const suggestions = await within(screen.getByRole('region', { name: 'Suggestions' })).findByRole('list');
+    expect(within(suggestions).getByText('I/K')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Accept IK' }));
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'GQ IK' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Accept IK' })).not.toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Accept all' }));
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenLastCalledWith(0, { steckers: 'AD ET FU GQ HM IK JL NV OX PZ RR SS WW OX' }));
+  });
+
+  it('confirms the verdict against the solution', async () => {
+    const api = await openCarterCheck();
+
+    fireEvent.click(screen.getByRole('button', { name: 'True stop' }));
+
+    expect(await screen.findByText('The whole crib matches.')).toBeInTheDocument();
+    expect(screen.getByText(/This is the true stop/)).toHaveTextContent('This is the true stop, so the verdict is right.');
+    expect(api.bombe.confirmCheck).toHaveBeenCalledWith(0, 'True');
+  });
+});
+
+describe('KeyStep', () => {
+  it('sets up the Enigma with the key after asking, and shows Enigma mode', async () => {
+    const api = await openCarterCheck('key');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Set up Enigma' }));
+    expect(api.machine.setUpMachine).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole('group', { name: 'Confirm Enigma setup' })).getByRole('button', { name: 'Set up' }));
+
+    await waitFor(() => expect(api.windows.showMode).toHaveBeenCalledWith('enigma'));
+    expect(api.machine.setUpMachine).toHaveBeenCalledWith({ reflector: 'B', rotors: ['II', 'V', 'III'], rings: [26, 26, 26], plugs: ['GQ'], positions: 'ULA' });
+  });
+});

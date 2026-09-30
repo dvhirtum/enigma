@@ -3,8 +3,7 @@ import type { BombeRun, BombeState } from '../api';
 import { useWheelTurn } from '../components/useWheelTurn';
 import { shiftLetter } from '../machine';
 import { useMachine } from '../store';
-import { advanceBy, chainLength, drumColours, formatSpeed, fullSpeedStep, indicatorOf, rotors, slotsOf, speedAt, stepOf, type ScramblerSlot } from './drums';
-import { drumLetters } from './MenuView';
+import { advanceBy, chainLength, drumColours, drumLetters, formatSpeed, fullSpeedStep, indicatorOf, rotors, slotsOf, speedAt, stepOf, type ScramblerSlot } from './drums';
 
 const banks = 3;
 const pitch = 50;
@@ -306,7 +305,7 @@ function RunSettings({ bombe, locked }: { bombe: BombeState; locked: boolean }) 
 /** Why the Bombe cannot start yet, or null when it can. */
 export function notReady(bombe: BombeState): string | null {
   if (!bombe.menu) {
-    return 'Build a menu first.';
+    return 'Draw a menu in the Hut 8 notebook first.';
   }
   const copies = bombe.machine?.copies ?? [];
   const partial = copies.findIndex((copy) => copy.drums.some((rotor) => rotor) && !copy.drums.every((rotor) => rotor));

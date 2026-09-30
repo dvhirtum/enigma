@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import type { Placement } from '../api';
-import { useActive } from '../mode';
 import { useMachine } from '../store';
 import { isFormControl } from '../useKeys';
-
-/** Keeps the letters of typed text, in capitals. */
-export function cribLetters(text: string): string {
-  return text.toUpperCase().replace(/[^A-Z]/g, '');
-}
+import { cribLetters, plural } from './letters';
 
 function CribForm() {
   const crib = useMachine((store) => store.bombe?.crib ?? '');
@@ -20,20 +15,29 @@ function CribForm() {
   };
 
   return (
-    <form className="crib-form" onSubmit={onSubmit}>
-      <label>
+    <form className="notebook-form" aria-label="Crib" onSubmit={onSubmit}>
+      <label className="inline-label">
         Crib
-        <input value={text} spellCheck={false} autoComplete="off" onChange={(event) => setText(cribLetters(event.target.value))} />
+        <input
+          className="hand-input crib-input"
+          value={text}
+          spellCheck={false}
+          autoComplete="off"
+          placeholder="WETTERVORHERSAGE"
+          onChange={(event) => setText(cribLetters(event.target.value))}
+        />
       </label>
-      <button type="submit" disabled={text === crib}>
-        Set crib
-      </button>
+      <p className="notebook-actions">
+        <button type="submit" disabled={text === crib}>
+          Set crib
+        </button>
+      </p>
     </form>
   );
 }
 
 function crashText(crashes: number): string {
-  return crashes === 0 ? 'no crashes' : crashes === 1 ? '1 crash' : `${crashes} crashes`;
+  return crashes === 0 ? 'no crashes' : plural(crashes, 'crash', 'crashes');
 }
 
 /** The cipher letter under a pointer, counted in letter widths from the first (fractional, so 2.5 is halfway along the third). */
@@ -43,8 +47,8 @@ function letterAt(row: HTMLElement | null, clientX: number): number | null {
 }
 
 /**
- * The cipher text with the crib under it. Drag the crib, or use the arrow keys anywhere outside a text field, to slide
- * it; placing it builds the menu.
+ * The cipher text written out in squares with the crib under it. Drag the crib, or use the arrow keys anywhere outside a
+ * text field, to slide it; a crash (a letter enciphered to itself) is crossed out in red.
  */
 function CribStrip({ cipherText, crib, placements, placed }: { cipherText: string; crib: string; placements: Placement[]; placed: number | null }) {
   const placeCrib = useMachine((store) => store.placeCrib);
@@ -56,8 +60,6 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
   const last = placements.length - 1;
   const crashes = placements[position]?.crashes ?? [];
 
-  const active = useActive();
-
   useEffect(() => {
     if (grip.current === null) {
       cribRow.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
@@ -67,9 +69,6 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
   const slideTo = (next: number) => setPosition(Math.min(last, Math.max(0, next)));
 
   useEffect(() => {
-    if (!active) {
-      return;
-    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.altKey || event.metaKey || isFormControl(event.target)) {
         return;
@@ -83,7 +82,7 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [active, last]);
+  }, [last]);
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     const letter = letterAt(cipherRow.current, event.clientX);
@@ -111,7 +110,7 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
   return (
     <>
       <div
-        className="crib-strip"
+        className="crib-paper"
         role="slider"
         tabIndex={0}
         aria-label="Crib position"
@@ -127,7 +126,7 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
         </div>
         <div className="crib-cipher" ref={cipherRow} aria-hidden="true">
           {[...cipherText].map((letter, index) => (
-            <span key={index} className={covered(index) ? (crashes.includes(index - position) ? 'crash' : 'covered') : undefined}>
+            <span key={index} className={covered(index) ? (crashes.includes(index - position) ? 'square crash' : 'square covered') : 'square'}>
               {letter}
             </span>
           ))}
@@ -136,58 +135,87 @@ function CribStrip({ cipherText, crib, placements, placed }: { cipherText: strin
           className="crib-letters"
           ref={cribRow}
           aria-hidden="true"
-          style={{ marginLeft: `calc(${position} * var(--cell))` }}
+          style={{ marginLeft: `calc(${position} * var(--sq))` }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
           {[...crib].map((letter, index) => (
-            <span key={index} className={crashes.includes(index) ? 'crash' : undefined}>
+            <span key={index} className={crashes.includes(index) ? 'square crash' : 'square'}>
               {letter}
             </span>
           ))}
         </div>
       </div>
-      <div className="crib-controls">
+      <p className="notebook-actions">
         <button type="button" aria-label="Slide left" disabled={position === 0} onClick={() => slideTo(position - 1)}>
           ◀
         </button>
         <button type="button" aria-label="Slide right" disabled={position === last} onClick={() => slideTo(position + 1)}>
           ▶
         </button>
-        <p className="summary" aria-live="polite">
+        <span className="hut8-note" aria-live="polite">
           Position {position + 1} of {last + 1} · {crashText(crashes.length)}
-        </p>
+        </span>
+      </p>
+      <p className="notebook-actions">
         <button type="button" disabled={crashes.length > 0 || position === placed} onClick={() => void placeCrib(position)}>
           Place crib
         </button>
-        <p className="summary" aria-label="Placed">
-          {placed === null ? 'Not placed' : `Placed at position ${placed + 1}`}
-        </p>
-      </div>
+      </p>
     </>
   );
 }
 
-/** Slides the crib along the cipher text to a position without crashes and places it there. */
-export function CribView() {
+/** Where the crib was placed: the cipher letters it covers, with the crib written under them. */
+export function CribSummary() {
   const bombe = useMachine((store) => store.bombe);
-  if (!bombe?.source) {
-    return <p className="bombe-empty">Load a message in the Message view first.</p>;
+  if (!bombe?.crib || bombe.position === null) {
+    return null;
+  }
+
+  const { crib, position, cipherText } = bombe;
+  const cipher = cipherText.slice(position, position + crib.length);
+  return (
+    <section className="notebook-section" aria-label="Placed crib">
+      <p>Placed at position {position + 1}, no crashes.</p>
+      <p className="keys-lamps crib-placed" role="group" aria-label="Crib under the cipher text">
+        <span className="keys-lamps-group">
+          <span className="keys-lamps-row">
+            {[...cipher].map((letter, index) => (
+              <span key={index} className="square">
+                {letter}
+              </span>
+            ))}
+          </span>
+          <span className="keys-lamps-row keys-lamps-lamp">
+            {[...crib].map((letter, index) => (
+              <span key={index} className="square">
+                {letter}
+              </span>
+            ))}
+          </span>
+        </span>
+      </p>
+    </section>
+  );
+}
+
+/** Slides the crib along the cipher text to a position without crashes and places it there. */
+export function CribStep() {
+  const bombe = useMachine((store) => store.bombe);
+  if (!bombe) {
+    return null;
   }
 
   const { cipherText, crib, placements, position } = bombe;
   return (
-    <div className="bombe-view">
+    <>
+      <p>Write down the plain text you expect somewhere in the message, then slide it along the cipher text to a place where no letter crashes.</p>
       <CribForm key={crib ?? ''} />
-      {!crib ? (
-        <p className="bombe-empty">Type the plain text you expect somewhere in the message.</p>
-      ) : placements.length === 0 ? (
-        <p className="bombe-empty">The crib is longer than the cipher text.</p>
-      ) : (
-        <CribStrip key={`${cipherText} ${crib}`} cipherText={cipherText} crib={crib} placements={placements} placed={position} />
-      )}
-    </div>
+      {crib && placements.length === 0 && <p className="notebook-warning">The crib is longer than the cipher text.</p>}
+      {crib && placements.length > 0 && <CribStrip key={`${cipherText} ${crib}`} cipherText={cipherText} crib={crib} placements={placements} placed={position} />}
+    </>
   );
 }

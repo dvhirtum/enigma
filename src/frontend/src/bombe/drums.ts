@@ -1,6 +1,10 @@
 import type { BombeState } from '../api';
-import { drumLetters } from './MenuView';
 import { parseLink, type Link } from './menuLayout';
+
+/** The drum letters of an offset: its digits in base 26, with Z as 0 and A as 1 (1 = ZZA, 26 = ZAZ). */
+export function drumLetters(offset: number): string {
+  return [Math.floor(offset / 676), Math.floor(offset / 26), offset].map((digit) => String.fromCharCode(65 + ((digit + 25) % 26))).join('');
+}
 
 export const rotors = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'] as const;
 

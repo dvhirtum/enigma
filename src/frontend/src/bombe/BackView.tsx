@@ -141,7 +141,7 @@ export function BackView() {
         </label>
         {bombe.menu && <p className="summary">of the test register cable {bombe.menu.testRegister}.</p>}
       </div>
-      {!bombe.menu && <p className="bombe-empty">Build a menu to plug up the Bombe.</p>}
+      {!bombe.menu && <p className="bombe-empty">Draw a menu in the Hut 8 notebook to plug up the Bombe.</p>}
       <Back bombe={bombe} />
     </div>
   );

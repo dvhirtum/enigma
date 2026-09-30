@@ -3,6 +3,7 @@ import { createStore, useStore, type StoreApi } from 'zustand';
 import type {
   ApiResult,
   BombeCheck,
+  BombeResult,
   BombeRun,
   BombeSettingsChange,
   BombeState,
@@ -113,6 +114,8 @@ export interface BombeSlice {
   confirmation: Confirmation | null;
   /** Opens the check of a stop on the Checking view. */
   openCheck: (stop: number) => Promise<boolean>;
+  /** Follows a Bombe call another window made. */
+  receiveBombe: (result: BombeResult) => void;
   changeCheck: (change: CheckChange) => Promise<boolean>;
   /** Pairs `letter` with `partner` (itself: unsteckered; null: unknown) once the queued operations are done. */
   setPartner: (letter: string, partner: string | null) => Promise<boolean>;
@@ -145,8 +148,12 @@ export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice, Bo
   dismissError: () => void;
   /** Opens the operator's notebook window, or brings it to the front. */
   openNotebook: () => Promise<void>;
+  /** Opens the Hut 8 notebook window, or brings it to the front. */
+  openHut8Notebook: () => Promise<void>;
   /** Opens the instructions window, or brings it to the front. */
   openInstructions: () => Promise<void>;
+  /** Shows a mode in the machine window. */
+  showMode: (mode: 'enigma' | 'bombe') => Promise<void>;
   /** Runs operations that depend on earlier ones one at a time, in order. */
   enqueue: <T>(task: () => Promise<T>) => Promise<T>;
   /** Turns a rotor `steps` letters on from its position once the queued operations are done. */
@@ -198,15 +205,31 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       checkOpenings++;
       set({ stops: [], check: null, checkLamp: null, suggestion: null, ringScores: null, confirmation: null });
     };
+    const applyJob = (value: BombeState) => {
+      set({ bombe: value });
+      if (value.stops < get().stops.length || value.stops === 0) {
+        forgetStops();
+      }
+    };
     const job = async (call: Promise<ApiResult<BombeState>>) => {
       const result = await check(call);
       if (result.ok) {
-        set({ bombe: result.value });
-        if (result.value.stops < get().stops.length || result.value.stops === 0) {
-          forgetStops();
-        }
+        applyJob(result.value);
       }
       return result.ok;
+    };
+    /** Shows a check that was just opened, here or in another window. */
+    const showCheck = (value: BombeCheck) => {
+      checkOpenings++;
+      keyPresses++;
+      set({ check: value, checkLamp: null, suggestion: null, ringScores: null, confirmation: null, bombeView: 'bombe-checking' });
+    };
+    /** Follows a check changed in another window, when it is the open one. */
+    const followCheck = (next: BombeCheck, changes: Partial<MachineStore> = {}) => {
+      set((state) => ({
+        stops: state.stops.map((stop) => (stop.index === next.stop.index ? next.stop : stop)),
+        ...(state.check?.stop.index === next.stop.index ? { check: next, ...changes } : {}),
+      }));
     };
     /** Whether the check of `stop` is still the open one. */
     const stillOpen = (stop: number) => get().check?.stop.index === stop;
@@ -238,15 +261,21 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       turned[drum] = shiftLetter(turned[drum], steps);
       return get().changeCheck({ [field]: turned.join('') });
     };
+    /** Follows a run, or its end when the backend no longer has it. */
+    const applyRun = (value: BombeRun | null) => {
+      const current = get().bombe;
+      if (current) {
+        set({ bombe: { ...current, run: value, stops: value ? value.allStops : current.stops } });
+      }
+    };
     /** A run call; a poll leaves the error as it is unless the poll fails. A run the backend no longer has is dropped. */
     const run = async (call: Promise<ApiResult<BombeRun>>, poll = false) => {
       const result = poll ? await settle(call) : await check(call);
       if (poll && !result.ok) {
         set({ error: result.problem });
       }
-      const current = get().bombe;
-      if (current && (result.ok || result.problem.status === 404)) {
-        set({ bombe: { ...current, run: result.ok ? result.value : null, stops: result.ok ? result.value.allStops : current.stops } });
+      if (result.ok || result.problem.status === 404) {
+        applyRun(result.ok ? result.value : null);
       }
       return result.ok;
     };
@@ -270,7 +299,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       bombe: null,
       intercepts: [],
       speed: historicalSpeed,
-      bombeView: 'bombe-message',
+      bombeView: 'bombe-front',
       stops: [],
       check: null,
       checkLamp: null,
@@ -326,10 +355,56 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         const opening = ++checkOpenings;
         const result = await check(bombe.getCheck(stop));
         if (result.ok && opening === checkOpenings) {
-          keyPresses++;
-          set({ check: result.value, checkLamp: null, suggestion: null, ringScores: null, confirmation: null, bombeView: 'bombe-checking' });
+          showCheck(result.value);
         }
         return result.ok;
+      },
+      receiveBombe: ({ name, args, value }) => {
+        switch (name) {
+          case 'startRun':
+          case 'setRunSpeed':
+          case 'continueRun':
+          case 'cancelRun':
+          case 'getRun': {
+            const current = value as BombeRun;
+            applyRun(current);
+            if (name === 'startRun' || name === 'setRunSpeed') {
+              set({ speed: current.speed });
+            }
+            return;
+          }
+          case 'getCheck':
+            showCheck(value as BombeCheck);
+            return;
+          case 'setCheck': {
+            const next = value as BombeCheck;
+            const steckersChanged = get().check?.steckers !== next.steckers;
+            followCheck(next, { confirmation: null, ...(steckersChanged ? { suggestion: null, ringScores: null } : {}) });
+            return;
+          }
+          case 'confirmCheck': {
+            const confirmation = value as Confirmation;
+            followCheck(confirmation.check, { confirmation });
+            return;
+          }
+          case 'findRightRing': {
+            const found = value as RingFind;
+            followCheck(found.check, { ringScores: found.rings, confirmation: null });
+            return;
+          }
+          case 'suggestSteckers':
+            if (get().check?.stop.index === args[0]) {
+              set({ suggestion: value as Suggestion });
+            }
+            return;
+          case 'getState':
+          case 'intercepts':
+          case 'getStops':
+          case 'pressCheckKey':
+            return;
+          default:
+            applyJob(value as BombeState);
+        }
       },
       changeCheck: async (change) => {
         const steckers = change.steckers !== undefined ? { suggestion: null, ringScores: null } : {};
@@ -529,7 +604,9 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       },
       dismissError: () => set({ error: null }),
       openNotebook: () => windows.openNotebook(),
+      openHut8Notebook: () => windows.openHut8Notebook(),
       openInstructions: () => windows.openInstructions(),
+      showMode: (mode) => windows.showMode(mode),
       enqueue,
       stepRotor: (slot, steps) =>
         enqueue(async () => {
@@ -566,10 +643,11 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
 
 const MachineStoreContext = createContext<StoreApi<MachineStore> | null>(null);
 
-/** Provides the machine store, which follows machine states and key sheets changed by other windows. */
+/** Provides the machine store, which follows machine states, Bombe calls and key sheets changed by other windows. */
 export function MachineStoreProvider({ api, children }: { api: EnigmaApi; children: ReactNode }) {
   const [store] = useState(() => createMachineStore(api));
   useEffect(() => api.windows.onMachineState((machine) => store.setState({ machine })), [api, store]);
+  useEffect(() => api.windows.onBombeResult((result) => store.getState().receiveBombe(result)), [api, store]);
   useEffect(
     () =>
       api.windows.onKeySheetsChanged(() => {
