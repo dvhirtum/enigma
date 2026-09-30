@@ -133,6 +133,38 @@ public sealed class BombeEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_suggest_steckers_and_find_the_right_ring_When_asked_through_the_api()
+    {
+        // Arrange
+        await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/intercept", new { id = "carter-weather" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/crib", new { crib = "WETTERVORHERSAGE" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
+        await SendAsync<BombeState>(
+            HttpMethod.Put, "/api/bombe/settings", new { input = (string?)null, diagonalBoard = true, reflector = "B", wheelOrders = CarterWheelOrders });
+        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null });
+        await WaitForRunAsync();
+        var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/run/stops?from=0"), Token);
+        var stop = stops!.Single(s => s.Position == "VMB").Index;
+        await SendAsync<CheckState>(
+            HttpMethod.Put, $"/api/bombe/run/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ RR SS WW", position = (string?)null, rightRing = (int?)null });
+
+        // Act
+        using var suggestResponse = await _client.PostAsync(Url($"/api/bombe/run/stops/{stop}/check/suggest"), null, Token);
+        var suggestion = await suggestResponse.Content.ReadFromJsonAsync<SuggestionState>(Token);
+        using var findResponse = await _client.PostAsync(Url($"/api/bombe/run/stops/{stop}/check/find"), null, Token);
+        var found = await findResponse.Content.ReadFromJsonAsync<FindState>(Token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, suggestResponse.StatusCode);
+        Assert.Equal(["IK", "OX"], suggestion!.Pairs.Select(pair => pair.Pair).Order());
+        Assert.Equal("WETTERVORHERSAGE", suggestion.Decrypt);
+        Assert.Equal(HttpStatusCode.OK, findResponse.StatusCode);
+        Assert.Equal(26, found!.Rings.Count);
+        Assert.Equal(found.Rings.First(ring => ring.Best).Ring, found.Check.RightRing);
+    }
+
+    [Fact]
     public async Task Should_return_not_found_When_there_is_no_run()
     {
         // Arrange

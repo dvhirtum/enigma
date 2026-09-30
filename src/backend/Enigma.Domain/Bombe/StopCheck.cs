@@ -49,6 +49,18 @@ public sealed record CheckConfirmation(
     IReadOnlyList<int> CribUnknown,
     SolutionComparison? Solution);
 
+/// <summary>A proposed stecker (a letter with itself: unsteckered) and its gain in log likelihood.</summary>
+public sealed record SuggestedPair(Letter First, Letter Second, double Gain)
+{
+    public override string ToString() => First.Index <= Second.Index ? $"{First}{Second}" : $"{Second}{First}";
+}
+
+/// <summary>The proposed steckers in the order found, the steckers with them added and the decrypt they give.</summary>
+public sealed record SteckerSuggestion(IReadOnlyList<SuggestedPair> Pairs, Steckers Steckers, IReadOnlyList<Letter?> Decrypt);
+
+/// <summary>A right ring's decrypt score (null when no three letters in a row are known), and whether it is the best.</summary>
+public sealed record RingScore(RingSetting Ring, double? Score, bool Best);
+
 /// <summary>
 /// The checking of a Bombe stop, as on the Hut 8 checking machine: rotors and reflector without plugboard, which do not
 /// step and are set by the Bombe drum letters. The checker writes down the steckers, turns the right ring (the core
@@ -56,6 +68,12 @@ public sealed record CheckConfirmation(
 /// </summary>
 public sealed class StopCheck
 {
+    /// <summary>The most plug pairs Suggest fills in, as on the Navy key sheets.</summary>
+    public const int MaxPlugs = 10;
+
+    /// <summary>How much a suggested partner must gain over the letter's runner-up, in natural log units.</summary>
+    public const double SuggestMargin = 2.0;
+
     public StopCheck(BombeStop stop, ReflectorType reflector, CribPlacement placement)
     {
         ArgumentNullException.ThrowIfNull(stop);
@@ -122,20 +140,50 @@ public sealed class StopCheck
     /// Decrypts the whole message on an Enigma with this key, the rotors stepping. A letter is null where a stecker
     /// it needs is not known yet.
     /// </summary>
-    public IReadOnlyList<Letter?> Decrypt()
+    public IReadOnlyList<Letter?> Decrypt() => Decrypt(Steckers, MessageScrambles(RightRing));
+
+    /// <summary>
+    /// Proposes steckers for the letters still unknown, one at a time, without changing the check. Each partner of an
+    /// unknown letter (itself included) that keeps the crib consistent gains the log likelihood of the decrypt letters
+    /// it makes known, against random letters. The letter whose best partner gains most is taken when that partner
+    /// gains and beats the letter's runner-up by <see cref="SuggestMargin"/>. At most <see cref="MaxPlugs"/> plug pairs.
+    /// </summary>
+    public SteckerSuggestion Suggest()
     {
-        var rings = Rings;
-        var windows = MessageStart(WindowsAtCrib(Stop.Position, rings), Placement.Position);
-        var plain = new List<Letter?>(Placement.CipherText.Count);
-        foreach (var cipher in Placement.CipherText)
+        var scrambles = MessageScrambles(RightRing);
+        var crib = Placement.Links
+            .Select(link => (Link: link, Scramble: Scramble(Stop.Position.Advance(link.Offset))))
+            .ToArray();
+        var steckers = Steckers;
+        var pairs = new List<SuggestedPair>();
+        while (BestPair(steckers, scrambles, crib) is { } pair)
         {
-            windows = Step(WheelOrder, windows);
-            plain.Add(Steckers.PartnerOf(cipher) is { } input
-                ? Steckers.PartnerOf(Scrambler.Encipher(WheelOrder, Reflector, Core(windows, rings), input))
-                : null);
+            steckers = steckers.With(pair.First, pair.Second);
+            pairs.Add(pair);
         }
 
-        return plain;
+        return new SteckerSuggestion(pairs, steckers, Decrypt(steckers, scrambles));
+    }
+
+    /// <summary>
+    /// Scores the decrypt with each right ring, the core positions kept, by its gain against random letters, and sets
+    /// the lowest ring with the best score. Rings that give the same decrypt tie. When no ring has three known letters
+    /// in a row, all tie and the ring stays.
+    /// </summary>
+    public IReadOnlyList<RingScore> FindRightRing()
+    {
+        var scores = Enumerable.Range(1, Letter.Count)
+            .Select(RingSetting.FromNumber)
+            .Select(ring => (Ring: ring, Score: LanguageModel.Gain(Decrypt(Steckers, MessageScrambles(ring)))))
+            .ToArray();
+        var best = scores.Max(ring => ring.Score ?? double.NegativeInfinity);
+        RingScore[] rings = [.. scores.Select(ring => new RingScore(ring.Ring, ring.Score, (ring.Score ?? double.NegativeInfinity) == best))];
+        if (!double.IsNegativeInfinity(best))
+        {
+            RightRing = rings.First(ring => ring.Best).Ring;
+        }
+
+        return rings;
     }
 
     /// <summary>Gives the verdict, and checks the crib and, when there is one, the solution.</summary>
@@ -173,6 +221,100 @@ public sealed class StopCheck
             [.. Steckers.Pairs.Where(pair => partners[pair.First.Index] != pair.Second).Select(pair => $"{pair.First}{pair.Second}")],
             [.. solution.Plugs.Where(plug => Steckers.PartnerOf(plug.First) != plug.Second).Select(plug => plug.ToString())],
             solution.Rings[2] == RightRing);
+    }
+
+    private static Letter?[] Decrypt(Steckers steckers, Letter[][] scrambles, IReadOnlyList<Letter> cipherText)
+    {
+        var plain = new Letter?[cipherText.Count];
+        for (var index = 0; index < plain.Length; index++)
+        {
+            plain[index] = steckers.PartnerOf(cipherText[index]) is { } input
+                ? steckers.PartnerOf(scrambles[index][input.Index])
+                : null;
+        }
+
+        return plain;
+    }
+
+    private Letter?[] Decrypt(Steckers steckers, Letter[][] scrambles) => Decrypt(steckers, scrambles, Placement.CipherText);
+
+    // The scrambler of each message letter with the right ring, the rotors stepping: the output for each input.
+    private Letter[][] MessageScrambles(RingSetting rightRing)
+    {
+        IReadOnlyList<RingSetting> rings = [RingSetting.FromChar('Z'), RingSetting.FromChar('Z'), rightRing];
+        var windows = MessageStart(WindowsAtCrib(Stop.Position, rings), Placement.Position);
+        var scrambles = new Letter[Placement.CipherText.Count][];
+        for (var index = 0; index < scrambles.Length; index++)
+        {
+            windows = Step(WheelOrder, windows);
+            scrambles[index] = Scramble(Core(windows, rings));
+        }
+
+        return scrambles;
+    }
+
+    private Letter[] Scramble(DrumPosition core) =>
+        [.. Enumerable.Range(0, Letter.Count).Select(input => Scrambler.Encipher(WheelOrder, Reflector, core, Letter.FromIndex(input)))];
+
+    private SuggestedPair? BestPair(Steckers steckers, Letter[][] scrambles, (MenuLink Link, Letter[] Scramble)[] crib)
+    {
+        Letter[] unknown = [.. Enumerable.Range(0, Letter.Count).Select(Letter.FromIndex).Where(letter => steckers.PartnerOf(letter) is null)];
+        var plugsFull = steckers.Plugs.Count >= MaxPlugs;
+        var decrypt = Decrypt(steckers, scrambles);
+        SuggestedPair? best = null;
+        foreach (var letter in unknown)
+        {
+            var candidates = unknown
+                .Where(partner => partner == letter || !plugsFull)
+                .Select(partner => (Partner: partner, Steckers: steckers.With(letter, partner)))
+                .Where(candidate => crib.All(link => Consistent(candidate.Steckers, link.Link, link.Scramble)))
+                .Select(candidate => new SuggestedPair(letter, candidate.Partner, Gain(decrypt, Decrypt(candidate.Steckers, scrambles))))
+                .OrderByDescending(candidate => candidate.Gain)
+                .ToArray();
+            if (candidates.Length == 0)
+            {
+                continue;
+            }
+
+            var runnerUp = candidates.Length > 1 ? candidates[1].Gain : double.NegativeInfinity;
+            if (candidates[0].Gain > (best?.Gain ?? 0) && candidates[0].Gain - runnerUp >= SuggestMargin)
+            {
+                best = candidates[0];
+            }
+        }
+
+        return best;
+    }
+
+    // The log likelihood against random letters of the windows the candidate decrypt makes known.
+    private static double Gain(Letter?[] before, Letter?[] after)
+    {
+        var gain = 0.0;
+        for (var index = 2; index < after.Length; index++)
+        {
+            if (LanguageModel.Window(before, index) is null && LanguageModel.Window(after, index) is { } logProbability)
+            {
+                gain += logProbability - LanguageModel.RandomLogProbability;
+            }
+        }
+
+        return gain;
+    }
+
+    // Whether the steckers can still encipher a crib letter to its cipher letter, from either end of the link.
+    private static bool Consistent(Steckers steckers, MenuLink link, Letter[] scramble) =>
+        Agrees(steckers, link.Second, link.First, scramble) && Agrees(steckers, link.First, link.Second, scramble);
+
+    private static bool Agrees(Steckers steckers, Letter from, Letter to, Letter[] scramble)
+    {
+        if (steckers.PartnerOf(from) is not { } input)
+        {
+            return true;
+        }
+
+        var output = scramble[input.Index];
+        return (steckers.PartnerOf(output) is not { } partner || partner == to)
+            && (steckers.PartnerOf(to) is not { } known || known == output);
     }
 
     private static (Letter Left, Letter Middle, Letter Right) WindowsAtCrib(DrumPosition core, IReadOnlyList<RingSetting> rings) =>

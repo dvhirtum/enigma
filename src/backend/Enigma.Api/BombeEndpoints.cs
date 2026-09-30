@@ -35,7 +35,9 @@ internal static class BombeEndpoints
         .AddSingleton<GetCheckHandler>()
         .AddSingleton<SetCheckHandler>()
         .AddSingleton<PressCheckKeyHandler>()
-        .AddSingleton<ConfirmCheckHandler>();
+        .AddSingleton<ConfirmCheckHandler>()
+        .AddSingleton<SuggestSteckersHandler>()
+        .AddSingleton<FindRightRingHandler>();
 
     public static void MapBombeEndpoints(this IEndpointRouteBuilder app)
     {
@@ -106,5 +108,11 @@ internal static class BombeEndpoints
 
         bombe.MapPost("/run/stops/{stop:int}/check/verdict", (int stop, VerdictRequest request, ConfirmCheckHandler handler) =>
             handler.Handle(new ConfirmCheck(stop, request.Verdict)));
+
+        bombe.MapPost("/run/stops/{stop:int}/check/suggest", (int stop, SuggestSteckersHandler handler) =>
+            handler.Handle(new SuggestSteckers(stop)));
+
+        bombe.MapPost("/run/stops/{stop:int}/check/find", (int stop, FindRightRingHandler handler) =>
+            handler.Handle(new FindRightRing(stop)));
     }
 }

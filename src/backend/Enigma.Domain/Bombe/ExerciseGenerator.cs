@@ -64,9 +64,7 @@ public static class ExerciseGenerator
         var allotment = book.AllotmentOf(sheet.Network)
             ?? throw new DomainException($"{sheet.Network} has no columns in the Kenngruppenbuch.");
 
-        var template = Templates[random.Next(Templates.Length)];
-        var prefix = Compact(template.Prefix(random));
-        var plaintext = prefix + template.Crib + Compact(template.Body(random));
+        var (template, prefix, plaintext) = Compose(random);
         var group = RadioMessage.GroupLength;
         plaintext += new string('X', (group - (plaintext.Length % group)) % group);
 
@@ -103,6 +101,21 @@ public static class ExerciseGenerator
             MessageSource.Letters(message.CipherText),
             Crib.Parse(template.Crib),
             solution);
+    }
+
+    /// <summary>The plain text of a random template, before padding.</summary>
+    public static string PlainText(Random random)
+    {
+        ArgumentNullException.ThrowIfNull(random);
+
+        return Compose(random).PlainText;
+    }
+
+    private static (Template Template, string Prefix, string PlainText) Compose(Random random)
+    {
+        var template = Templates[random.Next(Templates.Length)];
+        var prefix = Compact(template.Prefix(random));
+        return (template, prefix, prefix + template.Crib + Compact(template.Body(random)));
     }
 
     private static Kenngruppe RandomKenngruppe(Kenngruppenbuch book, ColumnRange columns, Random random) =>
