@@ -146,7 +146,6 @@ public sealed class StopCheckTests
         Assert.True(solution.VerdictCorrect);
         Assert.Empty(solution.WrongPairs);
         Assert.Empty(solution.MissingPairs);
-        Assert.True(solution.RightRingCorrect);
     }
 
     [Fact]

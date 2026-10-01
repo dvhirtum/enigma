@@ -341,7 +341,6 @@ export interface SolutionComparison {
   verdictCorrect: boolean;
   wrongPairs: string[];
   missingPairs: string[];
-  rightRingCorrect: boolean;
 }
 
 /** A verdict with the crib offsets that mismatch or are unknown, the comparison with the solution (when there is one) and the check. */

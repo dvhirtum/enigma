@@ -36,8 +36,7 @@ public sealed record SolutionComparison(
     bool IsTrueStop,
     bool VerdictCorrect,
     IReadOnlyList<string> WrongPairs,
-    IReadOnlyList<string> MissingPairs,
-    bool RightRingCorrect);
+    IReadOnlyList<string> MissingPairs);
 
 /// <summary>
 /// The confirmation of a verdict: the crib offsets the steckers do not encipher correctly, the offsets still unknown,
@@ -243,8 +242,7 @@ public sealed class StopCheck
             isTrue,
             Verdict == (isTrue ? StopVerdict.True : StopVerdict.False),
             [.. Steckers.Pairs.Where(pair => partners[pair.First.Index] != pair.Second).Select(pair => $"{pair.First}{pair.Second}")],
-            [.. solution.Plugs.Where(plug => Steckers.PartnerOf(plug.First) != plug.Second).Select(plug => plug.ToString())],
-            solution.Rings[2] == RightRing);
+            [.. solution.Plugs.Where(plug => Steckers.PartnerOf(plug.First) != plug.Second).Select(plug => plug.ToString())]);
     }
 
     private static Letter?[] Decrypt(Steckers steckers, Letter[][] scrambles, IReadOnlyList<Letter> cipherText)

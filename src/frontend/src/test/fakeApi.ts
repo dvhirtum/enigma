@@ -342,7 +342,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
           verdict: 'True',
           cribMismatches: [],
           cribUnknown: [],
-          solution: { isTrueStop: true, verdictCorrect: true, wrongPairs: [], missingPairs: [], rightRingCorrect: true },
+          solution: { isTrueStop: true, verdictCorrect: true, wrongPairs: [], missingPairs: [] },
           check: { ...carterChecked, verdict: 'True', stop: { ...carterChecked.stop, verdict: 'True' } },
         },
       }),

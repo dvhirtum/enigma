@@ -226,7 +226,6 @@ function Verdict({ check }: { check: BombeCheck }) {
                 <>
                   <li>{solution.wrongPairs.length > 0 ? `Wrong pairs: ${solution.wrongPairs.join(' ')}.` : 'No wrong pairs.'}</li>
                   <li>{solution.missingPairs.length > 0 ? `Missing plug pairs: ${solution.missingPairs.join(' ')}.` : 'Every plug pair found.'}</li>
-                  <li>The right ring is {solution.rightRingCorrect ? 'right' : 'wrong'}.</li>
                 </>
               )}
             </>
@@ -277,18 +276,18 @@ function CheckerSetup({ check }: { check: BombeCheck }) {
   );
 }
 
-/** The checked steckers and right ring, in one line each. */
+/** The verdict and the checked steckers, in one line. */
 export function CheckSummary({ check }: { check: BombeCheck }) {
   return (
     <p>
-      {verdictLabels[check.verdict]}: steckers <Hand>{check.steckers || '—'}</Hand>, right ring <Hand>{ringLetter(check.rightRing)}</Hand>
+      {verdictLabels[check.verdict]}: steckers <Hand>{check.steckers || '—'}</Hand>
     </p>
   );
 }
 
 /**
  * Checks the stop: typed letters press the checking machine, whose lamps fill in the stecker sheet by following the
- * menu, and the rest is found with Suggest and Find until the crib and the rest of the message read right.
+ * menu, until the steckers bear the stop out or contradict it.
  */
 export function CheckStep({ check }: { check: BombeCheck }) {
   usePhysicalKeyboard(useCheckKeys());
@@ -296,24 +295,21 @@ export function CheckStep({ check }: { check: BombeCheck }) {
     <>
       <p>
         Test the stop on the checking machine on the <strong>Checking</strong> tab of the machine window: turn the drums to a link's position and type
-        the partner of one of its letters, here or in the machine window. The lamp is written down as the partner of the other letter. Fill in the rest
-        with Suggest and Find until the message reads as German.
+        the partner of one of its letters, here or in the machine window. The lamp is written down as the partner of the other letter. Follow the menu
+        until the steckers bear the stop out or contradict it.
       </p>
       <CheckerSetup check={check} />
       <CribCheck check={check} />
       <SteckerSheet check={check} />
-      <RightRing check={check} />
-      <Suggestions />
-      <section className="notebook-section" aria-label="Decrypt">
-        <h4>Decrypt</h4>
-        <Squares text={groups(check.decrypt)} label="Decrypt" />
-      </section>
       <Verdict check={check} />
     </>
   );
 }
 
-/** The key the true stop gives, the message read with it, and the hand-off to Enigma mode, which asks before replacing the Enigma setup. */
+/**
+ * Reads the message with the true stop, as on the Enigma: the right ring, the steckers the menu does not reach, the
+ * decrypt, the key it gives, and the hand-off to Enigma mode, which asks before replacing the Enigma setup.
+ */
 export function KeyStep({ check }: { check: BombeCheck }) {
   const setUpEnigma = useMachine((store) => store.setUpEnigma);
   const showMode = useMachine((store) => store.showMode);
@@ -329,6 +325,17 @@ export function KeyStep({ check }: { check: BombeCheck }) {
 
   return (
     <>
+      <p>
+        Read the message as on the Enigma: find the right ring and the steckers the menu does not reach, with Suggest and Find, until the message reads
+        as German.
+      </p>
+      <RightRing check={check} />
+      <Suggestions />
+      <SteckerSheet check={check} />
+      <section className="notebook-section" aria-label="Decrypt">
+        <h4>Decrypt</h4>
+        <Squares text={groups(check.decrypt)} label="Decrypt" />
+      </section>
       <dl className="checked-key" aria-label="Key">
         <dt>Reflector</dt>
         <dd className="hand">{key.reflector}</dd>
@@ -343,7 +350,6 @@ export function KeyStep({ check }: { check: BombeCheck }) {
         <dt>Message key</dt>
         <dd className="hand">{key.messageKey}</dd>
       </dl>
-      <Squares text={groups(check.decrypt)} label="Plain text" />
       {confirming ? (
         <p className="notebook-actions" role="group" aria-label="Confirm Enigma setup">
           <span>This replaces the Enigma setup.</span>

@@ -71,7 +71,7 @@ public sealed record ConfirmationState(
             confirmation.CribMismatches,
             confirmation.CribUnknown,
             confirmation.Solution is { } solution
-                ? new ComparisonState(solution.IsTrueStop, solution.VerdictCorrect, solution.WrongPairs, solution.MissingPairs, solution.RightRingCorrect)
+                ? new ComparisonState(solution.IsTrueStop, solution.VerdictCorrect, solution.WrongPairs, solution.MissingPairs)
                 : null,
             check);
     }
@@ -79,9 +79,9 @@ public sealed record ConfirmationState(
 
 /// <summary>
 /// How a verdict compares with the solution: whether the stop is the true one, whether the verdict is right, the pairs
-/// entered that are wrong (self pairs included), the plug pairs not entered yet, and whether the right ring is right.
+/// entered that are wrong (self pairs included), and the plug pairs not entered yet.
 /// </summary>
-public sealed record ComparisonState(bool IsTrueStop, bool VerdictCorrect, IReadOnlyList<string> WrongPairs, IReadOnlyList<string> MissingPairs, bool RightRingCorrect);
+public sealed record ComparisonState(bool IsTrueStop, bool VerdictCorrect, IReadOnlyList<string> WrongPairs, IReadOnlyList<string> MissingPairs);
 
 /// <summary>
 /// Proposed steckers in the order found (a letter with itself: unsteckered), each with its gain in log likelihood; the

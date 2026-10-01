@@ -124,7 +124,15 @@ To check the stop, follow the links from the stecker the Bombe found. The notebo
 
 The notebook writes each lamp on the **Steckers** sheet for you: when the drums stand at a link and the key you press is a partner already written for one of its letters, the lamp is written as the partner of the other letter (the letter itself when it is unsteckered). You cannot type in the sheet. A letter can have only one partner, so when a lamp gives a letter a second partner, both are kept and the letter and its partners are marked in red: a sign of a false stop, or of a key pressed at the wrong position. Red letters count as unknown for the crib, the decrypt, Suggest and Find. Click a box to rub out that letter's pairs.
 
-The crib letter is underlined green when the steckers encipher it correctly, struck through when they contradict it, and faint while it is still unknown. Partners in contradiction are red. The **Decrypt** shows the whole message with the steckers found so far, with **?** where a stecker is still unknown.
+The crib letter is underlined green when the steckers encipher it correctly, struck through when they contradict it, and faint while it is still unknown. Partners in contradiction are red.
+
+### The verdict
+
+Mark the stop **True stop** or **False stop** (or **Unchecked** again). The verdict shows in the list of stops; after **False stop** the notebook goes back to it. It also tells you whether the crib matches. For an intercept or exercise, it says whether the stop really is the true one, and which pairs are wrong or missing.
+
+## Reading the message
+
+After **True stop**, the notebook goes on to **Read the message**, the work Hut 8 did on an Enigma: finding the steckers the menu does not reach and the right ring, until the whole message reads as German. The **Steckers** sheet is shown again, and the **Decrypt** shows the whole message with the steckers found so far, with **?** where a stecker is still unknown.
 
 ### Letters the menu does not reach
 
@@ -134,10 +142,8 @@ The scoring counts letters, pairs and triples of letters from the Navy messages 
 
 ### The right ring
 
-The Bombe finds the rotor cores, not the ring settings. The **Right ring** decides when the middle rotor turns over. A wrong right ring garbles the message a letter at a time, once every 26 letters. Turn it with ◀ and ▶ (the core positions stay), or click **Find**. Find scores the decrypt with each of the 26 rings and sets the lowest ring with the best score. The bars show every ring's score, with the best ones highlighted. When several rings tie, the ring is not settled yet: find or accept more steckers, then click **Find** again. A good order is Find, Suggest, Find. The left and middle rings stay at Z until the indicators are read.
+The Bombe finds the rotor cores, not the ring settings. For the right rotor, 26 pairs of ring and window letter give the same core; they differ only in where the middle rotor turns over. The **Right ring** picks one of them. A wrong right ring garbles the message from the wrong turnover on. Turn it with ◀ and ▶ (the core positions stay), or click **Find**. Find scores the decrypt with each of the 26 rings and sets the lowest ring with the best score. The bars show every ring's score, with the best ones highlighted. When several rings tie, the ring is not settled yet: find or accept more steckers, then click **Find** again. A good order is Find, Suggest, Find. The left and middle rings stay at Z until the indicators are read.
 
-### Verdict and key
+### The key
 
-Mark the stop **True stop** or **False stop** (or **Unchecked** again). The verdict shows in the list of stops; after **False stop** the notebook goes back to it. It also tells you whether the crib matches. For an intercept or exercise, it says whether the stop really is the true one, which pairs are wrong or missing, and whether the right ring is right.
-
-After **True stop**, the last step gives the key: the reflector, wheel order, rings, plugs and the message key: the rotor positions at the start of the message. **Set up Enigma** asks first, then sets up the Enigma with this key at the message key and switches the machine window to Enigma mode, ready to type the cipher text.
+The step ends with the key: the reflector, wheel order, rings, plugs and the message key: the rotor positions at the start of the message. **Set up Enigma** asks first, then sets up the Enigma with this key at the message key and switches the machine window to Enigma mode, ready to type the cipher text.
