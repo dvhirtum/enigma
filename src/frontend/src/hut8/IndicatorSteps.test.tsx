@@ -106,8 +106,8 @@ describe('IndicatorsStep', () => {
     const api = renderStep('indicators', { ...exercise, day: withVerfahrenkenngruppe });
 
     const table = await screen.findByRole('region', { name: 'Ring table' });
-    expect(within(table).getByRole('group', { name: "Stop's cores" })).toHaveTextContent('VMB');
-    fireEvent.click(within(table).getByRole('button', { name: 'Rings C N: Spruchschlüssel ULA, cores VMB' }));
+    expect(within(table).getByRole('group', { name: "Stop's indicator" })).toHaveTextContent('DKX');
+    fireEvent.click(within(table).getByRole('button', { name: 'Rings C N: Spruchschlüssel ULA, indicator DKX' }));
 
     await waitFor(() => expect(api.bombe.readRings).toHaveBeenCalledWith(0, 3, 14));
     expect(api.bombe.getRingTable).toHaveBeenCalledWith(0);
@@ -120,7 +120,7 @@ describe('IndicatorsStep', () => {
     expect(key).toHaveTextContent('C N Z');
     expect(key).toHaveTextContent('These are the rings of the key sheet.');
     expect(within(key).getByRole('group', { name: 'Decrypt with the whole key' })).toHaveTextContent('WETT ERVO');
-    expect(await screen.findByRole('button', { name: 'Rings C N: Spruchschlüssel ULA, cores VMB', pressed: true })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Rings C N: Spruchschlüssel ULA, indicator DKX', pressed: true })).toBeInTheDocument();
   });
 });
 

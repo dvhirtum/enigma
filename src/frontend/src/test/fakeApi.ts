@@ -471,16 +471,16 @@ export const fakeDay: DayTraffic = {
   ],
 };
 
-/** The ring table of Carter's check: rings C and N lead to the stop's cores VMB. */
+/** The ring table of Carter's check: rings C and N lead to the stop's indicator DKX. */
 export const carterRingTable: RingTable = {
   grundstellung: 'QRS',
   verfahrenkenngruppe: 'ABC',
   rightRing: 26,
-  cores: 'VMB',
+  indicator: 'DKX',
   rows: Array.from({ length: 676 }, (_, index) => {
     const [left, middle] = [Math.floor(index / 26) + 1, (index % 26) + 1];
     const found = left === 3 && middle === 14;
-    return { left, middle, spruchschluessel: found ? 'ULA' : trigram((index * 7) % 17576), cores: found ? 'VMB' : trigram((index * 11 + 5) % 17576) };
+    return { left, middle, spruchschluessel: found ? 'ULA' : trigram((index * 7) % 17576), indicator: found ? 'DKX' : trigram((index * 11 + 5) % 17576) };
   }),
 };
 

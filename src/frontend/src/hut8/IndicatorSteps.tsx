@@ -242,8 +242,8 @@ function IndicatorWriting({ index, message }: { index: number; message: DayMessa
 }
 
 /**
- * The ring table: for each left (row) and middle (column) ring, the cores at the crib that the Spruchschlüssel leads
- * to. The cell with the stop's cores gives the rings; a click reads them.
+ * The ring table: for each left (row) and middle (column) ring, the indicator reading of the cores at the crib that the
+ * Spruchschlüssel leads to. The cell with the stop's indicator reading gives the rings; a click reads them.
  */
 function RingTableGrid({ check, table }: { check: BombeCheck; table: RingTable }) {
   const readRings = useMachine((store) => store.readRings);
@@ -255,9 +255,9 @@ function RingTableGrid({ check, table }: { check: BombeCheck; table: RingTable }
       <p>
         Each square is a pair of left (row) and middle (column) rings. Set up with them, the Enigma turns the Verfahrenkenngruppe{' '}
         <Hand>{table.verfahrenkenngruppe}</Hand> at the Grundstellung <Hand>{table.grundstellung}</Hand> into a Spruchschlüssel; from there it steps
-        to the cores written in the square at the start of the crib. Find the square with the stop&apos;s cores and click it.
+        to the start of the crib, where the Bombe would read the indicator written in the square. Find the square with the stop&apos;s indicator reading and click it.
       </p>
-      <Field label="Stop's cores" value={table.cores} />
+      <Field label="Stop's indicator" value={table.indicator} />
       <div className="ring-table-scroll">
         <table className="ring-table">
           <thead>
@@ -280,12 +280,12 @@ function RingTableGrid({ check, table }: { check: BombeCheck; table: RingTable }
                     <td key={cell.middle} className={read ? 'read' : undefined}>
                       <button
                         type="button"
-                        aria-label={`Rings ${ringLetter(cell.left)} ${ringLetter(cell.middle)}: Spruchschlüssel ${cell.spruchschluessel}, cores ${cell.cores}`}
+                        aria-label={`Rings ${ringLetter(cell.left)} ${ringLetter(cell.middle)}: Spruchschlüssel ${cell.spruchschluessel}, indicator ${cell.indicator}`}
                         aria-pressed={read}
                         title={`Spruchschlüssel ${cell.spruchschluessel}`}
                         onClick={() => void readRings(cell.left, cell.middle)}
                       >
-                        {cell.cores}
+                        {cell.indicator}
                       </button>
                     </td>
                   );
@@ -322,9 +322,9 @@ function ReadingResult({ check, table }: { check: BombeCheck; table: RingTable |
         <dt>Spruchschlüssel</dt>
         <dd className="hand">{key.messageKey}</dd>
       </dl>
-      {row && table && row.cores !== table.cores && (
+      {row && table && row.indicator !== table.indicator && (
         <p className="notebook-warning">
-          These rings lead to cores <Hand>{row.cores}</Hand>, not the stop&apos;s <Hand>{table.cores}</Hand>.
+          These rings lead to indicator <Hand>{row.indicator}</Hand>, not the stop&apos;s <Hand>{table.indicator}</Hand>.
         </p>
       )}
       {reading.ringsRight !== null && (

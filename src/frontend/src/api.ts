@@ -343,20 +343,20 @@ export interface SourceSolution {
   notes: string;
 }
 
-/** A row of the ring table: left and middle rings (1–26), the Spruchschlüssel they give and the cores it leads to at the crib. */
+/** A row of the ring table: left and middle rings (1–26), the Spruchschlüssel they give and the indicator reading of the cores it leads to at the crib. */
 export interface RingRow {
   left: number;
   middle: number;
   spruchschluessel: string;
-  cores: string;
+  indicator: string;
 }
 
-/** The ring table of a check: the Grundstellung and Verfahrenkenngruppe, the right ring, the stop's cores at the crib and 676 rows. */
+/** The ring table of a check: the Grundstellung and Verfahrenkenngruppe, the right ring, the stop's indicator reading and 676 rows. */
 export interface RingTable {
   grundstellung: string;
   verfahrenkenngruppe: string;
   rightRing: number;
-  cores: string;
+  indicator: string;
   rows: RingRow[];
 }
 
