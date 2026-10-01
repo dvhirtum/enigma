@@ -286,7 +286,11 @@ public sealed record InterceptState(string Id, string Title, string? Date, strin
     }
 }
 
-public sealed record CribState(string Crib);
+/// <summary>A suggested crib and where in the message it is likely to stand (empty when unknown).</summary>
+public sealed record CribState(string Crib, string Place);
+
+/// <summary>A kind of stereotyped message to suggest a crib for: its id and name.</summary>
+public sealed record MessageTypeState(string Id, string Name);
 
 /// <summary>
 /// How the loaded message was encrypted: reflector, wheel order, ring settings (1–26), plug pairs, the rotor positions

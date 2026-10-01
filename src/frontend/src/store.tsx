@@ -17,6 +17,7 @@ import type {
   RingFind,
   Suggestion,
   EnigmaApi,
+  CribSuggestion,
   Intercept,
   Kenngruppenbuch,
   KeySheet,
@@ -24,6 +25,7 @@ import type {
   KeySheetSummary,
   MachineApi,
   MachineState,
+  MessageType,
   Problem,
   ReceivingKey,
 } from './api';
@@ -71,9 +73,12 @@ export interface ProcedureSlice {
 export interface BombeSlice {
   bombe: BombeState | null;
   intercepts: Intercept[];
-  /** Loads the job and the list of intercepts. */
+  messageTypes: MessageType[];
+  /** Loads the job, the list of intercepts and the message types. */
   loadBombe: () => Promise<boolean>;
   loadIntercept: (id: string) => Promise<boolean>;
+  /** The likely crib of the loaded message: its own, or else that of the message type `type`; null when there is none. */
+  suggestCrib: (type?: string) => Promise<CribSuggestion | null>;
   generateExercise: () => Promise<boolean>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */
   pasteCipherText: (text: string) => Promise<boolean>;
@@ -338,6 +343,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       books: {},
       bombe: null,
       intercepts: [],
+      messageTypes: [],
       speed: historicalSpeed,
       bombeView: 'bombe-front',
       stops: [],
@@ -349,20 +355,27 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       ringScores: null,
       confirmation: null,
       loadBombe: async () => {
-        const [listed, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.getState())]);
+        const [listed, types, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.messageTypes()), settle(bombe.getState())]);
         if (listed.ok) {
           set({ intercepts: listed.value });
+        }
+        if (types.ok) {
+          set({ messageTypes: types.value });
         }
         if (state.ok) {
           set({ bombe: state.value });
         }
-        const failed = [state, listed].find((result) => !result.ok);
+        const failed = [state, listed, types].find((result) => !result.ok);
         if (failed && !failed.ok) {
           set({ error: failed.problem });
         }
         return !failed;
       },
       loadIntercept: (id) => job(bombe.loadIntercept(id)),
+      suggestCrib: async (type) => {
+        const result = await check(bombe.suggestCrib(type));
+        return result.ok ? result.value : null;
+      },
       generateExercise: () => job(bombe.generateExercise()),
       pasteCipherText: (text) => job(bombe.pasteCipherText(text)),
       setCrib: (crib) => job(bombe.setCrib(crib)),
@@ -468,6 +481,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
             return;
           case 'getState':
           case 'intercepts':
+          case 'messageTypes':
+          case 'suggestCrib':
           case 'getStops':
           case 'getPrintout':
             return;

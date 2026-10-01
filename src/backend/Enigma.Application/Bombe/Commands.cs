@@ -79,8 +79,13 @@ public sealed record LoadIntercept(string? Id);
 /// <summary>Loads a new exercise, sent on a random day of a random M3 key sheet.</summary>
 public sealed record GenerateExercise;
 
-/// <summary>The likely crib of the loaded intercept or exercise.</summary>
-public sealed record GetSourceCrib;
+/// <summary>
+/// The likely crib of the loaded message and where it is likely to stand: its own for an intercept or exercise, or that
+/// of the message type with id <see cref="Type"/>.
+/// </summary>
+public sealed record GetSourceCrib(string? Type = null);
+
+public sealed record ListMessageTypes;
 
 /// <summary>The key and plain text of the loaded intercept or exercise.</summary>
 public sealed record GetSolution;

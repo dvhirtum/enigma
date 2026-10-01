@@ -204,6 +204,22 @@ public sealed class BombeEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_suggest_a_crib_for_the_chosen_message_type_When_text_is_pasted()
+    {
+        // Arrange
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/cipher-text", new { text = "QWERT ZUIOP" });
+
+        // Act
+        var types = await _client.GetFromJsonAsync<IReadOnlyList<MessageTypeState>>(Url("/api/bombe/message-types"), Token);
+        var crib = await _client.GetFromJsonAsync<CribState>(Url("/api/bombe/source/crib?type=weather"), Token);
+
+        // Assert
+        Assert.Contains(types!, type => type.Id == "weather" && type.Name == "Weather forecast");
+        Assert.Equal("WETTERVORHERSAGE", crib?.Crib);
+        Assert.StartsWith("At or near the start", crib?.Place, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Should_return_not_found_When_the_intercept_is_unknown()
     {
         // Arrange

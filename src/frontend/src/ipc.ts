@@ -72,7 +72,7 @@ export function registerIpc(backend: Backend, windows: Windows): void {
   }
 
   // Reads, which change nothing.
-  const unshared = new Set(['getState', 'intercepts', 'getStops', 'getPrintout']);
+  const unshared = new Set(['getState', 'intercepts', 'messageTypes', 'suggestCrib', 'getStops', 'getPrintout']);
   for (const [name, toRoute] of Object.entries(bombeRoutes)) {
     const route = toRoute as (...args: unknown[]) => Route;
     ipcMain.handle(`bombe:${name}`, async (event, ...args: unknown[]) => {

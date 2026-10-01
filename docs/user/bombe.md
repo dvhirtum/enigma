@@ -30,6 +30,8 @@ The notebook writes down the message, a hint for intercepts and exercises, and t
 
 A crib is a piece of plaintext you expect in the message, such as `WETTERVORHERSAGE` (weather forecast). Type it in the **Crib** field and click **Set crib**. Only letters count.
 
+**Suggest crib** fills in a likely crib and says where in the message it is likely to stand. For an intercept or exercise it suggests the message's own crib at once. For pasted text it first asks what kind of message it is: a weather forecast, nothing to report, a U-boat position report or a convoy report. Choose one and click **Suggest**; with **Don't know** there is no crib to suggest. Change the crib if you like, then click **Set crib**.
+
 The notebook writes the cipher text in squares, with the crib on a slip under it. The Enigma never encrypts a letter to itself, so where a crib letter sits under the same cipher letter, the crib cannot be at that position: a crash, written in red with the crib letter struck through. Slide the crib to a position without crashes:
 
 - drag the crib sideways,

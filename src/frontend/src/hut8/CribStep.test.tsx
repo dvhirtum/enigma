@@ -1,5 +1,6 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { BombeState } from '../api';
 import { carterBombe, withCrib } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
 import { CribStep, CribSummary } from './CribStep';
@@ -23,6 +24,42 @@ describe('CribStep', () => {
 
     expect(input).toHaveValue('WETTERVOR');
     await waitFor(() => expect(api.bombe.setCrib).toHaveBeenCalledWith('WETTERVOR'));
+  });
+
+  it("fills in an intercept's own crib and where it is likely to stand", async () => {
+    const api = renderBombe(<CribStep />, carterBombe);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest crib' }));
+
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Crib' })).toHaveValue('WETTERVORHERSAGE'));
+    expect(api.bombe.suggestCrib).toHaveBeenCalledWith(undefined);
+    expect(screen.getByText(/^Likely place: At or near the start/)).toBeInTheDocument();
+    expect(api.bombe.setCrib).not.toHaveBeenCalled();
+  });
+
+  it('asks what kind of message pasted text is, then suggests its crib', async () => {
+    const pasted: BombeState = { ...carterBombe, source: { ...carterBombe.source!, kind: 'Pasted', hasCrib: false } };
+    const api = renderBombe(<CribStep />, pasted);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest crib' }));
+    const question = screen.getByRole('group', { name: 'What kind of message is it?' });
+    fireEvent.click(within(question).getByRole('radio', { name: 'Convoy report' }));
+    fireEvent.click(within(question).getByRole('button', { name: 'Suggest' }));
+
+    await waitFor(() => expect(api.bombe.suggestCrib).toHaveBeenCalledWith('convoy'));
+    expect(screen.queryByRole('group', { name: 'What kind of message is it?' })).not.toBeInTheDocument();
+  });
+
+  it('suggests nothing when the kind of pasted message is not known', async () => {
+    const pasted: BombeState = { ...carterBombe, source: { ...carterBombe.source!, kind: 'Pasted', hasCrib: false } };
+    const api = renderBombe(<CribStep />, pasted);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest crib' }));
+    fireEvent.click(screen.getByRole('radio', { name: "Don't know" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Suggest' }));
+
+    expect(await screen.findByText(/Without the kind of message there is no crib to suggest/)).toBeInTheDocument();
+    expect(api.bombe.suggestCrib).not.toHaveBeenCalled();
   });
 
   it('says when the crib is longer than the cipher text', async () => {

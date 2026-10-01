@@ -96,6 +96,9 @@ test('places a crib and draws the menu in the Hut 8 notebook', async () => {
   await expect(notebook.getByRole('group', { name: 'Cipher text' })).toHaveText('SNMKG GSTZZ UGARL V');
 
   await expect(step.getByRole('heading')).toHaveText('Place the crib');
+  await notebook.getByRole('button', { name: 'Suggest crib' }).click();
+  await expect(notebook.getByRole('textbox', { name: 'Crib' })).toHaveValue('WETTERVORHERSAGE');
+  await expect(notebook.getByText(/^Likely place: The whole message/)).toBeVisible();
   await notebook.getByRole('textbox', { name: 'Crib' }).fill('wetter');
   await notebook.getByRole('button', { name: 'Set crib' }).click();
   const slider = notebook.getByRole('slider', { name: 'Crib position' });

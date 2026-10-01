@@ -12,7 +12,8 @@ public enum SourceKind
 
 /// <summary>
 /// The message a Bombe job breaks: where it came from, a hint, the transcript as received, the Navy radio message when
-/// it is one, and the cipher text the crib goes under. Intercepts and exercises also know a likely crib and the solution.
+/// it is one, and the cipher text the crib goes under. Intercepts and exercises also know a likely crib, where it is
+/// likely to stand, and the solution.
 /// </summary>
 public sealed record MessageSource(
     SourceKind Kind,
@@ -22,8 +23,18 @@ public sealed record MessageSource(
     RadioMessage? Message,
     IReadOnlyList<Letter> CipherText,
     Crib? Crib = null,
-    Solution? Solution = null)
+    Solution? Solution = null,
+    string? CribPlace = null)
 {
+    /// <summary>
+    /// The likely crib and where it is likely to stand: the message's own, or else the crib of a message of
+    /// <paramref name="type"/>; null when the message has none and no type is given.
+    /// </summary>
+    public (Crib Crib, string Place)? SuggestCrib(MessageType? type) =>
+        Crib is { } crib ? (crib, CribPlace ?? string.Empty)
+        : type is not null ? (type.Crib, type.Place)
+        : null;
+
     /// <summary>
     /// Reads pasted text as a Navy radio message, or else as bare cipher text. Text with digits must be a radio message.
     /// </summary>

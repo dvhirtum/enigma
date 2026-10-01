@@ -95,6 +95,7 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(IReadOnlyList<InterceptState>))]
 [JsonSerializable(typeof(LoadIntercept))]
 [JsonSerializable(typeof(CribState))]
+[JsonSerializable(typeof(IReadOnlyList<MessageTypeState>))]
 [JsonSerializable(typeof(SolutionState))]
 [JsonSerializable(typeof(CheckState))]
 [JsonSerializable(typeof(CheckRequest))]

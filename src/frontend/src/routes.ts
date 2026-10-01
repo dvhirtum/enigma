@@ -59,6 +59,8 @@ export const keySheetRoutes: Routes<KeySheetApi> = {
 export const bombeRoutes: Routes<BombeApi> = {
   getState: () => ({ method: 'GET', path: bombe }),
   intercepts: () => ({ method: 'GET', path: `${bombe}/intercepts` }),
+  messageTypes: () => ({ method: 'GET', path: `${bombe}/message-types` }),
+  suggestCrib: (type) => ({ method: 'GET', path: `${bombe}/source/crib${type ? `?type=${encodeURIComponent(type)}` : ''}` }),
   loadIntercept: (id) => ({ method: 'POST', path: `${bombe}/source/intercept`, body: { id } }),
   generateExercise: () => ({ method: 'POST', path: `${bombe}/source/exercise` }),
   pasteCipherText: (text) => ({ method: 'PUT', path: `${bombe}/cipher-text`, body: { text } }),

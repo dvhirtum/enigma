@@ -80,8 +80,11 @@ internal static class BombeEndpoints
         bombe.MapPost("/source/exercise", (GenerateExerciseHandler handler) =>
             handler.Handle(new GenerateExercise()));
 
-        bombe.MapGet("/source/crib", (GetSourceCribHandler handler) =>
-            handler.Handle(new GetSourceCrib()));
+        bombe.MapGet("/source/crib", (string? type, GetSourceCribHandler handler) =>
+            handler.Handle(new GetSourceCrib(type)));
+
+        bombe.MapGet("/message-types", () =>
+            ListMessageTypesHandler.Handle(new ListMessageTypes()));
 
         bombe.MapGet("/source/solution", (GetSolutionHandler handler) =>
             handler.Handle(new GetSolution()));

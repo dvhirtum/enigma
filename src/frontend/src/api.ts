@@ -133,6 +133,18 @@ export interface BombeSource {
   hasSolution: boolean;
 }
 
+/** A suggested crib and where in the message it is likely to stand (empty when unknown). */
+export interface CribSuggestion {
+  crib: string;
+  place: string;
+}
+
+/** A kind of stereotyped message to suggest a crib for. */
+export interface MessageType {
+  id: string;
+  name: string;
+}
+
 /** A crib position under the cipher text (0 = the first letter) and the crib indexes that crash. */
 export interface Placement {
   position: number;
@@ -452,6 +464,9 @@ export interface ProcedureApi {
 export interface BombeApi {
   getState: Call<[], BombeState>;
   intercepts: Call<[], Intercept[]>;
+  messageTypes: Call<[], MessageType[]>;
+  /** The likely crib of the loaded message: its own, or else that of the message type `type`. */
+  suggestCrib: Call<[type?: string], CribSuggestion>;
   loadIntercept: Call<[id: string], BombeState>;
   generateExercise: Call<[], BombeState>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */

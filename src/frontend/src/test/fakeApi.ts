@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { BackendStatus, BombeCheck, BombeMachine, BombeResult, BombeRun, BombeState, BombeStop, CheckingMachine, EnigmaApi, PrintedStop, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
+import type { BackendStatus, BombeCheck, BombeMachine, BombeResult, BombeRun, BombeState, BombeStop, CheckingMachine, EnigmaApi, PrintedStop, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, MessageType, OperatorState, TauschtafelSet } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -248,6 +248,13 @@ export const carterChecked: BombeCheck = {
   key: { ...carterCheck.key, plugs: ['AD', 'ET', 'FU', 'GQ', 'HM', 'IK', 'JL', 'NV', 'OX', 'PZ'] },
 };
 
+export const messageTypes: MessageType[] = [
+  { id: 'weather', name: 'Weather forecast' },
+  { id: 'nothing-to-report', name: 'Nothing to report' },
+  { id: 'own-position', name: 'U-boat position report' },
+  { id: 'convoy', name: 'Convoy report' },
+];
+
 export const intercepts: Intercept[] = [
   { id: 'carter', title: 'Carter weather crib', date: null, hint: 'A weather forecast.' },
   { id: 'scharnhorst', title: 'Scharnhorst', date: '1943-12-26', hint: null },
@@ -307,6 +314,8 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     bombe: {
       getState: bombe(),
       intercepts: vi.fn().mockResolvedValue({ ok: true, value: intercepts }),
+      messageTypes: vi.fn().mockResolvedValue({ ok: true, value: messageTypes }),
+      suggestCrib: vi.fn().mockResolvedValue({ ok: true, value: { crib: 'WETTERVORHERSAGE', place: 'At or near the start, after at most a short prefix such as AN ALLE or the hour.' } }),
       loadIntercept: bombe(carterBombe),
       generateExercise: bombe(),
       pasteCipherText: bombe(),

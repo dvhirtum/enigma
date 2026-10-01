@@ -4,14 +4,61 @@ import { useMachine } from '../store';
 import { isFormControl } from '../useKeys';
 import { cribLetters, plural } from './letters';
 
+/** Asks what kind of message pasted text is, from the exercise message types; an empty choice is "Don't know". */
+function MessageTypeQuestion({ onAnswer, onCancel }: { onAnswer: (type: string) => void; onCancel: () => void }) {
+  const messageTypes = useMachine((store) => store.messageTypes);
+  const [type, setType] = useState('');
+
+  return (
+    <fieldset className="message-type">
+      <legend>What kind of message is it?</legend>
+      {[...messageTypes, { id: '', name: "Don't know" }].map((own) => (
+        <label key={own.id}>
+          <input type="radio" name="message-type" checked={type === own.id} onChange={() => setType(own.id)} />
+          {own.name}
+        </label>
+      ))}
+      <p className="notebook-actions">
+        <button type="button" onClick={() => onAnswer(type)}>
+          Suggest
+        </button>
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
+      </p>
+    </fieldset>
+  );
+}
+
+/**
+ * The crib field. Suggest crib fills in the message's likely crib and says where it is likely to stand; for pasted text
+ * it first asks what kind of message it is.
+ */
 function CribForm() {
   const crib = useMachine((store) => store.bombe?.crib ?? '');
+  const hasCrib = useMachine((store) => store.bombe?.source?.hasCrib ?? false);
   const setCrib = useMachine((store) => store.setCrib);
+  const suggestCrib = useMachine((store) => store.suggestCrib);
   const [text, setText] = useState(crib);
+  const [asking, setAsking] = useState(false);
+  const [suggested, setSuggested] = useState<{ crib: string; place: string } | null>(null);
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     void setCrib(text);
+  };
+
+  const suggest = async (type?: string) => {
+    setAsking(false);
+    if (type === '') {
+      setSuggested({ crib: '', place: '' });
+      return;
+    }
+    const found = await suggestCrib(type);
+    if (found) {
+      setText(found.crib);
+      setSuggested(found);
+    }
   };
 
   return (
@@ -31,7 +78,13 @@ function CribForm() {
         <button type="submit" disabled={text === crib}>
           Set crib
         </button>
+        <button type="button" disabled={asking} onClick={() => (hasCrib ? void suggest() : setAsking(true))}>
+          Suggest crib
+        </button>
       </p>
+      {asking && <MessageTypeQuestion onAnswer={(type) => void suggest(type)} onCancel={() => setAsking(false)} />}
+      {suggested?.crib === '' && <p className="hut8-note">Without the kind of message there is no crib to suggest. Guess one from what you know about it.</p>}
+      {suggested?.crib && suggested.crib === text && suggested.place && <p className="hut8-note">Likely place: {suggested.place}</p>}
     </form>
   );
 }

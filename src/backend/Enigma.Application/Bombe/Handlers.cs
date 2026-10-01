@@ -26,6 +26,12 @@ public static class ListInterceptsHandler
     public static IReadOnlyList<InterceptState> Handle(ListIntercepts query) => [.. Intercepts.All.Select(InterceptState.From)];
 }
 
+public static class ListMessageTypesHandler
+{
+    public static IReadOnlyList<MessageTypeState> Handle(ListMessageTypes query) =>
+        [.. MessageType.All.Select(type => new MessageTypeState(type.Id, type.Name))];
+}
+
 public sealed class LoadInterceptHandler(IBombeSessionStore store)
 {
     public BombeState Handle(LoadIntercept command)
@@ -58,8 +64,17 @@ public sealed class GenerateExerciseHandler(IBombeSessionStore store, KeySheetLi
 
 public sealed class GetSourceCribHandler(IBombeSessionStore store)
 {
-    public CribState Handle(GetSourceCrib query) =>
-        new(store.Use(job => Loaded(job).Crib)?.ToString() ?? throw new NotFoundException("This message has no known crib."));
+    public CribState Handle(GetSourceCrib query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var type = string.IsNullOrEmpty(query.Type)
+            ? null
+            : MessageType.Find(query.Type) ?? throw new NotFoundException($"No message type has id '{query.Type}'.");
+        var (crib, place) = store.Use(job => Loaded(job).SuggestCrib(type))
+            ?? throw new NotFoundException("This message has no known crib. Choose its message type.");
+        return new CribState(crib.ToString(), place);
+    }
 
     internal static MessageSource Loaded(BombeJob job) => job.Source ?? throw new NotFoundException("No message is loaded.");
 }
