@@ -228,38 +228,44 @@ public sealed class BombeSetup
     }
 
     /// <summary>
-    /// The groups of chains a run tests: those with a test register, each with the scramblers that pass current (cabled
-    /// at both jacks, with all three drums). Refused when no test register is plugged.
+    /// The groups of chains a run tests: those with a test register and at least one scrambler that passes current
+    /// (cabled at both jacks, with all three drums), each with those scramblers. Refused when there are none.
     /// </summary>
     public IReadOnlyList<GroupMachine> Machines(ReflectorType reflector, bool diagonalBoard)
     {
         ArgumentNullException.ThrowIfNull(reflector);
 
         var tables = new Dictionary<WheelOrder, Scrambler>();
-        var machines = Groups
-            .Where(group => group.TestRegister is not null)
-            .Select(group => new GroupMachine(group, new BombeMachine(
-                [.. group.Chains
-                    .SelectMany(chain => ChainSetups[chain].Scramblers)
-                    .Where(scrambler => scrambler is { IsCabled: true, WheelOrder: not null })
-                    .Select(scrambler => new CabledScrambler(
-                        scrambler.Jacks[0]!.Value,
-                        scrambler.Jacks[1]!.Value,
-                        Table(scrambler.WheelOrder!),
-                        scrambler.Start))],
-                group.TestRegister!.Value,
-                group.Input,
+        var tested = Groups.Where(group => group.TestRegister is not null).ToList();
+        var machines = tested
+            .Select(group => (Group: group, Scramblers: Working(group).ToList()))
+            .Where(group => group.Scramblers.Count > 0)
+            .Select(group => new GroupMachine(group.Group, new BombeMachine(
+                [.. group.Scramblers.Select(scrambler => new CabledScrambler(
+                    scrambler.Jacks[0]!.Value,
+                    scrambler.Jacks[1]!.Value,
+                    Table(scrambler.WheelOrder!),
+                    scrambler.Start))],
+                group.Group.TestRegister!.Value,
+                group.Group.Input,
                 diagonalBoard)))
             .ToList();
-        return machines.Count > 0 ? machines : throw new DomainException("Plug a test register onto a common first.");
+        return machines.Count > 0 ? machines
+            : throw new DomainException(tested.Count > 0
+                ? "Fit all three drums on a cabled scrambler of a chain with a test register first."
+                : "Plug a test register onto a common first.");
 
         Scrambler Table(WheelOrder order) =>
             tables.TryGetValue(order, out var table) ? table : tables[order] = new Scrambler(order, reflector);
     }
 
+    /// <summary>The scramblers of a group that pass current: cabled at both jacks, with all three drums.</summary>
+    private IEnumerable<ScramblerSetup> Working(ChainGroup group) =>
+        group.Chains.SelectMany(chain => ChainSetups[chain].Scramblers).Where(scrambler => scrambler is { IsCabled: true, WheelOrder: not null });
+
     /// <summary>
     /// What a run will not use, per chain: scramblers with one jack cabled, cabled without all drums, or with drums but no
-    /// cables; cabled chains without a test register; and chains with a test register that stop at every position.
+    /// cables; cabled chains without a test register; and chains with a test register that a run leaves out.
     /// </summary>
     public IReadOnlyList<string> Warnings()
     {
@@ -282,9 +288,9 @@ public sealed class BombeSetup
             {
                 warnings.Add($"{names} {(plural ? "have" : "has")} no test register.");
             }
-            else if (group.TestRegister is not null && !scramblers.Any(s => s is { IsCabled: true, WheelOrder: not null }))
+            else if (group.TestRegister is not null && !Working(group).Any())
             {
-                warnings.Add($"{names} {(plural ? "have" : "has")} a test register but no scrambler with cables and drums, so {(plural ? "they stop" : "it stops")} at every position.");
+                warnings.Add($"{names} {(plural ? "have" : "has")} a test register but no scrambler with cables and drums, so the run leaves {(plural ? "them" : "it")} out.");
             }
         }
 

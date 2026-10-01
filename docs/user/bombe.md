@@ -74,7 +74,7 @@ Set up the drums as a Wren did:
 - **Take a drum out**: click it, or drag it off the machine.
 - **Turn a drum** with the mouse wheel over it, or Arrow Up/Down on it. The run uses the letters on the machine, so a drum set wrong makes the Bombe miss the key.
 
-The label above each chain gives its wheel order. The Bombe runs with whatever is set up: a scrambler cabled without all its drums passes no current, and drums without cables do nothing. The list on the **Side** tab says what a run will not use, and when a chain with a test register will stop at every position.
+The label above each chain gives its wheel order. The Bombe runs with whatever is set up: a scrambler cabled without all its drums passes no current, and drums without cables do nothing. A chain with a test register but no scrambler with cables and all three drums is left out of the run, so you can fit drums on one chain only. The list on the **Side** tab says what a run will not use.
 
 The Bombe drums are lettered ahead of the Enigma rotors: drums I, II, III, VI, VII and VIII by one letter, IV by two and V by three. The drums and the indicator show these historical letters, so to get the ring settings to try on the Enigma, add the offsets to the indicator reading. On Carter's weather crib (wheel order II V III) the indicator reads DKX, as Carter reports; adding 1, 3 and 1 gives the ring settings ENY.
 

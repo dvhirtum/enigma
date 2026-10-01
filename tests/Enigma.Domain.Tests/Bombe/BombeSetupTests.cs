@@ -140,18 +140,66 @@ public sealed class BombeSetupTests
     public void Should_pass_no_current_through_a_scrambler_When_it_is_cabled_without_drums()
     {
         // Arrange
-        // A single cabled scrambler without drums: the test register sees only the input wire.
+        // Scrambler 1 is cabled without drums; scrambler 2 is cabled with drums, as on a Bombe with only scrambler 2.
         var setup = new BombeSetup();
+        var only = new BombeSetup();
+        foreach (var bombe in new[] { setup, only })
+        {
+            bombe.Plug(0, 1, 0, Q);
+            bombe.Plug(0, 1, 1, Letter.FromChar('E'));
+            bombe.PlugTestRegister(0, G);
+        }
+
         setup.Plug(0, 0, 0, G);
         setup.Plug(0, 0, 1, Q);
-        setup.PlugTestRegister(0, G);
+        FitCarterDrums(setup, 0, 1);
+        foreach (var row in new[] { 0, 1, 2 })
+        {
+            setup.RemoveDrum(0, 0, row);
+        }
+
+        FitCarterDrums(only, 0, 1);
 
         // Act
         var machine = Assert.Single(setup.Machines(ReflectorType.B, diagonalBoard: false)).Machine;
 
         // Assert
-        Assert.Equal([Letter.A], machine.LiveWiresAt(DrumPosition.ZZZ));
+        var alone = Assert.Single(only.Machines(ReflectorType.B, diagonalBoard: false)).Machine;
+        Assert.Equal(alone.LiveWiresAt(DrumPosition.ZZZ), machine.LiveWiresAt(DrumPosition.ZZZ));
         Assert.Contains("Chain 1, scrambler 1 is cabled but has no drums.", setup.Warnings());
+    }
+
+    [Fact]
+    public void Should_leave_out_a_chain_When_it_has_a_test_register_but_no_drums()
+    {
+        // Arrange
+        // Carter's first 12 links plugged up on all three chains, with drums on chain 1 only.
+        var setup = new BombeSetup();
+        setup.PlugUp(new Menu([.. BombeKeys.CarterMenu.Links.Take(12)], G));
+        FitCarterDrums(setup, 0, 11);
+
+        // Act
+        var machines = setup.Machines(ReflectorType.B, diagonalBoard: true);
+
+        // Assert
+        var group = Assert.Single(machines);
+        Assert.Equal([0], group.Group.Chains);
+        Assert.Contains("Chain 2 has a test register but no scrambler with cables and drums, so the run leaves it out.", setup.Warnings());
+    }
+
+    [Fact]
+    public void Should_refuse_a_run_When_no_chain_with_a_test_register_has_drums()
+    {
+        // Arrange
+        var setup = new BombeSetup();
+        setup.PlugUp(new Menu([.. BombeKeys.CarterMenu.Links.Take(12)], G));
+
+        // Act
+        object Act() => setup.Machines(ReflectorType.B, true);
+
+        // Assert
+        var refused = Assert.Throws<DomainException>(Act);
+        Assert.Equal("Fit all three drums on a cabled scrambler of a chain with a test register first.", refused.Message);
     }
 
     [Fact]
@@ -190,7 +238,7 @@ public sealed class BombeSetupTests
         // Assert
         Assert.Contains("Chain 1, scramblers 3–5, 8 are cabled but have drums missing.", warnings);
         Assert.Contains("Chain 2, scramblers 1–12 are cabled but have no drums.", warnings);
-        Assert.Contains("Chain 2 has a test register but no scrambler with cables and drums, so it stops at every position.", warnings);
+        Assert.Contains("Chain 2 has a test register but no scrambler with cables and drums, so the run leaves it out.", warnings);
     }
 
     [Fact]

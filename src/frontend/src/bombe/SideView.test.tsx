@@ -16,6 +16,15 @@ describe('SideView', () => {
     expect(screen.getByRole('list', { name: 'Warnings' })).toHaveTextContent('Chain 1, scrambler 1 has drums but no cables.');
   });
 
+  it('asks for drums when no chain with a test register has a working scrambler', async () => {
+    const machine = emptyMachine();
+    machine.chains[0] = { ...machine.chains[0], testRegister: 'G', scramblers: machine.chains[0].scramblers.map((scrambler) => ({ ...scrambler, jacks: ['G', 'Q'] })) };
+    renderBombe(<SideView />, { ...emptyBombe, machine });
+
+    expect(await screen.findByRole('button', { name: 'Start' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText('Fit all three drums on a cabled scrambler of a chain with a test register.')).toBeInTheDocument();
+  });
+
   it('continues only at a stop', async () => {
     renderBombe(<SideView />, carter);
 

@@ -303,7 +303,13 @@ function Front({ bombe }: { bombe: BombeState }) {
 /** Why the Bombe cannot start yet, or null when it can. */
 export function notReady(bombe: BombeState): string | null {
   const { machine } = bombe;
-  return groupsOf(machine).some((chains) => machine.chains[chains[0]].testRegister) ? null : 'Plug a test register onto a common on the Back tab.';
+  const tested = groupsOf(machine).filter((chains) => machine.chains[chains[0]].testRegister);
+  if (tested.length === 0) {
+    return 'Plug a test register onto a common on the Back tab.';
+  }
+  const working = (chains: number[]) =>
+    chains.some((chain) => machine.chains[chain].scramblers.some((scrambler) => scrambler.jacks.every(Boolean) && scrambler.drums.every(Boolean)));
+  return tested.some(working) ? null : 'Fit all three drums on a cabled scrambler of a chain with a test register.';
 }
 
 /** The groups of chains a run tests, with their wheel orders: "Chains 1–2 II V III, Chain 3 no drums". */
