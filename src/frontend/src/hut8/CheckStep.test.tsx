@@ -1,11 +1,11 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { BombeState } from '../api';
 import { useMachine } from '../store';
-import { carterCheck, carterMenu, carterPaused, emptyChecker } from '../test/fakeApi';
+import { carterCheck, carterChecked, carterMenu, carterPaused, emptyChecker } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
-import { CheckStep, KeyStep } from './CheckStep';
+import { CheckStep, CheckSummary, KeyStep } from './CheckStep';
 
 const carter: BombeState = { ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 }, stops: 2 };
 
@@ -122,12 +122,43 @@ describe('CheckStep', () => {
   });
 });
 
+describe('CheckSummary', () => {  it('lists only the plug pairs, without unsteckered letters', () => {    render(<CheckSummary check={{ ...carterChecked, verdict: 'True' }} />);    expect(screen.getByText(/True stop/)).toHaveTextContent('True stop: steckers AD ET FU GQ HM IK JL NV OX PZ');  });});
 describe('KeyStep', () => {
   it('reads the message with the steckers found so far', async () => {
     await openCarterCheck('key');
 
-    expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('?????');
-    expect(screen.getByRole('button', { name: 'Partner of G: Q' })).toHaveTextContent('Q');
+    expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('XGTMB');
+    expect(screen.getByRole('textbox', { name: 'Partner of G' })).toHaveValue('Q');
+  });
+
+  it('highlights the pairs found while checking, and shows unknown letters faintly as unsteckered', async () => {
+    await openCarterCheck('key', carter, (fake) =>
+      fake.bombe.getCheck.mockResolvedValue({ ok: true, value: { ...carterCheck, steckers: 'AB GQ', checkedSteckers: 'GQ', verdict: 'True' } }),
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Partner of G' })).toHaveAccessibleDescription('found while checking');
+    expect(screen.getByRole('textbox', { name: 'Partner of G' }).parentElement).toHaveClass('checked');
+    expect(screen.getByRole('textbox', { name: 'Partner of A' }).parentElement).not.toHaveClass('checked');
+    const unknown = screen.getByRole('textbox', { name: 'Partner of C' });
+    expect(unknown).toHaveValue('');
+    expect(unknown).toHaveAttribute('placeholder', 'C');
+    expect(unknown).toHaveAccessibleDescription('taken as unsteckered');
+  });
+
+  it('writes a partner by hand in place of the old one', async () => {
+    const api = await openCarterCheck('key');
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Partner of G' }), { target: { value: 'QA' } });
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: 'AG' }));
+  });
+
+  it('rubs out a partner when its box is cleared', async () => {
+    const api = await openCarterCheck('key');
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Partner of Q' }), { target: { value: '' } });
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { steckers: '' }));
   });
 
   it('turns the right ring by hand', async () => {

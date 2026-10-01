@@ -17,6 +17,8 @@ internal sealed class FakeMachineSessionStore(EnigmaMachine machine) : IMachineS
 
     public OperatorProcedure? Procedure { get; set; }
 
+    public string Lamps { get; set; } = string.Empty;
+
     public T Use<T>(Func<EnigmaMachine, T> action) => action(Machine);
 
     public void Replace(EnigmaMachine machine, AppliedKey? appliedKey = null)

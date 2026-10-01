@@ -32,7 +32,7 @@ import type {
 import { shiftLetter, shiftRing } from './machine';
 import { keySheetDocument, procedureDocument, procedureName } from './printSheet';
 import { historicalSpeed } from './bombe/drums';
-import { withoutLetter } from './bombe/steckers';
+import { withPartner, withoutLetter } from './bombe/steckers';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -144,6 +144,8 @@ export interface BombeSlice {
   changeCheck: (change: CheckChange) => Promise<boolean>;
   /** Rubs out every pair of `letter` on the stecker sheet once the queued operations are done. */
   eraseLetter: (letter: string) => Promise<boolean>;
+  /** Writes `partner` as the partner of `letter` (null rubs it out) once the queued operations are done. */
+  setPartner: (letter: string, partner: string | null) => Promise<boolean>;
   /** Turns the right ring `steps` places on once the queued operations are done. */
   stepRightRing: (steps: number) => Promise<boolean>;
   /** Changes the checking machine once the queued operations are done. */
@@ -509,6 +511,11 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           const steckers = get().check?.steckers;
           return steckers !== undefined && get().changeCheck({ steckers: withoutLetter(steckers, letter) });
         }),
+      setPartner: (letter, partner) =>
+        enqueue(async () => {
+          const steckers = get().check?.steckers;
+          return steckers !== undefined && get().changeCheck({ steckers: withPartner(steckers, letter, partner) });
+        }),
       stepRightRing: (steps) =>
         enqueue(async () => {
           const ring = get().check?.rightRing;
@@ -729,6 +736,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       movePlug: (from, to) => apply(api.movePlug(from, to)),
       pressKey: (key) => apply(api.pressKey(key)),
       releaseKey: () => apply(api.releaseKey()),
+      clearLamps: () => apply(api.clearLamps()),
       applyDailyKey: (sheetId, day) => apply(api.applyDailyKey(sheetId, day)),
       setUpMachine: (key) => apply(api.setUpMachine(key)),
       startSending: () => apply(api.startSending()),

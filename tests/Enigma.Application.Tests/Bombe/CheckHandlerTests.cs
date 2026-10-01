@@ -31,7 +31,8 @@ public sealed class CheckHandlerTests
         Assert.Equal("Unchecked", check.Verdict);
         Assert.Equal(stop, check.Stop.Index);
         Assert.Equal(16, check.Crib.Count);
-        Assert.Equal(new string('?', 16), check.Decrypt);
+        Assert.DoesNotContain('?', check.Decrypt);
+        Assert.Equal("", check.CheckedSteckers);
     }
 
     [Fact]
@@ -135,6 +136,7 @@ public sealed class CheckHandlerTests
         Assert.NotNull(confirmation.Solution);
         Assert.True(confirmation.Solution.IsTrueStop);
         Assert.True(confirmation.Solution.VerdictCorrect);
+        Assert.Equal("AD ET FU GQ HM IK JL NV OX PZ RR SS WW", confirmation.Check.CheckedSteckers);
         Assert.Equal("True", Stops().Single(s => s.Index == stop).Verdict);
         Assert.All(Stops().Where(s => s.Index != stop), s => Assert.Equal("Unchecked", s.Verdict));
     }

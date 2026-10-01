@@ -20,6 +20,7 @@ const api: EnigmaApi = {
     movePlug: (from, to) => invoke('machine:movePlug', from, to),
     pressKey: (key) => invoke('machine:pressKey', key),
     releaseKey: () => invoke('machine:releaseKey'),
+    clearLamps: () => invoke('machine:clearLamps'),
     applyDailyKey: (sheetId, day) => invoke('machine:applyDailyKey', sheetId, day),
     setUpMachine: (key) => invoke('machine:setUpMachine', key),
     startSending: () => invoke('machine:startSending'),

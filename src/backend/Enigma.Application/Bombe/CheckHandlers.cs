@@ -61,7 +61,7 @@ public sealed class PressCheckingKeyHandler(IBombeSessionStore store)
 
             var check = store.Stops.Check(stop);
             check.Record(core, key, lamp);
-            return new LampState(lamp.ToString(), CheckState.From(check, stop));
+            return new LampState(lamp.ToString(), CheckState.From(check, stop, store.Stops.SolutionOf(stop)));
         });
     }
 }
@@ -87,7 +87,7 @@ public sealed class GetCheckHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        return store.UseCheck(query.Stop, (_, check) => CheckState.From(check, query.Stop));
+        return store.UseCheck(query.Stop, (_, check) => CheckState.From(check, query.Stop, store.Stops.SolutionOf(query.Stop)));
     }
 }
 
@@ -102,7 +102,7 @@ public sealed class SetCheckHandler(IBombeSessionStore store)
             var sheet = command.Steckers is { } pairs ? SteckerSheet.Parse(pairs.ToUpperInvariant()) : check.Sheet;
             var ring = command.RightRing is { } number ? RingSetting.FromNumber(number) : check.RightRing;
             (check.Sheet, check.RightRing) = (sheet, ring);
-            return CheckState.From(check, command.Stop);
+            return CheckState.From(check, command.Stop, store.Stops.SolutionOf(command.Stop));
         });
     }
 }
@@ -117,7 +117,7 @@ public sealed class ConfirmCheckHandler(IBombeSessionStore store)
             ? parsed
             : throw new DomainException($"'{command.Verdict}' is not a verdict: True, False or Unchecked.");
         return store.UseCheck(command.Stop, (log, check) =>
-            ConfirmationState.From(check.Confirm(verdict, log.SolutionOf(command.Stop)), CheckState.From(check, command.Stop)));
+            ConfirmationState.From(check.Confirm(verdict, log.SolutionOf(command.Stop)), CheckState.From(check, command.Stop, store.Stops.SolutionOf(command.Stop))));
     }
 }
 
@@ -140,7 +140,7 @@ public sealed class FindRightRingHandler(IBombeSessionStore store)
         return store.UseCheck(command.Stop, (_, check) =>
         {
             RingScoreState[] rings = [.. check.FindRightRing().Select(ring => new RingScoreState(ring.Ring.Number, ring.Score, ring.Best))];
-            return new FindState(rings, CheckState.From(check, command.Stop));
+            return new FindState(rings, CheckState.From(check, command.Stop, store.Stops.SolutionOf(command.Stop)));
         });
     }
 }

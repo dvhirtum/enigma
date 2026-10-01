@@ -15,6 +15,12 @@ public interface IMachineSessionStore
     /// <summary>The running operator procedure, or null. Set it only inside <see cref="Use{T}"/>.</summary>
     OperatorProcedure? Procedure { get; set; }
 
+    /// <summary>
+    /// Every lamp lit since the record was last cleared, oldest first; a new machine keeps it. Set it only inside
+    /// <see cref="Use{T}"/>.
+    /// </summary>
+    string Lamps { get; set; }
+
     /// <summary>Runs <paramref name="action"/> on the current machine.</summary>
     T Use<T>(Func<EnigmaMachine, T> action);
 

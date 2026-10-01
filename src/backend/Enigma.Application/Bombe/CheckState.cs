@@ -4,20 +4,25 @@ namespace Enigma.Application.Bombe;
 
 /// <summary>
 /// The check of a stop: the stop, the stecker sheet as written (pairs such as "AD ET EX RR"), the letters it
-/// contradicts (more than one partner), the right ring (1–26), the verdict, each crib letter with its match (Match,
-/// Mismatch or Unknown), the decrypt of the whole message ('?' where a stecker is not known yet) and the key it gives.
+/// contradicts (more than one partner), the steckers found by checking when the stop was confirmed true, the right
+/// ring (1–26), the verdict, each crib letter with its match (Match, Mismatch or Unknown), the decrypt of the whole
+/// message (letters not known yet taken as unsteckered), the key it gives, and the rings read from the indicator (null
+/// before).
 /// </summary>
 public sealed record CheckState(
     StopState Stop,
     string Steckers,
     string Contradicted,
+    string CheckedSteckers,
     int RightRing,
     string Verdict,
     IReadOnlyList<CribLetterState> Crib,
     string Decrypt,
-    CheckedKeyState Key)
+    CheckedKeyState Key,
+    ReadingState? Reading)
 {
-    public static CheckState From(StopCheck check, int index)
+    /// <param name="solution">The solution of the message, to tell whether the rings read are right.</param>
+    public static CheckState From(StopCheck check, int index, Solution? solution)
     {
         ArgumentNullException.ThrowIfNull(check);
 
@@ -26,17 +31,21 @@ public sealed record CheckState(
             StopState.From(check.Stop, index, check.Verdict),
             check.Sheet.ToString(),
             string.Concat(check.Sheet.Contradicted),
+            check.Checked.ToString(),
             check.RightRing.Number,
             check.Verdict.ToString(),
             [.. check.Crib().Select(letter => new CribLetterState(
                 letter.Offset, letter.Plain.ToString(), letter.Cipher.ToString(), letter.Match.ToString()))],
-            string.Concat(check.Decrypt().Select(letter => letter?.ToChar() ?? '?')),
-            new CheckedKeyState(
-                key.Reflector.Name,
-                key.WheelOrder.ToString(),
-                [.. key.Rings.Select(ring => ring.Number)],
-                [.. key.Plugs.Select(plug => plug.ToString())],
-                key.MessageKey.ToString()));
+            string.Concat(check.Decrypt().Select(letter => letter.ToChar())),
+            CheckedKeyState.From(key),
+            check is { Reading: { } reading, ReadKey: { } read }
+                ? new ReadingState(
+                    reading.Left.Number,
+                    reading.Middle.Number,
+                    CheckedKeyState.From(read),
+                    check.ReadDecrypt()!,
+                    solution is null ? null : solution.Rings[0] == reading.Left && solution.Rings[1] == reading.Middle)
+                : null);
     }
 }
 
@@ -46,7 +55,26 @@ public sealed record CribLetterState(int Offset, string Plain, string Cipher, st
 /// The key a check gives: reflector, wheel order, ring settings (1–26; left and middle stay 26 until the indicators are
 /// read), plug pairs and the rotor positions the message starts from.
 /// </summary>
-public sealed record CheckedKeyState(string Reflector, string WheelOrder, IReadOnlyList<int> Rings, IReadOnlyList<string> Plugs, string MessageKey);
+public sealed record CheckedKeyState(string Reflector, string WheelOrder, IReadOnlyList<int> Rings, IReadOnlyList<string> Plugs, string MessageKey)
+{
+    public static CheckedKeyState From(CheckedKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        return new CheckedKeyState(
+            key.Reflector.Name,
+            key.WheelOrder.ToString(),
+            [.. key.Rings.Select(ring => ring.Number)],
+            [.. key.Plugs.Select(plug => plug.ToString())],
+            key.MessageKey.ToString());
+    }
+}
+
+/// <summary>
+/// The left and middle rings (1–26) read from the indicator, the whole key they give (the Spruchschlüssel as the
+/// message key), the decrypt with it, and whether the rings are the solution's (null without a solution).
+/// </summary>
+public sealed record ReadingState(int Left, int Middle, CheckedKeyState Key, string Decrypt, bool? RingsRight);
 
 /// <summary>The lamp a key lit, and the check of the stop the checking machine is set up for, with what the lamp wrote down.</summary>
 public sealed record LampState(string Lamp, CheckState? Check);
@@ -85,7 +113,8 @@ public sealed record ComparisonState(bool IsTrueStop, bool VerdictCorrect, IRead
 
 /// <summary>
 /// Proposed steckers in the order found (a letter with itself: unsteckered), each with its gain in log likelihood; the
-/// steckers with them added, to accept as they are; and the decrypt they give ('?' where still unknown).
+/// steckers with them added, to accept as they are; and the decrypt they give (letters still unknown taken as
+/// unsteckered).
 /// </summary>
 public sealed record SuggestionState(IReadOnlyList<SuggestedPairState> Pairs, string Steckers, string Decrypt)
 {
@@ -96,16 +125,16 @@ public sealed record SuggestionState(IReadOnlyList<SuggestedPairState> Pairs, st
         return new SuggestionState(
             [.. suggestion.Pairs.Select(pair => new SuggestedPairState(pair.ToString(), pair.Gain))],
             suggestion.Steckers.ToString(),
-            string.Concat(suggestion.Decrypt.Select(letter => letter?.ToChar() ?? '?')));
+            string.Concat(suggestion.Decrypt.Select(letter => letter.ToChar())));
     }
 }
 
 public sealed record SuggestedPairState(string Pair, double Gain);
 
 /// <summary>
-/// Each right ring (1–26) with its decrypt score (log likelihood against random letters; null when no three letters in
-/// a row are known) and whether it has the best score; more than one best means the ring is not determined yet. The
-/// check has the lowest best ring set, or keeps its ring when no ring has a score.
+/// Each right ring (1–26) with its decrypt score (log likelihood against random letters, unknown letters taken as
+/// unsteckered; null when the message is shorter than three letters) and whether it has the best score; more than one
+/// best means the ring is not determined yet. The check has the lowest best ring set, or keeps its ring when no ring has a score.
 /// </summary>
 public sealed record FindState(IReadOnlyList<RingScoreState> Rings, CheckState Check);
 

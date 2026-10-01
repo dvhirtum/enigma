@@ -245,6 +245,41 @@ public sealed class HandlerTests
     }
 
     [Fact]
+    public void Should_write_down_every_lamp_and_keep_them_When_the_machine_is_set_up_anew()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var press = new PressKeyHandler(store);
+        var release = new ReleaseKeyHandler(store);
+        foreach (var key in "AAA")
+        {
+            press.Handle(new PressKey(key.ToString()));
+            release.Handle(new ReleaseKey());
+        }
+
+        // Act
+        var state = new CreateMachineHandler(store).Handle(new CreateMachine("M3"));
+
+        // Assert
+        Assert.Equal("BDZ", state.Lamps);
+    }
+
+    [Fact]
+    public void Should_clear_the_lamps_written_down_When_asked()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        new PressKeyHandler(store).Handle(new PressKey("A"));
+        new ReleaseKeyHandler(store).Handle(new ReleaseKey());
+
+        // Act
+        var state = new ClearLampsHandler(store).Handle(new ClearLamps());
+
+        // Assert
+        Assert.Equal("", state.Lamps);
+    }
+
+    [Fact]
     public void Should_decrypt_the_Scharnhorst_message_When_the_machine_is_set_up_through_handlers()
     {
         // Arrange

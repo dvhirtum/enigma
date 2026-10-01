@@ -94,10 +94,14 @@ public sealed class StopCheckTests
     }
 
     [Fact]
-    public void Should_leave_letters_unknown_When_their_steckers_are_not_found()
+    public void Should_leave_crib_letters_unknown_and_decrypt_them_unsteckered_When_their_steckers_are_not_found()
     {
         // Arrange
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
+        var unsteckered = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
+        {
+            Steckers = Steckers.Parse("GQ AA BB CC DD EE FF HH II JJ KK LL MM NN OO PP RR SS TT UU VV WW XX YY ZZ"),
+        };
 
         // Act
         var crib = check.Crib();
@@ -105,7 +109,41 @@ public sealed class StopCheckTests
 
         // Assert
         Assert.Equal(CribMatch.Unknown, crib[0].Match);
-        Assert.Null(plain[0]);
+        Assert.Equal(unsteckered.Decrypt(), plain);
+    }
+
+    [Fact]
+    public void Should_keep_the_checked_steckers_When_the_stop_is_confirmed_true()
+    {
+        // Arrange
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
+        {
+            Steckers = Steckers.Parse("GQ RR"),
+        };
+
+        // Act
+        check.Confirm(StopVerdict.True, null);
+        check.Steckers = Steckers.Parse("GQ RR AD");
+
+        // Assert
+        Assert.Equal("GQ RR", check.Checked.ToString());
+    }
+
+    [Fact]
+    public void Should_forget_the_checked_steckers_When_the_stop_is_no_longer_true()
+    {
+        // Arrange
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
+        {
+            Steckers = Steckers.Parse("GQ RR"),
+        };
+        check.Confirm(StopVerdict.True, null);
+
+        // Act
+        check.Confirm(StopVerdict.False, null);
+
+        // Assert
+        Assert.Equal(Steckers.None, check.Checked);
     }
 
     [Fact]
@@ -289,7 +327,7 @@ public sealed class StopCheckTests
     }
 
     [Fact]
-    public void Should_tie_every_ring_and_keep_the_ring_When_no_three_letters_in_a_row_are_known()
+    public void Should_score_every_ring_with_unknown_letters_unsteckered_When_only_the_stops_stecker_is_known()
     {
         // Arrange
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
@@ -298,9 +336,8 @@ public sealed class StopCheckTests
         var rings = check.FindRightRing();
 
         // Assert
-        Assert.All(rings, ring => Assert.Null(ring.Score));
-        Assert.All(rings, ring => Assert.True(ring.Best));
-        Assert.Equal(26, check.RightRing.Number);
+        Assert.All(rings, ring => Assert.NotNull(ring.Score));
+        Assert.Equal(26, rings.Count);
     }
 
     [Fact]

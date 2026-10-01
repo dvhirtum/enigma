@@ -356,7 +356,8 @@ input.hand-input.crib-input {
 
 .stecker-sheet {
   display: grid;
-  grid-template-columns: repeat(13, calc(var(--sq) * 2));
+  grid-template-columns: repeat(auto-fill, calc(var(--sq) * 2));
+  max-width: calc(var(--sq) * 26);
 }
 
 .hut8 output.hand {
@@ -447,6 +448,32 @@ input.hand-input.crib-input {
   font-family: 'Kalam', cursive;
   font-size: 1.2rem;
   cursor: pointer;
+}
+
+input.hand-box {
+  box-sizing: border-box;
+  width: calc(var(--sq) * 1.75);
+  text-align: center;
+  text-transform: uppercase;
+  cursor: text;
+}
+
+input.hand-box::placeholder {
+  color: var(--pencil);
+  opacity: 0.3;
+}
+
+.stecker-sheet .checked .hand-box,
+.checked-mark {
+  background: var(--highlight);
+}
+
+.checked-mark {
+  color: inherit;
+}
+
+input.hand-box:focus-visible {
+  outline: 2px solid var(--pencil);
 }
 
 .stecker-sheet .hand-box:disabled {

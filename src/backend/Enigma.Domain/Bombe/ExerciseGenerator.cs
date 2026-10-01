@@ -7,10 +7,17 @@ namespace Enigma.Domain.Bombe;
 /// <summary>
 /// Generates a Bombe exercise: a Navy message from a template, encrypted with a key sheet day by the full procedure
 /// (Kenngruppen, bigram table, message key). The template's stereotyped phrase is the likely crib; it may follow a
-/// short prefix. Words are separated by X and numbers are spelled out digit by digit.
+/// short prefix. Words are separated by X and numbers are spelled out digit by digit. Also generates the day's other
+/// messages, from the same templates and a few more.
 /// </summary>
 public static class ExerciseGenerator
 {
+    /// <summary>The fewest other messages of the day.</summary>
+    public const int MinDayMessages = 3;
+
+    /// <summary>The most other messages of the day.</summary>
+    public const int MaxDayMessages = 5;
+
     private static readonly string[] Digits = ["NUL", "EINS", "ZWO", "DREI", "VIER", "FUENF", "SEQS", "SIEBEN", "AQT", "NEUN"];
 
     private static readonly string[] Directions = ["NORD", "NORDOST", "OST", "SUEDOST", "SUED", "SUEDWEST", "WEST", "NORDWEST"];
@@ -41,8 +48,74 @@ public static class ExerciseGenerator
                 + $"{Number(random, 10, 60)} DAMPFER {Number(random, 2, 9)} ZERSTOERER"),
     ];
 
+    // Rendezvous order, mine warning and air attack report: only for the day's other messages, without a crib.
+    private static readonly Template[] DayTemplates =
+    [
+        new(
+            null,
+            random => $"AN U {Number(random, 100, 999)} X ",
+            random => $"TREFFPUNKT QU {Square(random)} X UHRZEIT {Number(random, 0, 23)} UHR X "
+                + $"{Pick(random, "VERSORGER", "SPERRBRECHER", "GELEIT")} ERWARTET"),
+        new(
+            null,
+            random => Pick(random, "", "AN ALLE X "),
+            random => $"MINENWARNUNG X {Pick(random, Areas)} X MINEN IN QU {Square(random)} X {Pick(random, "WEG GESPERRT", "NUR MIT GELEIT")}"),
+        new(
+            null,
+            random => Pick(random, "", "AN BDU X ", $"VON U {Number(random, 100, 999)} X "),
+            random => $"FLIEGERANGRIFF IN QU {Square(random)} X {Number(random, 2, 12)} FLUGZEUGE X "
+                + Pick(random, "KEINE SQAEDEN", "LEIQTE SQAEDEN", "TAUQKLAR")),
+    ];
+
     /// <summary>Generates an exercise sent on <paramref name="day"/> of an M3 <paramref name="sheet"/>.</summary>
     public static MessageSource Generate(KeySheet sheet, int day, Kenngruppenbuch book, TauschtafelSet tables, Random random)
+    {
+        var allotment = Allotment(sheet, day, book, tables, random);
+        var (template, prefix, plaintext) = Compose(Templates, random);
+        var (message, solution) = Send(sheet, day, book, tables, random, allotment, plaintext);
+        solution = solution with { Notes = $"{solution.Notes} The crib starts at position {prefix.Length}." };
+
+        var date = new DateOnly(sheet.Month.Year, sheet.Month.Month, day);
+        var type = template.Type!;
+        return new MessageSource(
+            SourceKind.Exercise,
+            $"Exercise, {date.ToString("d MMMM yyyy", CultureInfo.InvariantCulture)}",
+            $"Sent at {message.TimeOfOrigin!.Value.ToString("HHmm", CultureInfo.InvariantCulture)}. {type.Hint}",
+            message.ToString(),
+            message,
+            MessageSource.Letters(message.CipherText),
+            type.Crib,
+            solution,
+            type.Place);
+    }
+
+    /// <summary>
+    /// Generates the other messages sent on <paramref name="day"/> of an M3 <paramref name="sheet"/>: between
+    /// <see cref="MinDayMessages"/> and <see cref="MaxDayMessages"/>, in the order of their time of origin.
+    /// </summary>
+    public static IReadOnlyList<DayMessage> DayTraffic(KeySheet sheet, int day, Kenngruppenbuch book, TauschtafelSet tables, Random random)
+    {
+        var allotment = Allotment(sheet, day, book, tables, random);
+        Template[] templates = [.. Templates, .. DayTemplates];
+        return
+        [
+            .. Enumerable.Range(0, random.Next(MinDayMessages, MaxDayMessages + 1))
+                .Select(_ => Send(sheet, day, book, tables, random, allotment, Compose(templates, random).PlainText))
+                .Select(sent => new DayMessage(sent.Message, sent.Solution))
+                .OrderBy(message => message.Message.TimeOfOrigin),
+        ];
+    }
+
+    /// <summary>The plain text of a random template, before padding.</summary>
+    public static string PlainText(Random random)
+    {
+        ArgumentNullException.ThrowIfNull(random);
+
+        return Compose(Templates, random).PlainText;
+    }
+
+    // Checks the day can send Navy messages, and gives the network's Kenngruppen columns.
+    private static Allotment Allotment(KeySheet sheet, int day, Kenngruppenbuch book, TauschtafelSet tables, Random random)
     {
         ArgumentNullException.ThrowIfNull(sheet);
         ArgumentNullException.ThrowIfNull(book);
@@ -54,13 +127,18 @@ public static class ExerciseGenerator
             throw new DomainException("The three-rotor Bombe needs an M3 key sheet.");
         }
 
-        var key = sheet.KeyFor(day);
-        var grundstellung = key.Grundstellung
+        _ = sheet.KeyFor(day).Grundstellung
             ?? throw new DomainException($"Day {day} of {sheet.Network} {sheet.Month} has no Grundstellung.");
-        var allotment = book.AllotmentOf(sheet.Network)
+        return book.AllotmentOf(sheet.Network)
             ?? throw new DomainException($"{sheet.Network} has no columns in the Kenngruppenbuch.");
+    }
 
-        var (template, prefix, plaintext) = Compose(random);
+    // Sends the plain text on the day by the Navy procedure, with a random indicator and time of origin.
+    private static (RadioMessage Message, Solution Solution) Send(
+        KeySheet sheet, int day, Kenngruppenbuch book, TauschtafelSet tables, Random random, Allotment allotment, string plaintext)
+    {
+        var key = sheet.KeyFor(day);
+        var grundstellung = key.Grundstellung!;
         var group = RadioMessage.GroupLength;
         plaintext += new string('X', (group - (plaintext.Length % group)) % group);
 
@@ -79,40 +157,21 @@ public static class ExerciseGenerator
             plaintext,
             $"{sheet.Network} {sheet.Month}, day {day}: Grundstellung {grundstellung}, Schlüsselkenngruppe "
             + $"{indicator.Schluesselkenngruppe}, Verfahrenkenngruppe {indicator.Verfahrenkenngruppe}, Spruchschlüssel "
-            + $"{messageKey.Spruchschluessel}. The crib starts at position {prefix.Length}.")
+            + $"{messageKey.Spruchschluessel}.")
         {
             Exercise = new ExerciseKey(sheet.Id, sheet.Network, sheet.Month, day, grundstellung, indicator),
         };
 
         var time = new TimeOnly(random.Next(24), random.Next(60));
         var groups = indicator.Encrypt(tables.TableFor(sheet.Month, day));
-        var message = RadioMessage.Create(time, groups, solution.Decrypt(MessageSource.Letters(plaintext)));
-        var date = new DateOnly(sheet.Month.Year, sheet.Month.Month, day);
-        return new MessageSource(
-            SourceKind.Exercise,
-            $"Exercise, {date.ToString("d MMMM yyyy", CultureInfo.InvariantCulture)}",
-            $"Sent at {time.ToString("HHmm", CultureInfo.InvariantCulture)}. {template.Type.Hint}",
-            message.ToString(),
-            message,
-            MessageSource.Letters(message.CipherText),
-            template.Type.Crib,
-            solution,
-            template.Type.Place);
+        return (RadioMessage.Create(time, groups, solution.Decrypt(MessageSource.Letters(plaintext))), solution);
     }
 
-    /// <summary>The plain text of a random template, before padding.</summary>
-    public static string PlainText(Random random)
+    private static (Template Template, string Prefix, string PlainText) Compose(Template[] templates, Random random)
     {
-        ArgumentNullException.ThrowIfNull(random);
-
-        return Compose(random).PlainText;
-    }
-
-    private static (Template Template, string Prefix, string PlainText) Compose(Random random)
-    {
-        var template = Templates[random.Next(Templates.Length)];
+        var template = templates[random.Next(templates.Length)];
         var prefix = Compact(template.Prefix(random));
-        return (template, prefix, prefix + template.Type.Crib.ToString() + Compact(template.Body(random)));
+        return (template, prefix, prefix + template.Type?.Crib.ToString() + Compact(template.Body(random)));
     }
 
     private static Kenngruppe RandomKenngruppe(Kenngruppenbuch book, ColumnRange columns, Random random) =>
@@ -136,5 +195,6 @@ public static class ExerciseGenerator
 
     private static string Compact(string text) => string.Concat(text.Where(c => c != ' '));
 
-    private sealed record Template(MessageType Type, Func<Random, string> Prefix, Func<Random, string> Body);
+    /// <summary>A message template: the kind of message with its crib (none for the day's other messages), a prefix and a body.</summary>
+    private sealed record Template(MessageType? Type, Func<Random, string> Prefix, Func<Random, string> Body);
 }

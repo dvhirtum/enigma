@@ -50,14 +50,31 @@ function CribCheck({ check }: { check: BombeCheck }) {
 }
 
 /**
- * The stecker sheet, filled in by the checking machine's lamps: every partner written for each letter, itself when
- * unsteckered, empty when unknown. A letter with more than one partner, and its partners, are marked in red. Click a
- * box to rub out its letter's pairs.
+ * The stecker sheet: every partner written for each letter, itself when unsteckered, empty when unknown. A letter with
+ * more than one partner, and its partners, are marked in red. While checking, the checking machine's lamps fill it in
+ * and a click on a box rubs out its letter's pairs. When `editable`, partners are written in by hand, the pairs found by
+ * checking are highlighted, and an unknown letter shows itself faintly: it is taken as unsteckered.
  */
-function SteckerSheet({ check }: { check: BombeCheck }) {
+function SteckerSheet({ check, editable = false }: { check: BombeCheck; editable?: boolean }) {
   const eraseLetter = useMachine((store) => store.eraseLetter);
+  const setPartner = useMachine((store) => store.setPartner);
   const partners = partnersOf(check.steckers);
   const contradicted = contradictionsOf(check.steckers);
+  const checked = partnersOf(check.checkedSteckers);
+
+  // The letter typed is the one that is not an old partner, wherever the cursor was.
+  const write = (letter: string, value: string) => {
+    const own = partners[letter] ?? [];
+    const typed = [...value.toUpperCase()].filter((character) => alphabet.includes(character));
+    const partner = typed.find((character) => !own.includes(character)) ?? typed[0];
+    if (partner === undefined) {
+      if (value.trim() === '') {
+        void setPartner(letter, null);
+      }
+    } else if (own.length !== 1 || own[0] !== partner) {
+      void setPartner(letter, partner);
+    }
+  };
 
   return (
     <section className="notebook-section" aria-label="Steckers">
@@ -66,26 +83,50 @@ function SteckerSheet({ check }: { check: BombeCheck }) {
         {[...alphabet].map((letter) => {
           const own = partners[letter] ?? [];
           const red = contradicted.has(letter);
+          const found = editable && own.length === 1 && checked[letter]?.[0] === own[0];
+          const classes = [own.length === 1 && own[0] === letter ? 'self' : '', red ? 'contradicted' : '', found ? 'checked' : ''];
           return (
-            <div key={letter} className={[own.length === 1 && own[0] === letter ? 'self' : '', red ? 'contradicted' : ''].filter(Boolean).join(' ') || undefined}>
+            <div key={letter} className={classes.filter(Boolean).join(' ') || undefined}>
               <span>{letter}</span>
-              <button
-                type="button"
-                className="hand-box"
-                aria-label={`Partner of ${letter}: ${own.length > 0 ? own.join(' ') : 'unknown'}${red ? ', contradicted' : ''}`}
-                title={own.length > 0 ? `Rub out ${letter}` : undefined}
-                disabled={own.length === 0}
-                onClick={() => void eraseLetter(letter)}
-              >
-                {own.join('')}
-              </button>
+              {editable ? (
+                <input
+                  className="hand-box"
+                  value={own.join('')}
+                  placeholder={letter}
+                  title={found ? 'Found while checking the stop' : own.length === 0 ? 'Not found yet: taken as unsteckered' : undefined}
+                  aria-label={`Partner of ${letter}`}
+                  aria-description={found ? 'found while checking' : own.length === 0 ? 'taken as unsteckered' : undefined}
+                  aria-invalid={red || undefined}
+                  spellCheck={false}
+                  autoComplete="off"
+                  onChange={(event) => write(letter, event.target.value)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="hand-box"
+                  aria-label={`Partner of ${letter}: ${own.length > 0 ? own.join(' ') : 'unknown'}${red ? ', contradicted' : ''}`}
+                  title={own.length > 0 ? `Rub out ${letter}` : undefined}
+                  disabled={own.length === 0}
+                  onClick={() => void eraseLetter(letter)}
+                >
+                  {own.join('')}
+                </button>
+              )}
             </div>
           );
         })}
       </div>
+      {editable && (
+        <p className="hut8-note">
+          <mark className="checked-mark">Highlighted</mark> pairs were found while checking the stop. A faint letter is not found yet and is taken as
+          unsteckered.
+        </p>
+      )}
       {check.contradicted && (
         <p className="notebook-warning">
-          The lamps contradict each other at {[...check.contradicted].join(', ')}: a sign of a false stop. Click a box to rub it out.
+          The lamps contradict each other at {[...check.contradicted].join(', ')}: a sign of a false stop.{' '}
+          {editable ? 'Write the right partner in, or clear the box.' : 'Click a box to rub it out.'}
         </p>
       )}
     </section>
@@ -276,11 +317,11 @@ function CheckerSetup({ check }: { check: BombeCheck }) {
   );
 }
 
-/** The verdict and the checked steckers, in one line. */
+/** The verdict and the plug pairs found, in one line. */
 export function CheckSummary({ check }: { check: BombeCheck }) {
   return (
     <p>
-      {verdictLabels[check.verdict]}: steckers <Hand>{check.steckers || '—'}</Hand>
+      {verdictLabels[check.verdict]}: steckers <Hand>{check.key.plugs.join(' ') || '—'}</Hand>
     </p>
   );
 }
@@ -326,12 +367,12 @@ export function KeyStep({ check }: { check: BombeCheck }) {
   return (
     <>
       <p>
-        Read the message as on the Enigma: find the right ring and the steckers the menu does not reach, with Suggest and Find, until the message reads
-        as German.
+        Read the message as on the Enigma: find the right ring and the steckers the menu does not reach, with Suggest and Find or by writing partners
+        on the sheet, until the message reads as German.
       </p>
       <RightRing check={check} />
       <Suggestions />
-      <SteckerSheet check={check} />
+      <SteckerSheet check={check} editable />
       <section className="notebook-section" aria-label="Decrypt">
         <h4>Decrypt</h4>
         <Squares text={groups(check.decrypt)} label="Decrypt" />

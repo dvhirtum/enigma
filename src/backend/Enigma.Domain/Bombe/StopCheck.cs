@@ -21,8 +21,8 @@ public enum CribMatch
 public sealed record CribLetterCheck(int Offset, Letter Plain, Letter Cipher, CribMatch Match);
 
 /// <summary>
-/// The key a checked stop gives: the right ring from the turnover, the left and middle rings at Z (unknown until the
-/// indicators are read), the known plug pairs and the rotor positions the message starts from.
+/// The key a checked stop gives: the right ring from the turnover, the left and middle rings at Z, or as read from
+/// the indicator, the known plug pairs and the rotor positions the message starts from.
 /// </summary>
 public sealed record CheckedKey(
     ReflectorType Reflector,
@@ -54,11 +54,23 @@ public sealed record SuggestedPair(Letter First, Letter Second, double Gain)
     public override string ToString() => First.Index <= Second.Index ? $"{First}{Second}" : $"{Second}{First}";
 }
 
-/// <summary>The proposed steckers in the order found, the steckers with them added and the decrypt they give.</summary>
-public sealed record SteckerSuggestion(IReadOnlyList<SuggestedPair> Pairs, Steckers Steckers, IReadOnlyList<Letter?> Decrypt);
+/// <summary>
+/// The proposed steckers in the order found, the steckers with them added and the decrypt they give, letters still
+/// unknown taken as unsteckered.
+/// </summary>
+public sealed record SteckerSuggestion(IReadOnlyList<SuggestedPair> Pairs, Steckers Steckers, IReadOnlyList<Letter> Decrypt);
 
-/// <summary>A right ring's decrypt score (null when no three letters in a row are known), and whether it is the best.</summary>
+/// <summary>A right ring's decrypt score (null when the message is shorter than three letters), and whether it is the best.</summary>
 public sealed record RingScore(RingSetting Ring, double? Score, bool Best);
+
+/// <summary>
+/// A row of the ring table: left and middle rings, the Spruchschlüssel the Verfahrenkenngruppe gives at the
+/// Grundstellung with them, and the core positions it leads to at the start of the crib.
+/// </summary>
+public sealed record RingRow(RingSetting Left, RingSetting Middle, RotorPositions Spruchschluessel, DrumPosition Cores);
+
+/// <summary>The left and middle rings read from the indicator, with the Grundstellung and Verfahrenkenngruppe they were read with.</summary>
+public sealed record IndicatorReading(RotorPositions Grundstellung, Kenngruppe Verfahrenkenngruppe, RingSetting Left, RingSetting Middle);
 
 /// <summary>
 /// The checking of a Bombe stop, worked on the checking machine (<see cref="CheckingMachine"/>). The checker writes
@@ -106,6 +118,9 @@ public sealed class StopCheck
     public RingSetting RightRing { get; set; } = RingSetting.FromChar('Z');
 
     public StopVerdict Verdict { get; private set; }
+
+    /// <summary>The steckers found by checking, as they stood when the stop was confirmed true; none otherwise.</summary>
+    public Steckers Checked { get; private set; } = Steckers.None;
 
     /// <summary>The ring settings: left and middle at Z, the right one as turned.</summary>
     public IReadOnlyList<RingSetting> Rings => [RingSetting.FromChar('Z'), RingSetting.FromChar('Z'), RightRing];
@@ -159,11 +174,62 @@ public sealed class StopCheck
 
     public CheckedKey Key => new(Reflector, WheelOrder, Rings, Steckers.Plugs, MessageKey);
 
+    /// <summary>The left and middle rings read from the indicator, or null.</summary>
+    public IndicatorReading? Reading { get; set; }
+
     /// <summary>
-    /// Decrypts the whole message on an Enigma with this key, the rotors stepping. A letter is null where a stecker
-    /// it needs is not known yet.
+    /// The 676 pairs of left and middle rings, left ring first, each with the Spruchschlüssel that typing
+    /// <paramref name="verfahrenkenngruppe"/> at <paramref name="grundstellung"/> gives on an Enigma with this check's
+    /// key (letters not known yet unsteckered), and the cores it leads to at the crib. The row with the stop's cores
+    /// gives the rings.
     /// </summary>
-    public IReadOnlyList<Letter?> Decrypt() => Decrypt(Steckers, MessageScrambles(RightRing));
+    public IReadOnlyList<RingRow> RingTable(RotorPositions grundstellung, Kenngruppe verfahrenkenngruppe)
+    {
+        ArgumentNullException.ThrowIfNull(grundstellung);
+
+        var rings = Enumerable.Range(1, Letter.Count).Select(RingSetting.FromNumber).ToArray();
+        return [.. from left in rings from middle in rings select Row(grundstellung, verfahrenkenngruppe, left, middle)];
+    }
+
+    /// <summary>
+    /// The whole key once the rings are read: the rings read and the right ring, the known plug pairs, and the
+    /// Spruchschlüssel of the reading's row as the message key. Null before the rings are read.
+    /// </summary>
+    public CheckedKey? ReadKey =>
+        Reading is { } reading
+            ? new CheckedKey(
+                Reflector,
+                WheelOrder,
+                [reading.Left, reading.Middle, RightRing],
+                Steckers.Plugs,
+                Row(reading.Grundstellung, reading.Verfahrenkenngruppe, reading.Left, reading.Middle).Spruchschluessel)
+            : null;
+
+    /// <summary>Decrypts the message on an Enigma with <see cref="ReadKey"/>; null before the rings are read.</summary>
+    public string? ReadDecrypt() =>
+        ReadKey is { } key
+            ? new Solution(key.Reflector, key.WheelOrder, key.Rings, key.Plugs, key.MessageKey, string.Empty, string.Empty).Decrypt(Placement.CipherText)
+            : null;
+
+    private RingRow Row(RotorPositions grundstellung, Kenngruppe verfahrenkenngruppe, RingSetting left, RingSetting middle)
+    {
+        var key = new DailyKey(1, Reflector, [WheelOrder.Left, WheelOrder.Middle, WheelOrder.Right], [left, middle, RightRing], Steckers.Plugs);
+        var spruchschluessel = KeyProcedure.MessageKey.Derive(key, grundstellung, verfahrenkenngruppe).Spruchschluessel;
+        var start = spruchschluessel.Positions;
+        var windows = (start[0].Letter, start[1].Letter, start[2].Letter);
+        for (var press = 0; press < Placement.Position; press++)
+        {
+            windows = Step(WheelOrder, windows);
+        }
+
+        return new RingRow(left, middle, spruchschluessel, Core(windows, key.Rings));
+    }
+
+    /// <summary>
+    /// Decrypts the whole message on an Enigma with this key, the rotors stepping, taking letters whose steckers are
+    /// not known yet as unsteckered.
+    /// </summary>
+    public IReadOnlyList<Letter> Decrypt() => DecryptAssumed(Steckers, MessageScrambles(RightRing));
 
     /// <summary>
     /// Proposes steckers for the letters still unknown, one at a time, without changing the check. Each partner of an
@@ -185,19 +251,19 @@ public sealed class StopCheck
             pairs.Add(pair);
         }
 
-        return new SteckerSuggestion(pairs, steckers, Decrypt(steckers, scrambles));
+        return new SteckerSuggestion(pairs, steckers, DecryptAssumed(steckers, scrambles));
     }
 
     /// <summary>
-    /// Scores the decrypt with each right ring, the core positions kept, by its gain against random letters, and sets
-    /// the lowest ring with the best score. Rings that give the same decrypt tie. When no ring has three known letters
-    /// in a row, all tie and the ring stays.
+    /// Scores the decrypt with each right ring, the core positions kept and unknown letters taken as unsteckered, by its
+    /// gain against random letters, and sets the lowest ring with the best score. Rings that give the same decrypt tie.
+    /// When the message is too short to score, all tie and the ring stays.
     /// </summary>
     public IReadOnlyList<RingScore> FindRightRing()
     {
         var scores = Enumerable.Range(1, Letter.Count)
             .Select(RingSetting.FromNumber)
-            .Select(ring => (Ring: ring, Score: LanguageModel.Gain(Decrypt(Steckers, MessageScrambles(ring)))))
+            .Select(ring => (Ring: ring, Score: LanguageModel.Gain(Decrypt(Steckers.WithUnknownUnsteckered(), MessageScrambles(ring)))))
             .ToArray();
         var best = scores.Max(ring => ring.Score ?? double.NegativeInfinity);
         RingScore[] rings = [.. scores.Select(ring => new RingScore(ring.Ring, ring.Score, (ring.Score ?? double.NegativeInfinity) == best))];
@@ -213,6 +279,7 @@ public sealed class StopCheck
     public CheckConfirmation Confirm(StopVerdict verdict, Solution? solution)
     {
         Verdict = verdict;
+        Checked = verdict == StopVerdict.True ? Steckers : Steckers.None;
         var crib = Crib();
         return new CheckConfirmation(
             verdict,
@@ -259,6 +326,9 @@ public sealed class StopCheck
     }
 
     private Letter?[] Decrypt(Steckers steckers, Letter[][] scrambles) => Decrypt(steckers, scrambles, Placement.CipherText);
+
+    private Letter[] DecryptAssumed(Steckers steckers, Letter[][] scrambles) =>
+        [.. Decrypt(steckers.WithUnknownUnsteckered(), scrambles).Select(letter => letter!.Value)];
 
     // The scrambler of each message letter with the right ring, the rotors stepping: the output for each input.
     private Letter[][] MessageScrambles(RingSetting rightRing)

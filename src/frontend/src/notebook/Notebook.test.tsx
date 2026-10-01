@@ -63,6 +63,21 @@ describe('Notebook', () => {
     expect(screen.getByRole('tab', { name: 'Decrypt' })).toHaveFocus();
   });
 
+  it('writes down the lamps in groups of 4 on the Lamps page, copies and clears them', async () => {
+    const api = renderMachine(<Notebook />, { ...defaultM3, lamps: 'WETTERV' });
+    api.machine.clearLamps.mockResolvedValue({ ok: true, value: { ...defaultM3, lamps: '' } });
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Lamps' }));
+
+    expect(await screen.findByRole('group', { name: 'Lamps' })).toHaveTextContent('WETT ERV');
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+    expect(api.clipboard.writeText).toHaveBeenCalledWith('WETT ERV');
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(await screen.findByText('No lamps yet.')).toBeInTheDocument();
+    expect(api.machine.clearLamps).toHaveBeenCalled();
+  });
+
   it('warns when the setup differs from the daily key', async () => {
     renderNotebook(null, true);
 

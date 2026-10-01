@@ -18,6 +18,8 @@ export interface MachineState {
   plugs: string[];
   heldKey: string | null;
   litLamp: string | null;
+  /** Every lamp lit since the record was last cleared. */
+  lamps: string;
   appliedKey: AppliedKey | null;
   /** The running operator procedure, or null. */
   operator: OperatorState | null;
@@ -321,13 +323,15 @@ export interface CheckedKey {
 
 /**
  * The check of a stop: the stecker sheet as written ("AD ET EX RR", contradictions and all), the right ring (1–26),
- * the verdict, each crib letter's match, the decrypt ('?' where a stecker is unknown) and the key.
+ * the verdict, each crib letter's match, the decrypt (unknown letters taken as unsteckered) and the key.
  */
 export interface BombeCheck {
   stop: BombeStop;
   steckers: string;
   /** The letters with more than one partner written. */
   contradicted: string;
+  /** The steckers found by checking, as they stood when the stop was confirmed true; empty otherwise. */
+  checkedSteckers: string;
   rightRing: number;
   verdict: BombeStop['verdict'];
   crib: CribLetter[];
@@ -422,6 +426,8 @@ export interface MachineApi {
   movePlug: MachineCall<[from: string, to: string]>;
   pressKey: MachineCall<[key: string]>;
   releaseKey: MachineCall<[]>;
+  /** Clears the record of lit lamps. */
+  clearLamps: MachineCall<[]>;
   applyDailyKey: MachineCall<[sheetId: string, day: number]>;
   /** Replaces the machine with one set up with the whole key. */
   setUpMachine: MachineCall<[key: MachineKey]>;

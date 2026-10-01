@@ -126,7 +126,7 @@ Checking a stop in the notebook sets the machine up for it: the stop's reflector
 
 To check the stop, follow the links from the stecker the Bombe found. The notebook's **Crib** gives a column for each crib letter, headed by its link's drum position (ZZA, ZZB, ...), with the cipher letter on top and the crib letter at the bottom. Between them it writes the partners found so far: under the cipher letter its partner, above the crib letter its partner. A column with one partner and a gap is a link you can test next. For a link at ZZE, turn the drums to ZZE, press the stecker partner of one letter and read the lamp: that is the stecker partner of the other letter. For example, for a stop with indicator SNY and G/D, turn the drums to ZZE for link G–E and press D: lamp P lights, so E/P.
 
-The notebook writes each lamp on the **Steckers** sheet for you: when the drums stand at a link and the key you press is a partner already written for one of its letters, the lamp is written as the partner of the other letter (the letter itself when it is unsteckered). You cannot type in the sheet. A letter can have only one partner, so when a lamp gives a letter a second partner, both are kept and the letter and its partners are marked in red: a sign of a false stop, or of a key pressed at the wrong position. Red letters count as unknown for the crib, the decrypt, Suggest and Find. Click a box to rub out that letter's pairs.
+The notebook writes each lamp on the **Steckers** sheet for you: when the drums stand at a link and the key you press is a partner already written for one of its letters, the lamp is written as the partner of the other letter (the letter itself when it is unsteckered). While checking you cannot type in the sheet. A letter can have only one partner, so when a lamp gives a letter a second partner, both are kept and the letter and its partners are marked in red: a sign of a false stop, or of a key pressed at the wrong position. Red letters count as unknown for the crib, the decrypt, Suggest and Find. Click a box to rub out that letter's pairs.
 
 The crib letter is underlined green when the steckers encipher it correctly, struck through when they contradict it, and faint while it is still unknown. Partners in contradiction are red.
 
@@ -136,7 +136,7 @@ Mark the stop **True stop** or **False stop** (or **Unchecked** again). The verd
 
 ## Reading the message
 
-After **True stop**, the notebook goes on to **Read the message**, the work Hut 8 did on an Enigma: finding the steckers the menu does not reach and the right ring, until the whole message reads as German. The **Steckers** sheet is shown again, and the **Decrypt** shows the whole message with the steckers found so far, with **?** where a stecker is still unknown.
+After **True stop**, the notebook goes on to **Read the message**, the work Hut 8 did on an Enigma: finding the steckers the menu does not reach and the right ring, until the whole message reads as German. The **Steckers** sheet is shown again, and here you can write in it: type a letter in a box to make it that letter's partner (the pairs either letter had are rubbed out), or clear the box to rub the letter out. Pairs found while checking the stop are highlighted, so you can see which pairs came from the checking and which you added since. A letter whose partner is not found yet shows itself faintly: it is taken as unsteckered, as when you set up an Enigma with only the plugs you know. The **Decrypt** shows the whole message with the steckers found so far and every other letter unsteckered, so you see what the Enigma would print.
 
 ### Letters the menu does not reach
 
@@ -147,6 +147,15 @@ The scoring counts letters, pairs and triples of letters from the Navy messages 
 ### The right ring
 
 The Bombe finds the rotor cores, not the ring settings. For the right rotor, 26 pairs of ring and window letter give the same core; they differ only in where the middle rotor turns over. The **Right ring** picks one of them. A wrong right ring garbles the message from the wrong turnover on. Turn it with ◀ and ▶ (the core positions stay), or click **Find**. Find scores the decrypt with each of the 26 rings and sets the lowest ring with the best score. The bars show every ring's score, with the best ones highlighted. When several rings tie, the ring is not settled yet: find or accept more steckers, then click **Find** again. A good order is Find, Suggest, Find. The left and middle rings stay at Z until the indicators are read.
+
+### The left and middle rings
+
+The left and middle rings hardly change the message: the left rotor only moves when the middle one turns over, and the left one turns nothing. They do matter for the day's other messages, whose start positions come from their indicators. The bigram tables turn a message's indicator into its Verfahrenkenngruppe. The operator typed that trigram at the day's Grundstellung, and the lamps gave the message key. The Grundstellung was printed on the secret key sheet and changed daily. One broken message therefore leaves 676 possibilities: for every pair of left and middle rings there is a Grundstellung that turns its Verfahrenkenngruppe into its message key. The Army sent its Grundstellung in the clear, so there the one ring pair that fits can be read off a table of all 676. With the Navy that table fits on every row.
+
+Hut 8 had two other ways to find the rings:
+
+- **Paired days.** The wheel order and the rings changed every other day, the steckers and the Grundstellung daily. Rings found on one day held for its paired day, which was often broken next on the known wheel order.
+- **Grundstellung alphabets.** Each broken message of the day gives a trigram and the start position it was typed to. Messages broken one by one on cribs or the EINS catalogue (the four letters EINS enciphered at all 17,576 positions and looked up in the cipher texts), or set in depth by Banburismus, built up for each trigram letter the start position it gives: the Grundstellung alphabets. With enough messages they fix the Grundstellung and the rings, and every other message of the day can be set up from its indicator. Short signals from U-boats served the same purpose.
 
 ### The key
 

@@ -104,4 +104,8 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(ConfirmationState))]
 [JsonSerializable(typeof(SuggestionState))]
 [JsonSerializable(typeof(FindState))]
+[JsonSerializable(typeof(PinchRequest))]
+[JsonSerializable(typeof(IndicatorRequest))]
+[JsonSerializable(typeof(RingsRequest))]
+[JsonSerializable(typeof(RingTableState))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;

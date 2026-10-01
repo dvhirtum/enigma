@@ -252,6 +252,33 @@ public sealed class BombeEndpointTests : IDisposable
         Assert.StartsWith("1944-", solution.Exercise.Month, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Should_take_the_pinch_and_read_the_indicator_When_asked_through_the_api()
+    {
+        // Arrange
+        using var paths = new TemporaryKeySheetPaths();
+        using var factory = paths.Configure(_factory);
+        using var client = factory.CreateClient();
+        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M3", year = 1944 });
+        await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/exercise", new { });
+        var solution = await client.GetFromJsonAsync<SolutionState>(Url("/api/bombe/source/solution"), Token);
+
+        // Act
+        var pinched = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/pinch", new { });
+        var written = await SendAsync<BombeState>(client, HttpMethod.Put, "/api/bombe/day/messages/1/indicator", new { verfahrenkenngruppe = "abc" });
+        var filled = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/day/messages/0/indicator/fill-in", new { });
+        using var noStop = await client.GetAsync(Url("/api/bombe/stops/0/check/ring-table"), Token);
+        using var rings = new HttpRequestMessage(HttpMethod.Put, Url("/api/bombe/stops/0/check/rings")) { Content = JsonContent.Create(new { left = 1 }) };
+        using var halfRings = await client.SendAsync(rings, Token);
+
+        // Assert
+        Assert.Equal(solution?.Exercise?.Grundstellung, pinched.Day?.Grundstellung);
+        Assert.Equal("ABC", written.Day?.Messages[1].Verfahrenkenngruppe);
+        Assert.Equal(solution?.Exercise?.Verfahrenkenngruppe, filled.Day?.Messages[0].Verfahrenkenngruppe);
+        Assert.Equal(HttpStatusCode.NotFound, noStop.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, halfRings.StatusCode);
+    }
+
     private static Uri Url(string path) => new(path, UriKind.Relative);
 
     // Fits drums II, V and III in the rows of chain 1 and plugs up the menu.

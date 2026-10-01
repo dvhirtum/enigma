@@ -15,6 +15,7 @@ describe('machine routes', () => {
     ['movePlug', machineRoutes.movePlug('A', 'C'), 'PUT', '/api/machine/plugs/A', { to: 'C' }],
     ['pressKey', machineRoutes.pressKey('Q'), 'POST', '/api/machine/keyboard/press', { key: 'Q' }],
     ['releaseKey', machineRoutes.releaseKey(), 'POST', '/api/machine/keyboard/release', undefined],
+    ['clearLamps', machineRoutes.clearLamps(), 'DELETE', '/api/machine/lamps', undefined],
     ['applyDailyKey', machineRoutes.applyDailyKey('g1', 19), 'POST', '/api/machine/daily-key', { sheetId: 'g1', day: 19 }],
     ['startSending', machineRoutes.startSending(), 'POST', '/api/operator/send', undefined],
     ['startReceiving', machineRoutes.startReceiving('QWER', 'g1', 19), 'POST', '/api/operator/receive', { message: 'QWER', sheetId: 'g1', day: 19 }],

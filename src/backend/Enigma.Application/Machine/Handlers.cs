@@ -9,7 +9,7 @@ public sealed class CreateMachineHandler(IMachineSessionStore store)
         ArgumentNullException.ThrowIfNull(command);
 
         var machine = EnigmaMachine.Create(Input.Model(command.Model));
-        var state = MachineState.From(machine, null);
+        var state = MachineState.From(machine, null, null, store.Lamps);
         store.Replace(machine);
         return state;
     }
@@ -125,7 +125,8 @@ public sealed class PressKeyHandler(IMachineSessionStore store)
             var lamp = machine.PressKey(key);
             machine.ClearDomainEvents();
             procedure?.Record(machine, key, lamp);
-            return MachineState.From(machine, store.AppliedKey, procedure);
+            store.Lamps += lamp.ToString();
+            return MachineState.From(machine, store.AppliedKey, procedure, store.Lamps);
         });
     }
 }
@@ -135,10 +136,20 @@ public sealed class ReleaseKeyHandler(IMachineSessionStore store)
     public MachineState Handle(ReleaseKey command) => store.Update(m => m.ReleaseKey());
 }
 
+public sealed class ClearLampsHandler(IMachineSessionStore store)
+{
+    public MachineState Handle(ClearLamps command) =>
+        store.Use(machine =>
+        {
+            store.Lamps = string.Empty;
+            return MachineState.From(machine, store.AppliedKey, store.Procedure, store.Lamps);
+        });
+}
+
 public sealed class GetMachineStateHandler(IMachineSessionStore store)
 {
     public MachineState Handle(GetMachineState query) =>
-        store.Use(machine => MachineState.From(machine, store.AppliedKey, store.Procedure));
+        store.Use(machine => MachineState.From(machine, store.AppliedKey, store.Procedure, store.Lamps));
 }
 
 internal static class MachineSessionStoreExtensions
@@ -153,7 +164,7 @@ internal static class MachineSessionStoreExtensions
             action(machine);
             machine.ClearDomainEvents();
             store.Procedure?.Observe(machine);
-            return MachineState.From(machine, store.AppliedKey, store.Procedure);
+            return MachineState.From(machine, store.AppliedKey, store.Procedure, store.Lamps);
         });
 }
 
@@ -197,7 +208,7 @@ public sealed class SetUpMachineHandler(IMachineSessionStore store)
             machine.ConnectPlug(Input.PlugPair(pair));
         }
 
-        var state = MachineState.From(machine, null);
+        var state = MachineState.From(machine, null, null, store.Lamps);
         store.Replace(machine);
         return state;
     }

@@ -13,7 +13,10 @@ public sealed record RotorState(string Rotor, int RingSetting, string Position, 
 /// </summary>
 public sealed record AppliedKeyState(string SheetId, string Network, string Month, int Day, bool Modified, string? Grundstellung);
 
-/// <summary>A snapshot of the machine. Inserted rotors are listed from left to right; empty slots are left out.</summary>
+/// <summary>
+/// A snapshot of the machine. Inserted rotors are listed from left to right; empty slots are left out. <see cref="Lamps"/>
+/// holds every lamp lit since the record was last cleared.
+/// </summary>
 public sealed record MachineState(
     string Model,
     string Reflector,
@@ -23,9 +26,10 @@ public sealed record MachineState(
     string? HeldKey,
     string? LitLamp,
     AppliedKeyState? AppliedKey,
-    OperatorState? Operator = null)
+    OperatorState? Operator,
+    string Lamps)
 {
-    public static MachineState From(EnigmaMachine machine, AppliedKey? appliedKey, OperatorProcedure? procedure = null)
+    public static MachineState From(EnigmaMachine machine, AppliedKey? appliedKey, OperatorProcedure? procedure, string lamps)
     {
         ArgumentNullException.ThrowIfNull(machine);
 
@@ -45,7 +49,8 @@ public sealed record MachineState(
                 : new AppliedKeyState(
                     appliedKey.SheetId, appliedKey.Network, appliedKey.Month, appliedKey.Key.Day, !appliedKey.Key.IsSetUpOn(machine),
                     appliedKey.Key.Grundstellung?.ToString()),
-            procedure is null ? null : OperatorState.From(procedure));
+            procedure is null ? null : OperatorState.From(procedure),
+            lamps);
     }
 
     private static RotorState ToState(Rotor rotor, string? slot) =>
