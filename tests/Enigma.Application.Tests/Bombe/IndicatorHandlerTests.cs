@@ -86,6 +86,7 @@ public sealed class IndicatorHandlerTests
         Assert.Equal(solution.MessageKey, row.Spruchschluessel);
         var reading = Assert.IsType<ReadingState>(check.Reading);
         Assert.True(reading.RingsRight);
+        Assert.True(reading.MiddleRingFits);
         Assert.Equal(solution.Rings, reading.Key.Rings);
         Assert.Equal(solution.MessageKey, reading.Key.MessageKey);
         Assert.Equal(solution.Plaintext, reading.Decrypt);

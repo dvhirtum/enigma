@@ -235,6 +235,7 @@ export const carterCheck: BombeCheck = {
   steckers: 'GQ',
   contradicted: '',
   checkedSteckers: '',
+  middleRing: 26,
   rightRing: 26,
   verdict: 'Unchecked',
   crib: [...carterCrib].map((plain, index) => ({ offset: index + 1, plain, cipher: 'SNMKGGSTZZUGARLV'[index], match: 'Unknown' })),
@@ -372,6 +373,13 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
           check: { ...carterChecked, rightRing: 1 },
         },
       }),
+      findMiddleRing: vi.fn().mockResolvedValue({
+        ok: true,
+        value: {
+          rings: Array.from({ length: 26 }, (_, index) => ({ ring: index + 1, score: index === 7 ? 25 : 30, best: index !== 7 })),
+          check: { ...carterChecked, middleRing: 1, key: { ...carterChecked.key, rings: [26, 1, 26] } },
+        },
+      }),
       takePinch: bombe({ ...emptyBombe, day: fakeDay }),
       writeIndicator: bombe({ ...emptyBombe, day: fakeDay }),
       fillInIndicator: bombe({ ...emptyBombe, day: fakeDay }),
@@ -493,6 +501,7 @@ export const carterRead: BombeCheck = {
     middle: 14,
     key: { ...carterChecked.key, rings: [3, 14, 26], messageKey: 'ULA' },
     decrypt: carterCrib,
+    middleRingFits: true,
     ringsRight: true,
   },
 };

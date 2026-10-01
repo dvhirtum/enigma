@@ -250,6 +250,43 @@ public sealed class CheckHandlerTests
         Assert.Equal("WETTERVORHERSAGE", found.Check.Decrypt);
     }
 
+    [Fact]
+    public async Task Should_score_every_middle_ring_and_set_the_lowest_best_When_the_middle_ring_is_found()
+    {
+        // Arrange
+        // Carter's sixteen letters see no left rotor turnover, so the middle rings tie but the one that puts the middle
+        // rotor at its notch, which double-steps it.
+        var stop = await RunCarterAsync(intercept: false);
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, CarterSteckers, null, MiddleRing: 5));
+
+        // Act
+        var found = new FindMiddleRingHandler(_store).Handle(new FindMiddleRing(stop));
+
+        // Assert
+        Assert.Equal(Enumerable.Range(1, 26), found.Rings.Select(ring => ring.Ring));
+        Assert.Equal(25, found.Rings.Count(ring => ring.Best));
+        Assert.Equal(found.Rings.First(ring => ring.Best).Ring, found.Check.MiddleRing);
+        Assert.Equal(found.Check.MiddleRing, found.Check.Key.Rings[1]);
+        Assert.Equal("WETTERVORHERSAGE", found.Check.Decrypt);
+    }
+
+    [Fact]
+    public async Task Should_keep_the_middle_ring_When_only_the_right_ring_is_changed()
+    {
+        // Arrange
+        var stop = await RunCarterAsync(intercept: false);
+        var handler = new SetCheckHandler(_store);
+        handler.Handle(new SetCheck(stop, null, null, MiddleRing: 7));
+
+        // Act
+        var check = handler.Handle(new SetCheck(stop, null, 3));
+
+        // Assert
+        Assert.Equal(7, check.MiddleRing);
+        Assert.Equal(3, check.RightRing);
+        Assert.Equal([26, 7, 3], check.Key.Rings);
+    }
+
     private IReadOnlyList<StopState> Stops() => new GetStopsHandler(_store).Handle(new GetStops(0));
 
     // Runs Carter's menu on II V III and returns the index of the true stop (core positions VMB).

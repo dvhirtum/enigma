@@ -327,6 +327,12 @@ function ReadingResult({ check, table }: { check: BombeCheck; table: RingTable |
           These rings lead to indicator <Hand>{row.indicator}</Hand>, not the stop&apos;s <Hand>{table.indicator}</Hand>.
         </p>
       )}
+      {!reading.middleRingFits && (
+        <p className="notebook-warning">
+          The middle ring <Hand>{ringLetter(reading.middle)}</Hand> reads the message worse than the best middle ring: the left rotor turns over at
+          the wrong letter.
+        </p>
+      )}
       {reading.ringsRight !== null && (
         <p className={reading.ringsRight ? 'hut8-note' : 'notebook-warning'}>
           {reading.ringsRight ? 'These are the rings of the key sheet.' : 'These are not the rings of the key sheet.'}

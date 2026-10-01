@@ -60,7 +60,7 @@ public sealed record SuggestedPair(Letter First, Letter Second, double Gain)
 /// </summary>
 public sealed record SteckerSuggestion(IReadOnlyList<SuggestedPair> Pairs, Steckers Steckers, IReadOnlyList<Letter> Decrypt);
 
-/// <summary>A right ring's decrypt score (null when the message is shorter than three letters), and whether it is the best.</summary>
+/// <summary>A middle or right ring's decrypt score (null when the message is shorter than three letters), and whether it is the best.</summary>
 public sealed record RingScore(RingSetting Ring, double? Score, bool Best);
 
 /// <summary>
@@ -117,13 +117,16 @@ public sealed class StopCheck
 
     public RingSetting RightRing { get; set; } = RingSetting.FromChar('Z');
 
+    /// <summary>The middle ring: it sets where the left rotor turns over in the message.</summary>
+    public RingSetting MiddleRing { get; set; } = RingSetting.FromChar('Z');
+
     public StopVerdict Verdict { get; private set; }
 
     /// <summary>The steckers found by checking, as they stood when the stop was confirmed true; none otherwise.</summary>
     public Steckers Checked { get; private set; } = Steckers.None;
 
-    /// <summary>The ring settings: left and middle at Z, the right one as turned.</summary>
-    public IReadOnlyList<RingSetting> Rings => [RingSetting.FromChar('Z'), RingSetting.FromChar('Z'), RightRing];
+    /// <summary>The ring settings: left at Z, the middle and right ones as turned.</summary>
+    public IReadOnlyList<RingSetting> Rings => [RingSetting.FromChar('Z'), MiddleRing, RightRing];
 
     /// <summary>
     /// Writes down what a lamp of the checking machine says at <paramref name="core"/>: at a crib link's position, when
@@ -229,7 +232,7 @@ public sealed class StopCheck
     /// Decrypts the whole message on an Enigma with this key, the rotors stepping, taking letters whose steckers are
     /// not known yet as unsteckered.
     /// </summary>
-    public IReadOnlyList<Letter> Decrypt() => DecryptAssumed(Steckers, MessageScrambles(RightRing));
+    public IReadOnlyList<Letter> Decrypt() => DecryptAssumed(Steckers, MessageScrambles(MiddleRing, RightRing));
 
     /// <summary>
     /// Proposes steckers for the letters still unknown, one at a time, without changing the check. Each partner of an
@@ -239,7 +242,7 @@ public sealed class StopCheck
     /// </summary>
     public SteckerSuggestion Suggest()
     {
-        var scrambles = MessageScrambles(RightRing);
+        var scrambles = MessageScrambles(MiddleRing, RightRing);
         var crib = Placement.Links
             .Select(link => (Link: link, Scramble: Scramble(Stop.Position.Advance(link.Offset))))
             .ToArray();
@@ -255,21 +258,34 @@ public sealed class StopCheck
     }
 
     /// <summary>
-    /// Scores the decrypt with each right ring, the core positions kept and unknown letters taken as unsteckered, by its
-    /// gain against random letters, and sets the lowest ring with the best score. Rings that give the same decrypt tie.
-    /// When the message is too short to score, all tie and the ring stays.
+    /// Scores the decrypt with each right ring, the middle ring and the core positions kept and unknown letters taken as
+    /// unsteckered, by its gain against random letters, and sets the lowest ring with the best score. Rings that give
+    /// the same decrypt tie. When the message is too short to score, all tie and the ring stays.
     /// </summary>
     public IReadOnlyList<RingScore> FindRightRing()
     {
-        var scores = Enumerable.Range(1, Letter.Count)
-            .Select(RingSetting.FromNumber)
-            .Select(ring => (Ring: ring, Score: LanguageModel.Gain(Decrypt(Steckers.WithUnknownUnsteckered(), MessageScrambles(ring)))))
-            .ToArray();
-        var best = scores.Max(ring => ring.Score ?? double.NegativeInfinity);
-        RingScore[] rings = [.. scores.Select(ring => new RingScore(ring.Ring, ring.Score, (ring.Score ?? double.NegativeInfinity) == best))];
-        if (!double.IsNegativeInfinity(best))
+        var rings = Score(ring => MessageScrambles(MiddleRing, ring));
+        if (rings.Any(ring => ring.Score is not null))
         {
             RightRing = rings.First(ring => ring.Best).Ring;
+        }
+
+        return rings;
+    }
+
+    /// <summary>
+    /// Scores the decrypt with each middle ring, the right ring and the core positions kept, as <see cref="FindRightRing"/>
+    /// does, without setting it. The middle ring only changes the decrypt where the left rotor turns over.
+    /// </summary>
+    public IReadOnlyList<RingScore> MiddleRingScores() => Score(ring => MessageScrambles(ring, RightRing));
+
+    /// <summary>Scores the middle rings as <see cref="MiddleRingScores"/> does, and sets the lowest with the best score.</summary>
+    public IReadOnlyList<RingScore> FindMiddleRing()
+    {
+        var rings = MiddleRingScores();
+        if (rings.Any(ring => ring.Score is not null))
+        {
+            MiddleRing = rings.First(ring => ring.Best).Ring;
         }
 
         return rings;
@@ -330,10 +346,21 @@ public sealed class StopCheck
     private Letter[] DecryptAssumed(Steckers steckers, Letter[][] scrambles) =>
         [.. Decrypt(steckers.WithUnknownUnsteckered(), scrambles).Select(letter => letter!.Value)];
 
-    // The scrambler of each message letter with the right ring, the rotors stepping: the output for each input.
-    private Letter[][] MessageScrambles(RingSetting rightRing)
+    // Scores the decrypt with each of the 26 rings, by the scrambles that ring gives.
+    private RingScore[] Score(Func<RingSetting, Letter[][]> scramblesWith)
     {
-        IReadOnlyList<RingSetting> rings = [RingSetting.FromChar('Z'), RingSetting.FromChar('Z'), rightRing];
+        var scores = Enumerable.Range(1, Letter.Count)
+            .Select(RingSetting.FromNumber)
+            .Select(ring => (Ring: ring, Score: LanguageModel.Gain(Decrypt(Steckers.WithUnknownUnsteckered(), scramblesWith(ring)))))
+            .ToArray();
+        var best = scores.Max(ring => ring.Score ?? double.NegativeInfinity);
+        return [.. scores.Select(ring => new RingScore(ring.Ring, ring.Score, (ring.Score ?? double.NegativeInfinity) == best))];
+    }
+
+    // The scrambler of each message letter with the middle and right rings, the rotors stepping: the output for each input.
+    private Letter[][] MessageScrambles(RingSetting middleRing, RingSetting rightRing)
+    {
+        IReadOnlyList<RingSetting> rings = [RingSetting.FromChar('Z'), middleRing, rightRing];
         var windows = MessageStart(WindowsAtCrib(Stop.Position, rings), Placement.Position);
         var scrambles = new Letter[Placement.CipherText.Count][];
         for (var index = 0; index < scrambles.Length; index++)

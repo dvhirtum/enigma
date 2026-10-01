@@ -121,6 +121,15 @@ describe('IndicatorsStep', () => {
     expect(key).toHaveTextContent('These are the rings of the key sheet.');
     expect(within(key).getByRole('group', { name: 'Decrypt with the whole key' })).toHaveTextContent('WETT ERVO');
     expect(await screen.findByRole('button', { name: 'Rings C N: Spruchschlüssel ULA, indicator DKX', pressed: true })).toBeInTheDocument();
+    expect(key).not.toHaveTextContent('the left rotor turns over at the wrong letter');
+  });
+
+  it('warns when the middle ring read garbles the message', async () => {
+    const garbled: BombeCheck = { ...carterRead, reading: { ...carterRead.reading!, middleRingFits: false } };
+    renderStep('indicators', { ...exercise, day: withVerfahrenkenngruppe }, garbled);
+
+    const key = await screen.findByRole('region', { name: 'Key' });
+    expect(key).toHaveTextContent('The middle ring N reads the message worse than the best middle ring: the left rotor turns over at the wrong letter.');
   });
 });
 

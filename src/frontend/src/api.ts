@@ -366,6 +366,8 @@ export interface Reading {
   middle: number;
   key: CheckedKey;
   decrypt: string;
+  /** Whether the middle ring reads the message as well as the best middle ring does. */
+  middleRingFits: boolean;
   ringsRight: boolean | null;
 }
 
@@ -393,7 +395,7 @@ export interface CheckedKey {
 }
 
 /**
- * The check of a stop: the stecker sheet as written ("AD ET EX RR", contradictions and all), the right ring (1–26),
+ * The check of a stop: the stecker sheet as written ("AD ET EX RR", contradictions and all), the middle and right rings (1–26),
  * the verdict, each crib letter's match, the decrypt (unknown letters taken as unsteckered) and the key.
  */
 export interface BombeCheck {
@@ -403,6 +405,7 @@ export interface BombeCheck {
   contradicted: string;
   /** The steckers found by checking, as they stood when the stop was confirmed true; empty otherwise. */
   checkedSteckers: string;
+  middleRing: number;
   rightRing: number;
   verdict: BombeStop['verdict'];
   crib: CribLetter[];
@@ -422,6 +425,7 @@ export interface CheckerPress {
 export interface CheckChange {
   steckers?: string;
   rightRing?: number;
+  middleRing?: number;
 }
 
 /** How a verdict compares with the message's solution. */
@@ -603,6 +607,8 @@ export interface BombeApi {
   suggestSteckers: Call<[stop: number], Suggestion>;
   /** Scores the 26 right rings and sets the lowest best. */
   findRightRing: Call<[stop: number], RingFind>;
+  /** Scores the 26 middle rings and sets the lowest best. */
+  findMiddleRing: Call<[stop: number], RingFind>;
   /** Takes a pinch of the message's key sheet day: an exercise's own, or for a pasted radio message the sheet and day given. */
   takePinch: Call<[sheetId?: string, day?: number], BombeState>;
   /** Writes down the groups of the indicator of a message of the day (0 = the broken message). */

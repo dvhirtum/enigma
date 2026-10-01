@@ -105,9 +105,9 @@ public sealed record GetCheck(int Stop);
 
 /// <summary>
 /// Changes a check; each field left out (null) stays as it is. Steckers are pairs such as "AD ET RR" (empty clears
-/// them); the right ring is 1–26.
+/// them); the middle and right rings are 1–26.
 /// </summary>
-public sealed record SetCheck(int Stop, string? Steckers, int? RightRing);
+public sealed record SetCheck(int Stop, string? Steckers, int? RightRing, int? MiddleRing = null);
 
 /// <summary>Sets the checking machine up for a stop: its reflector and drums, the rings at its indicator, the windows at ZZZ.</summary>
 public sealed record SetUpCheckingMachine(int Stop);
@@ -120,6 +120,9 @@ public sealed record SuggestSteckers(int Stop);
 
 /// <summary>Scores the 26 right rings of a stop's check and sets the lowest with the best score.</summary>
 public sealed record FindRightRing(int Stop);
+
+/// <summary>Scores the 26 middle rings of a stop's check and sets the lowest with the best score.</summary>
+public sealed record FindMiddleRing(int Stop);
 
 /// <summary>
 /// Takes a pinch of the loaded message's key sheet day, which gives its Grundstellung and bigram table, and generates

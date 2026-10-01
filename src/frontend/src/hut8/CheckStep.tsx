@@ -133,47 +133,58 @@ function SteckerSheet({ check, editable = false }: { check: BombeCheck; editable
   );
 }
 
-/** The right ring, turned by hand or found, with each ring's score after Find. */
-function RightRing({ check }: { check: BombeCheck }) {
-  const stepRightRing = useMachine((store) => store.stepRightRing);
-  const findRightRing = useMachine((store) => store.findRightRing);
-  const scores = useMachine((store) => store.ringScores);
-  const turn = (steps: number) => void stepRightRing(steps);
-  const known = scores?.flatMap((ring) => (ring.score === null ? [] : [ring.score])) ?? [];
+const ringParts = {
+  right: { title: 'Right ring', turnover: 'the middle rotor' },
+  middle: { title: 'Middle ring', turnover: 'the left rotor' },
+} as const;
+
+/** The middle or right ring, turned by hand or found, with each ring's score after Find. */
+function RingFinder({ check, part }: { check: BombeCheck; part: 'middle' | 'right' }) {
+  const stepRing = useMachine((store) => (part === 'right' ? store.stepRightRing : store.stepMiddleRing));
+  const findRing = useMachine((store) => (part === 'right' ? store.findRightRing : store.findMiddleRing));
+  const scores = useMachine((store) => (part === 'right' ? store.ringScores : store.middleRingScores));
+  const ring = part === 'right' ? check.rightRing : check.middleRing;
+  const { title, turnover } = ringParts[part];
+  const turn = (steps: number) => void stepRing(steps);
+  const known = scores?.flatMap((score) => (score.score === null ? [] : [score.score])) ?? [];
   const low = Math.min(0, ...known);
   const high = Math.max(...known, low + 1);
-  const best = scores?.filter((ring) => ring.best) ?? [];
+  const best = scores?.filter((score) => score.best) ?? [];
 
   return (
-    <section className="notebook-section" aria-label="Right ring">
-      <h4>Right ring</h4>
+    <section className="notebook-section" aria-label={title}>
+      <h4>{title}</h4>
       <p className="notebook-actions">
-        <button type="button" aria-label="Previous ring" onClick={() => turn(-1)}>
+        <button type="button" aria-label={`Previous ${part} ring`} onClick={() => turn(-1)}>
           ◀
         </button>
-        <output aria-label="Right ring setting" className="hand">
-          {ringLetter(check.rightRing)} ({String(check.rightRing).padStart(2, '0')})
+        <output aria-label={`${title} setting`} className="hand">
+          {ringLetter(ring)} ({String(ring).padStart(2, '0')})
         </output>
-        <button type="button" aria-label="Next ring" onClick={() => turn(1)}>
+        <button type="button" aria-label={`Next ${part} ring`} onClick={() => turn(1)}>
           ▶
         </button>
-        <button type="button" onClick={() => void findRightRing()}>
+        <button type="button" aria-label={`Find the ${part} ring`} onClick={() => void findRing()}>
           Find
         </button>
       </p>
-      <p className="hut8-note">Left and middle rings stay at Z until the indicators are read.</p>
+      <p className="hut8-note">
+        {part === 'right'
+          ? 'The right ring sets where the middle rotor turns over.'
+          : 'The middle ring sets where the left rotor turns over. The left ring stays at Z until the indicators are read: it does not change the message.'}
+      </p>
       {scores && (
         <>
-          <svg className="ring-scores" viewBox="0 0 520 90" role="img" aria-label="Scores of the right rings">
-            {scores.map((ring, index) => {
-              const barHeight = ring.score === null ? 0 : ((ring.score - low) / (high - low)) * 64;
-              const classes = ['ring-bar', ring.best ? 'best' : '', ring.ring === check.rightRing ? 'set' : ''].filter(Boolean).join(' ');
+          <svg className="ring-scores" viewBox="0 0 520 90" role="img" aria-label={`Scores of the ${part} rings`}>
+            {scores.map((score, index) => {
+              const barHeight = score.score === null ? 0 : ((score.score - low) / (high - low)) * 64;
+              const classes = ['ring-bar', score.best ? 'best' : '', score.ring === ring ? 'set' : ''].filter(Boolean).join(' ');
               return (
-                <g key={ring.ring} className={classes}>
-                  <title>{`${ringLetter(ring.ring)}: ${ring.score === null ? 'no score' : ring.score.toFixed(1)}`}</title>
+                <g key={score.ring} className={classes}>
+                  <title>{`${ringLetter(score.ring)}: ${score.score === null ? 'no score' : score.score.toFixed(1)}`}</title>
                   <rect x={index * 20 + 3} y={70 - barHeight} width={14} height={Math.max(barHeight, 1)} />
                   <text x={index * 20 + 10} y={85}>
-                    {ringLetter(ring.ring)}
+                    {ringLetter(score.ring)}
                   </text>
                 </g>
               );
@@ -181,8 +192,10 @@ function RightRing({ check }: { check: BombeCheck }) {
           </svg>
           {best.length > 1 && (
             <p className="notebook-warning">
-              Not determined yet: {best.length === 26 ? 'every ring ties' : `rings ${best.map((ring) => ringLetter(ring.ring)).join(', ')} tie`}. Find
-              more steckers, then Find again.
+              Not determined yet: {best.length === 26 ? 'every ring ties' : `rings ${best.map((score) => ringLetter(score.ring)).join(', ')} tie`}.{' '}
+              {part === 'right'
+                ? 'Find more steckers, then Find again.'
+                : `The message may be too short for ${turnover} to turn over; any of them reads it.`}
             </p>
           )}
         </>
@@ -326,11 +339,11 @@ export function CheckSummary({ check }: { check: BombeCheck }) {
   );
 }
 
-/** The right ring and the plug pairs, in one line. */
+/** The middle and right rings and the plug pairs, in one line. */
 export function KeySummary({ check }: { check: BombeCheck }) {
   return (
     <p>
-      Right ring <Hand>{ringLetter(check.rightRing)}</Hand>, plugs <Hand>{check.key.plugs.join(' ') || '—'}</Hand>
+      Middle ring <Hand>{ringLetter(check.middleRing)}</Hand>, right ring <Hand>{ringLetter(check.rightRing)}</Hand>, plugs <Hand>{check.key.plugs.join(' ') || '—'}</Hand>
     </p>
   );
 }
@@ -368,9 +381,10 @@ export function KeyStep({ check }: { check: BombeCheck }) {
     <>
       <p>
         Read the message as on the Enigma: find the right ring and the steckers the menu does not reach, with Suggest and Find or by writing partners
-        on the sheet, until the message reads as German.
+        on the sheet, then the middle ring, until the message reads as German.
       </p>
-      <RightRing check={check} />
+      <RingFinder check={check} part="right" />
+      <RingFinder check={check} part="middle" />
       <Suggestions />
       <SteckerSheet check={check} editable />
       <section className="notebook-section" aria-label="Decrypt">

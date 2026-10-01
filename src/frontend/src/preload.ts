@@ -80,6 +80,7 @@ const api: EnigmaApi = {
     confirmCheck: (stop, verdict) => invoke('bombe:confirmCheck', stop, verdict),
     suggestSteckers: (stop) => invoke('bombe:suggestSteckers', stop),
     findRightRing: (stop) => invoke('bombe:findRightRing', stop),
+    findMiddleRing: (stop) => invoke('bombe:findMiddleRing', stop),
     takePinch: (sheetId, day) => invoke('bombe:takePinch', sheetId, day),
     writeIndicator: (message, change) => invoke('bombe:writeIndicator', message, change),
     fillInIndicator: (message) => invoke('bombe:fillInIndicator', message),

@@ -306,6 +306,52 @@ public sealed class StopCheckTests
     }
 
     [Fact]
+    public void Should_garble_the_message_from_the_left_rotors_turnover_on_When_the_middle_ring_is_wrong()
+    {
+        // Arrange
+        var check = LeftTurnoverCheck();
+
+        // Act
+        var decrypt = string.Concat(check.Decrypt());
+
+        // Assert
+        Assert.Equal(LeftTurnoverPlain[..52], decrypt[..52]);
+        Assert.NotEqual(LeftTurnoverPlain, decrypt);
+    }
+
+    [Fact]
+    public void Should_find_the_middle_ring_When_the_left_rotor_turns_over_in_the_message()
+    {
+        // Arrange
+        var check = LeftTurnoverCheck();
+
+        // Act
+        var rings = check.FindMiddleRing();
+
+        // Assert
+        Assert.Equal(26, rings.Count);
+        Assert.Equal(LeftTurnoverMiddleRing, Assert.Single(rings, ring => ring.Best).Ring.Number);
+        Assert.Equal(LeftTurnoverMiddleRing, check.MiddleRing.Number);
+        Assert.Equal(LeftTurnoverPlain, string.Concat(check.Decrypt()));
+        Assert.Equal(LeftTurnoverMiddleRing, check.Key.Rings[1].Number);
+    }
+
+    [Fact]
+    public void Should_keep_the_middle_ring_When_its_scores_are_only_asked_for()
+    {
+        // Arrange
+        var check = LeftTurnoverCheck();
+
+        // Act
+        var rings = check.MiddleRingScores();
+
+        // Assert
+        Assert.True(rings.Single(ring => ring.Ring.Number == LeftTurnoverMiddleRing).Best);
+        Assert.False(rings.Single(ring => ring.Ring.Number == 26).Best);
+        Assert.Equal(26, check.MiddleRing.Number);
+    }
+
+    [Fact]
     public void Should_mark_every_tied_ring_and_set_the_lowest_When_rings_give_the_same_decrypt()
     {
         // Arrange
@@ -381,6 +427,11 @@ public sealed class StopCheckTests
 
     private const int RoundTripRightRing = 5;
 
+    private const string LeftTurnoverPlain =
+        "WETTERVORHERSAGEXBISKAYAXWINDSUEDWESTXVIERXSEEGANGXDREIXLUFTDRUCKXEINSNULLEINSZWOXSIQTXAQTSMXKEINEBESONDERENEREIGNISSE";
+
+    private const int LeftTurnoverMiddleRing = 10;
+
     // A weather message on IV I III, rings 26 26 05, from ABK, with the crib at position 15. The middle rotor turns
     // over at the twelfth letter, before the crib, and not again within it. The check starts with every stecker and
     // the right ring at Z; menuSteckers are those of the letters on the crib's links, as checking the menu finds them.
@@ -416,6 +467,24 @@ public sealed class StopCheckTests
         var stop = new BombeStop(WheelOrder.Parse(rotors), core, Letter.FromChar('E'), [Letter.FromChar('F')]);
         var placement = new CribPlacement([.. cipher.Select(Letter.FromChar)], Crib.Parse("WETTERVORHERSAGE"), 10);
         return new StopCheck(stop, ReflectorType.B, placement) { Steckers = Steckers.Parse(plugs + " UU VV WW XX YY ZZ") };
+    }
+
+    // A message on IV I III, rings 26 10 05, from AOW, with the crib at the start. The middle rotor reaches its notch
+    // (window Q) at the 52nd letter, so the left rotor turns over at the 53rd. The check has every stecker and the right
+    // ring, with the middle ring at Z.
+    private static StopCheck LeftTurnoverCheck()
+    {
+        const string rotors = "IV I III";
+        const string rings = "26 10 05";
+        var cipher = MachineBuilder.Build(MachineModel.M3, "B", rotors, rings, RoundTripSteckers, "AOW").Type(LeftTurnoverPlain);
+        var core = BombeKeys.CorePosition(rings, "AOW");
+        var stop = new BombeStop(WheelOrder.Parse(rotors), core, Letter.FromChar('E'), [Letter.FromChar('F')]);
+        var placement = new CribPlacement([.. cipher.Select(Letter.FromChar)], Crib.Parse("WETTERVORHERSAGE"), 0);
+        return new StopCheck(stop, ReflectorType.B, placement)
+        {
+            Steckers = Steckers.Parse(RoundTripAllSteckers),
+            RightRing = RingSetting.FromNumber(RoundTripRightRing),
+        };
     }
 
     private static BombeStop CarterStop(string core) =>

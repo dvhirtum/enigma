@@ -95,6 +95,7 @@ export const bombeRoutes: Routes<BombeApi> = {
   confirmCheck: (stop, verdict) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/verdict`, body: { verdict } }),
   suggestSteckers: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/suggest` }),
   findRightRing: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/find` }),
+  findMiddleRing: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/find-middle` }),
   takePinch: (sheetId, day) => ({ method: 'POST', path: `${bombe}/pinch`, body: { sheetId, day } }),
   writeIndicator: (message, change) => ({ method: 'PUT', path: `${bombe}/day/messages/${message}/indicator`, body: change }),
   fillInIndicator: (message) => ({ method: 'POST', path: `${bombe}/day/messages/${message}/indicator/fill-in` }),
