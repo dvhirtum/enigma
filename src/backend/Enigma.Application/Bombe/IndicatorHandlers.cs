@@ -96,9 +96,9 @@ public sealed class GetRingTableHandler(IBombeSessionStore store)
                 grundstellung.ToString(),
                 verfahrenkenngruppe.ToString(),
                 check.RightRing.Number,
-                check.Stop.Position.ToString(),
+                check.Stop.Indicator.ToString(),
                 [.. check.RingTable(grundstellung, verfahrenkenngruppe).Select(row =>
-                    new RingRowState(row.Left.Number, row.Middle.Number, row.Spruchschluessel.ToString(), row.Cores.ToString()))]);
+                    new RingRowState(row.Left.Number, row.Middle.Number, row.Spruchschluessel.ToString(), check.WheelOrder.DrumLetters(row.Cores).Indicator.ToString()))]);
         });
     }
 }

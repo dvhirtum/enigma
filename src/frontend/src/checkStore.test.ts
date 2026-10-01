@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ApiResult, BombeCheck, BombeStop, CheckChange } from './api';
 import { createMachineStore, stopPage } from './store';
-import { carterCheck, carterStops, createFakeApi } from './test/fakeApi';
+import { carterCheck, carterRead, carterRingTable, carterStops, createFakeApi, emptyBombe, fakeDay } from './test/fakeApi';
+
+/** The job after a pinch is taken, with Carter's stops kept. */
+const pinched = { ...emptyBombe, stops: carterStops.length, day: fakeDay };
 
 /** A promise and the function that resolves it, to answer a call later. */
 function deferred<T>() {
@@ -84,5 +87,67 @@ describe('checking in the machine store', () => {
     await more;
 
     expect(store.getState().stops).toHaveLength(stopPage);
+  });
+
+  it('forgets the ring table when another check is opened', async () => {
+    const { store } = await openStore();
+    await store.getState().loadRingTable();
+    expect(store.getState().ringTable).toBe(carterRingTable);
+
+    await store.getState().openCheck(1);
+
+    expect(store.getState().ringTable).toBeNull();
+  });
+
+  it('follows rings read in another window on the open check', async () => {
+    const { store } = await openStore();
+
+    store.getState().receiveBombe({ name: 'readRings', args: [0, 3, 14], value: carterRead });
+
+    expect(store.getState().check?.reading?.key.rings).toEqual([3, 14, 26]);
+  });
+
+  it('forgets the middle ring scores when the right ring is turned or found, and keeps them otherwise', async () => {
+    const { store } = await openStore();
+    await store.getState().findMiddleRing();
+    expect(store.getState().middleRingScores).toHaveLength(26);
+
+    await store.getState().stepMiddleRing(1);
+    expect(store.getState().middleRingScores).toHaveLength(26);
+
+    await store.getState().findRightRing();
+
+    expect(store.getState().ringScores).toHaveLength(26);
+    expect(store.getState().middleRingScores).toBeNull();
+  });
+
+  it('forgets the right ring scores when the middle ring is turned, here or in another window', async () => {
+    const { store } = await openStore();
+    await store.getState().findRightRing();
+
+    store.getState().receiveBombe({ name: 'setCheck', args: [0, { middleRing: 3 }], value: { ...store.getState().check!, middleRing: 3 } });
+
+    expect(store.getState().ringScores).toBeNull();
+  });
+
+  it('forgets the rings read when the pinch is taken again', async () => {
+    const { api, store } = await openStore();
+    store.getState().receiveBombe({ name: 'readRings', args: [0, 3, 14], value: carterRead });
+    api.bombe.takePinch.mockResolvedValueOnce({ ok: true, value: pinched });
+
+    await store.getState().takePinch();
+
+    expect(store.getState().check?.stop.index).toBe(0);
+    expect(store.getState().check?.reading).toBeNull();
+  });
+
+  it('forgets the rings read when the pinch is taken again in another window', async () => {
+    const { store } = await openStore();
+    store.getState().receiveBombe({ name: 'readRings', args: [0, 3, 14], value: carterRead });
+
+    store.getState().receiveBombe({ name: 'takePinch', args: [], value: pinched });
+
+    expect(store.getState().check?.stop.index).toBe(0);
+    expect(store.getState().check?.reading).toBeNull();
   });
 });

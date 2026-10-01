@@ -14,17 +14,17 @@ In Bombe mode, the book button opens these instructions.
 
 Breaking a message is worked in the Hut 8 notebook, a separate window on squared paper, opened with the notebook button at the top right of Bombe mode. The machine window keeps the machines: the **Front**, **Side** and **Back** of the Bombe and the **Checking** machine. You set them up by hand, or let the notebook set them up for you.
 
-The notebook walks through the steps one by one: choose the message, place the crib, draw the menu, run the Bombe, choose a stop, check the stop and read the message. The current step is highlighted. A finished step is ticked off in the margin with what it wrote down. Click **Change** to reopen it: change it, and the steps after it start again, or click **Keep as it is**. Both windows show the same job, so what you do in one shows in the other.
+The notebook walks through the steps one by one: choose the message, place the crib, draw the menu, run the Bombe, choose a stop, check the stop, read the message, read the indicators and read the day's traffic. The current step is highlighted. A finished step is ticked off in the margin with what it wrote down. Click **Change** to reopen it: change it, and the steps after it start again, or click **Keep as it is**. Both windows show the same job, so what you do in one shows in the other.
 
 ## Loading a message
 
 The first step loads the message to break:
 
 - **Intercept**: a historical message, such as Scharnhorst's last signal. Choose it and click **Load intercept**.
-- **New exercise**: a Navy message sent on a random day of one of your M3 key sheets. Generate or import M3 key sheets first.
+- **New exercise**: a Navy message sent on a random day of one of your M3 key sheets, a day with rotor I–V on the right. The middle rotor never turns over during its crib. Generate or import M3 key sheets first.
 - **Radio message or cipher text**: paste a Navy radio message, as the operator's notebook writes it, or bare cipher text, and click **Load pasted text**.
 
-The notebook writes down the message, a hint for intercepts and exercises, and the cipher text in groups of five. Loading a message removes the crib.
+The notebook writes down the message, a hint for intercepts and exercises, and the cipher text in groups of four. Loading a message removes the crib.
 
 ## Placing the crib
 
@@ -146,13 +146,19 @@ The scoring counts letters, pairs and triples of letters from the Navy messages 
 
 ### The right ring
 
-The Bombe finds the rotor cores, not the ring settings. For the right rotor, 26 pairs of ring and window letter give the same core; they differ only in where the middle rotor turns over. The **Right ring** picks one of them. A wrong right ring garbles the message from the wrong turnover on. Turn it with ◀ and ▶ (the core positions stay), or click **Find**. Find scores the decrypt with each of the 26 rings and sets the lowest ring with the best score. The bars show every ring's score, with the best ones highlighted. When several rings tie, the ring is not settled yet: find or accept more steckers, then click **Find** again. A good order is Find, Suggest, Find. The left and middle rings stay at Z until the indicators are read.
+The Bombe finds the rotor cores, not the ring settings. For the right rotor, 26 pairs of ring and window letter give the same core; they differ only in where the middle rotor turns over. The **Right ring** picks one of them. A wrong right ring garbles the message from the wrong turnover on. Turn it with ◀ and ▶ (the core positions stay), or click **Find**. Find scores the decrypt with each of the 26 rings and sets the lowest ring with the best score. The bars show every ring's score, with the best ones highlighted. When several rings tie, the ring is not settled yet: find or accept more steckers, then click **Find** again. A good order is Find, Suggest, Find.
+
+### The middle ring
+
+The same holds for the middle rotor: its ring sets where the left rotor turns over. Once the middle rotor has stepped far enough to reach its notch, it steps again with the left rotor (the double step). In a long message, a wrong middle ring garbles the message from that letter on. The **Middle ring** works like the right ring: turn it with ◀ and ▶, or click **Find** to score the 26 middle rings with the right ring kept. Find the middle ring after the right ring and the steckers. When the message is too short for the left rotor to turn over, most middle rings tie and any of them reads it. The left ring stays at Z until the indicators are read: the left rotor turns nothing, so it does not change the message.
 
 ### The left and middle rings
 
-The left and middle rings hardly change the message: the left rotor only moves when the middle one turns over, and the left one turns nothing. They do matter for the day's other messages, whose start positions come from their indicators. The bigram tables turn a message's indicator into its Verfahrenkenngruppe. The operator typed that trigram at the day's Grundstellung, and the lamps gave the message key. The Grundstellung was printed on the secret key sheet and changed daily. One broken message therefore leaves 676 possibilities: for every pair of left and middle rings there is a Grundstellung that turns its Verfahrenkenngruppe into its message key. The Army sent its Grundstellung in the clear, so there the one ring pair that fits can be read off a table of all 676. With the Navy that table fits on every row.
+The left ring does not change the message, and the middle ring only where the left rotor turns over. They do matter for the day's other messages, whose start positions come from their indicators. The bigram tables turn a message's indicator into its Verfahrenkenngruppe. The operator typed that trigram at the day's Grundstellung, and the lamps gave the message key. The Grundstellung was printed on the secret key sheet and changed daily. One broken message therefore leaves 676 possibilities: for every pair of left and middle rings there is a Grundstellung that turns its Verfahrenkenngruppe into its message key. The Army sent its Grundstellung in the clear, so there the one ring pair that fits can be read off a table of all 676. With the Navy that table fits on every row.
 
-Hut 8 had two other ways to find the rings:
+A pinch made the table work for the Navy too: when a captured key sheet or bigram table gave away a day's Grundstellung, the one ring pair that fits could be read off as for the Army. The notebook works it this way, in the next step.
+
+Without a pinch, Hut 8 had two other ways to find the rings:
 
 - **Paired days.** The wheel order and the rings changed every other day, the steckers and the Grundstellung daily. Rings found on one day held for its paired day, which was often broken next on the known wheel order.
 - **Grundstellung alphabets.** Each broken message of the day gives a trigram and the start position it was typed to. Messages broken one by one on cribs or the EINS catalogue (the four letters EINS enciphered at all 17,576 positions and looked up in the cipher texts), or set in depth by Banburismus, built up for each trigram letter the start position it gives: the Grundstellung alphabets. With enough messages they fix the Grundstellung and the rings, and every other message of the day can be set up from its indicator. Short signals from U-boats served the same purpose.
@@ -160,3 +166,26 @@ Hut 8 had two other ways to find the rings:
 ### The key
 
 The step ends with the key: the reflector, wheel order, rings, plugs and the message key: the rotor positions at the start of the message. **Set up Enigma** asks first, then sets up the Enigma with this key at the message key and switches the machine window to Enigma mode, ready to type the cipher text.
+
+For a Navy radio message, **Read the indicators** goes on to the next step. An intercept ends here, as its key sheet day is not known; the notebook gives its published rings instead. Bare cipher text has no indicator, so it ends here too.
+
+## Reading the indicators
+
+This step finds the left and middle rings with a pinch of the day the message was sent on.
+
+- **The pinch.** For an exercise, click **Take the pinch**. For a pasted radio message, choose the month, the key sheet and the day it was sent on, as in the Enigma's key sheet panel, then click **Take the pinch**. If you choose the wrong day, the indicator reads as nonsense and no ring pair fits. The notebook writes down the day's Grundstellung and its Tauschtafel; open the Tauschtafel to see it. It scrolls when it does not fit, with its row and column letters always in view, and the letters of the square under the mouse are highlighted. Taking the pinch also brings in the day's other messages for the next step.
+- **The indicator.** The two indicator groups are written one above the other. Look up each vertical pair in the Tauschtafel: find the row of its upper letter and the column of its lower letter, and write down the pair you find there. The upper row then reads a filler and the Schlüsselkenngruppe, the lower row the Verfahrenkenngruppe and a filler. Write both trigrams in their boxes. Each box is marked ✓ or ✗ once it has three letters. **Fill in** writes them for you.
+- **The ring table.** Once the Verfahrenkenngruppe is right, the notebook works out the ring table, as Hut 8 did by hand. Each square is a pair of rings, with the left ring by row and the middle ring by column. For each pair, the notebook sets up an Enigma with the key found so far and those rings, turns it to the Grundstellung and types the Verfahrenkenngruppe; the lamps give the Spruchschlüssel. From there the rotors step to the start of the crib, and the square shows the indicator reading the Bombe would give there. Find the square that shows the stop's indicator reading, written above the table, and click it. The notebook does not mark the square for you, and the step stays open until you click a square with the stop's indicator reading whose middle ring does not garble the message. Now and then a second square fits by chance, and its decrypt then reads as nonsense.
+
+The **Key** then gives the whole key: wheel order, all three rings, the plugs and the Spruchschlüssel. If the square's indicator reading differs from the stop's, or its middle ring reads the message worse than the best middle ring, the notebook warns you. For an exercise it also says whether these are the rings of the key sheet. The decrypt shows the message read with this key. Click another square to read other rings, or **Rub out the rings**.
+
+## The day's traffic
+
+With the whole key, Hut 8 could read every other message sent on that key that day. The last step lists them: three to five messages, such as weather forecasts, position and convoy reports, rendezvous orders, mine warnings and air attack reports. **Copy** next to a message copies it as received. Read each one as its receiving operator did:
+
+1. Read its indicator with the Tauschtafel and write down the Schlüsselkenngruppe and the Verfahrenkenngruppe, or click **Fill in**.
+2. Click **Set up Enigma at the Grundstellung**. The notebook asks first, then sets up the Enigma with the whole key, turns it to the Grundstellung and switches the machine window to Enigma mode.
+3. Type the Verfahrenkenngruppe. The three lamps give the Spruchschlüssel.
+4. Turn the rotors to the Spruchschlüssel and type the cipher text.
+
+The **Lamps** tab of the operator's notebook writes down every lamp, so you can read the plain text there. Set up the Enigma again before each message.

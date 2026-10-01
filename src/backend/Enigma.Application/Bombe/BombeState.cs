@@ -397,9 +397,9 @@ public sealed record DayMessageState(
 
 /// <summary>
 /// The ring table of a stop's check: the Grundstellung and Verfahrenkenngruppe it is worked with, the right ring, the
-/// stop's core positions at the start of the crib, and a row for each of the 676 left and middle rings.
+/// stop's indicator reading, and a row for each of the 676 left and middle rings.
 /// </summary>
-public sealed record RingTableState(string Grundstellung, string Verfahrenkenngruppe, int RightRing, string Cores, IReadOnlyList<RingRowState> Rows);
+public sealed record RingTableState(string Grundstellung, string Verfahrenkenngruppe, int RightRing, string Indicator, IReadOnlyList<RingRowState> Rows);
 
-/// <summary>A row of the ring table: left and middle rings (1–26), the Spruchschlüssel they give and the cores it leads to at the crib.</summary>
-public sealed record RingRowState(int Left, int Middle, string Spruchschluessel, string Cores);
+/// <summary>A row of the ring table: left and middle rings (1–26), the Spruchschlüssel they give and the indicator reading of the cores it leads to at the crib.</summary>
+public sealed record RingRowState(int Left, int Middle, string Spruchschluessel, string Indicator);

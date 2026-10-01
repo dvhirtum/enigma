@@ -81,10 +81,13 @@ public sealed class IndicatorHandlerTests
         Assert.Equal(676, table.Rows.Count);
         Assert.Equal(solution.Exercise!.Verfahrenkenngruppe, table.Verfahrenkenngruppe);
         var row = table.Rows.Single(row => row.Left == solution.Rings[0] && row.Middle == solution.Rings[1]);
-        Assert.Equal(table.Cores, row.Cores);
+        Assert.Equal(_store.Stops.Stops(stop, 1)[0].Indicator.ToString(), table.Indicator);
+        Assert.Equal(table.Indicator, row.Indicator);
         Assert.Equal(solution.MessageKey, row.Spruchschluessel);
         var reading = Assert.IsType<ReadingState>(check.Reading);
         Assert.True(reading.RingsRight);
+        Assert.True(reading.MiddleRingFits);
+        Assert.True(reading.FitsStop);
         Assert.Equal(solution.Rings, reading.Key.Rings);
         Assert.Equal(solution.MessageKey, reading.Key.MessageKey);
         Assert.Equal(solution.Plaintext, reading.Decrypt);
@@ -106,6 +109,7 @@ public sealed class IndicatorHandlerTests
 
         // Assert
         Assert.False(wrong.Reading?.RingsRight);
+        Assert.False(wrong.Reading?.FitsStop);
         Assert.Null(forgotten.Reading);
     }
 

@@ -63,7 +63,7 @@ function PasteForm() {
   );
 }
 
-/** The message as it was received, and its cipher text in groups of five. */
+/** The message as it was received, and its cipher text in groups of four. */
 export function MessageSummary() {
   const source = useMachine((store) => store.bombe?.source);
   const cipherText = useMachine((store) => store.bombe?.cipherText ?? '');

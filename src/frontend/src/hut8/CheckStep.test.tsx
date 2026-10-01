@@ -127,7 +127,7 @@ describe('KeyStep', () => {
   it('reads the message with the steckers found so far', async () => {
     await openCarterCheck('key');
 
-    expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('XGTMB');
+    expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('XGTM BRVO');
     expect(screen.getByRole('textbox', { name: 'Partner of G' })).toHaveValue('Q');
   });
 
@@ -164,15 +164,36 @@ describe('KeyStep', () => {
   it('turns the right ring by hand', async () => {
     const api = await openCarterCheck('key');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next ring' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next right ring' }));
 
     await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { rightRing: 1 }));
+  });
+
+  it('turns the middle ring by hand', async () => {
+    const api = await openCarterCheck('key');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous middle ring' }));
+
+    await waitFor(() => expect(api.bombe.setCheck).toHaveBeenCalledWith(0, { middleRing: 25 }));
+  });
+
+  it('finds the middle ring and says when the rings tie', async () => {
+    const api = await openCarterCheck('key');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Find the middle ring' }));
+
+    expect(await screen.findByRole('img', { name: 'Scores of the middle rings' })).toBeInTheDocument();
+    expect(api.bombe.findMiddleRing).toHaveBeenCalledWith(0);
+    expect(api.bombe.findRightRing).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Middle ring setting')).toHaveTextContent('A (01)');
+    expect(screen.getByText(/Not determined yet: rings A, B/)).toHaveTextContent('too short for the left rotor to turn over');
+    expect(screen.queryByRole('img', { name: 'Scores of the right rings' })).not.toBeInTheDocument();
   });
 
   it('finds the right ring and says when the rings tie', async () => {
     const api = await openCarterCheck('key');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Find' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Find the right ring' }));
 
     expect(await screen.findByRole('img', { name: 'Scores of the right rings' })).toBeInTheDocument();
     expect(api.bombe.findRightRing).toHaveBeenCalledWith(0);

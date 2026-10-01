@@ -3,7 +3,7 @@ import type { AppliedKey, Kenngruppenbuch, OperatorState, OperatorStep, Receivin
 import { ErrorToast } from '../ErrorToast';
 import { useMachine } from '../store';
 import { useKeys, usePhysicalKeyboard } from '../useKeys';
-import { Field, Hand, Squares } from './paper';
+import { CopyButton, Field, Hand, Squares } from './paper';
 
 type Direction = OperatorState['direction'];
 
@@ -280,17 +280,6 @@ function PreambleExplanation({ message, cipherLength }: { message: string; ciphe
       <Hand>{count}</Hand>, is the letter count: every letter after it, so the two indicator groups at the start, the {cipherLength} letters of
       cipher text and the indicator groups again at the end (8 + {cipherLength} + 8). The receiver checks it to see whether letters went missing.
     </p>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  const copyText = useMachine((store) => store.copyText);
-  const [copied, setCopied] = useState(false);
-  const copy = async () => setCopied(await copyText(text));
-  return (
-    <button type="button" onClick={() => void copy()}>
-      {copied ? 'Copied' : 'Copy'}
-    </button>
   );
 }
 

@@ -48,13 +48,13 @@ describe('MessageSummary', () => {
     expect(await screen.findByText('Carter weather crib')).toBeInTheDocument();
     expect(screen.getByText(/Historical intercept · 16 letters/)).toBeInTheDocument();
     expect(screen.getByText('A weather forecast.')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Cipher text' })).toHaveTextContent('SNMKG GSTZZ UGARL V');
+    expect(screen.getByRole('group', { name: 'Cipher text' })).toHaveTextContent('SNMK GGST ZZUG ARLV');
   });
 });
 
 describe('groups', () => {
-  it('splits text into groups of five', () => {
-    expect(groups('ABCDEFGHIJKL')).toBe('ABCDE FGHIJ KL');
+  it('splits text into groups of four', () => {
+    expect(groups('ABCDEFGHIJKL')).toBe('ABCD EFGH IJKL');
     expect(groups('')).toBe('');
   });
 });

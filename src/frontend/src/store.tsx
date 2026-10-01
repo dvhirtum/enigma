@@ -11,7 +11,10 @@ import type {
   CheckChange,
   CheckerPress,
   CheckerChange,
+  IndicatorChange,
   PrintedStop,
+  RingTable,
+  SourceSolution,
   TestRegisterChange,
   Confirmation,
   RingFind,
@@ -136,6 +139,7 @@ export interface BombeSlice {
   checkKey: string | null;
   suggestion: Suggestion | null;
   ringScores: RingFind['rings'] | null;
+  middleRingScores: RingFind['rings'] | null;
   confirmation: Confirmation | null;
   /** Opens the check of a stop on the Checking view. */
   openCheck: (stop: number) => Promise<boolean>;
@@ -148,6 +152,8 @@ export interface BombeSlice {
   setPartner: (letter: string, partner: string | null) => Promise<boolean>;
   /** Turns the right ring `steps` places on once the queued operations are done. */
   stepRightRing: (steps: number) => Promise<boolean>;
+  /** Turns the middle ring `steps` places on once the queued operations are done. */
+  stepMiddleRing: (steps: number) => Promise<boolean>;
   /** Changes the checking machine once the queued operations are done. */
   setChecker: (change: CheckerChange) => Promise<boolean>;
   /** Sets the checking machine up for a logged stop, and shows it. */
@@ -166,12 +172,30 @@ export interface BombeSlice {
   /** Adds proposed pairs, such as "IK", to the check's steckers. */
   acceptSuggestion: (pairs: string[]) => Promise<boolean>;
   findRightRing: () => Promise<boolean>;
+  findMiddleRing: () => Promise<boolean>;
   /** Sets up the Enigma with the check's key, at the message key. */
   setUpEnigma: () => Promise<boolean>;
+  /** The key and plain text of the loaded intercept or exercise, or null when it has none. */
+  loadSolution: () => Promise<SourceSolution | null>;
+  /** Takes a pinch of the message's key sheet day: an exercise's own, or for a pasted radio message the sheet and day given. */
+  takePinch: (sheetId?: string, day?: number) => Promise<boolean>;
+  /** Writes down groups of the indicator of a message of the day (0 = the broken message). */
+  writeIndicator: (message: number, change: IndicatorChange) => Promise<boolean>;
+  fillInIndicator: (message: number) => Promise<boolean>;
+  /** The ring table of the open check, once loaded. */
+  ringTable: RingTable | null;
+  loadRingTable: () => Promise<boolean>;
+  /** Reads the left and middle rings of the open check off the ring table; null forgets them. */
+  readRings: (left: number | null, middle: number | null) => Promise<boolean>;
+  /** Sets up the Enigma with the key the rings read give, at the Grundstellung, to read a message of the day. */
+  setUpDayEnigma: () => Promise<boolean>;
 }
 
 /** How many stops a page of the Stops view fetches. */
 export const stopPage = 100;
+
+/** A ring (1–26) turned `steps` places on. */
+const turnRing = (ring: number, steps: number) => ((ring - 1 + steps + 26 * 26) % 26) + 1;
 
 export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice, BombeSlice {
   machine: MachineState | null;
@@ -237,7 +261,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
     const forgetStops = () => {
       stopLoads++;
       checkOpenings++;
-      set({ stops: [], check: null, suggestion: null, ringScores: null, confirmation: null });
+      set({ stops: [], check: null, suggestion: null, ringScores: null, middleRingScores: null, confirmation: null, ringTable: null });
     };
     /** Forgets the printout fetched when the backend has fewer stops printed. */
     const followPrinted = (printed: number) => {
@@ -263,7 +287,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
     /** Shows a check that was just opened, here or in another window. */
     const showCheck = (value: BombeCheck) => {
       checkOpenings++;
-      set({ check: value, suggestion: null, ringScores: null, confirmation: null });
+      set({ check: value, suggestion: null, ringScores: null, middleRingScores: null, confirmation: null, ringTable: null });
     };
     /** Shows the checking machine once it is set up for a stop, here or in another window. */
     const showChecker = (value: BombeState) => {
@@ -271,13 +295,20 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       keyPresses++;
       set({ checkLamp: null, bombeView: 'bombe-checking' });
     };
+    /** Forgets each ring's scores once the other ring changes, as they were scored with it. */
+    const staleScores = (current: BombeCheck | null, next: BombeCheck): Partial<MachineStore> => ({
+      ...(current?.rightRing !== next.rightRing ? { middleRingScores: null } : {}),
+      ...(current?.middleRing !== next.middleRing ? { ringScores: null } : {}),
+    });
     /** Follows a check changed in another window, when it is the open one. */
     const followCheck = (next: BombeCheck, changes: Partial<MachineStore> = {}) => {
       set((state) => ({
         stops: state.stops.map((stop) => (stop.index === next.stop.index ? next.stop : stop)),
-        ...(state.check?.stop.index === next.stop.index ? { check: next, ...changes } : {}),
+        ...(state.check?.stop.index === next.stop.index ? { check: next, ...staleScores(state.check, next), ...changes } : {}),
       }));
     };
+    /** Forgets the rings read on the open check, as the backend does when a pinch is taken. */
+    const forgetReading = () => set((state) => ({ check: state.check && { ...state.check, reading: null } }));
     /** Whether the check of `stop` is still the open one. */
     const stillOpen = (stop: number) => get().check?.stop.index === stop;
     /** A call on the open check; the check and the stop's verdict follow the result, unless another check was opened meanwhile. */
@@ -294,6 +325,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       set((state) => ({
         check: next,
         stops: state.stops.map((stop) => (stop.index === next.stop.index ? next.stop : stop)),
+        ...staleScores(state.check, next),
         ...changes,
       }));
       return result.value;
@@ -354,8 +386,9 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       checkLamp: null,
       checkKey: null,
       suggestion: null,
-      ringScores: null,
+      ringScores: null, middleRingScores: null,
       confirmation: null,
+      ringTable: null,
       loadBombe: async () => {
         const [listed, types, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.messageTypes()), settle(bombe.getState())]);
         if (listed.ok) {
@@ -450,7 +483,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
             keyPresses++;
             set({ checkKey: args[0] as string, checkLamp: pressed.lamp });
             if (pressed.check) {
-              followCheck(pressed.check, { suggestion: null, ringScores: null, confirmation: null });
+              followCheck(pressed.check, { suggestion: null, ringScores: null, middleRingScores: null, confirmation: null });
             }
             return;
           }
@@ -463,7 +496,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           case 'setCheck': {
             const next = value as BombeCheck;
             const steckersChanged = get().check?.steckers !== next.steckers;
-            followCheck(next, { confirmation: null, ...(steckersChanged ? { suggestion: null, ringScores: null } : {}) });
+            followCheck(next, { confirmation: null, ...(steckersChanged ? { suggestion: null, ringScores: null, middleRingScores: null } : {}) });
             return;
           }
           case 'confirmCheck': {
@@ -476,6 +509,18 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
             followCheck(found.check, { ringScores: found.rings, confirmation: null });
             return;
           }
+          case 'findMiddleRing': {
+            const found = value as RingFind;
+            followCheck(found.check, { middleRingScores: found.rings, confirmation: null });
+            return;
+          }
+          case 'readRings':
+            followCheck(value as BombeCheck);
+            return;
+          case 'takePinch':
+            applyJob(value as BombeState);
+            forgetReading();
+            return;
           case 'suggestSteckers':
             if (get().check?.stop.index === args[0]) {
               set({ suggestion: value as Suggestion });
@@ -487,13 +532,15 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           case 'suggestCrib':
           case 'getStops':
           case 'getPrintout':
+          case 'getRingTable':
+          case 'getSolution':
             return;
           default:
             applyJob(value as BombeState);
         }
       },
       changeCheck: async (change) => {
-        const steckers = change.steckers !== undefined ? { suggestion: null, ringScores: null } : {};
+        const steckers = change.steckers !== undefined ? { suggestion: null, ringScores: null, middleRingScores: null } : {};
         return (await onCheck((stop) => bombe.setCheck(stop, change), (value) => value, { ...steckers, confirmation: null })) !== null;
       },
       setChecker: (change) => enqueue(() => job(bombe.setChecker(change))),
@@ -519,7 +566,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       stepRightRing: (steps) =>
         enqueue(async () => {
           const ring = get().check?.rightRing;
-          return ring !== undefined && get().changeCheck({ rightRing: ((ring - 1 + steps + 26 * 26) % 26) + 1 });
+          return ring !== undefined && get().changeCheck({ rightRing: turnRing(ring, steps) });
+        }),
+      stepMiddleRing: (steps) =>
+        enqueue(async () => {
+          const ring = get().check?.middleRing;
+          return ring !== undefined && get().changeCheck({ middleRing: turnRing(ring, steps) });
         }),
       pressCheckKey: async (key) => {
         const press = ++keyPresses;
@@ -533,7 +585,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           set({ checkLamp: result.value.lamp });
         }
         if (result.value.check) {
-          followCheck(result.value.check, { suggestion: null, ringScores: null, confirmation: null });
+          followCheck(result.value.check, { suggestion: null, ringScores: null, middleRingScores: null, confirmation: null });
         }
         return true;
       },
@@ -571,7 +623,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
             return false;
           }
           const steckers = [current.steckers, ...pairs].filter(Boolean).join(' ');
-          const accepted = await onCheck((stop) => bombe.setCheck(stop, { steckers }), (value) => value, { ringScores: null, confirmation: null });
+          const accepted = await onCheck((stop) => bombe.setCheck(stop, { steckers }), (value) => value, { ringScores: null, middleRingScores: null, confirmation: null });
           const suggestion = get().suggestion;
           if (accepted && suggestion) {
             const left = suggestion.pairs.filter((pair) => !pairs.includes(pair.pair));
@@ -586,12 +638,52 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         }
         return found !== null;
       },
+      findMiddleRing: async () => {
+        const found = await onCheck((stop) => bombe.findMiddleRing(stop), (value) => value.check, { confirmation: null });
+        if (found) {
+          set({ middleRingScores: found.rings });
+        }
+        return found !== null;
+      },
       setUpEnigma: async () => {
         const key = get().check?.key;
         if (!key) {
           return false;
         }
         return apply(api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: key.messageKey }));
+      },
+      loadSolution: async () => {
+        const result = await check(bombe.getSolution());
+        return result.ok ? result.value : null;
+      },
+      takePinch: async (sheetId, day) => {
+        const taken = await job(bombe.takePinch(sheetId, day));
+        if (taken) {
+          forgetReading();
+        }
+        return taken;
+      },
+      writeIndicator: (message, change) => enqueue(() => job(bombe.writeIndicator(message, change))),
+      fillInIndicator: (message) => enqueue(() => job(bombe.fillInIndicator(message))),
+      loadRingTable: async () => {
+        const current = get().check;
+        if (!current) {
+          return false;
+        }
+        const result = await check(bombe.getRingTable(current.stop.index));
+        if (result.ok && stillOpen(current.stop.index)) {
+          set({ ringTable: result.value });
+        }
+        return result.ok;
+      },
+      readRings: async (left, middle) => (await onCheck((stop) => bombe.readRings(stop, left, middle), (value) => value)) !== null,
+      setUpDayEnigma: async () => {
+        const key = get().check?.reading?.key;
+        const grundstellung = get().bombe?.day?.grundstellung;
+        if (!key || !grundstellung) {
+          return false;
+        }
+        return apply(api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: grundstellung }));
       },
       loadBook: async (id) => {
         if (get().books[id]) {

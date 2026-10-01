@@ -1,6 +1,6 @@
-/** Text in groups of five. */
+/** Text in Navy groups of four. */
 export function groups(text: string): string {
-  return text.match(/.{1,5}/g)?.join(' ') ?? '';
+  return text.match(/.{1,4}/g)?.join(' ') ?? '';
 }
 
 /** Keeps the letters of typed text, in capitals. */

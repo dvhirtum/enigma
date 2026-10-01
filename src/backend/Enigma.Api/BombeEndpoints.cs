@@ -18,7 +18,7 @@ internal sealed record TestRegisterRequest(string? Letter, string? Input);
 
 internal sealed record JoinRequest(bool Joined);
 
-internal sealed record CheckRequest(string? Steckers, int? RightRing);
+internal sealed record CheckRequest(string? Steckers, int? RightRing, int? MiddleRing);
 
 internal sealed record VerdictRequest(string? Verdict);
 
@@ -66,6 +66,7 @@ internal static class BombeEndpoints
         .AddSingleton<ConfirmCheckHandler>()
         .AddSingleton<SuggestSteckersHandler>()
         .AddSingleton<FindRightRingHandler>()
+        .AddSingleton<FindMiddleRingHandler>()
         .AddSingleton<TakePinchHandler>()
         .AddSingleton<WriteIndicatorHandler>()
         .AddSingleton<FillInIndicatorHandler>()
@@ -178,7 +179,7 @@ internal static class BombeEndpoints
             handler.Handle(new GetCheck(stop)));
 
         bombe.MapPut("/stops/{stop:int}/check", (int stop, CheckRequest request, SetCheckHandler handler) =>
-            handler.Handle(new SetCheck(stop, request.Steckers, request.RightRing)));
+            handler.Handle(new SetCheck(stop, request.Steckers, request.RightRing, request.MiddleRing)));
 
         bombe.MapPost("/stops/{stop:int}/check/verdict", (int stop, VerdictRequest request, ConfirmCheckHandler handler) =>
             handler.Handle(new ConfirmCheck(stop, request.Verdict)));
@@ -188,6 +189,9 @@ internal static class BombeEndpoints
 
         bombe.MapPost("/stops/{stop:int}/check/find", (int stop, FindRightRingHandler handler) =>
             handler.Handle(new FindRightRing(stop)));
+
+        bombe.MapPost("/stops/{stop:int}/check/find-middle", (int stop, FindMiddleRingHandler handler) =>
+            handler.Handle(new FindMiddleRing(stop)));
 
         bombe.MapGet("/stops/{stop:int}/check/ring-table", (int stop, GetRingTableHandler handler) =>
             handler.Handle(new GetRingTable(stop)));

@@ -93,7 +93,7 @@ test('places a crib and draws the menu in the Hut 8 notebook', async () => {
 
   await notebook.getByRole('combobox', { name: 'Intercept' }).selectOption({ label: "Carter's weather crib" });
   await notebook.getByRole('button', { name: 'Load intercept' }).click();
-  await expect(notebook.getByRole('group', { name: 'Cipher text' })).toHaveText('SNMKG GSTZZ UGARL V');
+  await expect(notebook.getByRole('group', { name: 'Cipher text' })).toHaveText('SNMK GGST ZZUG ARLV');
 
   await expect(step.getByRole('heading')).toHaveText('Place the crib');
   await notebook.getByRole('button', { name: 'Suggest crib' }).click();

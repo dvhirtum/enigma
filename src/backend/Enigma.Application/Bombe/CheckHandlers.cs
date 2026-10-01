@@ -100,8 +100,9 @@ public sealed class SetCheckHandler(IBombeSessionStore store)
         return store.UseCheck(command.Stop, (_, check) =>
         {
             var sheet = command.Steckers is { } pairs ? SteckerSheet.Parse(pairs.ToUpperInvariant()) : check.Sheet;
-            var ring = command.RightRing is { } number ? RingSetting.FromNumber(number) : check.RightRing;
-            (check.Sheet, check.RightRing) = (sheet, ring);
+            var right = command.RightRing is { } number ? RingSetting.FromNumber(number) : check.RightRing;
+            var middle = command.MiddleRing is { } middleNumber ? RingSetting.FromNumber(middleNumber) : check.MiddleRing;
+            (check.Sheet, check.RightRing, check.MiddleRing) = (sheet, right, middle);
             return CheckState.From(check, command.Stop, store.Stops.SolutionOf(command.Stop));
         });
     }
@@ -140,6 +141,20 @@ public sealed class FindRightRingHandler(IBombeSessionStore store)
         return store.UseCheck(command.Stop, (_, check) =>
         {
             RingScoreState[] rings = [.. check.FindRightRing().Select(ring => new RingScoreState(ring.Ring.Number, ring.Score, ring.Best))];
+            return new FindState(rings, CheckState.From(check, command.Stop, store.Stops.SolutionOf(command.Stop)));
+        });
+    }
+}
+
+public sealed class FindMiddleRingHandler(IBombeSessionStore store)
+{
+    public FindState Handle(FindMiddleRing command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        return store.UseCheck(command.Stop, (_, check) =>
+        {
+            RingScoreState[] rings = [.. check.FindMiddleRing().Select(ring => new RingScoreState(ring.Ring.Number, ring.Score, ring.Best))];
             return new FindState(rings, CheckState.From(check, command.Stop, store.Stops.SolutionOf(command.Stop)));
         });
     }

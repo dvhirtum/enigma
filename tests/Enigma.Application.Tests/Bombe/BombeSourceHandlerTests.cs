@@ -135,6 +135,41 @@ public sealed class BombeSourceHandlerTests
     }
 
     [Fact]
+    public void Should_send_the_exercise_on_a_day_with_rotor_I_to_V_on_the_right_When_other_days_have_VI_to_VIII()
+    {
+        // Arrange
+        var sheet = new KeySheet(
+            "t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 B I II VI 01 01 01 AT QRS\n2 B I II III 01 01 01 AT QRS\n3 B I II VIII 01 01 01 AT QRS\n"));
+        var linker = Linking.For(new FakeKeySheetRepository(sheet));
+
+        // Act
+        var days = Enumerable.Range(0, 20).Select(seed =>
+        {
+            new GenerateExerciseHandler(_store, linker, new Random(seed)).Handle(new GenerateExercise());
+            return new GetSolutionHandler(_store).Handle(new GetSolution()).Exercise?.Day;
+        }).ToList();
+
+        // Assert
+        Assert.All(days, day => Assert.Equal(2, day));
+    }
+
+    [Fact]
+    public void Should_refuse_an_exercise_When_every_M3_day_has_rotor_VI_to_VIII_on_the_right()
+    {
+        // Arrange
+        var sheet = new KeySheet(
+            "t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 B I II VI 01 01 01 AT QRS\n2 B I II VII 01 01 01 AT QRS\n"));
+        var handler = new GenerateExerciseHandler(_store, Linking.For(new FakeKeySheetRepository(sheet)), new Random(4));
+
+        // Act
+        void Act() => handler.Handle(new GenerateExercise());
+
+        // Assert
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Contains("VI, VII or VIII", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Should_refuse_an_exercise_When_there_are_no_M3_key_sheets()
     {
         // Arrange

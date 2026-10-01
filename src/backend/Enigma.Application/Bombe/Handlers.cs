@@ -54,8 +54,15 @@ public sealed class GenerateExerciseHandler(IBombeSessionStore store, KeySheetLi
             throw new DomainException("Generate or import M3 key sheets first.");
         }
 
-        var sheet = sheets[random.Next(sheets.Count)];
-        var day = sheet.DailyKeys[random.Next(sheet.DailyKeys.Count)].Day;
+        var days = sheets
+            .SelectMany(sheet => sheet.DailyKeys.Where(ExerciseGenerator.Suits).Select(key => (Sheet: sheet, key.Day)))
+            .ToList();
+        if (days.Count == 0)
+        {
+            throw new DomainException("Every day of the M3 key sheets has rotor VI, VII or VIII on the right. Generate more M3 key sheets.");
+        }
+
+        var (sheet, day) = days[random.Next(days.Count)];
         var source = ExerciseGenerator.Generate(
             sheet, day, linker.Book(sheet.KenngruppenbuchId!), linker.Tables(sheet.TauschtafelSetId!), random);
         return store.Update(job => job.Load(source), clearStops: true);

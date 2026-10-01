@@ -133,6 +133,33 @@ public sealed class ExerciseGeneratorTests
     }
 
     [Fact]
+    public void Should_keep_the_middle_rotor_still_during_the_crib_When_many_exercises_are_generated()
+    {
+        // Arrange
+        var sources = Enumerable.Range(0, 100).Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
+
+        // Act
+        var turnovers = sources.Count(MiddleTurnsOverDuringCrib);
+
+        // Assert
+        Assert.Equal(0, turnovers);
+    }
+
+    [Fact]
+    public void Should_reject_the_day_When_its_right_rotor_has_two_notches()
+    {
+        // Arrange
+        var day = Sheet.DailyKeys.First(key => key.Rotors[^1].Notches.Count == 2).Day;
+
+        // Act
+        void Act() => ExerciseGenerator.Generate(Sheet, day, Book, Tables, new Random(1));
+
+        // Assert
+        Assert.False(ExerciseGenerator.Suits(Sheet.KeyFor(day)));
+        Assert.Throws<DomainException>(Act);
+    }
+
+    [Fact]
     public void Should_reject_the_sheet_When_it_is_for_the_M4()
     {
         // Arrange
@@ -143,5 +170,32 @@ public sealed class ExerciseGeneratorTests
 
         // Assert
         Assert.Throws<DomainException>(Act);
+    }
+
+    // Types the plain text up to the end of the crib on an M3 set up with the solution, watching the middle rotor.
+    private static bool MiddleTurnsOverDuringCrib(MessageSource source)
+    {
+        var solution = source.Solution!;
+        var start = solution.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal);
+        var machine = new DailyKey(1, solution.Reflector, [solution.WheelOrder.Left, solution.WheelOrder.Middle, solution.WheelOrder.Right], solution.Rings, solution.Plugs).SetUp();
+        foreach (var (slot, position) in machine.Model.Slots.Zip(solution.MessageKey.Positions))
+        {
+            machine.TurnRotor(slot, position);
+        }
+
+        Type(machine, solution.Plaintext[..start]);
+        var middle = machine.Model.Slots[1];
+        var atCrib = machine.RotorIn(middle)!.Position;
+        Type(machine, source.Crib.ToString());
+        return machine.RotorIn(middle)!.Position != atCrib;
+    }
+
+    private static void Type(EnigmaMachine machine, string text)
+    {
+        foreach (var letter in text)
+        {
+            machine.PressKey(Letter.FromChar(letter));
+            machine.ReleaseKey();
+        }
     }
 }

@@ -4,8 +4,8 @@ namespace Enigma.Application.Bombe;
 
 /// <summary>
 /// The check of a stop: the stop, the stecker sheet as written (pairs such as "AD ET EX RR"), the letters it
-/// contradicts (more than one partner), the steckers found by checking when the stop was confirmed true, the right
-/// ring (1–26), the verdict, each crib letter with its match (Match, Mismatch or Unknown), the decrypt of the whole
+/// contradicts (more than one partner), the steckers found by checking when the stop was confirmed true, the middle
+/// and right rings (1–26), the verdict, each crib letter with its match (Match, Mismatch or Unknown), the decrypt of the whole
 /// message (letters not known yet taken as unsteckered), the key it gives, and the rings read from the indicator (null
 /// before).
 /// </summary>
@@ -14,6 +14,7 @@ public sealed record CheckState(
     string Steckers,
     string Contradicted,
     string CheckedSteckers,
+    int MiddleRing,
     int RightRing,
     string Verdict,
     IReadOnlyList<CribLetterState> Crib,
@@ -32,6 +33,7 @@ public sealed record CheckState(
             check.Sheet.ToString(),
             string.Concat(check.Sheet.Contradicted),
             check.Checked.ToString(),
+            check.MiddleRing.Number,
             check.RightRing.Number,
             check.Verdict.ToString(),
             [.. check.Crib().Select(letter => new CribLetterState(
@@ -44,6 +46,8 @@ public sealed record CheckState(
                     reading.Middle.Number,
                     CheckedKeyState.From(read),
                     check.ReadDecrypt()!,
+                    check.ReadingFitsStop == true,
+                    check.MiddleRingScores().Single(score => score.Ring == reading.Middle).Best,
                     solution is null ? null : solution.Rings[0] == reading.Left && solution.Rings[1] == reading.Middle)
                 : null);
     }
@@ -52,7 +56,7 @@ public sealed record CheckState(
 public sealed record CribLetterState(int Offset, string Plain, string Cipher, string Match);
 
 /// <summary>
-/// The key a check gives: reflector, wheel order, ring settings (1–26; left and middle stay 26 until the indicators are
+/// The key a check gives: reflector, wheel order, ring settings (1–26; the left one stays 26 until the indicators are
 /// read), plug pairs and the rotor positions the message starts from.
 /// </summary>
 public sealed record CheckedKeyState(string Reflector, string WheelOrder, IReadOnlyList<int> Rings, IReadOnlyList<string> Plugs, string MessageKey)
@@ -72,9 +76,10 @@ public sealed record CheckedKeyState(string Reflector, string WheelOrder, IReadO
 
 /// <summary>
 /// The left and middle rings (1–26) read from the indicator, the whole key they give (the Spruchschlüssel as the
-/// message key), the decrypt with it, and whether the rings are the solution's (null without a solution).
+/// message key), the decrypt with it, whether they lead to the stop's cores, whether the middle ring reads the message as well as the best middle ring
+/// does, and whether the rings are the solution's (null without a solution).
 /// </summary>
-public sealed record ReadingState(int Left, int Middle, CheckedKeyState Key, string Decrypt, bool? RingsRight);
+public sealed record ReadingState(int Left, int Middle, CheckedKeyState Key, string Decrypt, bool FitsStop, bool MiddleRingFits, bool? RingsRight);
 
 /// <summary>The lamp a key lit, and the check of the stop the checking machine is set up for, with what the lamp wrote down.</summary>
 public sealed record LampState(string Lamp, CheckState? Check);
