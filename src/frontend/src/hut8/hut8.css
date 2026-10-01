@@ -643,3 +643,9 @@ input.hand-box:focus-visible {
   gap: var(--sq);
   padding-left: 1.25rem;
 }
+
+.day-message-text {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sq);
+}

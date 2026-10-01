@@ -177,7 +177,7 @@ The **Key** then gives the whole key: wheel order, all three rings, the plugs an
 
 ## The day's traffic
 
-With the whole key, Hut 8 could read every other message sent on that key that day. The last step lists them: three to five messages, such as weather forecasts, position and convoy reports, rendezvous orders, mine warnings and air attack reports. Read each one as its receiving operator did:
+With the whole key, Hut 8 could read every other message sent on that key that day. The last step lists them: three to five messages, such as weather forecasts, position and convoy reports, rendezvous orders, mine warnings and air attack reports. **Copy** next to a message copies it as received. Read each one as its receiving operator did:
 
 1. Read its indicator with the Tauschtafel and write down the Schlüsselkenngruppe and the Verfahrenkenngruppe, or click **Fill in**.
 2. Click **Set up Enigma at the Grundstellung**. The notebook asks first, then sets up the Enigma with the whole key, turns it to the Grundstellung and switches the machine window to Enigma mode.

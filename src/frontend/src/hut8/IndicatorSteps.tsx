@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { BombeCheck, BombeState, DayMessage, DayTraffic, RingTable } from '../api';
 import { alphabet } from '../machine';
-import { Field, Hand, Squares } from '../notebook/paper';
+import { CopyButton, Field, Hand, Squares } from '../notebook/paper';
 import { KeySheetSelects, shownMonth } from '../panels/KeySheetSelects';
 import { useMachine } from '../store';
 import { SetUpEnigma } from './CheckStep';
@@ -428,7 +428,10 @@ export function TrafficStep({ check }: { check: BombeCheck }) {
       <ol className="day-messages" aria-label="Messages of the day">
         {day.messages.slice(1).map((message, index) => (
           <li key={message.message} aria-label={`Message ${index + 1}`}>
-            <Squares text={message.message} label={`Radio message ${index + 1}`} />
+            <div className="day-message-text">
+              <Squares text={message.message} label={`Radio message ${index + 1}`} />
+              <CopyButton text={message.message} />
+            </div>
             <IndicatorWriting index={index + 1} message={message} />
           </li>
         ))}

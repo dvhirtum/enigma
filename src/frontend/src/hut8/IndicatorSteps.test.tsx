@@ -149,6 +149,16 @@ describe('TrafficStep', () => {
     await waitFor(() => expect(api.bombe.fillInIndicator).toHaveBeenCalledWith(2));
   });
 
+  it('copies a message of the day as it was received', async () => {
+    const api = renderStep('traffic', { ...exercise, day: fakeDay }, carterRead);
+    const message = await screen.findByRole('listitem', { name: 'Message 1' });
+
+    fireEvent.click(within(message).getByRole('button', { name: 'Copy' }));
+
+    expect(await within(message).findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+    expect(api.clipboard.writeText).toHaveBeenCalledWith(fakeDay.messages[1].message);
+  });
+
   it('sets up the Enigma with the whole key at the Grundstellung after asking', async () => {
     const api = renderStep('traffic', { ...exercise, day: fakeDay }, carterRead);
 

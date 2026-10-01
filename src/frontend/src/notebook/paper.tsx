@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { useMachine } from '../store';
 
 /** Handwriting inside printed text. */
 export function Hand({ children }: { children: ReactNode }) {
@@ -34,5 +35,17 @@ export function Field({ label, value, stacked }: { label: string; value: string;
       <span className="field-label">{label}</span>
       <Squares text={value} label={label} stacked={stacked} />
     </p>
+  );
+}
+
+/** Copies `text` to the clipboard, and says so once copied. */
+export function CopyButton({ text }: { text: string }) {
+  const copyText = useMachine((store) => store.copyText);
+  const [copied, setCopied] = useState(false);
+  const copy = async () => setCopied(await copyText(text));
+  return (
+    <button type="button" onClick={() => void copy()}>
+      {copied ? 'Copied' : 'Copy'}
+    </button>
   );
 }
