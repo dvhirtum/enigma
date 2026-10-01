@@ -47,6 +47,18 @@ public sealed class StopLog
         }
     }
 
+    /// <summary>Forgets the rings read from the indicator on every check.</summary>
+    public void ClearReadings()
+    {
+        lock (_lock)
+        {
+            foreach (var check in _checks.Values)
+            {
+                check.Reading = null;
+            }
+        }
+    }
+
     /// <summary>The stops from the <paramref name="from"/>th on, at most <paramref name="count"/> (null: all).</summary>
     public IReadOnlyList<BombeStop> Stops(int from, int? count = null)
     {
