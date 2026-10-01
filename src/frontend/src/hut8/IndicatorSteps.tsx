@@ -90,6 +90,7 @@ function DayPicker({ day }: { day: DayTraffic | null }) {
 
 /** The bigram table of the pinch: the pair in the row of its first letter and the column of its second is swapped with the pair written there. */
 function BigramTable({ day }: { day: DayTraffic }) {
+  const [hovered, setHovered] = useState<{ first: string; second: string } | null>(null);
   const partner = new Map<string, string>();
   for (const swap of day.swaps) {
     partner.set(swap.slice(0, 2), swap.slice(2, 4));
@@ -99,28 +100,34 @@ function BigramTable({ day }: { day: DayTraffic }) {
   return (
     <details className="bigram-table">
       <summary>Tauschtafel {day.table}</summary>
-      <table aria-label={`Tauschtafel ${day.table}`}>
-        <thead>
-          <tr>
-            <th />
-            {[...alphabet].map((second) => (
-              <th key={second} scope="col">
-                {second}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {[...alphabet].map((first) => (
-            <tr key={first}>
-              <th scope="row">{first}</th>
+      <div className="bigram-table-scroll">
+        <table aria-label={`Tauschtafel ${day.table}`} onMouseLeave={() => setHovered(null)}>
+          <thead>
+            <tr>
+              <th />
               {[...alphabet].map((second) => (
-                <td key={second}>{partner.get(first + second) ?? ''}</td>
+                <th key={second} scope="col" className={hovered?.second === second ? 'hovered' : undefined}>
+                  {second}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {[...alphabet].map((first) => (
+              <tr key={first}>
+                <th scope="row" className={hovered?.first === first ? 'hovered' : undefined}>
+                  {first}
+                </th>
+                {[...alphabet].map((second) => (
+                  <td key={second} onMouseEnter={() => setHovered({ first, second })}>
+                    {partner.get(first + second) ?? ''}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </details>
   );
 }

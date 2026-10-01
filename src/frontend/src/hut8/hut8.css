@@ -538,6 +538,37 @@ input.hand-box:focus-visible {
   font-weight: 600;
 }
 
+.bigram-table-scroll {
+  max-width: 100%;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.bigram-table thead th,
+.bigram-table th[scope='row'] {
+  position: sticky;
+  z-index: 1;
+  background: var(--paper);
+}
+
+.bigram-table thead th {
+  top: 0;
+}
+
+.bigram-table th[scope='row'],
+.bigram-table thead th:first-child {
+  left: 0;
+}
+
+.bigram-table thead th:first-child {
+  z-index: 2;
+}
+
+.bigram-table th.hovered {
+  background: linear-gradient(var(--highlight), var(--highlight)), var(--paper);
+  color: var(--pencil);
+}
+
 .bigram-table td {
   padding: 0 3px;
   font-size: 14px;

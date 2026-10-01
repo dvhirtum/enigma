@@ -76,6 +76,24 @@ describe('IndicatorsStep', () => {
     expect(screen.queryByRole('region', { name: 'Ring table' })).not.toBeInTheDocument();
   });
 
+  it('highlights the row and column labels of the Tauschtafel square under the mouse', async () => {
+    renderStep('indicators', { ...exercise, day: fakeDay });
+    const table = await screen.findByRole('table', { name: 'Tauschtafel 3' });
+    const row = within(table).getByRole('rowheader', { name: 'C' });
+    const column = within(table).getByRole('columnheader', { name: 'F' });
+
+    fireEvent.mouseEnter(within(row.closest('tr')!).getAllByRole('cell')[5]);
+
+    expect(row).toHaveClass('hovered');
+    expect(column).toHaveClass('hovered');
+    expect(within(table).getByRole('rowheader', { name: 'D' })).not.toHaveClass('hovered');
+
+    fireEvent.mouseLeave(table);
+
+    expect(row).not.toHaveClass('hovered');
+    expect(column).not.toHaveClass('hovered');
+  });
+
   it('marks a wrong group', async () => {
     const day: DayTraffic = { ...fakeDay, messages: [{ ...fakeDay.messages[0], verfahrenkenngruppe: 'XYZ', verfahrenkenngruppeRight: false }] };
     renderStep('indicators', { ...exercise, day });
