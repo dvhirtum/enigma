@@ -295,6 +295,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         ...(state.check?.stop.index === next.stop.index ? { check: next, ...changes } : {}),
       }));
     };
+    /** Forgets the rings read on the open check, as the backend does when a pinch is taken. */
+    const forgetReading = () => set((state) => ({ check: state.check && { ...state.check, reading: null } }));
     /** Whether the check of `stop` is still the open one. */
     const stillOpen = (stop: number) => get().check?.stop.index === stop;
     /** A call on the open check; the check and the stop's verdict follow the result, unless another check was opened meanwhile. */
@@ -497,6 +499,10 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           case 'readRings':
             followCheck(value as BombeCheck);
             return;
+          case 'takePinch':
+            applyJob(value as BombeState);
+            forgetReading();
+            return;
           case 'suggestSteckers':
             if (get().check?.stop.index === args[0]) {
               set({ suggestion: value as Suggestion });
@@ -620,7 +626,13 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         const result = await check(bombe.getSolution());
         return result.ok ? result.value : null;
       },
-      takePinch: (sheetId, day) => job(bombe.takePinch(sheetId, day)),
+      takePinch: async (sheetId, day) => {
+        const taken = await job(bombe.takePinch(sheetId, day));
+        if (taken) {
+          forgetReading();
+        }
+        return taken;
+      },
       writeIndicator: (message, change) => enqueue(() => job(bombe.writeIndicator(message, change))),
       fillInIndicator: (message) => enqueue(() => job(bombe.fillInIndicator(message))),
       loadRingTable: async () => {
