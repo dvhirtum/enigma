@@ -308,36 +308,36 @@ input.hand-input.crib-input {
 
 /* Checking */
 
-.check-links {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, calc(var(--sq) * 6));
+.check-crib {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: var(--sq);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.check-links li {
-  display: grid;
-  grid-template-columns: var(--sq) calc(var(--sq) * 2) auto;
-  gap: 0.4rem;
-}
-
-.check-links li > span:first-child {
-  color: var(--print-muted);
-  text-align: right;
-}
-
-.check-crib {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.check-crib > span {
+.check-crib > li {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  padding: 0 0.2rem;
 }
 
-.check-crib > span > .square:last-child {
+.check-crib .check-position {
+  height: var(--sq);
+  color: var(--print-muted);
+  font-size: 0.75em;
+  line-height: var(--sq);
+}
+
+.check-crib .partner {
+  width: auto;
+  min-width: var(--sq);
+}
+
+.check-crib .partner.contradicted,
+.check-crib > li > .square:last-child {
   color: var(--red-pencil);
 }
 

@@ -54,12 +54,26 @@ describe('CheckStep', () => {
     expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('?????');
   });
 
-  it('lists the menu links with the drum position of each', async () => {
+  it('writes the partners found between the cipher letters and the crib, under the drum position of each link', async () => {
     await openCarterCheck();
 
-    const links = within(screen.getByRole('region', { name: 'Menu links' })).getAllByRole('listitem');
-    expect(links[0]).toHaveTextContent(/1\s*S–W\s*ZZA/);
-    expect(links.map((link) => link.textContent)).toContain('5G–EZZE');
+    const links = within(screen.getByRole('region', { name: 'Crib' })).getAllByRole('listitem');
+    expect(links).toHaveLength(16);
+    expect(links[0]).toHaveAccessibleName('ZZA: S/?, W/?, Unknown');
+    expect(links[4]).toHaveAccessibleName('ZZE: G/Q, E/?, Unknown');
+    expect(links[4]).toHaveTextContent('ZZEGQE');
+    expect(links[14]).toHaveAccessibleName('ZZO: L/?, G/Q, Unknown');
+    expect(links[14]).toHaveTextContent('ZZOLQG');
+  });
+
+  it('marks contradicted partners in the crib in red', async () => {
+    await openCarterCheck('check', carter, (fake) =>
+      fake.bombe.getCheck.mockResolvedValue({ ok: true, value: { ...carterCheck, steckers: 'GQ RR RX', contradicted: 'R' } }),
+    );
+
+    const link = within(screen.getByRole('region', { name: 'Crib' })).getByRole('listitem', { name: /^ZZF:/ });
+    expect(link).toHaveAccessibleName('ZZF: G/Q, R/RX, Unknown');
+    expect(within(link).getByText('RX')).toHaveClass('contradicted');
   });
 
   it('presses the checking machine when a letter is typed, and writes down what its lamp says', async () => {

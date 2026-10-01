@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { BombeCheck, BombeStop } from '../api';
-import { drumLetters, scramblersOf } from '../bombe/drums';
+import { drumLetters } from '../bombe/drums';
 import { useCheckKeys } from '../bombe/checkKeys';
 import { contradictionsOf, partnersOf } from '../bombe/steckers';
 import { usePhysicalKeyboard } from '../useKeys';
@@ -11,44 +11,40 @@ import { groups } from './letters';
 
 const ringLetter = (ring: number) => alphabet[ring - 1];
 
-/** The menu's links by offset, each with the drum position to turn the checking machine to. */
-function MenuLinks() {
-  const links = useMachine((store) => store.bombe?.menu?.links);
-  if (!links?.length) {
-    return null;
-  }
-
-  return (
-    <section className="notebook-section" aria-label="Menu links">
-      <h4>Menu links</h4>
-      <ol className="check-links">
-        {scramblersOf(links).map((link) => (
-          <li key={link.id}>
-            <span>{link.offset}</span>
-            <span className="hand">
-              {link.first}–{link.second}
-            </span>
-            <span className="hand">{drumLetters(link.offset)}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-/** The crib under the cipher letters at the stop, each marked as matched, contradicted or still unknown. */
+/**
+ * The crib under the cipher letters at the stop, a column per link headed by its drum position, with the partners
+ * written so far between them: under the cipher letter its partner, above the crib letter its partner. A gap shows a
+ * link still to test. Contradicted partners are red; the crib letter is marked as matched, contradicted or unknown.
+ */
 function CribCheck({ check }: { check: BombeCheck }) {
+  const partners = partnersOf(check.steckers);
+  const contradicted = contradictionsOf(check.steckers);
+  const written = (letter: string) => (partners[letter] ?? []).join('');
+
   return (
     <section className="notebook-section" aria-label="Crib">
       <h4>Crib</h4>
-      <div className="check-crib">
-        {check.crib.map((letter) => (
-          <span key={letter.offset} className={letter.match.toLowerCase()} title={`${letter.offset}: ${letter.match}`}>
-            <span className="square">{letter.cipher}</span>
-            <span className="square">{letter.plain}</span>
-          </span>
-        ))}
-      </div>
+      <ol className="check-crib">
+        {check.crib.map((letter) => {
+          const position = drumLetters(letter.offset);
+          return (
+            <li
+              key={letter.offset}
+              className={letter.match.toLowerCase()}
+              aria-label={`${position}: ${letter.cipher}/${written(letter.cipher) || '?'}, ${letter.plain}/${written(letter.plain) || '?'}, ${letter.match}`}
+            >
+              <span className="check-position">{position}</span>
+              <span className="square">{letter.cipher}</span>
+              {[letter.cipher, letter.plain].map((own, row) => (
+                <span key={row} className={contradicted.has(own) ? 'square partner contradicted' : 'square partner'}>
+                  {written(own)}
+                </span>
+              ))}
+              <span className="square">{letter.plain}</span>
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }
@@ -304,7 +300,6 @@ export function CheckStep({ check }: { check: BombeCheck }) {
         with Suggest and Find until the message reads as German.
       </p>
       <CheckerSetup check={check} />
-      <MenuLinks />
       <CribCheck check={check} />
       <SteckerSheet check={check} />
       <RightRing check={check} />
