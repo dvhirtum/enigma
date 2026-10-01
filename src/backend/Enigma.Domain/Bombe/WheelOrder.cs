@@ -53,6 +53,17 @@ public sealed record WheelOrder
             drumLetters.Middle.Shift(-LetterOffset(Middle)),
             drumLetters.Right.Shift(-LetterOffset(Right)));
 
+    /// <summary>The window letters after one key press, as on the Enigma, with the middle rotor's double step.</summary>
+    public (Letter Left, Letter Middle, Letter Right) Step((Letter Left, Letter Middle, Letter Right) windows)
+    {
+        var middleAtNotch = Middle.Notches.Contains(new RotorPosition(windows.Middle));
+        var rightAtNotch = Right.Notches.Contains(new RotorPosition(windows.Right));
+        return (
+            middleAtNotch ? windows.Left.Shift(1) : windows.Left,
+            middleAtNotch || rightAtNotch ? windows.Middle.Shift(1) : windows.Middle,
+            windows.Right.Shift(1));
+    }
+
     /// <summary>Parses rotor names from left to right, e.g. "II V III".</summary>
     public static WheelOrder Parse(string rotors)
     {

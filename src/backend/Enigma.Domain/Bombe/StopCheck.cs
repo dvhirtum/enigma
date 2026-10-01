@@ -219,7 +219,7 @@ public sealed class StopCheck
         var windows = (start[0].Letter, start[1].Letter, start[2].Letter);
         for (var press = 0; press < Placement.Position; press++)
         {
-            windows = Step(WheelOrder, windows);
+            windows = WheelOrder.Step(windows);
         }
 
         return new RingRow(left, middle, spruchschluessel, Core(windows, key.Rings));
@@ -293,7 +293,7 @@ public sealed class StopCheck
         var windows = (solution.MessageKey.Positions[0].Letter, solution.MessageKey.Positions[1].Letter, solution.MessageKey.Positions[2].Letter);
         for (var press = 0; press < Placement.Position; press++)
         {
-            windows = Step(solution.WheelOrder, windows);
+            windows = solution.WheelOrder.Step(windows);
         }
 
         var isTrue = solution.WheelOrder == WheelOrder
@@ -338,7 +338,7 @@ public sealed class StopCheck
         var scrambles = new Letter[Placement.CipherText.Count][];
         for (var index = 0; index < scrambles.Length; index++)
         {
-            windows = Step(WheelOrder, windows);
+            windows = WheelOrder.Step(windows);
             scrambles[index] = Scramble(Core(windows, rings));
         }
 
@@ -428,7 +428,7 @@ public sealed class StopCheck
             var windows = start;
             for (var press = 0; press < presses; press++)
             {
-                windows = Step(WheelOrder, windows);
+                windows = WheelOrder.Step(windows);
             }
 
             if (windows == atCrib)
@@ -438,16 +438,5 @@ public sealed class StopCheck
         }
 
         return (atCrib.Left, atCrib.Middle, right);
-    }
-
-    // Steps the rotors as on the Enigma, with the middle rotor's double step.
-    private static (Letter Left, Letter Middle, Letter Right) Step(WheelOrder order, (Letter Left, Letter Middle, Letter Right) windows)
-    {
-        var middleAtNotch = order.Middle.Notches.Contains(new RotorPosition(windows.Middle));
-        var rightAtNotch = order.Right.Notches.Contains(new RotorPosition(windows.Right));
-        return (
-            middleAtNotch ? windows.Left.Shift(1) : windows.Left,
-            middleAtNotch || rightAtNotch ? windows.Middle.Shift(1) : windows.Middle,
-            windows.Right.Shift(1));
     }
 }

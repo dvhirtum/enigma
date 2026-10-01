@@ -18,6 +18,9 @@ public static class ExerciseGenerator
     /// <summary>The most other messages of the day.</summary>
     public const int MaxDayMessages = 5;
 
+    /// <summary>The most message keys tried for a crib without a middle rotor turnover.</summary>
+    public const int MaxAttempts = 1000;
+
     private static readonly string[] Digits = ["NUL", "EINS", "ZWO", "DREI", "VIER", "FUENF", "SEQS", "SIEBEN", "AQT", "NEUN"];
 
     private static readonly string[] Directions = ["NORD", "NORDOST", "OST", "SUEDOST", "SUED", "SUEDWEST", "WEST", "NORDWEST"];
@@ -67,12 +70,39 @@ public static class ExerciseGenerator
                 + Pick(random, "KEINE SQAEDEN", "LEIQTE SQAEDEN", "TAUQKLAR")),
     ];
 
-    /// <summary>Generates an exercise sent on <paramref name="day"/> of an M3 <paramref name="sheet"/>.</summary>
+    /// <summary>
+    /// Whether an exercise can be sent with <paramref name="key"/>: its right rotor has one notch. Rotors VI, VII and VIII
+    /// turn the middle rotor every 13 letters, so no crib of an exercise fits between two turnovers.
+    /// </summary>
+    public static bool Suits(DailyKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        return key.Rotors[^1].Notches.Count == 1;
+    }
+
+    /// <summary>
+    /// Generates an exercise sent on <paramref name="day"/> of an M3 <paramref name="sheet"/>, with a message key at
+    /// which the middle rotor does not turn over while the crib is enciphered.
+    /// </summary>
     public static MessageSource Generate(KeySheet sheet, int day, Kenngruppenbuch book, TauschtafelSet tables, Random random)
     {
         var allotment = Allotment(sheet, day, book, tables, random);
+        if (!Suits(sheet.KeyFor(day)))
+        {
+            throw new DomainException($"Day {day} of {sheet.Network} {sheet.Month} has a right rotor with two notches, so every crib turns the middle rotor over.");
+        }
+
         var (template, prefix, plaintext) = Compose(Templates, random);
-        var (message, solution) = Send(sheet, day, book, tables, random, allotment, plaintext);
+        var crib = template.Type!.Crib.Length;
+        var (message, solution) = Enumerable.Range(0, MaxAttempts)
+            .Select(_ => Send(sheet, day, book, tables, random, allotment, plaintext))
+            .FirstOrDefault(sent => !MiddleTurnsOver(sent.Solution, prefix.Length, crib));
+        if (solution is null)
+        {
+            throw new DomainException("No message key keeps the middle rotor still during the crib.");
+        }
+
         solution = solution with { Notes = $"{solution.Notes} The crib starts at position {prefix.Length}." };
 
         var date = new DateOnly(sheet.Month.Year, sheet.Month.Month, day);
@@ -165,6 +195,25 @@ public static class ExerciseGenerator
         var time = new TimeOnly(random.Next(24), random.Next(60));
         var groups = indicator.Encrypt(tables.TableFor(sheet.Month, day));
         return (RadioMessage.Create(time, groups, solution.Decrypt(MessageSource.Letters(plaintext))), solution);
+    }
+
+    // Whether the middle rotor turns over while the letters from start on are enciphered, from the message key.
+    private static bool MiddleTurnsOver(Solution solution, int start, int length)
+    {
+        var key = solution.MessageKey.Positions;
+        (Letter Left, Letter Middle, Letter Right) windows = (key[0].Letter, key[1].Letter, key[2].Letter);
+        for (var press = 0; press < start + length; press++)
+        {
+            var next = solution.WheelOrder.Step(windows);
+            if (press >= start && next.Middle != windows.Middle)
+            {
+                return true;
+            }
+
+            windows = next;
+        }
+
+        return false;
     }
 
     private static (Template Template, string Prefix, string PlainText) Compose(Template[] templates, Random random)
