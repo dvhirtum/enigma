@@ -332,6 +332,7 @@ body {
 
 /* The Bombe: a black cabinet with coloured drums, cream plates and engravings, and heavy cables on the back. */
 .bombe-front,
+.bombe-side,
 .bombe-back {
   display: block;
   width: 100%;
@@ -347,7 +348,12 @@ body {
   max-width: 66rem;
 }
 
+.bombe-side {
+  max-width: 34rem;
+}
+
 .bombe-front text,
+.bombe-side text,
 .bombe-back text {
   fill: #ece8df;
   text-anchor: middle;
@@ -355,6 +361,7 @@ body {
 }
 
 .bombe-front .cabinet,
+.bombe-side .cabinet,
 .bombe-back .cabinet {
   fill: #1c1c1a;
   stroke: #000;
@@ -381,6 +388,7 @@ body {
 }
 
 .bombe-front .engraving,
+.bombe-side .engraving,
 .bombe-back .engraving {
   fill: #cfc7b3;
   font-size: 9px;
@@ -388,12 +396,13 @@ body {
   pointer-events: none;
 }
 
-.bombe-front .engraving.small,
+.bombe-side .engraving.small,
 .bombe-back .engraving.small {
   font-size: 8px;
 }
 
-.bombe-front .plate-text {
+.bombe-front .plate-text,
+.bombe-side .plate-text {
   font-size: 10px;
   font-weight: 600;
 }
@@ -515,7 +524,7 @@ body {
   fill: #1c1c1a;
 }
 
-.bombe-front .end-plate {
+.bombe-side .end-plate {
   fill: #2b2a27;
   stroke: #0b0b0a;
 }
@@ -533,14 +542,14 @@ body {
   filter: drop-shadow(0 0 4px #e5372a);
 }
 
-.bombe-front .letter-window,
+.bombe-side .letter-window,
 .letter-dial .dial-window {
   fill: #f1ead8;
   stroke: #5c5a54;
   stroke-width: 2;
 }
 
-.bombe-front .window-letter,
+.bombe-side .window-letter,
 .letter-dial .dial-letter {
   fill: #1b1a18;
   font-size: 16px;
@@ -554,7 +563,7 @@ body {
 
 .wire-lamp text {
   fill: #8f8a7e;
-  font-size: 8px;
+  font-size: 11px;
 }
 
 .wire-lamp.lit circle {
@@ -566,13 +575,13 @@ body {
   font-weight: bold;
 }
 
-.bombe-front .stop-reading {
+.bombe-side .stop-reading {
   fill: #ffd76a;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600;
 }
 
-.bombe-front .speed-reading {
+.bombe-side .speed-reading {
   fill: #ece8df;
   font-size: 10px;
 }

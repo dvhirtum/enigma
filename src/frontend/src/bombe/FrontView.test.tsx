@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { BombeState } from '../api';
-import { carterMenu, carterPaused, carterPrinted, emptyBombe, emptyMachine } from '../test/fakeApi';
+import { carterMenu, carterPaused, carterPrinted } from '../test/fakeApi';
 import { click, dragTo } from '../test/pointer';
 import { renderBombe } from '../test/renderBombe';
 import { FrontView } from './FrontView';
@@ -59,44 +59,11 @@ describe('FrontView', () => {
     await waitFor(() => expect(api.bombe.turnScrambler).toHaveBeenCalledWith(0, 2, 'ZZF'));
   });
 
-  it('asks for a test register before a run, and lists what the run will not use', async () => {
-    renderBombe(<FrontView />, { ...emptyBombe, machine: { ...emptyMachine(), warnings: ['Chain 1, scrambler 1 has drums but no cables.'] } });
-
-    expect(await screen.findByRole('button', { name: 'Start' })).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByText('Plug a test register onto a common on the Back tab.')).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'Warnings' })).toHaveTextContent('Chain 1, scrambler 1 has drums but no cables.');
-  });
-
-  it('continues only at a stop', async () => {
-    renderBombe(<FrontView />, carter);
-
-    expect(await screen.findByRole('button', { name: 'Continue' })).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('img', { name: 'Stop lamp' })).toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
-  });
-
-  it('turns the drums to the stop the run is paused at and shows the test register', async () => {
-    const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
+  it('turns the drums and the indicator to the stop the run is paused at', async () => {
+    renderBombe(<FrontView />, { ...carter, run: carterPaused });
 
     expect(await screen.findByRole('group', { name: 'Indicator DKX' })).toBeInTheDocument();
     expect(within(await scrambler(1, 1)).getByRole('img', { name: 'lower drum III at D' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Stop lamp, lit' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Live wires ABCDEFGHIJKLMNOPRSTUVWXYZ' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Chains 1–2 · II V III');
-    expect(screen.getByRole('status')).toHaveTextContent('Stecker G/Q');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-
-    await waitFor(() => expect(api.bombe.continueRun).toHaveBeenCalled());
-  });
-
-  it('shows the progress of the run', async () => {
-    renderBombe(<FrontView />, { ...carter, run: carterPaused });
-
-    expect(await screen.findByLabelText('Run progress')).toHaveTextContent(
-      'Stopped · Chains 1–2 II V III · 1,713 of 17,576 positions · 1 stop · 1:57 · stops go to the Hut 8 notebook',
-    );
-    expect(screen.getByRole('progressbar', { name: 'Positions tested' })).toHaveAttribute('value', '1713');
   });
 
   it('spins the drums at full speed', async () => {
@@ -116,50 +83,5 @@ describe('FrontView', () => {
     fireEvent.click(within(printout).getByRole('button', { name: 'Clear printout' }));
 
     await waitFor(() => expect(api.bombe.clearPrintout).toHaveBeenCalled());
-  });
-
-  it('starts a run at the chosen speed', async () => {
-    const api = renderBombe(<FrontView />, carter);
-    const knob = await screen.findByRole('slider', { name: 'Speed' });
-    fireEvent.keyDown(knob, { key: 'End' });
-    fireEvent.keyUp(knob, { key: 'End' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-
-    await waitFor(() => expect(api.bombe.startRun).toHaveBeenCalledWith(null));
-  });
-
-  it('changes the speed of the running run when the key press ends', async () => {
-    const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
-    const knob = await screen.findByRole('slider', { name: 'Speed' });
-
-    fireEvent.keyDown(knob, { key: 'PageUp' });
-    fireEvent.keyDown(knob, { key: 'End' });
-
-    expect(knob).toHaveAttribute('aria-valuetext', 'Full speed');
-    expect(screen.getByText('Full speed')).toBeInTheDocument();
-    expect(api.bombe.setRunSpeed).not.toHaveBeenCalled();
-    fireEvent.keyUp(knob, { key: 'End' });
-    await waitFor(() => expect(api.bombe.setRunSpeed).toHaveBeenCalledWith(null));
-    expect(api.bombe.setRunSpeed).toHaveBeenCalledOnce();
-  });
-
-  it('stops a run and locks the settings while it runs', async () => {
-    const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
-
-    expect(await screen.findByRole('radio', { name: 'C' })).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('button', { name: 'Start' })).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('img', { name: 'lower drum III at D' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
-
-    await waitFor(() => expect(api.bombe.cancelRun).toHaveBeenCalled());
-  });
-
-  it('chooses the reflector', async () => {
-    const api = renderBombe(<FrontView />, carter);
-
-    fireEvent.click(await screen.findByRole('radio', { name: 'C' }));
-
-    await waitFor(() => expect(api.bombe.configure).toHaveBeenCalledWith({ reflector: 'C' }));
   });
 });

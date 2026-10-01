@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import type { BombeMachine, BombeRun, BombeState, PrintedStop } from '../api';
+import type { BombeMachine, BombeRun, BombeState } from '../api';
 import { usePlugDrag } from '../components/usePlugDrag';
 import { useWheelTurn } from '../components/useWheelTurn';
-import { alphabet, shiftLetter } from '../machine';
+import { shiftLetter } from '../machine';
 import { stopPage, useMachine } from '../store';
-import { Knob, PushButton, Selector } from './controls';
-import { advanceBy, chainLength, chainNames, drumColours, formatSpeed, fullSpeedStep, groupsOf, indicatorOf, rotors, rowsOf, speedAt, stepOf, wiresOf } from './drums';
+import { advanceBy, chainLength, chainNames, drumColours, groupsOf, indicatorOf, rotors, rowsOf, wiresOf } from './drums';
 
 const banks = 3;
 const pitch = 60;
@@ -19,13 +18,12 @@ const rackHeight = 60;
 const cabinetTop = rackTop + rackHeight + 12;
 const banksTop = cabinetTop + 16;
 const banksLeft = margin + 20;
-const endX = banksLeft + chainLength * pitch + 24;
-const endWidth = 240;
-const endCentre = endX + endWidth / 2;
-const cabinetRight = endX + endWidth + 12;
+const indicatorLeft = banksLeft + chainLength * pitch + 16;
+const indicatorWidth = 72;
+const indicatorX = indicatorLeft + indicatorWidth / 2;
+const cabinetRight = indicatorLeft + indicatorWidth + 12;
 const width = cabinetRight + margin;
 const height = banksTop + banks * bankHeight + 12 + margin;
-const lampPitch = 17;
 
 export function isActive(run: BombeRun | null | undefined): boolean {
   return run?.status === 'Running' || run?.status === 'Paused';
@@ -148,136 +146,9 @@ function chainLabel(machine: BombeMachine, chain: number): string {
   return `${chainNames(group)} · ${order}`;
 }
 
-/** The test register: a stop lamp, the register letter, its 26 wire lamps (the live ones lit) and the stop reading. */
-function TestRegister({ stop, top }: { stop: PrintedStop | null; top: number }) {
-  const wires = stop ? wiresOf(stop.liveWires) : '';
-  const lampsTop = top + 96;
-  return (
-    <g className="test-register">
-      <text className="engraving plate-text" x={endCentre} y={top + 12}>
-        TEST REGISTER
-      </text>
-      <g className={stop ? 'stop-lamp lit' : 'stop-lamp'} role="img" aria-label={stop ? 'Stop lamp, lit' : 'Stop lamp'}>
-        <circle className="lamp-rim" cx={endX + 36} cy={top + 50} r={13} />
-        <circle className="lamp-glass" cx={endX + 36} cy={top + 50} r={10} />
-        <text className="engraving" x={endX + 36} y={top + 76}>
-          STOP
-        </text>
-      </g>
-      <rect className="letter-window" x={endX + endWidth - 52} y={top + 36} width={28} height={28} rx={3} />
-      <text className="window-letter" x={endX + endWidth - 38} y={top + 50}>
-        {stop?.testRegister ?? ''}
-      </text>
-      <text className="engraving" x={endX + endWidth - 38} y={top + 76}>
-        LETTER
-      </text>
-      <g role={stop ? 'img' : undefined} aria-label={stop ? `Live wires ${stop.liveWires}` : undefined} aria-hidden={stop ? undefined : true}>
-        {[...alphabet].map((letter, index) => {
-          const x = endCentre + ((index % 13) - 6) * lampPitch;
-          const y = lampsTop + Math.floor(index / 13) * 22;
-          return (
-            <g key={letter} className={wires[index] === letter ? 'wire-lamp lit' : 'wire-lamp'}>
-              <circle cx={x} cy={y} r={7.5} />
-              <text x={x} y={y}>
-                {letter}
-              </text>
-            </g>
-          );
-        })}
-      </g>
-      {stop && (
-        <g role="status">
-          <text className="stop-reading" x={endCentre} y={lampsTop + 54}>
-            {chainNames(stop.chains)}
-            {stop.wheelOrder ? ` · ${stop.wheelOrder}` : ''}
-          </text>
-          <text className="stop-reading" x={endCentre} y={lampsTop + 72}>
-            {stop.stecker ? `Stecker ${stop.testRegister}/${stop.stecker}` : 'No stecker'}
-          </text>
-        </g>
-      )}
-    </g>
-  );
-}
-
-/** The speed knob. The speed is chosen when the drag or key press ends, not at every step on the way. */
-function SpeedKnob({ x, y }: { x: number; y: number }) {
-  const chosen = useMachine((store) => store.speed);
-  const chooseSpeed = useMachine((store) => store.chooseSpeed);
-  const [draft, setDraft] = useState<number | null>(null);
-  const step = draft ?? stepOf(chosen);
-
-  const commit = () => {
-    if (draft !== null) {
-      setDraft(null);
-      void chooseSpeed(speedAt(draft));
-    }
-  };
-
-  return (
-    <Knob label="Speed" x={x} y={y} max={fullSpeedStep} value={step} valueText={(value) => formatSpeed(speedAt(value))} onDraft={setDraft} onCommit={commit}>
-      <text className="speed-reading" x={x} y={y + 48}>
-        {formatSpeed(speedAt(step))}
-      </text>
-    </Knob>
-  );
-}
-
-/**
- * The right-hand end of the Bombe: the indicator drums level with the first bank, the test register level with the
- * second, and the controls level with the third: the reflector switch, the speed knob, and Start, Stop and Continue.
- */
-function EndPanel({ bombe, indicator }: { bombe: BombeState; indicator: string }) {
-  const configureBombe = useMachine((store) => store.configureBombe);
-  const speed = useMachine((store) => store.speed);
-  const startRun = useMachine((store) => store.startRun);
-  const cancelRun = useMachine((store) => store.cancelRun);
-  const continueRun = useMachine((store) => store.continueRun);
-  const [busy, setBusy] = useState(false);
-  const { run } = bombe;
-  const active = isActive(run);
-  const stop = run?.pause ?? null;
-  const controlsTop = bankTop(2);
-
-  const send = (change: Promise<boolean>) => {
-    setBusy(true);
-    void change.finally(() => setBusy(false));
-  };
-
-  return (
-    <g className="end-panel">
-      <rect className="end-plate" x={endX} y={banksTop - 8} width={endWidth} height={banks * bankHeight} rx={4} />
-      <g className="indicator" role="group" aria-label={`Indicator ${indicator}`}>
-        <text className="engraving plate-text" x={endCentre} y={bankTop(0) + 12}>
-          INDICATOR
-        </text>
-        {drumNames.map((name, drum) => (
-          <Drum key={drum} x={endCentre} y={drumY(0, drum)} letter={indicator[drum]} rotor={null} label={`${name} indicator ${indicator[drum]}`} />
-        ))}
-      </g>
-      <TestRegister stop={stop} top={bankTop(1)} />
-      <g className="controls" role="group" aria-label="Controls">
-        <Selector
-          label="Reflector"
-          x={endX + 52}
-          y={controlsTop + 56}
-          options={['B', 'C']}
-          value={bombe.settings.reflector}
-          disabled={active || busy}
-          onSelect={(reflector) => send(configureBombe({ reflector }))}
-        />
-        <SpeedKnob x={endX + endWidth - 64} y={controlsTop + 52} />
-        <PushButton label="Start" kind="start" x={endX + 44} y={controlsTop + 160} disabled={active || notReady(bombe) !== null} onPress={() => void startRun(speed)} />
-        <PushButton label="Stop" kind="stop" x={endCentre} y={controlsTop + 160} disabled={!active} onPress={() => void cancelRun()} />
-        <PushButton label="Continue" kind="continue" x={endX + endWidth - 44} y={controlsTop + 160} disabled={!stop} onPress={() => void continueRun()} />
-      </g>
-    </g>
-  );
-}
-
 /**
  * The front of the Bombe: the drum rack on top, and in the cabinet three banks (chains) of twelve scramblers with
- * three drums each (upper, middle, lower), with the end panel on the right. Before a run, drag a drum from the rack
+ * three drums each (upper, middle, lower), with the indicator drums right of the second bank. Before a run, drag a drum from the rack
  * onto a drum place, or pick it in the rack and then click the place: it fills that row of the chain from the first
  * scrambler up to the place. A click on a fitted drum, or dragging it off, takes it out; the mouse wheel or Arrow
  * Up/Down turn its letter.
@@ -413,7 +284,15 @@ function Front({ bombe }: { bombe: BombeState }) {
           );
         }),
       )}
-      <EndPanel bombe={bombe} indicator={indicator} />
+      <g className="indicator" role="group" aria-label={`Indicator ${indicator}`}>
+        <rect className="bank" x={indicatorLeft} y={bankTop(1) - 8} width={indicatorWidth} height={bankHeight - 4} rx={4} />
+        <text className="engraving plate-text" x={indicatorX} y={bankTop(1) + 7}>
+          INDICATOR
+        </text>
+        {drumNames.map((name, drum) => (
+          <Drum key={drum} x={indicatorX} y={drumY(1, drum)} letter={indicator[drum]} rotor={null} label={`${name} indicator ${indicator[drum]}`} />
+        ))}
+      </g>
       {held && drag?.point && (
         <circle className="held-drum" cx={drag.point.x} cy={drag.point.y} r={drumRadius} style={{ fill: drumColours[held] }} aria-hidden="true" />
       )}
@@ -427,37 +306,9 @@ export function notReady(bombe: BombeState): string | null {
   return groupsOf(machine).some((chains) => machine.chains[chains[0]].testRegister) ? null : 'Plug a test register onto a common on the Back tab.';
 }
 
-function elapsed(seconds: number): string {
-  const whole = Math.floor(seconds);
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
-}
-
-function plural(count: number, one: string): string {
-  return `${count.toLocaleString('en-US')} ${count === 1 ? one : `${one}s`}`;
-}
-
 /** The groups of chains a run tests, with their wheel orders: "Chains 1–2 II V III, Chain 3 no drums". */
 export function groupsLine(run: BombeRun): string {
   return run.groups.map((group) => `${chainNames(group.chains)} ${group.wheelOrder ?? 'drums missing'}`).join(', ');
-}
-
-function RunProgress({ run }: { run: BombeRun }) {
-  const state = { Running: 'Running', Paused: 'Stopped', Finished: 'Finished', Cancelled: 'Cancelled', Failed: 'Failed' }[run.status];
-  return (
-    <div className="run-progress">
-      <progress max={run.positions} value={run.positionsTested} aria-label="Positions tested" />
-      <p className="summary" aria-label="Run progress">
-        {state} · {groupsLine(run)} · {run.positionsTested.toLocaleString('en-US')} of {plural(run.positions, 'position')} · {plural(run.stops, 'stop')} ·{' '}
-        {elapsed(run.elapsedSeconds)}
-        {run.logged ? ' · stops go to the Hut 8 notebook' : ''}
-      </p>
-      {run.error && (
-        <p className="menu-warning" role="alert">
-          {run.error}
-        </p>
-      )}
-    </div>
-  );
 }
 
 /** The paper the Bombe prints its stops on, a hundred at a time, kept until cleared. */
@@ -522,30 +373,20 @@ function Printout({ bombe }: { bombe: BombeState }) {
   );
 }
 
-/** The front of the Bombe with its run: the warnings, the progress, the machine with its controls, and the printout. */
+/** The front of the Bombe: the drums, the indicator and the printout. The run is worked from the side. */
 export function FrontView() {
   const bombe = useMachine((store) => store.bombe);
   if (!bombe) {
     return null;
   }
   const active = isActive(bombe.run);
-  const waiting = notReady(bombe);
 
   return (
     <div className="bombe-view front-view">
-      {!active && waiting && <p className="summary">{waiting}</p>}
-      {!active && bombe.machine.warnings.length > 0 && (
-        <ul className="bombe-warnings" aria-label="Warnings">
-          {bombe.machine.warnings.map((warning) => (
-            <li key={warning}>{warning}</li>
-          ))}
-        </ul>
-      )}
-      {bombe.run && <RunProgress run={bombe.run} />}
       {!active && (
         <p className="summary">
           Drag drums from the rack onto a drum, or pick them in the rack and click a drum: the row fills up to that drum. Click a drum to take it out;
-          scroll or use Arrow Up/Down to turn it. The reflector switch, speed knob, Start, Stop and Continue are on the right-hand end.
+          scroll or use Arrow Up/Down to turn it. The run is started and watched on the Side tab.
         </p>
       )}
       <div className="bombe-front-frame">

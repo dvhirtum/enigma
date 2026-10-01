@@ -8,7 +8,7 @@ import { chainLength, chainNames, groupsOf } from './drums';
 import { isActive } from './FrontView';
 
 const margin = 16;
-const headerHeight = 64;
+const headerHeight = 0;
 const groupWidth = 290;
 const groupGap = 76;
 const letterPitch = 22;
@@ -129,15 +129,14 @@ function Jack({ socket, label, selected, disabled, onActivate, onGrab }: SocketP
 
 /**
  * The back of the Bombe: a group of socket strips for each chain, with the commons (one per letter) on the left, the two
- * jacks of each of its 12 scramblers on the right, and its test register and input wire at the foot. The diagonal board
- * switch is at the top, and the join switches stand between the groups. Cables go from jacks and test registers to
+ * jacks of each of its 12 scramblers on the right, and its test register and input wire at the foot. The join switches
+ * stand between the groups. Cables go from jacks and test registers to
  * commons: drag one end onto the other, or pick the two ends in turn. A click on a plugged jack pulls its cable out;
  * dragging its end moves it, or pulls it out off the commons.
  */
 function Back({ bombe }: { bombe: BombeState }) {
   const plugJack = useMachine((store) => store.plugJack);
   const setTestRegister = useMachine((store) => store.setTestRegister);
-  const configureBombe = useMachine((store) => store.configureBombe);
   const joinChains = useMachine((store) => store.joinChains);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -218,14 +217,6 @@ function Back({ bombe }: { bombe: BombeState }) {
   return (
     <svg ref={svg} className="bombe-back" viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Back of the Bombe" onKeyDown={onKeyDown}>
       <rect className="cabinet" x={4} y={4} width={width - 8} height={height - 8} rx={6} />
-      <ToggleSwitch
-        label="Diagonal board"
-        x={margin + 60}
-        y={margin + 26}
-        on={board}
-        disabled={switchesLocked}
-        onToggle={(on) => send(configureBombe({ diagonalBoard: on }))}
-      />
       {machine.chains.map((chain, index) => {
         const left = groupLeft(index);
         const group = groupsOf(machine).find((chains) => chains.includes(index))!;
@@ -348,7 +339,7 @@ function Back({ bombe }: { bombe: BombeState }) {
   );
 }
 
-/** The back of the Bombe: the cables, the test registers and input wires, the join switches and the diagonal board switch. */
+/** The back of the Bombe: the cables, the test registers and input wires, and the join switches. */
 export function BackView() {
   const bombe = useMachine((store) => store.bombe);
   if (!bombe) {
@@ -359,7 +350,7 @@ export function BackView() {
     <div className="bombe-view back-view">
       <p className="summary">
         Cable each scrambler's two jacks to the commons of its letters, and the test register to the common it watches: drag one end onto the other, or
-        click them in turn. Click a plugged jack to pull its cable out. The switches set the diagonal board and join the chains; the input wire turns with
+        click them in turn. Click a plugged jack to pull its cable out. The switches join the chains; the input wire turns with
         its arrows or Arrow Up/Down.
       </p>
       <Back bombe={bombe} />

@@ -12,7 +12,7 @@ In Bombe mode, the book button opens these instructions.
 
 ## The Hut 8 notebook
 
-Breaking a message is worked in the Hut 8 notebook, a separate window on squared paper, opened with the notebook button at the top right of Bombe mode. The machine window keeps the machines: the **Front** and **Back** of the Bombe and the **Checking** machine. You set them up by hand, or let the notebook set them up for you.
+Breaking a message is worked in the Hut 8 notebook, a separate window on squared paper, opened with the notebook button at the top right of Bombe mode. The machine window keeps the machines: the **Front**, **Side** and **Back** of the Bombe and the **Checking** machine. You set them up by hand, or let the notebook set them up for you.
 
 The notebook walks through the steps one by one: choose the message, place the crib, draw the menu, run the Bombe, choose a stop, check the stop and read the message. The current step is highlighted. A finished step is ticked off in the margin with what it wrote down. Click **Change** to reopen it: change it, and the steps after it start again, or click **Keep as it is**. Both windows show the same job, so what you do in one shows in the other.
 
@@ -64,7 +64,7 @@ When the menu is ready, click **Send the menu to the Bombe**. The notebook plugs
 
 You can also leave the notebook closed and work with pen and paper: plug up the Bombe, run it, write down the stops and set up the checking machine yourself. The machines work the same either way.
 
-The **Front** tab shows the Bombe as the operators saw it: a rack of drums, then three banks (chains) of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The three drums on the right are the indicator drums: they read the position with the letters reversed. Under each scrambler are the letters its jacks are cabled to on the back.
+The **Front** tab shows the Bombe as the operators saw it: a rack of drums, then three banks (chains) of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The three cream drums to the right of the second bank are the indicator drums: they read the position with the letters reversed. Under each scrambler are the letters its jacks are cabled to on the back.
 
 Each chain is a Bombe of its own, with its own drums, so a menu of up to 12 links plugged up on all three chains tests three wheel orders in one run. A longer menu takes two or three chains joined together. The notebook plugs up the menu this way: each chain's scramblers in order of the links' offsets, each scrambler set to its link's offset (ZZA, ZZB, ...).
 
@@ -74,19 +74,22 @@ Set up the drums as a Wren did:
 - **Take a drum out**: click it, or drag it off the machine.
 - **Turn a drum** with the mouse wheel over it, or Arrow Up/Down on it. The run uses the letters on the machine, so a drum set wrong makes the Bombe miss the key.
 
-The label above each chain gives its wheel order. The Bombe runs with whatever is set up: a scrambler cabled without all its drums passes no current, and drums without cables do nothing. The list above the machine says what a run will not use, and when a chain with a test register will stop at every position.
+The label above each chain gives its wheel order. The Bombe runs with whatever is set up: a scrambler cabled without all its drums passes no current, and drums without cables do nothing. The list on the **Side** tab says what a run will not use, and when a chain with a test register will stop at every position.
 
 The Bombe drums are lettered ahead of the Enigma rotors: drums I, II, III, VI, VII and VIII by one letter, IV by two and V by three. The drums and the indicator show these historical letters, so to get the ring settings to try on the Enigma, add the offsets to the indicator reading. On Carter's weather crib (wheel order II V III) the indicator reads DKX, as Carter reports; adding 1, 3 and 1 gives the ring settings ENY.
 
-The controls are on the right-hand end of the machine, under the indicator drums and the test register. Before you start:
+## The side of the Bombe
 
+The **Side** tab shows the right-hand end of the machine: the test register, and under it the switches, the speed knob and the buttons. Above it are the reason the Bombe cannot start yet, the list of what a run will not use, and the run's progress. Before you start:
+
+- set the **Diagonal board** switch. It turns Welchman's diagonal board on or off; it is on by default, and without it a menu gives many more false stops,
 - turn the **Reflector** switch to **B** or **C**,
 - plug a test register onto a common on the **Back** tab,
 - set the **Speed** knob, by dragging round it or with the arrow keys. At the left end the Bombe runs at its historical speed, a run of all 17,576 positions in about 20 minutes; further right it runs faster, and at the right end at full speed, which takes a second or so.
 
 Press **Start**. The drums turn through every position once, and each chain (or group of joined chains) with a test register is tested. The bar and the line under it show the chains and their wheel orders, how far the run has got, the stops found and the time taken. You can turn the speed knob while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes.
 
-At a set speed the drums turn with the run, and the Bombe halts at each stop, as the real one did. The stop lamp lights, the indicator drums give the reading, and the test register shows its letter and its 26 wires with the live ones lit, with the chains, wheel order and stecker partner under them. Press **Continue** to run on. At full speed the Bombe does not halt.
+At a set speed the drums on the Front turn with the run, and the Bombe halts at each stop, as the real one did. The stop lamp lights, the indicator drums on the Front give the reading, and the test register shows its letter and its 26 wires with the live ones lit, with the chains, wheel order and stecker partner under them. Press **Continue** to run on. At full speed the Bombe does not halt.
 
 ## The back of the Bombe
 
@@ -98,7 +101,6 @@ The **Back** tab shows a group of socket strips for each chain: the commons on t
 
 A jack plugs into the commons of its own chain. The test register is plugged onto a common the same way: it watches that letter's cable.
 
-- The **Diagonal board** switch at the top turns Welchman's diagonal board on or off. It is on by default; without it a menu gives many more false stops.
 - The **Join** switches between the chains cable a chain to the next, for menus of more than 12 links. Joined chains share their commons and the first chain's test register.
 - **Input wire**, turned with its arrows or Arrow Up/Down, sets the wire of each test register cable that the current goes into: the guessed stecker partner of the test register letter. It is A, or B when the test register is on A.
 

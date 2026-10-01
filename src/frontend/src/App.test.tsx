@@ -122,7 +122,7 @@ describe('App', () => {
 
     expect(api.windows.openHut8Notebook).toHaveBeenCalledOnce();
     const tabs = screen.getByRole('tablist', { name: 'Bombe views' });
-    expect(tabs).toHaveTextContent('FrontBackChecking');
+    expect(tabs).toHaveTextContent('FrontSideBackChecking');
   });
 
   it('shows the mode another window asks for', async () => {

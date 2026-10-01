@@ -7,9 +7,11 @@ import { useMachine } from '../store';
 import { BackView } from './BackView';
 import { CheckingView } from './CheckingView';
 import { FrontView } from './FrontView';
+import { SideView } from './SideView';
 
 const views = [
   { id: 'bombe-front', label: 'Front', View: FrontView },
+  { id: 'bombe-side', label: 'Side', View: SideView },
   { id: 'bombe-back', label: 'Back', View: BackView },
   { id: 'bombe-checking', label: 'Checking', View: CheckingView },
 ] as const;

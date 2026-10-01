@@ -84,7 +84,7 @@ test('switches to Bombe mode and back', async () => {
 
 test('places a crib and draws the menu in the Hut 8 notebook', async () => {
   await page.getByRole('button', { name: 'Bombe' }).click();
-  await expect(page.getByRole('tablist', { name: 'Bombe views' })).toHaveText('FrontBackChecking');
+  await expect(page.getByRole('tablist', { name: 'Bombe views' })).toHaveText('FrontSideBackChecking');
   const opened = app.waitForEvent('window');
   await page.getByRole('button', { name: 'Hut 8 notebook' }).click();
   const notebook = await opened;
@@ -147,6 +147,7 @@ test('plugs a scrambler and fits drums on the Bombe by hand', async () => {
   const scrambler = page.getByRole('group', { name: /^Chain 3 scrambler 12:/ });
   await scrambler.getByRole('spinbutton', { name: 'upper drum empty' }).click();
   await expect(scrambler.getByRole('spinbutton', { name: 'upper drum VIII at Z' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Side' }).click();
   await expect(page.getByRole('list', { name: 'Warnings' })).toContainText('Chain 3, scrambler 12 has only one jack cabled.');
 
   await page.getByRole('tab', { name: 'Checking' }).click();

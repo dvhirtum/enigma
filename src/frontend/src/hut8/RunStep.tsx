@@ -30,8 +30,8 @@ export function RunStep({ onDone }: { onDone: () => void }) {
   return (
     <>
       <p>
-        The Bombe in the machine window is plugged up with the menu. Fit the drums on the <strong>Front</strong> tab, check the cables and the diagonal
-        board on the <strong>Back</strong> tab, then Start. While this notebook is open, each stop is written down here.
+        The Bombe in the machine window is plugged up with the menu. Fit the drums on the <strong>Front</strong> tab and check the cables on the{' '}
+        <strong>Back</strong> tab, then set the diagonal board and Start on the <strong>Side</strong> tab. While this notebook is open, each stop is written down here.
       </p>
       {!bombe.machine.pluggedForMenu && !isActive(run) && (
         <p className="notebook-warning">
