@@ -46,6 +46,7 @@ public sealed record CheckState(
                     reading.Middle.Number,
                     CheckedKeyState.From(read),
                     check.ReadDecrypt()!,
+                    check.ReadingFitsStop == true,
                     check.MiddleRingScores().Single(score => score.Ring == reading.Middle).Best,
                     solution is null ? null : solution.Rings[0] == reading.Left && solution.Rings[1] == reading.Middle)
                 : null);
@@ -75,10 +76,10 @@ public sealed record CheckedKeyState(string Reflector, string WheelOrder, IReadO
 
 /// <summary>
 /// The left and middle rings (1–26) read from the indicator, the whole key they give (the Spruchschlüssel as the
-/// message key), the decrypt with it, whether the middle ring reads the message as well as the best middle ring
+/// message key), the decrypt with it, whether they lead to the stop's cores, whether the middle ring reads the message as well as the best middle ring
 /// does, and whether the rings are the solution's (null without a solution).
 /// </summary>
-public sealed record ReadingState(int Left, int Middle, CheckedKeyState Key, string Decrypt, bool MiddleRingFits, bool? RingsRight);
+public sealed record ReadingState(int Left, int Middle, CheckedKeyState Key, string Decrypt, bool FitsStop, bool MiddleRingFits, bool? RingsRight);
 
 /// <summary>The lamp a key lit, and the check of the stop the checking machine is set up for, with what the lamp wrote down.</summary>
 public sealed record LampState(string Lamp, CheckState? Check);

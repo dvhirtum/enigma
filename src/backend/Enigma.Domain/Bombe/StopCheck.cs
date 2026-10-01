@@ -194,6 +194,10 @@ public sealed class StopCheck
         return [.. from left in rings from middle in rings select Row(grundstellung, verfahrenkenngruppe, left, middle)];
     }
 
+    /// <summary>Whether the rings read lead to the stop's core positions at the crib; null before the rings are read.</summary>
+    public bool? ReadingFitsStop =>
+        Reading is { } reading ? Row(reading.Grundstellung, reading.Verfahrenkenngruppe, reading.Left, reading.Middle).Cores == Stop.Position : null;
+
     /// <summary>
     /// The whole key once the rings are read: the rings read and the right ring, the known plug pairs, and the
     /// Spruchschlüssel of the reading's row as the message key. Null before the rings are read.

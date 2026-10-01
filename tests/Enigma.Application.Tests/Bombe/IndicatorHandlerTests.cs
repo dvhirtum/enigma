@@ -87,6 +87,7 @@ public sealed class IndicatorHandlerTests
         var reading = Assert.IsType<ReadingState>(check.Reading);
         Assert.True(reading.RingsRight);
         Assert.True(reading.MiddleRingFits);
+        Assert.True(reading.FitsStop);
         Assert.Equal(solution.Rings, reading.Key.Rings);
         Assert.Equal(solution.MessageKey, reading.Key.MessageKey);
         Assert.Equal(solution.Plaintext, reading.Decrypt);
@@ -108,6 +109,7 @@ public sealed class IndicatorHandlerTests
 
         // Assert
         Assert.False(wrong.Reading?.RingsRight);
+        Assert.False(wrong.Reading?.FitsStop);
         Assert.Null(forgotten.Reading);
     }
 

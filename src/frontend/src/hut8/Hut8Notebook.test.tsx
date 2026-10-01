@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { BombeState } from '../api';
+import type { BombeCheck, BombeState } from '../api';
 import { carterBombe, carterChecked, carterChecker, carterMenu, carterPaused, carterRead, emptyBombe, fakeDay, withCrib } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
 import { Hut8Notebook } from './Hut8Notebook';
@@ -115,6 +115,22 @@ describe('Hut8Notebook', () => {
     await expectCurrent("Read the day's traffic");
     expect(screen.getByRole('listitem', { name: 'Read the indicators' })).toHaveTextContent('Rings C N Z, Spruchschlüssel ULA');
     expect(screen.getByRole('list', { name: 'Messages of the day' })).toBeInTheDocument();
+  });
+
+  it('stays on the indicators when the square read does not lead to the stop', async () => {
+    const pinched: BombeState = { ...exercise, day: fakeDay };
+    const wrong: BombeCheck = { ...carterRead, reading: { ...carterRead.reading!, fitsStop: false } };
+    renderBombe(<Hut8Notebook />, pinched, (fake) => {
+      fake.bombe.setUpChecker.mockResolvedValue({ ok: true, value: { ...pinched, checker: carterChecker } });
+      fake.bombe.confirmCheck.mockResolvedValue({
+        ok: true,
+        value: { verdict: 'True', cribMismatches: [], cribUnknown: [], solution: null, check: wrong },
+      });
+    });
+    await confirmTrue();
+
+    await expectCurrent('Read the indicators');
+    expect(screen.queryByRole('list', { name: 'Messages of the day' })).not.toBeInTheDocument();
   });
 
   it('goes back to the stops after a false verdict', async () => {

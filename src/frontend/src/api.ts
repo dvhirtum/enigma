@@ -366,6 +366,8 @@ export interface Reading {
   middle: number;
   key: CheckedKey;
   decrypt: string;
+  /** Whether the rings lead to the stop's cores at the crib. */
+  fitsStop: boolean;
   /** Whether the middle ring reads the message as well as the best middle ring does. */
   middleRingFits: boolean;
   ringsRight: boolean | null;
