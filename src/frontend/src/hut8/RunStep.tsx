@@ -35,7 +35,7 @@ export function RunStep({ onDone }: { onDone: () => void }) {
       </p>
       {!bombe.machine.pluggedForMenu && !isActive(run) && (
         <p className="notebook-warning">
-          The Bombe is no longer plugged up for this menu.{' '}
+          The Bombe is no longer plugged up for this menu, so its stops are not written down here.{' '}
           <button type="button" onClick={() => void plugUpMenu()}>
             Plug it up again
           </button>

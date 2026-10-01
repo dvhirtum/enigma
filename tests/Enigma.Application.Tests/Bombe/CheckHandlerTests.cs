@@ -71,6 +71,25 @@ public sealed class CheckHandlerTests
     }
 
     [Fact]
+    public async Task Should_forget_the_stop_on_the_checking_machine_When_the_stops_are_cleared()
+    {
+        // Arrange
+        var stop = await RunCarterAsync(intercept: false);
+        new SetUpCheckingMachineHandler(_store).Handle(new SetUpCheckingMachine(stop));
+        new ClearStopsHandler(_store).Handle(new ClearStops());
+
+        // Act
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        await _store.Run!.Completion.WaitAsync(TimeSpan.FromSeconds(60), Token);
+        var lamp = new PressCheckingKeyHandler(_store).Handle(new PressCheckingKey("q"));
+
+        // Assert
+        Assert.NotEmpty(Stops());
+        Assert.Null(lamp.Check);
+        Assert.Equal("GQ", new GetCheckHandler(_store).Handle(new GetCheck(stop)).Steckers);
+    }
+
+    [Fact]
     public async Task Should_take_out_the_cartridge_and_dummy_drum_When_they_are_set_empty()
     {
         // Arrange

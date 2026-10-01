@@ -205,7 +205,7 @@ public sealed class BombeHandlerTests
     }
 
     [Fact]
-    public void Should_show_the_drums_and_start_letters_When_drums_are_fitted_and_a_scrambler_is_turned()
+    public void Should_show_the_drums_and_start_letters_and_mark_the_Bombe_plugged_by_hand_When_a_scrambler_is_turned()
     {
         // Arrange
         SetUpCarter();
@@ -220,7 +220,40 @@ public sealed class BombeHandlerTests
         Assert.Equal(["II", "V", "III"], chain.Scramblers[0].Drums);
         Assert.Equal(["S", "W"], chain.Scramblers[0].Jacks);
         Assert.Equal(["ZZA", "ZZB", "ZZF", "ZZF"], chain.Scramblers.Take(4).Select(scrambler => scrambler.Start));
-        Assert.True(state.Machine.PluggedForMenu);
+        Assert.False(state.Machine.PluggedForMenu);
+        Assert.True(state.Machine.PluggedByHand);
+    }
+
+    [Fact]
+    public async Task Should_not_log_the_stops_When_a_scrambler_was_turned_after_plugging_up_the_menu()
+    {
+        // Arrange
+        SetUpCarter();
+        new TurnScramblerHandler(_store).Handle(new TurnScrambler(0, 2, "zzf"));
+
+        // Act
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+
+        // Assert
+        Assert.False(new GetRunHandler(_store).Handle(new GetRun()).Logged);
+        Assert.Empty(Stops());
+    }
+
+    [Fact]
+    public async Task Should_not_log_the_stops_When_the_menu_changed_after_plugging_it_up()
+    {
+        // Arrange
+        SetUpCarter();
+        new SetMenuHandler(_store).Handle(new SetMenu(CarterLinks[..12], "G"));
+
+        // Act
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        await _store.Run!.Completion.WaitAsync(Timeout, Token);
+
+        // Assert
+        Assert.False(new GetRunHandler(_store).Handle(new GetRun()).Logged);
+        Assert.Empty(Stops());
     }
 
     [Fact]

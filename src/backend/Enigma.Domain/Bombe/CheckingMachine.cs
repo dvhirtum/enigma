@@ -39,7 +39,7 @@ public sealed class CheckingMachine
     /// <summary>The core positions of the drums, or null until all three are fitted.</summary>
     public DrumPosition? CorePositions => WheelOrder?.CorePositions(DrumLetters);
 
-    /// <summary>The stop it was set up for, until its drums or reflector are changed.</summary>
+    /// <summary>The stop it was set up for, until its drums or reflector are changed or the stops are cleared.</summary>
     public int? Stop { get; private set; }
 
     /// <summary>Puts a reflector cartridge in the slot, or takes it out (null).</summary>
@@ -83,6 +83,9 @@ public sealed class CheckingMachine
 
         Stop = null;
     }
+
+    /// <summary>Forgets the stop it was set up for, when the stops are cleared.</summary>
+    public void ForgetStop() => Stop = null;
 
     /// <summary>
     /// Sets the machine up for a stop: its reflector, the dummy drum and the wheel order, the rings at the stop's indicator

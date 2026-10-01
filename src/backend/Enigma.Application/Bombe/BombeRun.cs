@@ -54,7 +54,7 @@ public sealed class BombeRun
         Reflector = job.Reflector;
         _printout = printout;
         _placement = job.Placement;
-        _log = _placement is null ? null : log;
+        _log = _placement is not null && job.Machine.PluggedMenu is { } plugged && ReferenceEquals(plugged, job.Menu) ? log : null;
         _solution = job.Source?.Solution;
         _speed = CheckSpeed(speed);
         _time = time;
@@ -67,7 +67,7 @@ public sealed class BombeRun
 
     public ReflectorType Reflector { get; }
 
-    /// <summary>Whether the stops go to the Hut 8 notebook's stop log too.</summary>
+    /// <summary>Whether the stops go to the Hut 8 notebook's stop log too: when a crib is placed and the Bombe is plugged up with the job's menu.</summary>
     public bool Logged => _log is not null;
 
     /// <summary>Completes when the run has finished, was cancelled or failed.</summary>

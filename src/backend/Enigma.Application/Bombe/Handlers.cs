@@ -304,7 +304,7 @@ public sealed class ClearStopsHandler(IBombeSessionStore store)
         store.Use(job =>
         {
             store.EnsureNotRunning("Cancel the run before clearing the stops.");
-            store.Stops.Clear();
+            store.ClearStops(job);
             return BombeState.From(job, store.Run, store);
         });
 }
@@ -334,11 +334,18 @@ internal static class BombeSessionStoreExtensions
             store.Run = null;
             if (clearStops)
             {
-                store.Stops.Clear();
+                store.ClearStops(job);
             }
 
             return BombeState.From(job, null, store);
         });
+
+    /// <summary>Clears the stops logged for the notebook, and the checking machine forgets the stop it was set up for.</summary>
+    public static void ClearStops(this IBombeSessionStore store, BombeJob job)
+    {
+        store.Stops.Clear();
+        job.Checker.ForgetStop();
+    }
 
     public static void EnsureNotRunning(this IBombeSessionStore store, string message)
     {

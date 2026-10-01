@@ -79,7 +79,7 @@ public sealed class BombeSetup
     /// <summary>Whether chain n is joined to chain n + 1.</summary>
     public IReadOnlyList<bool> Joins => _joins;
 
-    /// <summary>The menu the Bombe was last plugged up with, until it is changed by hand.</summary>
+    /// <summary>The menu the Bombe was last plugged up with, until its cables, test registers, joins or start letters are changed by hand.</summary>
     public Menu? PluggedMenu { get; private set; }
 
     /// <summary>The chains joined into one Bombe each, in order.</summary>
@@ -152,7 +152,11 @@ public sealed class BombeSetup
     }
 
     /// <summary>Sets the letters a scrambler's drums start at.</summary>
-    public void Turn(int chain, int scrambler, DrumPosition start) => ScramblerAt(chain, scrambler).Start = start;
+    public void Turn(int chain, int scrambler, DrumPosition start)
+    {
+        ScramblerAt(chain, scrambler).Start = start;
+        PluggedMenu = null;
+    }
 
     /// <summary>Plugs the test register of a chain onto a letter's common, or unplugs it when null.</summary>
     public void PlugTestRegister(int chain, Letter? letter)

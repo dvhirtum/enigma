@@ -60,7 +60,7 @@ To change the menu:
 
 ## Running the Bombe
 
-When the menu is ready, click **Send the menu to the Bombe**. The notebook plugs up the Bombe in the machine window with the menu and follows the run. If you plugged the Bombe by hand, it asks first. When you change the Bombe by hand afterwards, the notebook says so and offers **Plug it up again**.
+When the menu is ready, click **Send the menu to the Bombe**. The notebook plugs up the Bombe in the machine window with the menu and follows the run. If you plugged the Bombe by hand, it asks first. When you change the cables or turn a scrambler by hand afterwards, the notebook says so and offers **Plug it up again**.
 
 You can also leave the notebook closed and work with pen and paper: plug up the Bombe, run it, write down the stops and set up the checking machine yourself. The machines work the same either way.
 
@@ -110,7 +110,7 @@ Nothing on the Bombe can change while it runs or waits at a stop.
 
 The Bombe prints every stop on the **Printout** under the Front: the chains, the wheel order, the indicator reading, the test register letter, its live wires (a dot for each dead wire) and the stecker they give. It shows a hundred at a time, with **Load more**, and keeps them until you click **Clear printout**.
 
-While the Hut 8 notebook is open, a run also writes its stops in the notebook, with the placed crib, a hundred at a time: the wheel order, the indicator reading, the stecker of the test register letter and your verdict. Fit other drums and run again to add the stops of more wheel orders. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it. To check stops while the run goes on, click **Check the stops found so far**. Changing the message, crib or menu clears the notebook's stops and their checks, and so does **Clear stops**.
+While the Hut 8 notebook is open and the Bombe is plugged up with its menu, a run also writes its stops in the notebook, with the placed crib, a hundred at a time: the wheel order, the indicator reading, the stecker of the test register letter and your verdict. Fit other drums and run again to add the stops of more wheel orders. **Load more** shows the next hundred. Click a stop, or its **Check** button, to check it. To check stops while the run goes on, click **Check the stops found so far**. Changing the message, crib or menu clears the notebook's stops and their checks, and so does **Clear stops**; the checking machine then forgets the stop it was set up for.
 
 ## Checking a stop
 
