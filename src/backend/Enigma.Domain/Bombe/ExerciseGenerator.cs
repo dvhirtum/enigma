@@ -22,24 +22,20 @@ public static class ExerciseGenerator
     private static readonly Template[] Templates =
     [
         new(
-            "A weather forecast. Forecasts start with a fixed heading.",
-            "WETTERVORHERSAGE",
+            MessageType.Weather,
             random => Pick(random, "", "AN ALLE X ", $"{Number(random, 0, 23)} UHR X "),
             random => $"X {Pick(random, Areas)} X WIND {Pick(random, Directions)} {Number(random, 1, 9)} X SEEGANG {Number(random, 1, 7)} X "
                 + $"LUFTDRUCK {Number(random, 980, 1035)} X SICHT {Number(random, 1, 20)} SM"),
         new(
-            "A routine report from a patrol vessel that had nothing to report.",
-            "KEINEBESONDERENEREIGNISSE",
+            MessageType.NothingToReport,
             random => Pick(random, "", $"VON {Pick(random, Vessels)} {Number(random, 1, 40)} X ", $"{Number(random, 0, 23)} UHR X "),
             _ => string.Empty),
         new(
-            "A U-boat reporting its own position, course and speed.",
-            "EIGENERSTANDORTQU",
+            MessageType.OwnPosition,
             random => Pick(random, "", "AN BDU X ", $"VON U {Number(random, 100, 999)} X "),
             random => $"{Square(random)} X KURS {Number(random, 0, 359)} X FAHRT {Number(random, 5, 17)} SM"),
         new(
-            "A U-boat reporting a convoy to the U-boat command.",
-            "FEINDLICHERGELEITZUG",
+            MessageType.Convoy,
             random => Pick(random, "", "AN BDU X ", $"VON U {Number(random, 100, 999)} X "),
             random => $"X IN QU {Square(random)} X KURS {Number(random, 0, 359)} X FAHRT {Number(random, 6, 12)} SM X "
                 + $"{Number(random, 10, 60)} DAMPFER {Number(random, 2, 9)} ZERSTOERER"),
@@ -95,12 +91,13 @@ public static class ExerciseGenerator
         return new MessageSource(
             SourceKind.Exercise,
             $"Exercise, {date.ToString("d MMMM yyyy", CultureInfo.InvariantCulture)}",
-            $"Sent at {time.ToString("HHmm", CultureInfo.InvariantCulture)}. {template.Hint}",
+            $"Sent at {time.ToString("HHmm", CultureInfo.InvariantCulture)}. {template.Type.Hint}",
             message.ToString(),
             message,
             MessageSource.Letters(message.CipherText),
-            Crib.Parse(template.Crib),
-            solution);
+            template.Type.Crib,
+            solution,
+            template.Type.Place);
     }
 
     /// <summary>The plain text of a random template, before padding.</summary>
@@ -115,7 +112,7 @@ public static class ExerciseGenerator
     {
         var template = Templates[random.Next(Templates.Length)];
         var prefix = Compact(template.Prefix(random));
-        return (template, prefix, prefix + template.Crib + Compact(template.Body(random)));
+        return (template, prefix, prefix + template.Type.Crib.ToString() + Compact(template.Body(random)));
     }
 
     private static Kenngruppe RandomKenngruppe(Kenngruppenbuch book, ColumnRange columns, Random random) =>
@@ -139,5 +136,5 @@ public static class ExerciseGenerator
 
     private static string Compact(string text) => string.Concat(text.Where(c => c != ' '));
 
-    private sealed record Template(string Hint, string Crib, Func<Random, string> Prefix, Func<Random, string> Body);
+    private sealed record Template(MessageType Type, Func<Random, string> Prefix, Func<Random, string> Body);
 }

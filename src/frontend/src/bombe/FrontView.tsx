@@ -1,253 +1,414 @@
-import { useState } from 'react';
-import type { BombeRun, BombeState } from '../api';
-import { useMachine } from '../store';
-import {
-  advance,
-  drumColours,
-  drumLettersOf,
-  formatSpeed,
-  fullSpeedStep,
-  indicatorOf,
-  rotors,
-  rotorsOf,
-  scramblersOf,
-  speedAt,
-  stepOf,
-  wheelOrdersOf,
-} from './drums';
-import { drumLetters } from './MenuView';
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import type { BombeMachine, BombeRun, BombeState } from '../api';
+import { usePlugDrag } from '../components/usePlugDrag';
+import { useWheelTurn } from '../components/useWheelTurn';
+import { shiftLetter } from '../machine';
+import { stopPage, useMachine } from '../store';
+import { PushButton } from './controls';
+import { advanceBy, chainLength, chainNames, drumColours, groupsOf, indicatorOf, rotors, rowsOf, wiresOf } from './drums';
 
-const columns = 12;
 const banks = 3;
-const pitch = 50;
-const drumRadius = 18;
-const drumPitch = 44;
-const bankHeight = 3 * drumPitch + 30;
-const margin = 24;
-const indicatorX = margin + columns * pitch + 40;
-const width = indicatorX + 90;
-const height = banks * bankHeight + margin;
+const pitch = 60;
+const drumRadius = 22;
+const drumPitch = 56;
+const plateHeight = 24;
+const bankHeight = plateHeight + 3 * drumPitch + 32;
+const margin = 16;
+const rackTop = margin;
+const rackHeight = 60;
+const cabinetTop = rackTop + rackHeight + 12;
+const banksTop = cabinetTop + 16;
+const banksLeft = margin + 20;
+const indicatorLeft = banksLeft + chainLength * pitch + 16;
+const indicatorWidth = 72;
+const indicatorX = indicatorLeft + indicatorWidth / 2;
+const cabinetRight = indicatorLeft + indicatorWidth + 12;
+const width = cabinetRight + margin;
+const height = banksTop + banks * bankHeight + 12 + margin;
 
 export function isActive(run: BombeRun | null | undefined): boolean {
   return run?.status === 'Running' || run?.status === 'Paused';
 }
 
-function Drum({ x, y, letter, rotor, label }: { x: number; y: number; letter: string; rotor: string | null; label: string }) {
-  const angle = ((letter.charCodeAt(0) - 65) * 360) / 26;
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** The Start, Stop and Continue push buttons at `places`. */
+export function RunButtons({ bombe, places }: { bombe: BombeState; places: [Point, Point, Point] }) {
+  const speed = useMachine((store) => store.speed);
+  const startRun = useMachine((store) => store.startRun);
+  const cancelRun = useMachine((store) => store.cancelRun);
+  const continueRun = useMachine((store) => store.continueRun);
+  const active = isActive(bombe.run);
+  const [start, stop, resume] = places;
   return (
-    <g className="drum" aria-label={label} role="img">
-      <circle className="rim" cx={x} cy={y} r={drumRadius} style={rotor ? { stroke: drumColours[rotor] } : undefined} />
-      <line className="marker" x1={x} y1={y - drumRadius + 2} x2={x} y2={y - drumRadius + 8} transform={`rotate(${angle} ${x} ${y})`} />
-      <text x={x} y={y}>
-        {letter}
-      </text>
-    </g>
+    <>
+      <PushButton label="Start" kind="start" {...start} disabled={active || notReady(bombe) !== null} onPress={() => void startRun(speed)} />
+      <PushButton label="Stop" kind="stop" {...stop} disabled={!active} onPress={() => void cancelRun()} />
+      <PushButton label="Continue" kind="continue" {...resume} disabled={!bombe.run?.pause} onPress={() => void continueRun()} />
+    </>
   );
 }
 
 const drumNames = ['upper', 'middle', 'lower'];
+/** Drums light enough to need dark lettering. */
+const lightDrums = new Set(['IV', 'VIII']);
+
+/** A drum position on the machine: chain, scrambler (0 = the first of the chain) and row (0 = upper). */
+interface Place {
+  chain: number;
+  scrambler: number;
+  row: number;
+}
+
+const placeId = ({ chain, scrambler, row }: Place) => `drum-${chain}-${scrambler}-${row}`;
+const rackId = (rotor: string) => `rack-${rotor}`;
+
+function placeOf(id: string | null): Place | null {
+  const match = id?.match(/^drum-(\d+)-(\d+)-(\d+)$/);
+  return match ? { chain: Number(match[1]), scrambler: Number(match[2]), row: Number(match[3]) } : null;
+}
+
+const rotorOf = (id: string | null) => (id?.startsWith('rack-') ? id.slice(5) : null);
+
+const ticks = Array.from({ length: 26 }, (_, tick) => (tick * 360) / 26);
+
+interface DrumProps {
+  x: number;
+  y: number;
+  letter: string;
+  /** The rotor fitted, or null for an indicator drum. */
+  rotor: string | null;
+  label: string;
+  /** No drum fitted here: the empty spindle. */
+  empty?: boolean;
+  /** Standing still while the Bombe runs: not all three drums are fitted. */
+  idle?: boolean;
+  selected?: boolean;
+  /** The drop target for drums from the rack. */
+  socket?: string;
+  onTurn?: (steps: number) => void;
+  onActivate?: () => void;
+  onGrab?: (event: PointerEvent<SVGGElement>) => void;
+}
 
 /**
- * The front of the Bombe: three banks of twelve scramblers, three drums each (upper, middle, lower), and the indicator
- * drums. The menu's scramblers show their drum letters; the others are empty.
+ * A drum: painted in its rotor's colour (cream for an indicator drum), with 26 marks round its face, and the letter
+ * under the index mark above it. Without a drum, the bare spindle. The mouse wheel or Arrow Up/Down turn it; Enter or
+ * Space fits the rotor picked in the rack, or takes the drum out.
  */
-function Front({ bombe }: { bombe: BombeState }) {
-  const run = bombe.run;
-  const spinning = run?.status === 'Running' && run.speed === null;
-  const wheelOrder = run?.wheelOrder ?? (spinning ? null : (bombe.settings.wheelOrders[0] ?? null));
-  const core = isActive(run) && run?.position;
-  const position = core && wheelOrder ? drumLettersOf(core, wheelOrder) : 'ZZZ';
-  const drumRotors = wheelOrder?.split(' ') ?? [null, null, null];
-  const scramblers = scramblersOf(bombe.menu?.links ?? []);
-  const indicator = indicatorOf(position);
+function Drum({ x, y, letter, rotor, label, empty = false, idle = false, selected = false, socket, onTurn, onActivate, onGrab }: DrumProps) {
+  const wheel = useWheelTurn<SVGGElement>((steps) => onTurn?.(steps), !onTurn);
+  const angle = ((letter.charCodeAt(0) - 65) * 360) / 26;
+  const interactive = Boolean(onTurn ?? onActivate);
+  const onKeyDown = (event: KeyboardEvent) => {
+    const steps = { ArrowUp: 1, ArrowDown: -1 }[event.key];
+    if (steps !== undefined && onTurn && !empty) {
+      event.preventDefault();
+      onTurn(steps);
+    } else if ((event.key === 'Enter' || event.key === ' ') && onActivate) {
+      event.preventDefault();
+      onActivate();
+    }
+  };
+  const classes = ['drum', empty ? 'empty' : '', rotor ? '' : 'indicator', rotor && lightDrums.has(rotor) ? 'light' : '', idle ? 'idle' : '', interactive ? 'settable' : '', selected ? 'selected' : ''];
 
   return (
-    <svg className={spinning ? 'bombe-front spinning' : 'bombe-front'} viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Front of the Bombe">
-      {Array.from({ length: banks * columns }, (_, index) => {
-        const x = margin + (index % columns) * pitch + pitch / 2;
-        const top = margin + Math.floor(index / columns) * bankHeight;
-        const link = scramblers[index];
-        if (!link) {
-          return (
-            <g key={index} className="scrambler empty" aria-hidden="true">
-              {drumNames.map((_, drum) => (
-                <circle key={drum} cx={x} cy={top + drumRadius + drum * drumPitch} r={4} />
+    <g
+      ref={wheel}
+      className={classes.filter(Boolean).join(' ')}
+      aria-label={label}
+      role={interactive ? 'spinbutton' : 'img'}
+      aria-valuetext={interactive ? letter : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      data-socket={socket}
+      onKeyDown={interactive ? onKeyDown : undefined}
+      onPointerDown={onGrab}
+    >
+      {empty ? (
+        <>
+          <circle className="socket" cx={x} cy={y} r={drumRadius} />
+          <circle className="spindle" cx={x} cy={y} r={5} />
+        </>
+      ) : (
+        <>
+          <circle className="body" cx={x} cy={y} r={drumRadius} style={rotor ? { fill: drumColours[rotor] } : undefined} />
+          <g transform={`rotate(${-angle} ${x} ${y})`}>
+            <g className="ticks">
+              {ticks.map((tick) => (
+                <line key={tick} x1={x} y1={y - drumRadius + 1} x2={x} y2={y - drumRadius + (tick === 0 ? 6 : 4)} transform={`rotate(${tick} ${x} ${y})`} />
               ))}
             </g>
-          );
-        }
-        const letters = advance(position, link.offset);
-        return (
-          <g key={index} className="scrambler" role="group" aria-label={`Scrambler ${index + 1}: ${link.first}–${link.second} at ${drumLetters(link.offset)}`}>
-            {drumNames.map((name, drum) => (
-              <Drum key={drum} x={x} y={top + drumRadius + drum * drumPitch} letter={letters[drum]} rotor={drumRotors[drum]} label={`${name} drum ${letters[drum]}`} />
-            ))}
-            <text className="scrambler-label" x={x} y={top + 3 * drumPitch + 6}>
-              {link.first}
-              {link.second} {link.offset}
+          </g>
+          <circle className="hub" cx={x} cy={y + 10} r={4} />
+          <text className="index-letter" x={x} y={y - 4}>
+            {letter}
+          </text>
+        </>
+      )}
+      <path className="index-mark" d={`M ${x - 4} ${y - drumRadius - 6} L ${x + 4} ${y - drumRadius - 6} L ${x} ${y - drumRadius - 1} Z`} aria-hidden="true" />
+    </g>
+  );
+}
+
+const slotX = (scrambler: number) => banksLeft + scrambler * pitch + pitch / 2;
+const bankTop = (chain: number) => banksTop + chain * bankHeight;
+const chainTop = (chain: number) => bankTop(chain) + plateHeight;
+const drumY = (chain: number, row: number) => chainTop(chain) + drumPitch / 2 + 4 + row * drumPitch;
+
+/** A chain's label: its chains, joined or not, and the wheel order of its rows. */
+function chainLabel(machine: BombeMachine, chain: number): string {
+  const group = groupsOf(machine).find((chains) => chains.includes(chain))!;
+  if (group[0] !== chain) {
+    return `Chain ${chain + 1} · joined to chain ${chain}`;
+  }
+  const rows = rowsOf(machine, chain);
+  const order = rows.every(Boolean) ? rows.join(' ') : rows.some(Boolean) ? 'drums missing' : 'no drums';
+  return `${chainNames(group)} · ${order}`;
+}
+
+/**
+ * The front of the Bombe: the drum rack on top, and in the cabinet three banks (chains) of twelve scramblers with
+ * three drums each (upper, middle, lower), with the indicator drums right of the second bank and Start, Stop and Continue below them. Before a run, drag a drum from the rack
+ * onto a drum place, or pick it in the rack and then click the place: it fills that row of the chain from the first
+ * scrambler up to the place. A click on a fitted drum, or dragging it off, takes it out; the mouse wheel or Arrow
+ * Up/Down turn its letter.
+ */
+function Front({ bombe }: { bombe: BombeState }) {
+  const fitRow = useMachine((store) => store.fitRow);
+  const removeDrum = useMachine((store) => store.removeDrum);
+  const turnScrambler = useMachine((store) => store.turnScrambler);
+  const [picked, setPicked] = useState<string | null>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  const { machine, run } = bombe;
+  const active = isActive(run);
+  const spinning = run?.status === 'Running' && run.speed === null;
+  const position = !active ? 'ZZZ' : run?.pause ? run.pause.drumLetters : (run?.position ?? 'ZZZ');
+  const indicator = indicatorOf(position);
+
+  const rotorAt = ({ chain, scrambler, row }: Place) => machine.chains[chain].scramblers[scrambler].drums[row];
+
+  const activate = (id: string) => {
+    const rotor = rotorOf(id);
+    const place = placeOf(id);
+    if (rotor) {
+      setPicked(picked === rotor ? null : rotor);
+    } else if (place && picked) {
+      setPicked(null);
+      void fitRow(place.chain, place.row, place.scrambler, picked);
+    } else if (place && rotorAt(place)) {
+      void removeDrum(place.chain, place.scrambler, place.row);
+    }
+  };
+
+  const drop = (from: string, to: string | null) => {
+    setPicked(null);
+    const source = placeOf(from);
+    const rotor = rotorOf(from) ?? (source && rotorAt(source));
+    const target = placeOf(to);
+    if (target && rotor && to !== from) {
+      void fitRow(target.chain, target.row, target.scrambler, rotor);
+    } else if (source && rotorAt(source) && to === null) {
+      void removeDrum(source.chain, source.scrambler, source.row);
+    }
+  };
+
+  const { drag, grab } = usePlugDrag(svg, activate, drop);
+
+  const turn = (place: Place, steps: number) => {
+    const start = [...machine.chains[place.chain].scramblers[place.scrambler].start];
+    start[place.row] = shiftLetter(start[place.row], steps);
+    void turnScrambler(place.chain, place.scrambler, start.join(''));
+  };
+
+  const rackPitch = 64;
+  const rackLeft = width / 2 - ((rotors.length - 1) * rackPitch) / 2;
+  const rackY = rackTop + rackHeight / 2 - 4;
+  const held = drag?.point && (rotorOf(drag.from) ?? (placeOf(drag.from) && rotorAt(placeOf(drag.from)!)));
+
+  return (
+    <svg ref={svg} className={spinning ? 'bombe-front spinning' : 'bombe-front'} viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Front of the Bombe">
+      <g className="drum-rack" role="group" aria-label="Drum rack">
+        <rect className="wood" x={rackLeft - 44} y={rackTop} width={(rotors.length - 1) * rackPitch + 88} height={rackHeight - 8} rx={4} />
+        <rect className="rack-lip" x={rackLeft - 44} y={rackTop + rackHeight - 14} width={(rotors.length - 1) * rackPitch + 88} height={6} />
+        {rotors.map((rotor, index) => (
+          <g
+            key={rotor}
+            className={['rack-drum', lightDrums.has(rotor) ? 'light' : '', picked === rotor ? 'selected' : ''].filter(Boolean).join(' ')}
+            role="button"
+            tabIndex={active ? undefined : 0}
+            aria-label={`Drums ${rotor}`}
+            aria-pressed={picked === rotor}
+            data-socket={rackId(rotor)}
+            onPointerDown={active ? undefined : (event) => grab(rackId(rotor), event)}
+            onKeyDown={(event) => {
+              if (!active && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                activate(rackId(rotor));
+              } else if (event.key === 'Escape') {
+                setPicked(null);
+              }
+            }}
+          >
+            <circle cx={rackLeft + index * rackPitch} cy={rackY} r={20} style={{ fill: drumColours[rotor] }} />
+            <text x={rackLeft + index * rackPitch} y={rackY}>
+              {rotor}
             </text>
           </g>
-        );
-      })}
-      <g className="indicator" role="group" aria-label={`Indicator ${indicator}`}>
-        <text className="indicator-label" x={indicatorX} y={margin - 8}>
-          Indicator
-        </text>
-        {drumNames.map((name, drum) => (
-          <Drum key={drum} x={indicatorX} y={margin + drumRadius + drum * drumPitch} letter={indicator[drum]} rotor={null} label={`${name} indicator ${indicator[drum]}`} />
         ))}
       </g>
+      <rect className="cabinet" x={margin} y={cabinetTop} width={cabinetRight - margin} height={height - margin - cabinetTop} rx={6} />
+      {Array.from({ length: banks }, (_, chain) => (
+        <g key={chain} aria-hidden="true">
+          <rect className="bank" x={banksLeft - 8} y={bankTop(chain) - 8} width={chainLength * pitch + 16} height={bankHeight - 4} rx={4} />
+          <rect className="label-plate" x={banksLeft} y={bankTop(chain) - 2} width={chainLength * pitch} height={18} rx={2} />
+        </g>
+      ))}
+      {Array.from({ length: banks }, (_, chain) => (
+        <text key={chain} className="chain-label" x={banksLeft + 8} y={bankTop(chain) + 7}>
+          {chainLabel(machine, chain)}
+        </text>
+      ))}
+      {machine.chains.flatMap((chain, chainIndex) =>
+        chain.scramblers.map((scrambler, index) => {
+          const x = slotX(index);
+          const tested = scrambler.drums.every(Boolean);
+          const letters = active ? advanceBy(position, scrambler.start) : scrambler.start;
+          const jacks = scrambler.jacks.map((jack) => jack ?? '·').join('');
+          return (
+            <g key={`${chainIndex}-${index}`} className="scrambler" role="group" aria-label={`Chain ${chainIndex + 1} scrambler ${index + 1}: ${jacks}`}>
+              {drumNames.map((name, row) => {
+                const place = { chain: chainIndex, scrambler: index, row };
+                const rotor = scrambler.drums[row];
+                return (
+                  <Drum
+                    key={row}
+                    x={x}
+                    y={drumY(chainIndex, row)}
+                    letter={letters[row]}
+                    rotor={rotor}
+                    empty={!rotor}
+                    idle={!tested}
+                    selected={drag?.from === placeId(place)}
+                    socket={placeId(place)}
+                    label={`${name} drum ${rotor ?? 'empty'}${rotor ? ` at ${letters[row]}` : ''}`}
+                    onTurn={active || !rotor ? undefined : (steps) => turn(place, steps)}
+                    onActivate={active ? undefined : () => activate(placeId(place))}
+                    onGrab={active ? undefined : (event) => grab(placeId(place), event)}
+                  />
+                );
+              })}
+              <text className="scrambler-label" x={x} y={drumY(chainIndex, 2) + drumPitch / 2 + 6}>
+                {scrambler.jacks.some(Boolean) ? jacks : ''}
+              </text>
+            </g>
+          );
+        }),
+      )}
+      <g className="indicator" role="group" aria-label={`Indicator ${indicator}`}>
+        <rect className="bank" x={indicatorLeft} y={bankTop(1) - 8} width={indicatorWidth} height={bankHeight - 4} rx={4} />
+        <text className="engraving plate-text" x={indicatorX} y={bankTop(1) + 7}>
+          INDICATOR
+        </text>
+        {drumNames.map((name, drum) => (
+          <Drum key={drum} x={indicatorX} y={drumY(1, drum)} letter={indicator[drum]} rotor={null} label={`${name} indicator ${indicator[drum]}`} />
+        ))}
+      </g>
+      <g className="controls" role="group" aria-label="Controls">
+        <rect className="bank" x={indicatorLeft} y={bankTop(2) - 8} width={indicatorWidth} height={bankHeight - 4} rx={4} />
+        <RunButtons bombe={bombe} places={[0, 1, 2].map((row) => ({ x: indicatorX, y: drumY(2, row) - 6 })) as [Point, Point, Point]} />
+      </g>
+      {held && drag?.point && (
+        <circle className="held-drum" cx={drag.point.x} cy={drag.point.y} r={drumRadius} style={{ fill: drumColours[held] }} aria-hidden="true" />
+      )}
     </svg>
   );
 }
 
-function RunSettings({ bombe, locked }: { bombe: BombeState; locked: boolean }) {
-  const configureBombe = useMachine((store) => store.configureBombe);
-  const [busy, setBusy] = useState(false);
-  const chosen = rotorsOf(bombe.settings.wheelOrders);
-  const disabled = locked || busy;
-
-  const send = (change: Promise<boolean>) => {
-    setBusy(true);
-    void change.finally(() => setBusy(false));
-  };
-
-  const toggle = (rotor: string) => {
-    const next = chosen.includes(rotor) ? chosen.filter((own) => own !== rotor) : [...chosen, rotor];
-    send(configureBombe({ wheelOrders: wheelOrdersOf(next) }));
-  };
-
-  return (
-    <div className="run-settings">
-      <fieldset>
-        <legend>Reflector</legend>
-        {['B', 'C'].map((reflector) => (
-          <label key={reflector}>
-            <input
-              type="radio"
-              name="reflector"
-              checked={bombe.settings.reflector === reflector}
-              disabled={disabled}
-              onChange={() => send(configureBombe({ reflector }))}
-            />
-            {reflector}
-          </label>
-        ))}
-      </fieldset>
-      <fieldset>
-        <legend>Rotors</legend>
-        {rotors.map((rotor) => (
-          <label key={rotor}>
-            <input
-              type="checkbox"
-              aria-label={`Rotor ${rotor}`}
-              checked={chosen.includes(rotor)}
-              disabled={disabled || (chosen.includes(rotor) && chosen.length === 3)}
-              onChange={() => toggle(rotor)}
-            />
-            <span className="swatch" style={{ background: drumColours[rotor] }} />
-            {rotor}
-          </label>
-        ))}
-        <span className="summary" aria-label="Wheel orders">
-          {bombe.settings.wheelOrders.length === 1 ? `Wheel order ${bombe.settings.wheelOrders[0]}` : `${bombe.settings.wheelOrders.length} wheel orders`}
-        </span>
-      </fieldset>
-    </div>
-  );
+/** Why the Bombe cannot start yet, or null when it can. */
+export function notReady(bombe: BombeState): string | null {
+  const { machine } = bombe;
+  const tested = groupsOf(machine).filter((chains) => machine.chains[chains[0]].testRegister);
+  if (tested.length === 0) {
+    return 'Plug a test register onto a common on the Back tab.';
+  }
+  const working = (chains: number[]) =>
+    chains.some((chain) => machine.chains[chain].scramblers.some((scrambler) => scrambler.jacks.every(Boolean) && scrambler.drums.every(Boolean)));
+  return tested.some(working) ? null : 'Fit all three drums on a cabled scrambler of a chain with a test register.';
 }
 
-/** The speed slider. The speed is chosen when the drag or key press ends, not at every step on the way. */
-function SpeedControl() {
-  const chosen = useMachine((store) => store.speed);
-  const chooseSpeed = useMachine((store) => store.chooseSpeed);
-  const [draft, setDraft] = useState<number | null>(null);
-  const step = draft ?? stepOf(chosen);
-  const speed = speedAt(step);
+/** The groups of chains a run tests, with their wheel orders: "Chains 1–2 II V III, Chain 3 no drums". */
+export function groupsLine(run: BombeRun): string {
+  return run.groups.map((group) => `${chainNames(group.chains)} ${group.wheelOrder ?? 'drums missing'}`).join(', ');
+}
 
-  const commit = () => {
-    if (draft !== null) {
-      setDraft(null);
-      void chooseSpeed(speedAt(draft));
+/** The paper the Bombe prints its stops on, a hundred at a time, kept until cleared. */
+function Printout({ bombe }: { bombe: BombeState }) {
+  const printout = useMachine((store) => store.printout);
+  const loadPrintout = useMachine((store) => store.loadPrintout);
+  const clearPrintout = useMachine((store) => store.clearPrintout);
+  const total = bombe.printed;
+  const shown = printout.length;
+
+  // Stops printed while the first page is not full yet reload the first page.
+  useEffect(() => {
+    if (shown < Math.min(total, stopPage)) {
+      void loadPrintout();
     }
-  };
+  }, [total, shown, loadPrintout]);
 
   return (
-    <label className="speed">
-      Speed
-      <input
-        type="range"
-        min={0}
-        max={fullSpeedStep}
-        value={step}
-        aria-valuetext={formatSpeed(speed)}
-        onChange={(event) => setDraft(Number(event.target.value))}
-        onPointerUp={commit}
-        onKeyUp={commit}
-        onBlur={commit}
-      />
-      <span className="summary">{formatSpeed(speed)}</span>
-    </label>
-  );
-}
-
-function elapsed(seconds: number): string {
-  const whole = Math.floor(seconds);
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
-}
-
-function plural(count: number, one: string): string {
-  return `${count.toLocaleString('en-US')} ${count === 1 ? one : `${one}s`}`;
-}
-
-function RunProgress({ run }: { run: BombeRun }) {
-  const continueRun = useMachine((store) => store.continueRun);
-  const stop = run.pause;
-  const state = { Running: 'Running', Paused: 'Stopped', Finished: 'Finished', Cancelled: 'Cancelled', Failed: 'Failed' }[run.status];
-  return (
-    <div className="run-progress">
-      <progress max={run.positions} value={run.positionsTested} aria-label="Positions tested" />
-      <p className="summary" aria-label="Run progress">
-        {state}
-        {run.wheelOrder && ` · wheel order ${run.wheelOrder}`} · {run.wheelOrdersDone} of {plural(run.wheelOrders, 'wheel order')} done · {plural(run.stops, 'stop')} ·{' '}
-        {elapsed(run.elapsedSeconds)}
-      </p>
-      {run.error && (
-        <p className="menu-warning" role="alert">
-          {run.error}
-        </p>
+    <section className="printout" aria-label="Printout">
+      <h3>Printout</h3>
+      {total === 0 ? (
+        <p className="summary">No stops printed.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Chains</th>
+              <th scope="col">Wheel order</th>
+              <th scope="col">Indicator</th>
+              <th scope="col">Test register</th>
+              <th scope="col">Live wires</th>
+              <th scope="col">Stecker</th>
+            </tr>
+          </thead>
+          <tbody>
+            {printout.map((stop) => (
+              <tr key={stop.index}>
+                <td>{stop.index + 1}</td>
+                <td>{stop.chains.map((chain) => chain + 1).join('–')}</td>
+                <td>{stop.wheelOrder ?? '—'}</td>
+                <td className="letters">{stop.indicator}</td>
+                <td className="letters">{stop.testRegister}</td>
+                <td className="letters wires">{wiresOf(stop.liveWires)}</td>
+                <td className="letters">{stop.stecker ? `${stop.testRegister}/${stop.stecker}` : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-      {stop && (
-        <div className="bombe-stop" role="status">
-          <p>
-            Stop on wheel order {stop.wheelOrder}: indicator <strong>{stop.indicator}</strong> (core {stop.position}). Test register {stop.testRegister}:{' '}
-            {stop.stecker ? (
-              <>
-                stecker{' '}
-                <strong>
-                  {stop.testRegister}/{stop.stecker}
-                </strong>
-              </>
-            ) : (
-              `${stop.liveWires.length} live wires, no stecker`
-            )}
-            .
-          </p>
-          <button type="button" onClick={() => void continueRun()}>
-            Continue
+      <p className="crib-controls">
+        {shown < total && shown > 0 && (
+          <button type="button" onClick={() => void loadPrintout(true)}>
+            Load more
           </button>
-        </div>
-      )}
-    </div>
+        )}
+        <button type="button" disabled={total === 0 || isActive(bombe.run)} onClick={() => void clearPrintout()}>
+          Clear printout
+        </button>
+      </p>
+    </section>
   );
 }
 
-/** The front of the Bombe with the run: reflector, rotors, speed, start and stop, and the progress. */
+/** The front of the Bombe: the drums, the indicator, Start, Stop and Continue, and the printout. */
 export function FrontView() {
   const bombe = useMachine((store) => store.bombe);
-  const speed = useMachine((store) => store.speed);
-  const startRun = useMachine((store) => store.startRun);
-  const cancelRun = useMachine((store) => store.cancelRun);
   if (!bombe) {
     return null;
   }
@@ -255,22 +416,16 @@ export function FrontView() {
 
   return (
     <div className="bombe-view front-view">
-      <RunSettings bombe={bombe} locked={active} />
-      <div className="crib-controls">
-        <SpeedControl />
-        {active ? (
-          <button type="button" onClick={() => void cancelRun()}>
-            Stop
-          </button>
-        ) : (
-          <button type="button" disabled={!bombe.menu} onClick={() => void startRun(speed)}>
-            Start
-          </button>
-        )}
-        {!bombe.menu && <p className="summary">Build a menu first.</p>}
+      {!active && (
+        <p className="summary">
+          Drag drums from the rack onto a drum, or pick them in the rack and click a drum: the row fills up to that drum. Click a drum to take it out;
+          scroll or use Arrow Up/Down to turn it. The run is set up and watched on the Side tab.
+        </p>
+      )}
+      <div className="bombe-front-frame">
+        <Front bombe={bombe} />
       </div>
-      {bombe.run && <RunProgress run={bombe.run} />}
-      <Front bombe={bombe} />
+      <Printout bombe={bombe} />
     </div>
   );
 }

@@ -1,112 +1,99 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { BombeState } from '../api';
-import { carterBombe, carterMenu, carterPaused } from '../test/fakeApi';
+import { carterMenu, carterPaused, carterPrinted } from '../test/fakeApi';
+import { click, dragTo } from '../test/pointer';
 import { renderBombe } from '../test/renderBombe';
-import { wheelOrdersOf } from './drums';
 import { FrontView } from './FrontView';
 
-const carter: BombeState = { ...carterMenu, settings: { ...carterMenu.settings, wheelOrders: ['II V III'] } };
+const carter: BombeState = carterMenu;
+
+const scrambler = (chain: number, index: number) => screen.findByRole('group', { name: new RegExp(`^Chain ${chain} scrambler ${index}:`) });
 
 describe('FrontView', () => {
-  it('shows the menu on the first scramblers, set to their offsets, and the rest empty', async () => {
+  it('shows the drums of each chain at their start letters, with the cables of their scramblers', async () => {
     renderBombe(<FrontView />, carter);
 
-    const scramblers = await screen.findAllByRole('group', { name: /^Scrambler/ });
-    expect(scramblers).toHaveLength(13);
-    expect(scramblers[0]).toHaveAccessibleName('Scrambler 1: S–W at ZZA');
-    expect(within(scramblers[12]).getByRole('img', { name: 'lower drum P' })).toBeInTheDocument();
+    const first = await scrambler(1, 1);
+    expect(first).toHaveAccessibleName('Chain 1 scrambler 1: SW');
+    expect(within(first).getByRole('spinbutton', { name: 'lower drum III at A' })).toBeInTheDocument();
+    expect(within(await scrambler(2, 1)).getByRole('spinbutton', { name: 'lower drum III at P' })).toBeInTheDocument();
+    expect(within(await scrambler(2, 2)).getByRole('spinbutton', { name: 'upper drum empty' })).toBeInTheDocument();
+    expect(screen.getByText('Chains 1–2 · II V III')).toBeInTheDocument();
+    expect(screen.getByText('Chain 2 · joined to chain 1')).toBeInTheDocument();
+    expect(screen.getByText('Chain 3 · no drums')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Indicator AAA' })).toBeInTheDocument();
   });
 
-  it('turns the drums to the stop the run is paused at and offers to continue', async () => {
-    const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
+  it('fills a row up to the drum clicked after picking a rotor in the rack', async () => {
+    const api = renderBombe(<FrontView />, carter);
+    click(await screen.findByRole('button', { name: 'Drums I' }));
 
-    expect(await screen.findByRole('group', { name: 'Indicator DKX' })).toBeInTheDocument();
-    const scramblers = screen.getAllByRole('group', { name: /^Scrambler/ });
-    expect(within(scramblers[0]).getByRole('img', { name: 'lower drum D' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Stop on wheel order II V III: indicator DKX (core VMB). Test register G: stecker G/Q.');
+    click(within(await scrambler(3, 5)).getByRole('spinbutton', { name: 'upper drum empty' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-
-    await waitFor(() => expect(api.bombe.continueRun).toHaveBeenCalled());
+    await waitFor(() => expect(api.bombe.fitRow).toHaveBeenCalledWith(2, 0, 4, 'I'));
   });
 
-  it('shows the progress of the run', async () => {
+  it('fills a row up to the drum a rotor is dragged onto', async () => {
+    const api = renderBombe(<FrontView />, carter);
+    const rack = await screen.findByRole('button', { name: 'Drums IV' });
+
+    dragTo(rack, within(await scrambler(3, 9)).getByRole('spinbutton', { name: 'middle drum empty' }));
+
+    await waitFor(() => expect(api.bombe.fitRow).toHaveBeenCalledWith(2, 1, 8, 'IV'));
+  });
+
+  it('takes out a drum that is clicked', async () => {
+    const api = renderBombe(<FrontView />, carter);
+
+    click(within(await scrambler(1, 4)).getByRole('spinbutton', { name: 'middle drum V at Z' }));
+
+    await waitFor(() => expect(api.bombe.removeDrum).toHaveBeenCalledWith(0, 3, 1));
+  });
+
+  it('turns a drum by hand with the arrow keys', async () => {
+    const api = renderBombe(<FrontView />, carter);
+
+    fireEvent.keyDown(within(await scrambler(1, 3)).getByRole('spinbutton', { name: 'lower drum III at E' }), { key: 'ArrowUp' });
+
+    await waitFor(() => expect(api.bombe.turnScrambler).toHaveBeenCalledWith(0, 2, 'ZZF'));
+  });
+
+  it('turns the drums and the indicator to the stop the run is paused at', async () => {
     renderBombe(<FrontView />, { ...carter, run: carterPaused });
 
-    expect(await screen.findByLabelText('Run progress')).toHaveTextContent('Stopped · wheel order II V III · 0 of 1 wheel order done · 1 stop · 1:57');
-    expect(screen.getByRole('progressbar', { name: 'Positions tested' })).toHaveAttribute('value', '1713');
+    expect(await screen.findByRole('group', { name: 'Indicator DKX' })).toBeInTheDocument();
+    expect(within(await scrambler(1, 1)).getByRole('img', { name: 'lower drum III at D' })).toBeInTheDocument();
+  });
+
+  it('starts, stops and continues the run from the front', async () => {
+    const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
+    const controls = await screen.findByRole('group', { name: 'Controls' });
+
+    expect(within(controls).getByRole('button', { name: 'Start' })).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(within(controls).getByRole('button', { name: 'Continue' }));
+    fireEvent.click(within(controls).getByRole('button', { name: 'Stop' }));
+
+    await waitFor(() => expect(api.bombe.continueRun).toHaveBeenCalled());
+    await waitFor(() => expect(api.bombe.cancelRun).toHaveBeenCalled());
   });
 
   it('spins the drums at full speed', async () => {
-    renderBombe(<FrontView />, { ...carter, run: { ...carterPaused, status: 'Running', speed: null, pause: null, wheelOrder: null, position: null } });
+    renderBombe(<FrontView />, { ...carter, run: { ...carterPaused, status: 'Running', speed: null, pause: null, position: null } });
 
     expect(await screen.findByRole('group', { name: 'Front of the Bombe' })).toHaveClass('spinning');
   });
 
-  it('starts a run at the chosen speed', async () => {
-    const api = renderBombe(<FrontView />, carter);
-    const slider = await screen.findByRole('slider', { name: /Speed/ });
-    fireEvent.change(slider, { target: { value: '40' } });
-    fireEvent.pointerUp(slider);
+  it('prints the stops with their live wires, and clears the printout', async () => {
+    const api = renderBombe(<FrontView />, { ...carter, printed: 1 });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const printout = await screen.findByRole('region', { name: 'Printout' });
+    await waitFor(() => expect(within(printout).getAllByRole('row')).toHaveLength(2));
+    const row = within(printout).getAllByRole('row')[1];
+    expect(row).toHaveTextContent(['1', '1–2', 'II V III', carterPrinted.indicator, 'G', 'ABCDEFGHIJKLMNOP·RSTUVWXYZ', 'G/Q'].join(''));
 
-    await waitFor(() => expect(api.bombe.startRun).toHaveBeenCalledWith(null));
-  });
+    fireEvent.click(within(printout).getByRole('button', { name: 'Clear printout' }));
 
-  it('changes the speed of the running run when the drag ends', async () => {
-    const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
-    const slider = await screen.findByRole('slider', { name: /Speed/ });
-
-    fireEvent.change(slider, { target: { value: '20' } });
-    fireEvent.change(slider, { target: { value: '40' } });
-
-    expect(screen.getByText('Full speed')).toBeInTheDocument();
-    expect(api.bombe.setRunSpeed).not.toHaveBeenCalled();
-    fireEvent.pointerUp(slider);
-    await waitFor(() => expect(api.bombe.setRunSpeed).toHaveBeenCalledWith(null));
-    expect(api.bombe.setRunSpeed).toHaveBeenCalledOnce();
-  });
-
-  it('stops a run and locks the settings while it runs', async () => {
-    const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
-
-    expect(await screen.findByRole('radio', { name: 'C' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
-
-    await waitFor(() => expect(api.bombe.cancelRun).toHaveBeenCalled());
-  });
-
-  it('runs the wheel orders of the ticked rotors', async () => {
-    const api = renderBombe(<FrontView />, { ...carter, settings: { ...carter.settings, wheelOrders: wheelOrdersOf(['I', 'II', 'III', 'IV']) } });
-
-    expect(await screen.findByLabelText('Wheel orders')).toHaveTextContent('24 wheel orders');
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Rotor IV' }));
-
-    await waitFor(() => expect(api.bombe.configure).toHaveBeenCalledWith({ wheelOrders: wheelOrdersOf(['I', 'II', 'III']) }));
-  });
-
-  it('keeps at least three rotors', async () => {
-    renderBombe(<FrontView />, carter);
-
-    expect(await screen.findByRole('checkbox', { name: 'Rotor V' })).toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: 'Rotor I' })).toBeEnabled();
-  });
-
-  it('chooses the reflector', async () => {
-    const api = renderBombe(<FrontView />, carter);
-
-    fireEvent.click(await screen.findByRole('radio', { name: 'C' }));
-
-    await waitFor(() => expect(api.bombe.configure).toHaveBeenCalledWith({ reflector: 'C' }));
-  });
-
-  it('asks for a menu before a run', async () => {
-    renderBombe(<FrontView />, carterBombe);
-
-    expect(await screen.findByRole('button', { name: 'Start' })).toBeDisabled();
-    expect(screen.getByText('Build a menu first.')).toBeInTheDocument();
+    await waitFor(() => expect(api.bombe.clearPrintout).toHaveBeenCalled());
   });
 });

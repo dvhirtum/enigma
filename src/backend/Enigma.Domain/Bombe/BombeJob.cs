@@ -3,13 +3,11 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// A Bombe job: the message and its cipher text, the crib and where it is placed, the menu, and the settings a run
-/// uses (input letter, diagonal board, reflector and wheel orders).
+/// A Bombe job: the message and its cipher text, the crib and where it is placed, the menu, the settings a run uses
+/// (diagonal board and reflector), and the machines: the Bombe and the checking machine, both set up by hand.
 /// </summary>
 public sealed class BombeJob
 {
-    private Letter? _input;
-
     /// <summary>The message being broken, or null before one is loaded.</summary>
     public MessageSource? Source { get; private set; }
 
@@ -21,17 +19,14 @@ public sealed class BombeJob
 
     public Menu? Menu { get; private set; }
 
-    /// <summary>The live wire on the test register cable: as set, or A (B when the test register is on A).</summary>
-    public Letter Input => _input ?? (Menu?.TestRegister == Letter.A ? Letter.A.Shift(1) : Letter.A);
-
-    /// <summary>The input letter as set, or null for the default.</summary>
-    public Letter? ChosenInput => _input;
-
     public bool DiagonalBoard { get; private set; } = true;
 
     public ReflectorType Reflector { get; private set; } = ReflectorType.B;
 
-    public IReadOnlyList<WheelOrder> WheelOrders { get; private set; } = WheelOrder.All;
+    /// <summary>The Bombe's chains, cables and drums.</summary>
+    public BombeSetup Machine { get; } = new();
+
+    public CheckingMachine Checker { get; } = new();
 
     /// <summary>Every position the crib fits under the cipher text, crashed or not.</summary>
     public IReadOnlyList<CribPlacement> Placements => Crib is null ? [] : CribPlacement.All(CipherText, Crib);
@@ -66,7 +61,7 @@ public sealed class BombeJob
     }
 
     /// <summary>
-    /// Plugs up a menu by hand from links of the placement. Without a test register letter it is chosen as in
+    /// Draws a menu by hand from links of the placement. Without a test register letter it is chosen as in
     /// <see cref="Bombe.Menu.Create"/>.
     /// </summary>
     public void SetMenu(IReadOnlyList<MenuLink> links, Letter? testRegister)
@@ -80,34 +75,23 @@ public sealed class BombeJob
     }
 
     /// <summary>Builds the menu from the placement again.</summary>
-    public void BuildMenu() =>
-        Menu = Menu.Build(Placement ?? throw new DomainException("Place the crib first."));
+    public void BuildMenu() => Menu = Menu.Build(Placement ?? throw new DomainException("Place the crib first."));
 
-    /// <summary>Sets the run settings. A null input letter uses the default (see <see cref="Input"/>).</summary>
-    public void Configure(Letter? input, bool diagonalBoard, ReflectorType reflector, IReadOnlyList<WheelOrder> wheelOrders)
+    /// <summary>Plugs up the Bombe with the menu.</summary>
+    public void PlugUpMenu() => Machine.PlugUp(Menu ?? throw new DomainException("Draw a menu first."));
+
+    /// <summary>Sets the run settings.</summary>
+    public void Configure(bool diagonalBoard, ReflectorType reflector)
     {
         ArgumentNullException.ThrowIfNull(reflector);
-        ArgumentNullException.ThrowIfNull(wheelOrders);
 
         if (reflector.IsThin)
         {
             throw new DomainException("The three-rotor Bombe takes reflector B or C.");
         }
 
-        if (wheelOrders.Count == 0)
-        {
-            throw new DomainException("Choose at least one wheel order.");
-        }
-
-        if (wheelOrders.Distinct().Count() < wheelOrders.Count)
-        {
-            throw new DomainException("A wheel order is chosen more than once.");
-        }
-
-        _input = input;
         DiagonalBoard = diagonalBoard;
         Reflector = reflector;
-        WheelOrders = [.. wheelOrders];
     }
 
     private static bool Same(MenuLink a, MenuLink b) =>

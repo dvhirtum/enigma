@@ -1,53 +1,95 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { carterBombe, carterMenu, carterPaused } from '../test/fakeApi';
+import { carterMenu, carterPaused, emptyBombe } from '../test/fakeApi';
+import { click, dragTo } from '../test/pointer';
 import { renderBombe } from '../test/renderBombe';
 import { BackView } from './BackView';
 
+const jack = (chain: number, scrambler: number, jack: number) => screen.findByRole('button', { name: new RegExp(`^Chain ${chain} scrambler ${scrambler} jack ${jack}\\b`) });
+const common = (chain: number, letter: string) => screen.findByRole('button', { name: `Chain ${chain} common ${letter}` });
+
 describe('BackView', () => {
-  it('cables each scrambler to the commons of its letters', async () => {
+  it('shows each scrambler cabled to the commons of its letters, and the test register', async () => {
     renderBombe(<BackView />, carterMenu);
 
-    expect(await screen.findAllByRole('img', { name: /^Scrambler \d+ jacks/ })).toHaveLength(13);
-    expect(screen.getByRole('img', { name: 'Scrambler 1 jacks S and W' })).toBeInTheDocument();
-    expect(screen.getAllByRole('img', { name: /^Common/ })).toHaveLength(12);
-    expect(screen.getByRole('img', { name: 'Test register on G, input A' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Diagonal board on' })).toBeInTheDocument();
+    expect(await jack(1, 1, 1)).toHaveAccessibleName('Chain 1 scrambler 1 jack 1, plugged to S');
+    expect(await jack(1, 1, 2)).toHaveAccessibleName('Chain 1 scrambler 1 jack 2, plugged to W');
+    expect(await jack(2, 1, 2)).toHaveAccessibleName('Chain 2 scrambler 1 jack 2, plugged to E');
+    expect(await jack(2, 2, 1)).toHaveAccessibleName('Chain 2 scrambler 2 jack 1');
+    expect(screen.getByRole('button', { name: 'Chain 1 test register, plugged to G' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Join chains 1–2' })).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('switches the diagonal board off', async () => {
+  it('cables a jack to a common clicked in turn', async () => {
+    const api = renderBombe(<BackView />, emptyBombe);
+
+    click(await jack(3, 2, 1));
+    click(await common(3, 'K'));
+
+    await waitFor(() => expect(api.bombe.plugJack).toHaveBeenCalledWith(2, 1, 0, 'K'));
+  });
+
+  it('cables a jack dragged onto a common', async () => {
+    const api = renderBombe(<BackView />, emptyBombe);
+
+    dragTo(await common(1, 'E'), await jack(1, 5, 2));
+
+    await waitFor(() => expect(api.bombe.plugJack).toHaveBeenCalledWith(0, 4, 1, 'E'));
+  });
+
+  it('pulls out the cable of a plugged jack that is clicked', async () => {
     const api = renderBombe(<BackView />, carterMenu);
 
-    fireEvent.click(await screen.findByRole('checkbox', { name: 'Diagonal board' }));
+    click(await jack(1, 3, 1));
 
-    await waitFor(() => expect(api.bombe.configure).toHaveBeenCalledWith({ diagonalBoard: false }));
+    await waitFor(() => expect(api.bombe.plugJack).toHaveBeenCalledWith(0, 2, 0, null));
   });
 
-  it('shows the diagonal board switched off', async () => {
-    renderBombe(<BackView />, { ...carterMenu, settings: { ...carterMenu.settings, diagonalBoard: false } });
+  it('plugs the test register onto a common', async () => {
+    const api = renderBombe(<BackView />, emptyBombe);
 
-    expect(await screen.findByRole('img', { name: 'Diagonal board off' })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Diagonal board' })).not.toBeChecked();
+    click(await screen.findByRole('button', { name: 'Chain 2 test register' }));
+    click(await common(2, 'R'));
+
+    await waitFor(() => expect(api.bombe.setTestRegister).toHaveBeenCalledWith(1, { letter: 'R' }));
+  });
+
+  it('does not cable a jack to the commons of another chain', async () => {
+    const api = renderBombe(<BackView />, emptyBombe);
+
+    click(await jack(1, 1, 1));
+    click(await common(2, 'A'));
+
+    expect(await common(2, 'A')).toHaveAttribute('aria-pressed', 'true');
+    expect(api.bombe.plugJack).not.toHaveBeenCalled();
+  });
+
+  it('joins chains', async () => {
+    const api = renderBombe(<BackView />, emptyBombe);
+
+    fireEvent.click(await screen.findByRole('switch', { name: 'Join chains 2–3' }));
+
+    await waitFor(() => expect(api.bombe.joinChains).toHaveBeenCalledWith(1, true));
   });
 
   it('puts the input on another wire of the test register cable', async () => {
     const api = renderBombe(<BackView />, carterMenu);
 
-    fireEvent.change(await screen.findByRole('combobox', { name: /Input on wire/ }), { target: { value: 'K' } });
+    const input = await screen.findByRole('spinbutton', { name: 'Chain 1 input wire' });
+    expect(input).toHaveAttribute('aria-valuetext', 'A');
+    expect(screen.queryByRole('spinbutton', { name: 'Chain 2 input wire' })).not.toBeInTheDocument();
 
-    await waitFor(() => expect(api.bombe.configure).toHaveBeenCalledWith({ input: 'K' }));
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+    await waitFor(() => expect(api.bombe.setTestRegister).toHaveBeenCalledWith(0, { input: 'Z' }));
   });
 
-  it('locks the switches while the Bombe runs', async () => {
+  it('locks the switches and jacks while the Bombe runs', async () => {
     renderBombe(<BackView />, { ...carterMenu, run: carterPaused });
 
-    expect(await screen.findByRole('checkbox', { name: 'Diagonal board' })).toBeDisabled();
-    expect(screen.getByRole('combobox', { name: /Input on wire/ })).toBeDisabled();
-  });
-
-  it('asks for a menu before plugging up', async () => {
-    renderBombe(<BackView />, carterBombe);
-
-    expect(await screen.findByText('Build a menu to plug up the Bombe.')).toBeInTheDocument();
+    expect(await screen.findByRole('switch', { name: 'Join chains 2–3' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('spinbutton', { name: 'Chain 1 input wire' })).toHaveAttribute('aria-disabled', 'true');
+    expect(await jack(1, 1, 1)).toHaveAttribute('aria-disabled', 'true');
+    expect(within(screen.getByRole('group', { name: 'Back of the Bombe' })).getAllByRole('button', { name: /common/ })[0]).toHaveAttribute('aria-disabled', 'true');
   });
 });

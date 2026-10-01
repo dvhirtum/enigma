@@ -25,7 +25,7 @@ describe('checking in the machine store', () => {
   it('leaves the lamp dark when the key is released before the lamp comes back', async () => {
     const { api, store } = await openStore();
     const lamp = deferred<ApiResult<{ lamp: string }>>();
-    api.bombe.pressCheckKey.mockReturnValueOnce(lamp.promise);
+    api.bombe.pressCheckerKey.mockReturnValueOnce(lamp.promise);
 
     const pressed = store.getState().pressCheckKey('Q');
     store.getState().releaseCheckKey();
@@ -35,13 +35,15 @@ describe('checking in the machine store', () => {
     expect(store.getState().checkLamp).toBeNull();
   });
 
-  it('keeps both pairs when two partners are typed before the first is saved', async () => {
+  it('rubs out both letters when two boxes are clicked before the first is saved', async () => {
     const { api, store } = await openStore();
 
-    await Promise.all([store.getState().setPartner('A', 'D'), store.getState().setPartner('E', 'T')]);
+    store.setState({ check: { ...carterCheck, steckers: 'AD EP EX GQ' } });
 
-    expect(api.bombe.setCheck).toHaveBeenLastCalledWith(0, { steckers: 'AD ET GQ' });
-    expect(store.getState().check?.steckers).toBe('AD ET GQ');
+    await Promise.all([store.getState().eraseLetter('A'), store.getState().eraseLetter('E')]);
+
+    expect(api.bombe.setCheck).toHaveBeenLastCalledWith(0, { steckers: 'GQ' });
+    expect(store.getState().check?.steckers).toBe('GQ');
   });
 
   it('keeps both pairs when two suggestions are accepted quickly', async () => {
@@ -56,16 +58,16 @@ describe('checking in the machine store', () => {
     const { api, store } = await openStore();
     const late = deferred<ApiResult<BombeCheck>>();
     api.bombe.setCheck.mockReturnValueOnce(late.promise);
-    const second: BombeCheck = { ...carterCheck, stop: carterStops[1], position: 'LRG' };
+    const second: BombeCheck = { ...carterCheck, stop: carterStops[1], steckers: 'GX' };
     api.bombe.getCheck.mockResolvedValueOnce({ ok: true, value: second });
 
-    const turned = store.getState().stepCheckDrum(2, 1);
+    const changed = store.getState().eraseLetter('G');
     await store.getState().openCheck(1);
-    late.resolve({ ok: true, value: { ...carterCheck, position: 'WPD' } });
-    await turned;
+    late.resolve({ ok: true, value: { ...carterCheck, steckers: 'AD GQ' } });
+    await changed;
 
     expect(store.getState().check?.stop.index).toBe(1);
-    expect(store.getState().check?.position).toBe('LRG');
+    expect(store.getState().check?.steckers).toBe('GX');
   });
 
   it('drops a next page when the first page was loaded again meanwhile', async () => {

@@ -1,13 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import type { BombeSource } from '../api';
+import { Hand, Squares } from '../notebook/paper';
 import { useMachine } from '../store';
+import { groups, plural } from './letters';
 
 const kinds: Record<BombeSource['kind'], string> = { Intercept: 'Historical intercept', Exercise: 'Exercise', Pasted: 'Pasted' };
-
-/** The cipher text in groups of five. */
-export function groups(text: string): string {
-  return text.match(/.{1,5}/g)?.join(' ') ?? '';
-}
 
 function InterceptPicker() {
   const intercepts = useMachine((store) => store.intercepts);
@@ -16,8 +13,8 @@ function InterceptPicker() {
   const chosen = id || intercepts[0]?.id;
 
   return (
-    <div className="bombe-source">
-      <label>
+    <p className="notebook-actions">
+      <label className="inline-label">
         Intercept
         <select value={chosen ?? ''} onChange={(event) => setId(event.target.value)} disabled={intercepts.length === 0}>
           {intercepts.map((intercept) => (
@@ -31,7 +28,7 @@ function InterceptPicker() {
       <button type="button" disabled={!chosen} onClick={() => chosen && void loadIntercept(chosen)}>
         Load intercept
       </button>
-    </div>
+    </p>
   );
 }
 
@@ -45,52 +42,60 @@ function PasteForm() {
   };
 
   return (
-    <form className="bombe-paste" onSubmit={onSubmit}>
+    <form className="notebook-form" aria-label="Paste a message" onSubmit={onSubmit}>
       <label>
         Radio message or cipher text
-        <textarea value={text} rows={4} spellCheck={false} onChange={(event) => setText(event.target.value)} />
+        <textarea
+          className="hand-input"
+          value={text}
+          rows={3}
+          spellCheck={false}
+          placeholder="1840 = 24 = QWER TZUI ABCDE FGHIJ"
+          onChange={(event) => setText(event.target.value)}
+        />
       </label>
-      <button type="submit">Load pasted text</button>
+      <p className="notebook-actions">
+        <button type="submit" disabled={text.trim() === ''}>
+          Load pasted text
+        </button>
+      </p>
     </form>
   );
 }
 
-function LoadedMessage() {
+/** The message as it was received, and its cipher text in groups of five. */
+export function MessageSummary() {
   const source = useMachine((store) => store.bombe?.source);
   const cipherText = useMachine((store) => store.bombe?.cipherText ?? '');
   if (!source) {
-    return <p className="bombe-empty">No message loaded. Load an intercept, a new exercise or pasted text.</p>;
+    return null;
   }
 
   return (
-    <section className="bombe-message" aria-label="Loaded message">
-      <h2>{source.title}</h2>
-      <p className="summary">{kinds[source.kind]}</p>
-      {source.hint && <p className="bombe-hint">{source.hint}</p>}
-      <h3>As received</h3>
-      <pre aria-label="Transcript">{source.transcript}</pre>
-      <h3>Cipher text ({cipherText.length} letters)</h3>
-      <pre aria-label="Cipher text">{groups(cipherText)}</pre>
+    <section className="notebook-section" aria-label="Loaded message">
+      <p>
+        <Hand>{source.title}</Hand> · {kinds[source.kind]} · {plural(cipherText.length, 'letter')}
+      </p>
+      {source.hint && <p className="hut8-hint">{source.hint}</p>}
+      <Squares text={groups(cipherText)} label="Cipher text" />
     </section>
   );
 }
 
 /** Loads the message to break: a historical intercept, a new exercise or pasted text. */
-export function MessageView() {
+export function MessageStep() {
   const generateExercise = useMachine((store) => store.generateExercise);
 
   return (
-    <div className="bombe-view">
-      <div className="bombe-sources">
-        <InterceptPicker />
-        <div className="bombe-source">
-          <button type="button" onClick={() => void generateExercise()}>
-            New exercise
-          </button>
-        </div>
-        <PasteForm />
-      </div>
-      <LoadedMessage />
-    </div>
+    <>
+      <p>Take a message from the day's traffic: a historical intercept, an exercise made from a key sheet, or a message of your own.</p>
+      <InterceptPicker />
+      <p className="notebook-actions">
+        <button type="button" onClick={() => void generateExercise()}>
+          New exercise
+        </button>
+      </p>
+      <PasteForm />
+    </>
   );
 }

@@ -103,24 +103,6 @@ public sealed class BombeJobTests
         Assert.Same(menu, job.Menu);
     }
 
-    [Theory]
-    [InlineData("AB", "B")]
-    [InlineData("GR", "A")]
-    public void Should_default_the_input_to_A_or_B_When_no_input_is_set(string pair, string input)
-    {
-        // Arrange
-        var job = new BombeJob();
-        job.Load(MessageSource.Pasted(pair[..1]));
-        job.SetCrib(Crib.Parse(pair[1..]));
-        job.Place(0);
-
-        // Act
-        job.SetMenu([new MenuLink(Letter.FromChar(pair[0]), Letter.FromChar(pair[1]), 1)], Letter.FromChar(pair[0]));
-
-        // Assert
-        Assert.Equal(Letter.FromChar(input[0]), job.Input);
-    }
-
     [Fact]
     public void Should_use_the_chosen_settings_When_the_job_is_configured()
     {
@@ -128,24 +110,22 @@ public sealed class BombeJobTests
         var job = new BombeJob();
 
         // Act
-        job.Configure(Letter.FromChar('Q'), false, ReflectorType.C, [WheelOrder.Parse("II V III")]);
+        job.Configure(false, ReflectorType.C);
 
         // Assert
-        Assert.Equal(Letter.FromChar('Q'), job.Input);
         Assert.False(job.DiagonalBoard);
         Assert.Equal(ReflectorType.C, job.Reflector);
-        Assert.Equal([WheelOrder.Parse("II V III")], job.WheelOrders);
     }
 
     [Fact]
-    public void Should_run_every_wheel_order_with_reflector_B_and_the_diagonal_board_When_the_job_is_new()
+    public void Should_use_reflector_B_and_the_diagonal_board_on_an_empty_Bombe_When_the_job_is_new()
     {
         // Arrange
         // Act
         var job = new BombeJob();
 
         // Assert
-        Assert.Equal(336, job.WheelOrders.Count);
+        Assert.All(job.Machine.ChainSetups, chain => Assert.DoesNotContain(chain.Scramblers, scrambler => scrambler.HasCable));
         Assert.Equal(ReflectorType.B, job.Reflector);
         Assert.True(job.DiagonalBoard);
     }
@@ -157,20 +137,36 @@ public sealed class BombeJobTests
         var job = new BombeJob();
 
         // Act
-        void Act() => job.Configure(null, true, ReflectorType.BThin, WheelOrder.All);
+        void Act() => job.Configure(true, ReflectorType.BThin);
 
         // Assert
         Assert.Throws<DomainException>(Act);
     }
 
     [Fact]
-    public void Should_reject_the_settings_When_no_wheel_order_is_chosen()
+    public void Should_leave_the_Bombe_as_it_is_When_the_menu_changes()
     {
         // Arrange
-        var job = new BombeJob();
+        var job = CarterJob();
+        job.Place(0);
+        job.PlugUpMenu();
 
         // Act
-        void Act() => job.Configure(null, true, ReflectorType.B, []);
+        job.SetMenu([.. CarterLinks.Take(11).Select(MenuLink.Parse)], Letter.FromChar('G'));
+
+        // Assert
+        Assert.NotSame(job.Menu, job.Machine.PluggedMenu);
+        Assert.NotNull(job.Machine.PluggedMenu);
+    }
+
+    [Fact]
+    public void Should_refuse_to_plug_up_When_there_is_no_menu()
+    {
+        // Arrange
+        var job = CarterJob();
+
+        // Act
+        void Act() => job.PlugUpMenu();
 
         // Assert
         Assert.Throws<DomainException>(Act);

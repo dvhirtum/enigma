@@ -1,13 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { advance, drumLettersOf, formatSpeed, fullSpeedStep, historicalSpeed, indicatorOf, rotorsOf, scramblersOf, speedAt, stepOf, wheelOrdersOf } from './drums';
+import { carterMachine, emptyMachine } from '../test/fakeApi';
+import { advance, advanceBy, chainNames, formatSpeed, fullSpeedStep, groupsOf, historicalSpeed, indicatorOf, rowsOf, scramblersOf, speedAt, stepOf, wiresOf } from './drums';
 
 describe('drums', () => {
-  it('lists every wheel order of the chosen rotors', () => {
-    expect(wheelOrdersOf(rotorsOf(['II V III']))).toEqual(['II III V', 'II V III', 'III II V', 'III V II', 'V II III', 'V III II']);
-    expect(wheelOrdersOf(['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'])).toHaveLength(336);
-    expect(wheelOrdersOf(['I', 'II'])).toEqual([]);
-  });
-
   it('turns each drum on by its letter of the offset, without carrying', () => {
     expect(advance('ZZZ', 1)).toBe('ZZA');
     expect(advance('ZZZ', 26)).toBe('ZAZ');
@@ -21,10 +16,27 @@ describe('drums', () => {
     expect(indicatorOf('ZZZ')).toBe('AAA');
   });
 
-  it('shows drum letters ahead of the Enigma rotors: IV by two, V by three, the others by one', () => {
-    expect(drumLettersOf('VMB', 'II V III')).toBe('WPC');
-    expect(drumLettersOf('ZZZ', 'IV VI VIII')).toBe('BAA');
-    expect(drumLettersOf('ZZZ', 'I VII V')).toBe('AAC');
+  it('turns each drum on by its letter of the start letters, Z counting as nought', () => {
+    expect(advanceBy('ZZZ', 'ZZF')).toBe('ZZF');
+    expect(advanceBy('WPC', 'ZZA')).toBe('WPD');
+    expect(advanceBy('WPC', 'ABZ')).toBe('XRC');
+  });
+
+  it('groups the chains joined to the one before', () => {
+    expect(groupsOf(carterMachine())).toEqual([[0, 1], [2]]);
+    expect(groupsOf(emptyMachine())).toEqual([[0], [1], [2]]);
+    expect(chainNames([0, 1])).toBe('Chains 1–2');
+    expect(chainNames([2])).toBe('Chain 3');
+  });
+
+  it('reads the rotor of each row of a chain', () => {
+    expect(rowsOf(carterMachine(), 1)).toEqual(['II', 'V', 'III']);
+    expect(rowsOf(carterMachine(), 2)).toEqual([null, null, null]);
+  });
+
+  it('writes the dead wires of a test register as dots', () => {
+    expect(wiresOf('Q')).toBe('················Q·········');
+    expect(wiresOf('ABCDEFGHIJKLMNOPRSTUVWXYZ')).toBe('ABCDEFGHIJKLMNOP·RSTUVWXYZ');
   });
 
   it('plugs the links into the scramblers by offset', () => {
@@ -37,7 +49,7 @@ describe('drums', () => {
     expect(speedAt(fullSpeedStep)).toBeNull();
     expect(stepOf(speedAt(20))).toBe(20);
     expect(stepOf(null)).toBe(fullSpeedStep);
-    expect(formatSpeed(historicalSpeed)).toBe('14.6 positions/s (historical)');
+    expect(formatSpeed(historicalSpeed)).toBe('28.2 positions/s');
     expect(formatSpeed(null)).toBe('Full speed');
     expect(formatSpeed(14_646)).toBe('14,646 positions/s');
   });

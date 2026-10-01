@@ -8,8 +8,14 @@ namespace Enigma.Domain.Bombe;
 /// </summary>
 public sealed class Menu
 {
-    /// <summary>The Bombe's 36 scramblers, three banks of 12.</summary>
-    public const int MaxLinks = 36;
+    /// <summary>The scramblers of a chain (a bank of 12).</summary>
+    public const int ChainLinks = 12;
+
+    /// <summary>The Bombe's three chains.</summary>
+    public const int Chains = 3;
+
+    /// <summary>The Bombe's 36 scramblers, three chains of 12.</summary>
+    public const int MaxLinks = ChainLinks * Chains;
 
     // The chance that the stecker partners guessed for two menu letters contradict each other: both the same letter,
     // or one pointing at the other without the reverse.
@@ -57,6 +63,12 @@ public sealed class Menu
     /// <summary>The loops (closures) in the part connected to the test register letter.</summary>
     public int Loops => Closures(ConnectedLinks);
 
+    /// <summary>The chains one copy of the menu takes: a chain per 12 links.</summary>
+    public int ChainsPerCopy => (Links.Count + ChainLinks - 1) / ChainLinks;
+
+    /// <summary>The copies of the menu that fit on the Bombe, each tested with its own wheel order.</summary>
+    public int Copies => Chains / ChainsPerCopy;
+
     /// <summary>
     /// A menu with the test register on the letter with the most links, then the most loops through it, then the
     /// first in the alphabet.
@@ -74,8 +86,9 @@ public sealed class Menu
     }
 
     /// <summary>
-    /// Builds the menu from the connected part of the crib with the fewest estimated stops. Above
-    /// <see cref="MaxLinks"/> links, links at the ends of chains go first, then links on loops, the last offsets first.
+    /// Builds the menu from the connected part of the crib with the fewest estimated stops, on one chain. Above
+    /// <see cref="ChainLinks"/> links, links at the ends of chains go first, then links on loops: each time the one whose
+    /// loss leaves the fewest estimated stops, the lowest offset on a tie.
     /// </summary>
     public static Menu Build(CribPlacement placement)
     {
@@ -118,12 +131,16 @@ public sealed class Menu
     private static IReadOnlyList<MenuLink> Trim(IReadOnlyList<MenuLink> links)
     {
         var trimmed = links.ToList();
-        while (trimmed.Count > MaxLinks)
+        while (trimmed.Count > ChainLinks)
         {
-            var byOffset = trimmed.OrderByDescending(link => link.Offset).ToList();
-            var drop = byOffset.FirstOrDefault(link =>
-                    LinksAt(trimmed, link.First) == 1 || LinksAt(trimmed, link.Second) == 1)
-                ?? byOffset.First(link => Components(trimmed.Where(other => other != link).ToList()) == 1);
+            var ends = trimmed.Where(link => LinksAt(trimmed, link.First) == 1 || LinksAt(trimmed, link.Second) == 1).ToList();
+            var candidates = ends.Count > 0
+                ? ends
+                : [.. trimmed.Where(link => Components([.. trimmed.Where(other => other != link)]) == 1)];
+            var drop = candidates
+                .OrderBy(link => Estimate([.. trimmed.Where(other => other != link)], diagonalBoard: true))
+                .ThenBy(link => link.Offset)
+                .First();
             trimmed.Remove(drop);
         }
 

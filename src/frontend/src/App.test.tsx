@@ -113,6 +113,37 @@ describe('App', () => {
     expect(api.windows.openInstructions).toHaveBeenCalledOnce();
   });
 
+  it('opens the Hut 8 notebook from Bombe mode, which keeps only the machine views', async () => {
+    const { api } = createFakeApi();
+    render(<App api={api} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Bombe' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hut 8 notebook' }));
+
+    expect(api.windows.openHut8Notebook).toHaveBeenCalledOnce();
+    const tabs = screen.getByRole('tablist', { name: 'Bombe views' });
+    expect(tabs).toHaveTextContent('FrontSideBackChecking');
+  });
+
+  it('shows the mode another window asks for', async () => {
+    const { api, pushMode } = createFakeApi();
+    render(<App api={api} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Bombe' }));
+
+    act(() => pushMode('enigma'));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Enigma' })).toHaveAttribute('aria-pressed', 'true'));
+  });
+
+  it('shows the Hut 8 notebook in its window', async () => {
+    const { api } = createFakeApi();
+
+    render(<App api={api} page="hut8" />);
+
+    expect(await screen.findByRole('list', { name: 'Steps' })).toBeInTheDocument();
+    expect(screen.queryByRole('tablist', { name: 'Bombe views' })).not.toBeInTheDocument();
+  });
+
   it('keeps the mode while a key is held down', async () => {
     const { api } = createFakeApi();
     api.machine.getState.mockResolvedValue({ ok: true, value: { ...defaultM3, heldKey: 'Q' } });

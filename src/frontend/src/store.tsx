@@ -3,15 +3,21 @@ import { createStore, useStore, type StoreApi } from 'zustand';
 import type {
   ApiResult,
   BombeCheck,
+  BombeResult,
   BombeRun,
   BombeSettingsChange,
   BombeState,
   BombeStop,
   CheckChange,
+  CheckerPress,
+  CheckerChange,
+  PrintedStop,
+  TestRegisterChange,
   Confirmation,
   RingFind,
   Suggestion,
   EnigmaApi,
+  CribSuggestion,
   Intercept,
   Kenngruppenbuch,
   KeySheet,
@@ -19,13 +25,14 @@ import type {
   KeySheetSummary,
   MachineApi,
   MachineState,
+  MessageType,
   Problem,
   ReceivingKey,
 } from './api';
 import { shiftLetter, shiftRing } from './machine';
 import { keySheetDocument, procedureDocument, procedureName } from './printSheet';
 import { historicalSpeed } from './bombe/drums';
-import { withPartner } from './bombe/steckers';
+import { withoutLetter } from './bombe/steckers';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -66,9 +73,12 @@ export interface ProcedureSlice {
 export interface BombeSlice {
   bombe: BombeState | null;
   intercepts: Intercept[];
-  /** Loads the job and the list of intercepts. */
+  messageTypes: MessageType[];
+  /** Loads the job, the list of intercepts and the message types. */
   loadBombe: () => Promise<boolean>;
   loadIntercept: (id: string) => Promise<boolean>;
+  /** The likely crib of the loaded message: its own, or else that of the message type `type`; null when there is none. */
+  suggestCrib: (type?: string) => Promise<CribSuggestion | null>;
   generateExercise: () => Promise<boolean>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */
   pasteCipherText: (text: string) => Promise<boolean>;
@@ -82,6 +92,25 @@ export interface BombeSlice {
   buildMenu: () => Promise<boolean>;
   /** Changes run settings; those left out stay as they are. */
   configureBombe: (settings: BombeSettingsChange) => Promise<boolean>;
+  /** Plugs up the Bombe with the menu. */
+  plugUpMenu: () => Promise<boolean>;
+  /** Cables a jack (0 or 1) of a scrambler to a letter's common; null unplugs it. */
+  plugJack: (chain: number, scrambler: number, jack: number, letter: string | null) => Promise<boolean>;
+  /** Fits drums of a rotor in a row (0 = upper) of a chain on its scramblers 0 up to `upTo`. */
+  fitRow: (chain: number, row: number, upTo: number, rotor: string) => Promise<boolean>;
+  /** Takes one drum (row 0 = upper) of a scrambler back to the rack. */
+  removeDrum: (chain: number, scrambler: number, row: number) => Promise<boolean>;
+  /** Sets the start letters of a scrambler of a chain. */
+  turnScrambler: (chain: number, scrambler: number, start: string) => Promise<boolean>;
+  setTestRegister: (chain: number, change: TestRegisterChange) => Promise<boolean>;
+  joinChains: (join: number, joined: boolean) => Promise<boolean>;
+  /** The printed stops fetched so far, from the first. */
+  printout: PrintedStop[];
+  /** Fetches the first page of the printout again, or with `more` the next page. */
+  loadPrintout: (more?: boolean) => Promise<boolean>;
+  clearPrintout: () => Promise<boolean>;
+  /** Clears the stops found and their checks. */
+  clearStops: () => Promise<boolean>;
   /** Starts a run at `speed` positions per second, or at full speed when null. */
   startRun: (speed: number | null) => Promise<boolean>;
   /** Continues a run paused at a stop. */
@@ -95,28 +124,41 @@ export interface BombeSlice {
   /** The Bombe view shown. */
   bombeView: string;
   showBombeView: (id: string) => void;
-  /** The stops of the run fetched so far, from the first. */
+  /** The stops fetched so far, from the first. */
   stops: BombeStop[];
   /** Fetches the first page of stops again, or with `more` the next page. */
   loadStops: (more?: boolean) => Promise<boolean>;
-  /** The check on the Checking view, the lamp lit on its machine, and its last suggestion, ring scores and confirmation. */
+  /** The check open in the notebook, and its last suggestion, ring scores and confirmation. */
   check: BombeCheck | null;
+  /** The lamp lit on the checking machine. */
   checkLamp: string | null;
+  /** The key held down on the checking machine, in this window or another. */
+  checkKey: string | null;
   suggestion: Suggestion | null;
   ringScores: RingFind['rings'] | null;
   confirmation: Confirmation | null;
   /** Opens the check of a stop on the Checking view. */
   openCheck: (stop: number) => Promise<boolean>;
+  /** Follows a Bombe call another window made. */
+  receiveBombe: (result: BombeResult) => void;
   changeCheck: (change: CheckChange) => Promise<boolean>;
-  /** Pairs `letter` with `partner` (itself: unsteckered; null: unknown) once the queued operations are done. */
-  setPartner: (letter: string, partner: string | null) => Promise<boolean>;
+  /** Rubs out every pair of `letter` on the stecker sheet once the queued operations are done. */
+  eraseLetter: (letter: string) => Promise<boolean>;
   /** Turns the right ring `steps` places on once the queued operations are done. */
   stepRightRing: (steps: number) => Promise<boolean>;
+  /** Changes the checking machine once the queued operations are done. */
+  setChecker: (change: CheckerChange) => Promise<boolean>;
+  /** Sets the checking machine up for a logged stop, and shows it. */
+  setUpChecker: (stop: number) => Promise<boolean>;
   /** Turns a checking machine drum (0 = left) `steps` letters on once the queued operations are done. */
   stepCheckDrum: (drum: number, steps: number) => Promise<boolean>;
+  /** Turns a checking machine ring (0 = left) `steps` letters on once the queued operations are done. */
+  stepCheckRing: (drum: number, steps: number) => Promise<boolean>;
   /** Presses a key on the checking machine; its lamp stays lit until `releaseCheckKey`. */
   pressCheckKey: (key: string) => Promise<boolean>;
   releaseCheckKey: () => void;
+  /** Follows a key released on the checking machine in another window. */
+  receiveCheckKeyRelease: () => void;
   confirmCheck: (verdict: BombeStop['verdict']) => Promise<boolean>;
   suggestSteckers: () => Promise<boolean>;
   /** Adds proposed pairs, such as "IK", to the check's steckers. */
@@ -137,8 +179,12 @@ export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice, Bo
   dismissError: () => void;
   /** Opens the operator's notebook window, or brings it to the front. */
   openNotebook: () => Promise<void>;
+  /** Opens the Hut 8 notebook window, or brings it to the front. */
+  openHut8Notebook: () => Promise<void>;
   /** Opens the instructions window, or brings it to the front. */
   openInstructions: () => Promise<void>;
+  /** Shows a mode in the machine window. */
+  showMode: (mode: 'enigma' | 'bombe') => Promise<void>;
   /** Runs operations that depend on earlier ones one at a time, in order. */
   enqueue: <T>(task: () => Promise<T>) => Promise<T>;
   /** Turns a rotor `steps` letters on from its position once the queued operations are done. */
@@ -180,23 +226,55 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }
       return result.ok;
     };
-    // Counters that let late replies be dropped: of stop loads, of check openings and of checking machine key presses.
+    // Counters that let late replies be dropped: of stop and printout loads, of check openings and of checking machine key presses.
     let stopLoads = 0;
+    let printoutLoads = 0;
     let checkOpenings = 0;
     let keyPresses = 0;
-    /** Forgets the stops and the check, which a changed job or a new run clears. */
-    const clearStops = () => {
+    /** Forgets the stops and the check, when the backend cleared them. */
+    const forgetStops = () => {
       stopLoads++;
       checkOpenings++;
-      set({ stops: [], check: null, checkLamp: null, suggestion: null, ringScores: null, confirmation: null });
+      set({ stops: [], check: null, suggestion: null, ringScores: null, confirmation: null });
+    };
+    /** Forgets the printout fetched when the backend has fewer stops printed. */
+    const followPrinted = (printed: number) => {
+      if (printed < get().printout.length || printed === 0) {
+        printoutLoads++;
+        set({ printout: [] });
+      }
+    };
+    const applyJob = (value: BombeState) => {
+      set({ bombe: value });
+      if (value.stops < get().stops.length || value.stops === 0) {
+        forgetStops();
+      }
+      followPrinted(value.printed);
     };
     const job = async (call: Promise<ApiResult<BombeState>>) => {
       const result = await check(call);
       if (result.ok) {
-        set({ bombe: result.value });
-        clearStops();
+        applyJob(result.value);
       }
       return result.ok;
+    };
+    /** Shows a check that was just opened, here or in another window. */
+    const showCheck = (value: BombeCheck) => {
+      checkOpenings++;
+      set({ check: value, suggestion: null, ringScores: null, confirmation: null });
+    };
+    /** Shows the checking machine once it is set up for a stop, here or in another window. */
+    const showChecker = (value: BombeState) => {
+      applyJob(value);
+      keyPresses++;
+      set({ checkLamp: null, bombeView: 'bombe-checking' });
+    };
+    /** Follows a check changed in another window, when it is the open one. */
+    const followCheck = (next: BombeCheck, changes: Partial<MachineStore> = {}) => {
+      set((state) => ({
+        stops: state.stops.map((stop) => (stop.index === next.stop.index ? next.stop : stop)),
+        ...(state.check?.stop.index === next.stop.index ? { check: next, ...changes } : {}),
+      }));
     };
     /** Whether the check of `stop` is still the open one. */
     const stillOpen = (stop: number) => get().check?.stop.index === stop;
@@ -218,15 +296,31 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }));
       return result.value;
     };
+    /** Turns one drum's window letter or ring letter on the checking machine `steps` letters on. */
+    const stepChecker = async (field: 'windows' | 'rings', drum: number, steps: number) => {
+      const letters = get().bombe?.checker[field];
+      if (!letters) {
+        return false;
+      }
+      const turned = [...letters];
+      turned[drum] = shiftLetter(turned[drum], steps);
+      return job(bombe.setChecker({ [field]: turned.join('') }));
+    };
+    /** Follows a run, or its end when the backend no longer has it. */
+    const applyRun = (value: BombeRun | null) => {
+      const current = get().bombe;
+      if (current) {
+        set({ bombe: { ...current, run: value, stops: value ? value.allStops : current.stops, printed: value ? value.printed : current.printed } });
+      }
+    };
     /** A run call; a poll leaves the error as it is unless the poll fails. A run the backend no longer has is dropped. */
     const run = async (call: Promise<ApiResult<BombeRun>>, poll = false) => {
       const result = poll ? await settle(call) : await check(call);
       if (poll && !result.ok) {
         set({ error: result.problem });
       }
-      const current = get().bombe;
-      if (current && (result.ok || result.problem.status === 404)) {
-        set({ bombe: { ...current, run: result.ok ? result.value : null } });
+      if (result.ok || result.problem.status === 404) {
+        applyRun(result.ok ? result.value : null);
       }
       return result.ok;
     };
@@ -249,29 +343,39 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       books: {},
       bombe: null,
       intercepts: [],
+      messageTypes: [],
       speed: historicalSpeed,
-      bombeView: 'bombe-message',
+      bombeView: 'bombe-front',
       stops: [],
+      printout: [],
       check: null,
       checkLamp: null,
+      checkKey: null,
       suggestion: null,
       ringScores: null,
       confirmation: null,
       loadBombe: async () => {
-        const [listed, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.getState())]);
+        const [listed, types, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.messageTypes()), settle(bombe.getState())]);
         if (listed.ok) {
           set({ intercepts: listed.value });
+        }
+        if (types.ok) {
+          set({ messageTypes: types.value });
         }
         if (state.ok) {
           set({ bombe: state.value });
         }
-        const failed = [state, listed].find((result) => !result.ok);
+        const failed = [state, listed, types].find((result) => !result.ok);
         if (failed && !failed.ok) {
           set({ error: failed.problem });
         }
         return !failed;
       },
       loadIntercept: (id) => job(bombe.loadIntercept(id)),
+      suggestCrib: async (type) => {
+        const result = await check(bombe.suggestCrib(type));
+        return result.ok ? result.value : null;
+      },
       generateExercise: () => job(bombe.generateExercise()),
       pasteCipherText: (text) => job(bombe.pasteCipherText(text)),
       setCrib: (crib) => job(bombe.setCrib(crib)),
@@ -279,13 +383,16 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       setMenu: (links, testRegister) => job(bombe.setMenu(links, testRegister)),
       buildMenu: () => job(bombe.buildMenu()),
       configureBombe: (settings) => job(bombe.configure(settings)),
-      startRun: async (speed) => {
-        const started = await run(bombe.startRun(speed));
-        if (started) {
-          clearStops();
-        }
-        return started;
-      },
+      plugUpMenu: () => job(bombe.plugUpMenu()),
+      plugJack: (chain, scrambler, jack, letter) => job(bombe.plugJack(chain, scrambler, jack, letter)),
+      fitRow: (chain, row, upTo, rotor) => job(bombe.fitRow(chain, row, upTo, rotor)),
+      removeDrum: (chain, scrambler, row) => job(bombe.removeDrum(chain, scrambler, row)),
+      turnScrambler: (chain, scrambler, start) => enqueue(() => job(bombe.turnScrambler(chain, scrambler, start))),
+      setTestRegister: (chain, change) => job(bombe.setTestRegister(chain, change)),
+      joinChains: (join, joined) => job(bombe.joinChains(join, joined)),
+      clearPrintout: () => job(bombe.clearPrintout()),
+      clearStops: () => job(bombe.clearStops()),
+      startRun: (speed) => run(bombe.startRun(speed)),
       continueRun: () => run(bombe.continueRun()),
       cancelRun: () => run(bombe.cancelRun()),
       pollRun: () => run(bombe.getRun(), true),
@@ -305,33 +412,102 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         }
         return result.ok;
       },
+      loadPrintout: async (more = false) => {
+        const load = more ? printoutLoads : ++printoutLoads;
+        const from = more ? get().printout.length : 0;
+        const result = await check(bombe.getPrintout(from, stopPage));
+        if (result.ok && load === printoutLoads && (!more || get().printout.length === from)) {
+          set((state) => ({ printout: more ? [...state.printout, ...result.value] : result.value }));
+        }
+        return result.ok;
+      },
       openCheck: async (stop) => {
         const opening = ++checkOpenings;
         const result = await check(bombe.getCheck(stop));
         if (result.ok && opening === checkOpenings) {
-          keyPresses++;
-          set({ check: result.value, checkLamp: null, suggestion: null, ringScores: null, confirmation: null, bombeView: 'bombe-checking' });
+          showCheck(result.value);
         }
         return result.ok;
+      },
+      receiveBombe: ({ name, args, value }) => {
+        switch (name) {
+          case 'startRun':
+          case 'setRunSpeed':
+          case 'continueRun':
+          case 'cancelRun':
+          case 'getRun': {
+            const current = value as BombeRun;
+            applyRun(current);
+            if (name === 'startRun' || name === 'setRunSpeed') {
+              set({ speed: current.speed });
+            }
+            return;
+          }
+          case 'pressCheckerKey': {
+            const pressed = value as CheckerPress;
+            keyPresses++;
+            set({ checkKey: args[0] as string, checkLamp: pressed.lamp });
+            if (pressed.check) {
+              followCheck(pressed.check, { suggestion: null, ringScores: null, confirmation: null });
+            }
+            return;
+          }
+          case 'setUpChecker':
+            showChecker(value as BombeState);
+            return;
+          case 'getCheck':
+            showCheck(value as BombeCheck);
+            return;
+          case 'setCheck': {
+            const next = value as BombeCheck;
+            const steckersChanged = get().check?.steckers !== next.steckers;
+            followCheck(next, { confirmation: null, ...(steckersChanged ? { suggestion: null, ringScores: null } : {}) });
+            return;
+          }
+          case 'confirmCheck': {
+            const confirmation = value as Confirmation;
+            followCheck(confirmation.check, { confirmation });
+            return;
+          }
+          case 'findRightRing': {
+            const found = value as RingFind;
+            followCheck(found.check, { ringScores: found.rings, confirmation: null });
+            return;
+          }
+          case 'suggestSteckers':
+            if (get().check?.stop.index === args[0]) {
+              set({ suggestion: value as Suggestion });
+            }
+            return;
+          case 'getState':
+          case 'intercepts':
+          case 'messageTypes':
+          case 'suggestCrib':
+          case 'getStops':
+          case 'getPrintout':
+            return;
+          default:
+            applyJob(value as BombeState);
+        }
       },
       changeCheck: async (change) => {
         const steckers = change.steckers !== undefined ? { suggestion: null, ringScores: null } : {};
         return (await onCheck((stop) => bombe.setCheck(stop, change), (value) => value, { ...steckers, confirmation: null })) !== null;
       },
-      stepCheckDrum: (drum, steps) =>
-        enqueue(async () => {
-          const position = get().check?.position;
-          if (!position) {
-            return false;
-          }
-          const letters = [...position];
-          letters[drum] = shiftLetter(letters[drum], steps);
-          return get().changeCheck({ position: letters.join('') });
-        }),
-      setPartner: (letter, partner) =>
+      setChecker: (change) => enqueue(() => job(bombe.setChecker(change))),
+      setUpChecker: async (stop) => {
+        const result = await check(bombe.setUpChecker(stop));
+        if (result.ok) {
+          showChecker(result.value);
+        }
+        return result.ok;
+      },
+      stepCheckDrum: (drum, steps) => enqueue(() => stepChecker('windows', drum, steps)),
+      stepCheckRing: (drum, steps) => enqueue(() => stepChecker('rings', drum, steps)),
+      eraseLetter: (letter) =>
         enqueue(async () => {
           const steckers = get().check?.steckers;
-          return steckers !== undefined && get().changeCheck({ steckers: withPartner(steckers, letter, partner) });
+          return steckers !== undefined && get().changeCheck({ steckers: withoutLetter(steckers, letter) });
         }),
       stepRightRing: (steps) =>
         enqueue(async () => {
@@ -339,21 +515,29 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           return ring !== undefined && get().changeCheck({ rightRing: ((ring - 1 + steps + 26 * 26) % 26) + 1 });
         }),
       pressCheckKey: async (key) => {
-        const current = get().check;
-        if (!current) {
+        const press = ++keyPresses;
+        set({ checkKey: key });
+        const result = await check(bombe.pressCheckerKey(key));
+        if (!result.ok) {
           return false;
         }
-        const press = ++keyPresses;
-        const result = await check(bombe.pressCheckKey(current.stop.index, key));
-        // A key released before the lamp came back leaves it dark.
-        if (result.ok && press === keyPresses) {
+        // A key released before the lamp came back leaves it dark; what the lamp wrote down stays.
+        if (press === keyPresses) {
           set({ checkLamp: result.value.lamp });
         }
-        return result.ok;
+        if (result.value.check) {
+          followCheck(result.value.check, { suggestion: null, ringScores: null, confirmation: null });
+        }
+        return true;
       },
       releaseCheckKey: () => {
         keyPresses++;
-        set({ checkLamp: null });
+        set({ checkKey: null, checkLamp: null });
+        void windows.releaseCheckerKey();
+      },
+      receiveCheckKeyRelease: () => {
+        keyPresses++;
+        set({ checkKey: null, checkLamp: null });
       },
       confirmCheck: async (verdict) => {
         const confirmation = await onCheck((stop) => bombe.confirmCheck(stop, verdict), (value) => value.check);
@@ -520,7 +704,9 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       },
       dismissError: () => set({ error: null }),
       openNotebook: () => windows.openNotebook(),
+      openHut8Notebook: () => windows.openHut8Notebook(),
       openInstructions: () => windows.openInstructions(),
+      showMode: (mode) => windows.showMode(mode),
       enqueue,
       stepRotor: (slot, steps) =>
         enqueue(async () => {
@@ -557,10 +743,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
 
 const MachineStoreContext = createContext<StoreApi<MachineStore> | null>(null);
 
-/** Provides the machine store, which follows machine states and key sheets changed by other windows. */
+/** Provides the machine store, which follows machine states, Bombe calls and key sheets changed by other windows. */
 export function MachineStoreProvider({ api, children }: { api: EnigmaApi; children: ReactNode }) {
   const [store] = useState(() => createMachineStore(api));
   useEffect(() => api.windows.onMachineState((machine) => store.setState({ machine })), [api, store]);
+  useEffect(() => api.windows.onBombeResult((result) => store.getState().receiveBombe(result)), [api, store]);
+  useEffect(() => api.windows.onCheckerKeyReleased(() => store.getState().receiveCheckKeyRelease()), [api, store]);
   useEffect(
     () =>
       api.windows.onKeySheetsChanged(() => {

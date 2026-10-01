@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { BackendStatus, BombeCheck, BombeRun, BombeState, BombeStop, EnigmaApi, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, OperatorState, TauschtafelSet } from '../api';
+import type { BackendStatus, BombeCheck, BombeMachine, BombeResult, BombeRun, BombeState, BombeStop, CheckingMachine, EnigmaApi, PrintedStop, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, MessageType, OperatorState, TauschtafelSet } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -110,6 +110,23 @@ export const exportedFile = {
   tauschtafeln: fakeTables,
 };
 
+/** A Bombe with nothing plugged in and no drums. */
+export function emptyMachine(): BombeMachine {
+  return {
+    chains: Array.from({ length: 3 }, () => ({
+      testRegister: null,
+      input: 'A',
+      scramblers: Array.from({ length: 12 }, () => ({ jacks: [null, null], drums: [null, null, null], start: 'ZZZ' })),
+    })),
+    joins: [false, false],
+    pluggedForMenu: false,
+    pluggedByHand: false,
+    warnings: [],
+  };
+}
+
+export const emptyChecker: CheckingMachine = { reflector: 'B', dummy: true, drums: [null, null, null], rings: 'ZZZ', windows: 'ZZZ', stop: null };
+
 export const emptyBombe: BombeState = {
   source: null,
   cipherText: '',
@@ -117,8 +134,12 @@ export const emptyBombe: BombeState = {
   placements: [],
   position: null,
   menu: null,
-  settings: { input: 'A', diagonalBoard: true, reflector: 'B', wheelOrders: [] },
+  machine: emptyMachine(),
+  checker: emptyChecker,
+  settings: { diagonalBoard: true, reflector: 'B' },
   run: null,
+  stops: 0,
+  printed: 0,
 };
 
 export const carterBombe: BombeState = {
@@ -144,6 +165,24 @@ export function withCrib(state: BombeState, crib: string, position: number | nul
   return { ...state, crib, placements, position };
 }
 
+/** The Bombe plugged up with Carter's menu: 13 links on chain 1 and the first scrambler of chain 2, joined, drums II V III, test register on G. */
+export function carterMachine(): BombeMachine {
+  const machine = emptyMachine();
+  const links = ['SW1', 'NE2', 'GE5', 'GR6', 'SV7', 'ZR9', 'ZH10', 'UE11', 'GR12', 'AS13', 'RA14', 'LG15', 'VE16'];
+  links.forEach((link, index) => {
+    const offset = Number(link.slice(2));
+    machine.chains[Math.floor(index / 12)].scramblers[index % 12] = {
+      jacks: [link[0], link[1]],
+      drums: ['II', 'V', 'III'],
+      start: `ZZ${String.fromCharCode(64 + offset)}`,
+    };
+  });
+  machine.chains[0].testRegister = 'G';
+  machine.joins = [true, false];
+  machine.pluggedForMenu = true;
+  return machine;
+}
+
 /** Carter's crib placed at the start, with his training menu (positions 3, 4 and 8 left out) and the test register on G. */
 export const carterMenu: BombeState = {
   ...withCrib(carterBombe, 'WETTERVORHERSAGE', 0),
@@ -156,21 +195,24 @@ export const carterMenu: BombeState = {
     stopsWithBoard: 0.4,
     stopsWithoutBoard: 721.3,
   },
+  machine: carterMachine(),
 };
 
+/** Carter's true stop as the Bombe prints it. */export const carterPrinted: PrintedStop = {  index: 0,  chains: [0, 1],  wheelOrder: 'II V III',  drumLetters: 'WPC',  indicator: 'DKX',  testRegister: 'G',  liveWires: 'ABCDEFGHIJKLMNOPRSTUVWXYZ',  stecker: 'Q',};
 /** A paced run of Carter's menu on II V III, paused at the true stop. */
 export const carterPaused: BombeRun = {
   status: 'Paused',
   speed: 14.6,
   reflector: 'B',
-  wheelOrders: 1,
-  wheelOrdersDone: 0,
+  groups: [{ chains: [0, 1], wheelOrder: 'II V III', testRegister: 'G', input: 'A' }],
+  logged: true,
   positionsTested: 1713,
   positions: 17576,
-  wheelOrder: 'II V III',
-  position: 'VMB',
-  pause: { index: 0, wheelOrder: 'II V III', position: 'VMB', indicator: 'DKX', testRegister: 'G', liveWires: 'Q', stecker: 'Q', verdict: 'Unchecked' },
+  position: 'WPD',
+  pause: carterPrinted,
   stops: 1,
+  allStops: 1,
+  printed: 1,
   error: null,
   elapsedSeconds: 117.3,
 };
@@ -181,13 +223,15 @@ export const carterStops: BombeStop[] = [
   { index: 1, wheelOrder: 'II V III', position: 'KQF', indicator: 'NFO', testRegister: 'G', liveWires: 'ABCDEFHIJKLMNOPQRSTUVWXYZ', stecker: 'G', verdict: 'Unchecked' },
 ];
 
+/** The checking machine as the notebook sets it up for Carter's true stop. */
+export const carterChecker: CheckingMachine = { reflector: 'B', dummy: true, drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterStops[0] };
 const carterCrib = 'WETTERVORHERSAGE';
 
-/** The check of Carter's true stop as it starts: the drums at the stop's letters, only G/Q known. */
+/** The check of Carter's true stop as it starts: the rings at the indicator, the windows at ZZZ, only G/Q known. */
 export const carterCheck: BombeCheck = {
   stop: carterStops[0],
-  position: 'WPC',
   steckers: 'GQ',
+  contradicted: '',
   rightRing: 26,
   verdict: 'Unchecked',
   crib: [...carterCrib].map((plain, index) => ({ offset: index + 1, plain, cipher: 'SNMKGGSTZZUGARLV'[index], match: 'Unknown' })),
@@ -204,6 +248,13 @@ export const carterChecked: BombeCheck = {
   key: { ...carterCheck.key, plugs: ['AD', 'ET', 'FU', 'GQ', 'HM', 'IK', 'JL', 'NV', 'OX', 'PZ'] },
 };
 
+export const messageTypes: MessageType[] = [
+  { id: 'weather', name: 'Weather forecast' },
+  { id: 'nothing-to-report', name: 'Nothing to report' },
+  { id: 'own-position', name: 'U-boat position report' },
+  { id: 'convoy', name: 'Convoy report' },
+];
+
 export const intercepts: Intercept[] = [
   { id: 'carter', title: 'Carter weather crib', date: null, hint: 'A weather forecast.' },
   { id: 'scharnhorst', title: 'Scharnhorst', date: '1943-12-26', hint: null },
@@ -217,6 +268,9 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
   const listeners = new Set<(status: BackendStatus) => void>();
   const stateListeners = new Set<(state: MachineState) => void>();
   const keySheetListeners = new Set<() => void>();
+  const modeListeners = new Set<(mode: 'enigma' | 'bombe') => void>();
+  const bombeListeners = new Set<(result: BombeResult) => void>();
+  const releaseListeners = new Set<() => void>();
   const ok = (value: MachineState = defaultM3) => vi.fn().mockResolvedValue({ ok: true, value });
   const bombe = (value: BombeState = emptyBombe) => vi.fn().mockResolvedValue({ ok: true, value });
   const run = (value: BombeRun = { ...carterPaused, status: 'Running', pause: null }) => vi.fn().mockResolvedValue({ ok: true, value });
@@ -260,6 +314,8 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     bombe: {
       getState: bombe(),
       intercepts: vi.fn().mockResolvedValue({ ok: true, value: intercepts }),
+      messageTypes: vi.fn().mockResolvedValue({ ok: true, value: messageTypes }),
+      suggestCrib: vi.fn().mockResolvedValue({ ok: true, value: { crib: 'WETTERVORHERSAGE', place: 'At or near the start, after at most a short prefix such as AN ALLE or the hour.' } }),
       loadIntercept: bombe(carterBombe),
       generateExercise: bombe(),
       pasteCipherText: bombe(),
@@ -268,22 +324,34 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       setMenu: bombe(),
       buildMenu: bombe(),
       configure: bombe(),
+      plugUpMenu: bombe(carterMenu),
+      plugJack: bombe(),
+      fitRow: bombe(),
+      removeDrum: bombe(),
+      setTestRegister: bombe(),
+      joinChains: bombe(),
+      turnScrambler: bombe(),
+      clearStops: bombe(),
+      getPrintout: vi.fn().mockResolvedValue({ ok: true, value: [carterPrinted] }),
+      clearPrintout: bombe(),
+      setChecker: bombe(),
+      pressCheckerKey: vi.fn().mockResolvedValue({ ok: true, value: { lamp: 'R', check: null } }),
+      setUpChecker: bombe({ ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 }, stops: 2, checker: carterChecker }),
       startRun: run(),
       setRunSpeed: run(),
       continueRun: run(),
-      cancelRun: run({ ...carterPaused, status: 'Cancelled', pause: null, wheelOrder: null, position: null }),
+      cancelRun: run({ ...carterPaused, status: 'Cancelled', pause: null, position: null }),
       getRun: run(),
       getStops: vi.fn().mockResolvedValue({ ok: true, value: carterStops }),
       getCheck: vi.fn().mockResolvedValue({ ok: true, value: carterCheck }),
       setCheck: vi.fn().mockResolvedValue({ ok: true, value: carterChecked }),
-      pressCheckKey: vi.fn().mockResolvedValue({ ok: true, value: { lamp: 'R' } }),
       confirmCheck: vi.fn().mockResolvedValue({
         ok: true,
         value: {
           verdict: 'True',
           cribMismatches: [],
           cribUnknown: [],
-          solution: { isTrueStop: true, verdictCorrect: true, wrongPairs: [], missingPairs: [], rightRingCorrect: true },
+          solution: { isTrueStop: true, verdictCorrect: true, wrongPairs: [], missingPairs: [] },
           check: { ...carterChecked, verdict: 'True', stop: { ...carterChecked.stop, verdict: 'True' } },
         },
       }),
@@ -310,10 +378,25 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     },
     windows: {
       openNotebook: vi.fn().mockResolvedValue(undefined),
+      openHut8Notebook: vi.fn().mockResolvedValue(undefined),
       openInstructions: vi.fn().mockResolvedValue(undefined),
+      showMode: vi.fn().mockResolvedValue(undefined),
+      onShowMode: vi.fn((listener: (mode: 'enigma' | 'bombe') => void) => {
+        modeListeners.add(listener);
+        return () => modeListeners.delete(listener);
+      }),
       onMachineState: vi.fn((listener: (state: MachineState) => void) => {
         stateListeners.add(listener);
         return () => stateListeners.delete(listener);
+      }),
+      releaseCheckerKey: vi.fn().mockResolvedValue(undefined),
+      onCheckerKeyReleased: vi.fn((listener: () => void) => {
+        releaseListeners.add(listener);
+        return () => releaseListeners.delete(listener);
+      }),
+      onBombeResult: vi.fn((listener: (result: BombeResult) => void) => {
+        bombeListeners.add(listener);
+        return () => bombeListeners.delete(listener);
       }),
       onKeySheetsChanged: vi.fn((listener: () => void) => {
         keySheetListeners.add(listener);
@@ -334,5 +417,8 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
   const pushState = (next: MachineState) => stateListeners.forEach((listener) => listener(next));
   const pushKeySheetsChanged = () => keySheetListeners.forEach((listener) => listener());
 
-  return { api, pushStatus, pushState, pushKeySheetsChanged };
+  const pushMode = (mode: 'enigma' | 'bombe') => modeListeners.forEach((listener) => listener(mode));
+  const pushBombeResult = (result: BombeResult) => bombeListeners.forEach((listener) => listener(result));
+
+  return { api, pushStatus, pushState, pushKeySheetsChanged, pushMode, pushBombeResult };
 }

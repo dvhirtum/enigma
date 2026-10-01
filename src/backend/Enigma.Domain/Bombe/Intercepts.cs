@@ -57,7 +57,8 @@ public static class Intercepts
                     RotorPositions.Parse("UZV"),
                     "STEUEREJTANAFJORDJANSTANDORTQUAAACCCVIERNEUNNEUNZWOFAHRTZWONULSMXXSCHARNHORSTHCO",
                     "Red Form from HMS Duke of York, published by Frode Weierud (CryptoCellar). Key recovered by the M4 "
-                    + "Project in 2008. The preamble gives 21 groups, but 24 were received."))),
+                    + "Project in 2008. The preamble gives 21 groups, but 24 were received."),
+                CribPlace: "At the very start: the signal opens with where she is steering.")),
         new(
             "barbarossa-1941-1",
             new DateOnly(1941, 7, 7),
@@ -94,7 +95,8 @@ public static class Intercepts
                     RotorPositions.Parse("BLA"),
                     "AUFKLXABTEILUNGXVONXKURTINOWAXKURTINOWAXNORDWESTLXSEBEZXSEBEZXUAFFLIEGERSTRASZERIQTUNGXDUBROWKIX"
                     + "DUBROWKIXOPOTSCHKAXOPOTSCHKAXUMXEINSAQTDREINULLXUHRANGETRETENXANGRIFFXINFXRGTX",
-                    "Message key BLA, sent as KCH at WXC. " + BarbarossaSource))),
+                    "Message key BLA, sent as KCH at WXC. " + BarbarossaSource),
+                CribPlace: "At the very start: the report opens with the unit it comes from.")),
         new(
             "barbarossa-1941-2",
             new DateOnly(1941, 7, 7),
@@ -127,7 +129,8 @@ public static class Intercepts
                     RotorPositions.Parse("LSD"),
                     "DREIGEHTLANGSAMABERSIQERVORWAERTSXEINSSIEBENNULLSEQSXUHRXROEMXEINSXINFRGTXDREIXAUFFLIEGERSTRASZE"
                     + "MITANFANGXEINSSEQSXKMXKMXOSTWXKAMENECXK",
-                    "Message key LSD, sent as YPJ at CRS. " + BarbarossaSource))),
+                    "Message key LSD, sent as YPJ at CRS. " + BarbarossaSource),
+                CribPlace: "About 80 letters in: the road named in part 1 comes up again.")),
         new(
             "carter-weather",
             null,
@@ -148,7 +151,8 @@ public static class Intercepts
                     RotorPositions.Parse("ULA"),
                     "WETTERVORHERSAGE",
                     "Frank Carter, Rutherford Journal 3. The Bombe stops at core positions VMB; the indicator drums "
-                    + "read DKX, as Carter reports."))),
+                    + "read DKX, as Carter reports."),
+                CribPlace: "The whole message: the heading fills all sixteen letters.")),
     ];
 
     /// <summary>The intercept with <paramref name="id"/>, or null.</summary>

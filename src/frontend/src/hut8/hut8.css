@@ -1,0 +1,490 @@
+/* The Hut 8 notebook: the operator's notebook paper, with the codebreaker's workings in pencil. */
+
+.hut8 .page {
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.hut8-note,
+.hut8-hint {
+  color: var(--print-muted);
+}
+
+.hut8-hint {
+  font-style: italic;
+}
+
+.hut8 .notebook-actions {
+  align-items: center;
+}
+
+.hut8 .notebook-actions > .inline-label,
+.hut8 .notebook-form > .inline-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--print-muted);
+}
+
+.hut8 .page h4 {
+  margin: 0;
+}
+
+input.hand-input.crib-input {
+  width: calc(var(--sq) * 16);
+  height: var(--sq);
+  letter-spacing: 0.3em;
+  box-shadow: inset 0 -1px var(--pencil);
+}
+
+/* The crib strip: the cipher text in squares, the crib written on a slip underneath */
+
+.crib-paper {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(var(--sq) / 2);
+  overflow-x: auto;
+  user-select: none;
+}
+
+.crib-paper:focus-visible {
+  outline: 2px solid var(--pencil);
+  outline-offset: 2px;
+}
+
+.crib-ruler,
+.crib-cipher,
+.crib-letters {
+  display: flex;
+  width: max-content;
+}
+
+.crib-ruler span {
+  flex: none;
+  width: var(--sq);
+  color: var(--print-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.crib-cipher .square,
+.crib-letters .square {
+  position: relative;
+  flex: none;
+}
+
+.crib-cipher .covered {
+  box-shadow: inset 0 -2px var(--highlight);
+  background: var(--highlight);
+}
+
+.crib-letters {
+  cursor: grab;
+  touch-action: none;
+}
+
+.crib-letters:active {
+  cursor: grabbing;
+}
+
+.crib-letters .square {
+  background: rgb(255 255 255 / 0.55);
+  box-shadow: inset 0 0 0 1px rgb(47 61 99 / 0.25);
+}
+
+/* A crash: both letters in red pencil, the crib letter struck through. */
+.crib-paper .crash {
+  color: var(--red-pencil);
+}
+
+.crib-letters .crash::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  right: 3px;
+  border-top: 2px solid var(--red-pencil);
+  transform: rotate(-35deg);
+}
+
+.crib-placed .keys-lamps-row .square {
+  flex: none;
+}
+
+/* The menu, sketched in pencil */
+
+.menu-sketch {
+  width: 100%;
+  max-width: 640px;
+  user-select: none;
+}
+
+.menu-sketch text {
+  font-family: 'Kalam', cursive;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.menu-sketch .stroke {
+  fill: none;
+  stroke: var(--pencil);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: url(#pencil);
+}
+
+.menu-sketch.busy .sketch-link,
+.menu-sketch.busy .sketch-letter {
+  pointer-events: none;
+}
+
+.sketch-link {
+  cursor: pointer;
+}
+
+.sketch-link .hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+}
+
+.sketch-link text {
+  fill: var(--pencil);
+  font-size: 14px;
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 4px;
+}
+
+.sketch-link.loose .stroke {
+  stroke: var(--red-pencil);
+  stroke-dasharray: 5 4;
+}
+
+.sketch-link.spare .stroke {
+  stroke-dasharray: 2 5;
+  opacity: 0.45;
+}
+
+.sketch-link.spare text {
+  opacity: 0.45;
+}
+
+.sketch-link:hover .stroke {
+  stroke-width: 2.6;
+}
+
+.sketch-letter {
+  cursor: pointer;
+  outline: none;
+}
+
+.sketch-letter .paper {
+  fill: var(--paper);
+}
+
+.sketch-letter text {
+  fill: var(--pencil);
+  font-size: 19px;
+}
+
+.sketch-letter.loose .stroke,
+.sketch-letter.loose text {
+  stroke: var(--red-pencil);
+  fill: var(--red-pencil);
+}
+
+.sketch-letter.loose .stroke {
+  fill: none;
+}
+
+.sketch-letter.spare {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.sketch-letter .ring {
+  fill: none;
+  stroke: var(--red-pencil);
+  stroke-width: 2;
+  filter: url(#pencil);
+}
+
+.sketch-letter:focus-visible .stroke {
+  stroke-width: 3;
+}
+
+.sketch-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, calc(var(--sq) * 7));
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.sketch-links legend {
+  padding: 0;
+  color: var(--print-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sketch-links label {
+  display: grid;
+  grid-template-columns: var(--sq) calc(var(--sq) * 1.25) calc(var(--sq) * 2) auto;
+  align-items: center;
+  height: var(--sq);
+}
+
+.sketch-links .offset {
+  color: var(--print-muted);
+  text-align: right;
+  padding-right: 0.4rem;
+}
+
+.sketch-links .drums {
+  color: var(--print-muted);
+  font-size: 15px;
+}
+
+.sketch-links .loose .hand {
+  color: var(--red-pencil);
+}
+
+.sketch-links .spare .hand {
+  opacity: 0.5;
+}
+
+/* Stops */
+
+.hut8-stops {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.hut8-stops th {
+  padding: 0 var(--sq) 0 0;
+  color: var(--print-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.hut8-stops td {
+  height: var(--sq);
+  padding: 0 var(--sq) 0 0;
+}
+
+.hut8-stops td.hand {
+  font-size: 18px;
+  letter-spacing: 0.08em;
+}
+
+.hut8-stops tbody tr {
+  cursor: pointer;
+}
+
+.hut8-stops tbody tr:hover {
+  background: rgb(47 61 99 / 0.06);
+}
+
+.hut8-stops .verdict {
+  font-size: 22px;
+}
+
+.hut8-stops tr.false td {
+  color: var(--print-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--red-pencil);
+}
+
+.hut8-stops tr.false .verdict {
+  color: var(--red-pencil);
+  text-decoration: none;
+}
+
+/* Checking */
+
+.check-crib {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: var(--sq);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-crib > li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0.2rem;
+}
+
+.check-crib .check-position {
+  height: var(--sq);
+  color: var(--print-muted);
+  font-size: 0.75em;
+  line-height: var(--sq);
+}
+
+.check-crib .partner {
+  width: auto;
+  min-width: var(--sq);
+}
+
+.check-crib .partner.contradicted,
+.check-crib > li > .square:last-child {
+  color: var(--red-pencil);
+}
+
+.check-crib .match > .square:last-child {
+  box-shadow: inset 0 -2px #2e7d32;
+}
+
+.check-crib .mismatch > .square:last-child {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.check-crib .unknown > .square:last-child {
+  opacity: 0.55;
+}
+
+.stecker-sheet {
+  display: grid;
+  grid-template-columns: repeat(13, calc(var(--sq) * 2));
+}
+
+.hut8 output.hand {
+  min-width: calc(var(--sq) * 3);
+  text-align: center;
+}
+
+.ring-scores {
+  width: 100%;
+  max-width: 32rem;
+}
+
+.ring-scores text {
+  fill: var(--print-muted);
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.ring-bar rect {
+  fill: rgb(47 61 99 / 0.35);
+}
+
+.ring-bar.best rect {
+  fill: var(--pencil);
+}
+
+.ring-bar.set text {
+  fill: var(--red-pencil);
+  font-weight: bold;
+}
+
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestions li {
+  display: flex;
+  align-items: center;
+  gap: var(--sq);
+  height: var(--sq);
+}
+
+.confirmation {
+  padding-left: 1.25rem;
+}
+
+.checked-key {
+  display: grid;
+  grid-template-columns: calc(var(--sq) * 6) 1fr;
+  margin: 0;
+}
+
+.checked-key dt {
+  color: var(--print-muted);
+}
+
+.checked-key dd {
+  margin: 0;
+}
+
+.checked-key dd.hand {
+  font-size: 19px;
+  letter-spacing: 0.12em;
+}
+
+.stecker-sheet > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--print-muted);
+}
+
+.stecker-sheet > div > span {
+  height: var(--sq);
+}
+
+.stecker-sheet .hand-box {
+  min-width: var(--sq);
+  height: var(--sq);
+  padding: 0 2px;
+  border: none;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--grid);
+  color: var(--pencil);
+  font-family: 'Kalam', cursive;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.stecker-sheet .hand-box:disabled {
+  cursor: default;
+}
+
+.stecker-sheet .self .hand-box {
+  color: var(--print-muted);
+}
+
+.stecker-sheet .contradicted,
+.stecker-sheet .contradicted .hand-box {
+  color: var(--red-pencil);
+}
+
+.stecker-sheet .contradicted .hand-box {
+  box-shadow: inset 0 0 0 2px var(--red-pencil);
+}
+
+.message-type {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.message-type legend {
+  padding: 0;
+  color: var(--print-muted);
+}
+
+.message-type label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.message-type .notebook-actions {
+  margin-top: var(--sq);
+}

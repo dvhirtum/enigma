@@ -1,8 +1,85 @@
+using Enigma.Application.Machine;
 using Enigma.Application.Procedure;
 using Enigma.Domain.Bombe;
 using Enigma.Domain.Machine;
 
 namespace Enigma.Application.Bombe;
+
+public sealed class SetCheckingMachineHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(SetCheckingMachine command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var reflector = string.IsNullOrEmpty(command.Reflector) ? null : Input.Reflector(command.Reflector);
+        IReadOnlyList<RotorType?>? drums = command.Drums is null
+            ? null
+            : [.. command.Drums.Select(rotor => string.IsNullOrEmpty(rotor) ? null : Input.Rotor(rotor))];
+        var rings = command.Rings is { } ring ? DrumPosition.Parse(ring.ToUpperInvariant()) : (DrumPosition?)null;
+        var windows = command.Windows is { } window ? DrumPosition.Parse(window.ToUpperInvariant()) : (DrumPosition?)null;
+        return store.Use(job =>
+        {
+            var checker = job.Checker;
+            if (command.Reflector is not null)
+            {
+                checker.SetReflector(reflector);
+            }
+
+            if (command.Dummy is { } dummy)
+            {
+                checker.FitDummy(dummy);
+            }
+
+            if (drums is not null)
+            {
+                checker.Fit(drums);
+            }
+
+            (checker.Rings, checker.Windows) = (rings ?? checker.Rings, windows ?? checker.Windows);
+            return BombeState.From(job, store.Run, store);
+        });
+    }
+}
+
+public sealed class PressCheckingKeyHandler(IBombeSessionStore store)
+{
+    public LampState Handle(PressCheckingKey command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var key = command.Key is { Length: 1 } && char.IsAsciiLetter(command.Key[0])
+            ? Letter.FromChar(char.ToUpperInvariant(command.Key[0]))
+            : throw new DomainException($"'{command.Key}' is not a key.");
+        return store.Use(job =>
+        {
+            var checker = job.Checker;
+            var lamp = checker.Press(key);
+            if (checker is not { Stop: { } stop, CorePositions: { } core } || stop >= store.Stops.Count)
+            {
+                return new LampState(lamp.ToString(), null);
+            }
+
+            var check = store.Stops.Check(stop);
+            check.Record(core, key, lamp);
+            return new LampState(lamp.ToString(), CheckState.From(check, stop));
+        });
+    }
+}
+
+public sealed class SetUpCheckingMachineHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(SetUpCheckingMachine command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        return store.Use(job =>
+        {
+            var check = store.Stops.Check(command.Stop);
+            job.Checker.SetUp(command.Stop, check.Stop, check.Reflector);
+            return BombeState.From(job, store.Run, store);
+        });
+    }
+}
 
 public sealed class GetCheckHandler(IBombeSessionStore store)
 {
@@ -10,7 +87,7 @@ public sealed class GetCheckHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        return store.UseCheck(query.Stop, (run, check) => CheckState.From(check, query.Stop, run));
+        return store.UseCheck(query.Stop, (_, check) => CheckState.From(check, query.Stop));
     }
 }
 
@@ -20,31 +97,14 @@ public sealed class SetCheckHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        return store.UseCheck(command.Stop, (run, check) =>
+        return store.UseCheck(command.Stop, (_, check) =>
         {
-            var position = command.Position is { } letters ? DrumPosition.Parse(letters.ToUpperInvariant()) : check.MachinePosition;
-            var steckers = command.Steckers is { } pairs ? Steckers.Parse(pairs.ToUpperInvariant()) : check.Steckers;
+            var sheet = command.Steckers is { } pairs ? SteckerSheet.Parse(pairs.ToUpperInvariant()) : check.Sheet;
             var ring = command.RightRing is { } number ? RingSetting.FromNumber(number) : check.RightRing;
-            (check.MachinePosition, check.Steckers, check.RightRing) = (position, steckers, ring);
-            return CheckState.From(check, command.Stop, run);
+            (check.Sheet, check.RightRing) = (sheet, ring);
+            return CheckState.From(check, command.Stop);
         });
     }
-}
-
-public sealed class PressCheckKeyHandler(IBombeSessionStore store)
-{
-    public LampState Handle(PressCheckKey command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-
-        return store.UseCheck(command.Stop, (_, check) =>
-            new LampState(check.Press(ParseKey(command.Key)).ToString()));
-    }
-
-    private static Letter ParseKey(string? key) =>
-        key is { Length: 1 } && char.IsAsciiLetter(key[0])
-            ? Letter.FromChar(char.ToUpperInvariant(key[0]))
-            : throw new DomainException($"'{key}' is not a key.");
 }
 
 public sealed class ConfirmCheckHandler(IBombeSessionStore store)
@@ -56,8 +116,8 @@ public sealed class ConfirmCheckHandler(IBombeSessionStore store)
         var verdict = Enum.TryParse<StopVerdict>(command.Verdict, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed)
             ? parsed
             : throw new DomainException($"'{command.Verdict}' is not a verdict: True, False or Unchecked.");
-        return store.UseCheck(command.Stop, (run, check) =>
-            ConfirmationState.From(check.Confirm(verdict, run.Solution), CheckState.From(check, command.Stop, run)));
+        return store.UseCheck(command.Stop, (log, check) =>
+            ConfirmationState.From(check.Confirm(verdict, log.SolutionOf(command.Stop)), CheckState.From(check, command.Stop)));
     }
 }
 
@@ -77,20 +137,16 @@ public sealed class FindRightRingHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        return store.UseCheck(command.Stop, (run, check) =>
+        return store.UseCheck(command.Stop, (_, check) =>
         {
             RingScoreState[] rings = [.. check.FindRightRing().Select(ring => new RingScoreState(ring.Ring.Number, ring.Score, ring.Best))];
-            return new FindState(rings, CheckState.From(check, command.Stop, run));
+            return new FindState(rings, CheckState.From(check, command.Stop));
         });
     }
 }
 
 internal static class CheckStoreExtensions
 {
-    public static T UseCheck<T>(this IBombeSessionStore store, int stop, Func<BombeRun, StopCheck, T> action) =>
-        store.Use(_ =>
-        {
-            var run = store.Run ?? throw new NotFoundException("There is no run.");
-            return action(run, run.Check(stop));
-        });
+    public static T UseCheck<T>(this IBombeSessionStore store, int stop, Func<StopLog, StopCheck, T> action) =>
+        store.Use(_ => action(store.Stops, store.Stops.Check(stop)));
 }

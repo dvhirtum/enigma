@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { BackendStatus, EnigmaApi } from './api';
 import { BombeFrame } from './bombe/BombeFrame';
+import { Hut8Notebook } from './hut8/Hut8Notebook';
 import { MachineFrame } from './MachineFrame';
 import { ActiveContext, ModeProvider, type Mode } from './mode';
 import { Notebook } from './notebook/Notebook';
@@ -27,9 +28,9 @@ function useBackendStatus(api: EnigmaApi): BackendStatus {
   return status;
 }
 
-export type Page = 'machine' | 'notebook' | 'instructions';
+export type Page = 'machine' | 'notebook' | 'hut8' | 'instructions';
 
-/** The machine window, the operator's notebook window, or the instructions window. */
+/** The machine window, the operator's notebook window, the Hut 8 notebook window, or the instructions window. */
 export function App({ api, page = 'machine' }: { api: EnigmaApi; page?: Page }) {
   const status = useBackendStatus(api);
 
@@ -61,14 +62,20 @@ export function App({ api, page = 'machine' }: { api: EnigmaApi; page?: Page }) 
     );
   }
 
-  return <MachineStoreProvider api={api}>{page === 'notebook' ? <Notebook /> : <Modes />}</MachineStoreProvider>;
+  return (
+    <MachineStoreProvider api={api}>
+      {page === 'notebook' ? <Notebook /> : page === 'hut8' ? <Hut8Notebook /> : <Modes api={api} />}
+    </MachineStoreProvider>
+  );
 }
 
 const titles: Record<Mode, string> = { enigma: 'Enigma', bombe: 'Bombe' };
 
-/** The Enigma and Bombe frames. Both stay mounted, so each keeps its state while the other is shown. */
-function Modes() {
+/** The Enigma and Bombe frames. Both stay mounted, so each keeps its state while the other is shown. Other windows can switch the mode. */
+function Modes({ api }: { api: EnigmaApi }) {
   const [mode, setMode] = useState<Mode>('enigma');
+
+  useEffect(() => api.windows.onShowMode(setMode), [api]);
 
   useEffect(() => {
     document.title = titles[mode];

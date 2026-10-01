@@ -1,7 +1,10 @@
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
 import type { BombeMenu } from '../api';
+import { drumLetters } from '../bombe/drums';
+import { clamp, layoutMenu, lettersOf, parseLink, type Link, type Point } from '../bombe/menuLayout';
+import { Hand } from '../notebook/paper';
 import { useMachine } from '../store';
-import { clamp, layoutMenu, lettersOf, parseLink, type Link, type Point } from './menuLayout';
+import { plural } from './letters';
 
 const width = 640;
 const height = 440;
@@ -9,19 +12,10 @@ const radius = 15;
 /** How far apart links between the same two letters bow out, at their middle. */
 const spread = 26;
 
-/** The drum letters of an offset: its digits in base 26, with Z as 0 and A as 1 (1 = ZZA, 26 = ZAZ). */
-export function drumLetters(offset: number): string {
-  return [Math.floor(offset / 676), Math.floor(offset / 26), offset].map((digit) => String.fromCharCode(65 + ((digit + 25) % 26))).join('');
-}
-
 /** Estimated stops, with one decimal below 10. */
 export function formatStops(stops: number): string {
   const tenths = Math.round(stops * 10) / 10;
   return tenths < 10 ? tenths.toFixed(1) : Math.round(stops).toLocaleString('en-US');
-}
-
-function plural(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
 }
 
 /** The path of each link: straight, or bowed out when two letters share more than one link. Also the middle, for the offset. */
@@ -47,10 +41,10 @@ function linkPaths(links: Link[], at: Record<string, Point>): Map<string, { d: s
 }
 
 /**
- * Every link of the placed crib as a graph: plugged links solid, the others faded. Click a link to plug it in or out,
- * click a letter to put the test register on it, and drag letters to tidy the picture.
+ * Every link of the placed crib, sketched in pencil: plugged links drawn firmly, the others faint. Click a link to plug it
+ * in or out, click a letter to put the test register on it, and drag letters to tidy the sketch.
  */
-function MenuGraph({
+function MenuSketch({
   menu,
   busy,
   onToggle,
@@ -109,19 +103,26 @@ function MenuGraph({
     }
   };
 
-  const linkClass = (link: Link) => (!plugged.has(link.id) ? 'menu-link spare' : connected.has(link.id) ? 'menu-link' : 'menu-link loose');
+  const linkClass = (link: Link) => (!plugged.has(link.id) ? 'sketch-link spare' : connected.has(link.id) ? 'sketch-link' : 'sketch-link loose');
   const letterClass = (letter: string) =>
-    ['menu-letter', !onMenu.has(letter) && 'spare', onMenu.has(letter) && !tested.has(letter) && 'loose', letter === menu.testRegister && 'test-register'].filter(Boolean).join(' ');
+    ['sketch-letter', !onMenu.has(letter) && 'spare', onMenu.has(letter) && !tested.has(letter) && 'loose', letter === menu.testRegister && 'test-register']
+      .filter(Boolean)
+      .join(' ');
 
   return (
-    <svg ref={svg} className={busy ? 'menu-graph busy' : 'menu-graph'} viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Menu graph">
+    <svg ref={svg} className={busy ? 'menu-sketch busy' : 'menu-sketch'} viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Menu sketch">
+      <defs>
+        <filter id="pencil" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="8" />
+          <feDisplacementMap in="SourceGraphic" scale="2.5" />
+        </filter>
+      </defs>
       {cribLinks.map((link) => {
         const path = paths.get(link.id)!;
         return (
           <g key={link.id} className={linkClass(link)} aria-hidden="true" onClick={() => onToggle(link.id)}>
-            <path d={path.d} />
+            <path className="stroke" d={path.d} />
             <path className="hit" d={path.d} />
-            <circle cx={path.middle.x} cy={path.middle.y} r={9} />
             <text x={path.middle.x} y={path.middle.y}>
               {link.offset}
             </text>
@@ -148,8 +149,9 @@ function MenuGraph({
             }
           }}
         >
-          {letter === menu.testRegister && <circle className="ring" cx={point.x} cy={point.y} r={radius + 5} />}
-          <circle cx={point.x} cy={point.y} r={radius} />
+          <circle className="paper" cx={point.x} cy={point.y} r={radius} />
+          <circle className="stroke" cx={point.x} cy={point.y} r={radius} />
+          {letter === menu.testRegister && <ellipse className="ring" cx={point.x} cy={point.y} rx={radius + 6} ry={radius + 4} transform={`rotate(-12 ${point.x} ${point.y})`} />}
           <text x={point.x} y={point.y}>
             {letter}
           </text>
@@ -159,41 +161,35 @@ function MenuGraph({
   );
 }
 
-function MenuSummary({ menu, diagonalBoard }: { menu: BombeMenu; diagonalBoard: boolean }) {
+/** The size of the menu, its test register and the stops to expect. */
+export function MenuSummary({ menu, diagonalBoard }: { menu: BombeMenu; diagonalBoard: boolean }) {
   const letters = lettersOf(menu.connectedLinks.map(parseLink)).length;
   const loose = menu.links.filter((link) => !menu.connectedLinks.includes(link));
   return (
-    <div className="menu-summary">
-      <p className="summary" aria-label="Menu size">
-        {plural(menu.connectedLinks.length, 'link', 'links')}, {plural(letters, 'letter', 'letters')}, {plural(menu.loops, 'loop', 'loops')} · test register on{' '}
-        {menu.testRegister}
+    <section className="notebook-section" aria-label="Menu summary">
+      <p aria-label="Menu size">
+        {plural(menu.connectedLinks.length, 'link')}, {plural(letters, 'letter')}, {plural(menu.loops, 'loop')} · test register on{' '}
+        <Hand>{menu.testRegister}</Hand>
       </p>
-      <dl className="menu-stops">
-        <dt>Estimated false stops per wheel order</dt>
-        <dd>
-          With the diagonal board: <strong>{formatStops(menu.stopsWithBoard)}</strong>
-          {diagonalBoard && ' (on)'}
-        </dd>
-        <dd>
-          Without: <strong>{formatStops(menu.stopsWithoutBoard)}</strong>
-          {!diagonalBoard && ' (on)'}
-        </dd>
-      </dl>
+      <p aria-label="Estimated false stops">
+        Expect <Hand>{formatStops(menu.stopsWithBoard)}</Hand> false stops per wheel order with the diagonal board, <Hand>{formatStops(menu.stopsWithoutBoard)}</Hand>{' '}
+        without{diagonalBoard ? ' (the board is on)' : ' (the board is off)'}.
+      </p>
       {loose.length > 0 && (
-        <p className="menu-warning" role="status">
+        <p className="notebook-warning" role="status">
           {loose.length === 1 ? '1 link is' : `${loose.length} links are`} not connected to the test register letter {menu.testRegister} and
           {loose.length === 1 ? ' tests' : ' test'} nothing: {loose.join(', ')}.
         </p>
       )}
-    </div>
+    </section>
   );
 }
 
-/** The crib's links as a list of switches, in crib order. */
+/** The crib's links as a list of tick boxes, in crib order, each with its offset in drum letters. */
 function LinkList({ menu, busy, onToggle }: { menu: BombeMenu; busy: boolean; onToggle: (link: string) => void }) {
   const plugged = new Set(menu.links);
   return (
-    <fieldset className="menu-links">
+    <fieldset className="sketch-links">
       <legend>Links</legend>
       {menu.cribLinks.map(parseLink).map((link) => (
         <label key={link.id} className={menu.connectedLinks.includes(link.id) ? undefined : plugged.has(link.id) ? 'loose' : 'spare'}>
@@ -205,10 +201,10 @@ function LinkList({ menu, busy, onToggle }: { menu: BombeMenu; busy: boolean; on
             onChange={() => onToggle(link.id)}
           />
           <span className="offset">{link.offset}</span>
-          <span>
+          <span className="hand">
             {link.first}–{link.second}
           </span>
-          <span className="drums">{drumLetters(link.offset)}</span>
+          <span className="hand drums">{drumLetters(link.offset)}</span>
         </label>
       ))}
     </fieldset>
@@ -216,18 +212,21 @@ function LinkList({ menu, busy, onToggle }: { menu: BombeMenu; busy: boolean; on
 }
 
 /**
- * The menu of the placed crib: built automatically when the crib is placed, and edited by hand here. The controls are
- * locked while a change is on its way to the backend.
+ * The menu of the placed crib: built when the crib is placed, and edited by hand here. The controls are locked while a
+ * change is on its way to the backend. Sending the menu plugs up the Bombe, after asking when it was plugged by hand;
+ * `onDone` follows.
  */
-export function MenuView() {
+export function MenuStep({ onDone }: { onDone: () => void }) {
   const bombe = useMachine((store) => store.bombe);
   const setMenu = useMachine((store) => store.setMenu);
   const buildMenu = useMachine((store) => store.buildMenu);
+  const plugUpMenu = useMachine((store) => store.plugUpMenu);
+  const [asking, setAsking] = useState(false);
   const pending = useRef(false);
   const [busy, setBusy] = useState(false);
   const menu = bombe?.menu;
   if (!menu) {
-    return <p className="bombe-empty">Place the crib in the Crib view first.</p>;
+    return null;
   }
 
   const send = (change: () => Promise<boolean>) => {
@@ -242,6 +241,17 @@ export function MenuView() {
     });
   };
 
+  const sendMenu = () => {
+    setAsking(false);
+    send(async () => {
+      const plugged = await plugUpMenu();
+      if (plugged) {
+        onDone();
+      }
+      return plugged;
+    });
+  };
+
   const onToggle = (link: string) => {
     const links = menu.cribLinks.filter((own) => (own === link) !== menu.links.includes(own));
     if (links.length === 0) {
@@ -252,24 +262,39 @@ export function MenuView() {
   };
 
   return (
-    <div className="bombe-view menu-view" aria-busy={busy}>
-      <div className="crib-controls">
-        <button type="button" disabled={busy} onClick={() => send(buildMenu)}>
-          Build menu
-        </button>
-        <p className="summary">Click a link to plug it in or out, and a letter to put the test register on it.</p>
-      </div>
+    <div className="notebook-form" aria-busy={busy}>
+      <p>
+        Each crib letter and its cipher letter make a link, numbered by its place in the crib. Click a link to plug it in or out, and a letter to put the
+        test register on it. Loops make a good menu.
+      </p>
       <MenuSummary menu={menu} diagonalBoard={bombe.settings.diagonalBoard} />
-      <div className="menu-layout">
-        <MenuGraph
-          key={menu.cribLinks.join(' ')}
-          menu={menu}
-          busy={busy}
-          onToggle={onToggle}
-          onTestRegister={(letter) => send(() => setMenu(menu.links, letter))}
-        />
-        <LinkList menu={menu} busy={busy} onToggle={onToggle} />
-      </div>
+      <MenuSketch
+        key={menu.cribLinks.join(' ')}
+        menu={menu}
+        busy={busy}
+        onToggle={onToggle}
+        onTestRegister={(letter) => send(() => setMenu(menu.links, letter))}
+      />
+      <LinkList menu={menu} busy={busy} onToggle={onToggle} />
+      <p className="notebook-actions">
+        <button type="button" disabled={busy} onClick={() => send(buildMenu)}>
+          Build menu again
+        </button>
+        <button type="button" disabled={busy || asking} onClick={() => (bombe.machine.pluggedByHand ? setAsking(true) : sendMenu())}>
+          Send the menu to the Bombe
+        </button>
+      </p>
+      {asking && (
+        <p className="notebook-warning" role="alert">
+          The Bombe is plugged up by hand. Pull out its cables and plug up this menu?{' '}
+          <button type="button" onClick={sendMenu}>
+            Plug up the menu
+          </button>{' '}
+          <button type="button" onClick={() => setAsking(false)}>
+            Keep the Bombe as it is
+          </button>
+        </p>
+      )}
     </div>
   );
 }

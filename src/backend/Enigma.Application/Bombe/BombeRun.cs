@@ -14,58 +14,61 @@ public enum RunStatus
 }
 
 /// <summary>
-/// A Bombe run of the job's menu over its wheel orders, in the background. At full speed (null) the wheel orders run
-/// in parallel; at a set speed (positions per second) one wheel order runs at a time, paced by the clock, and pauses at
-/// each stop until it is continued. The speed can change while the run goes.
+/// A Bombe run in the background: the drums turn once through all 17,576 positions, and at each one every group of
+/// chains with a test register is tested with its scramblers as set up. At full speed (null) the groups are tested in
+/// parallel; at a set speed (positions per second) the run is paced by the clock and pauses at each stop until it is
+/// continued. The speed can change while the run goes. The stops are printed, and, for the Hut 8 notebook, logged with
+/// the placed crib.
 /// </summary>
 public sealed class BombeRun
 {
-    /// <summary>The speed of a real Bombe: a wheel order in about 20 minutes.</summary>
-    public const double HistoricalSpeed = DrumPosition.Count / (20 * 60.0);
+    /// <summary>The speed of a real Bombe: a run without stops in 10.4 minutes.</summary>
+    public const double HistoricalSpeed = DrumPosition.Count / (10.4 * 60);
+
+    // The positions tested at full speed between looks at the speed and the cancel flag.
+    private const int FullSpeedChunk = Letter.Count * Letter.Count;
 
     private static readonly TimeSpan Tick = TimeSpan.FromMilliseconds(20);
 
     private readonly Lock _lock = new();
-    private readonly Func<WheelOrder, BombeMachine> _machine;
-    private readonly bool[] _done;
-    private readonly List<BombeStop> _stops = [];
-    private readonly Dictionary<int, StopCheck> _checks = [];
+    private readonly GroupMachine[] _machines;
+    private readonly Printout _printout;
+    private readonly StopLog? _log;
+    private readonly CribPlacement? _placement;
+    private readonly Solution? _solution;
     private readonly TimeProvider _time;
     private readonly long _started;
     private volatile bool _cancelled;
     private double? _speed;
-    private int _ordersDone;
-    private (BombeMachine Machine, int Order, int Step)? _current;
-    private BombeStop? _pause;
+    private int _step;
+    private int _stops;
+    private (PrintedStop Stop, int Index)? _pause;
     private long? _ended;
     private RunStatus _status = RunStatus.Running;
     private string? _error;
 
-    private BombeRun(BombeJob job, double? speed, TimeProvider time)
+    private BombeRun(BombeJob job, double? speed, TimeProvider time, Printout printout, StopLog? log)
     {
-        var menu = job.Menu ?? throw new DomainException("Build a menu first.");
-        Placement = job.Placement ?? throw new DomainException("Place the crib first.");
-        Solution = job.Source?.Solution;
-        var (reflector, input, diagonalBoard) = (job.Reflector, job.Input, job.DiagonalBoard);
-        _machine = order => new BombeMachine(new Scrambler(order, reflector), menu, input, diagonalBoard);
-        WheelOrders = job.WheelOrders;
-        Reflector = reflector;
-        _done = new bool[WheelOrders.Count];
+        _machines = [.. job.Machine.Machines(job.Reflector, job.DiagonalBoard)];
+        Groups = [.. _machines.Select(machine => machine.Group)];
+        Reflector = job.Reflector;
+        _printout = printout;
+        _placement = job.Placement;
+        _log = _placement is not null && job.Machine.PluggedMenu is { } plugged && ReferenceEquals(plugged, job.Menu) ? log : null;
+        _solution = job.Source?.Solution;
         _speed = CheckSpeed(speed);
         _time = time;
         _started = time.GetTimestamp();
         Completion = Task.Run(RunAsync);
     }
 
-    public IReadOnlyList<WheelOrder> WheelOrders { get; }
+    /// <summary>The groups of chains tested, in order.</summary>
+    public IReadOnlyList<ChainGroup> Groups { get; }
 
     public ReflectorType Reflector { get; }
 
-    /// <summary>The crib placement the menu was built from.</summary>
-    public CribPlacement Placement { get; }
-
-    /// <summary>The solution of the message, when it has one.</summary>
-    public Solution? Solution { get; }
+    /// <summary>Whether the stops go to the Hut 8 notebook's stop log too: when a crib is placed and the Bombe is plugged up with the job's menu.</summary>
+    public bool Logged => _log is not null;
 
     /// <summary>Completes when the run has finished, was cancelled or failed.</summary>
     public Task Completion { get; }
@@ -117,13 +120,17 @@ public sealed class BombeRun
         }
     }
 
-    /// <summary>Starts running the job's menu over its wheel orders.</summary>
-    public static BombeRun Start(BombeJob job, double? speed, TimeProvider time)
+    /// <summary>
+    /// Starts running the Bombe as set up. With a stop log (the Hut 8 notebook is open) and a placed crib, the stops
+    /// are logged for checking too.
+    /// </summary>
+    public static BombeRun Start(BombeJob job, double? speed, TimeProvider time, Printout printout, StopLog? log)
     {
         ArgumentNullException.ThrowIfNull(job);
         ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(printout);
 
-        return new BombeRun(job, speed, time);
+        return new BombeRun(job, speed, time, printout, log);
     }
 
     public void Cancel() => _cancelled = true;
@@ -146,52 +153,13 @@ public sealed class BombeRun
             return new RunProgress(
                 CurrentStatus,
                 _speed,
-                _ordersDone,
-                ((long)_ordersDone * DrumPosition.Count) + (_current?.Step ?? 0),
-                _pause?.WheelOrder ?? _current?.Machine.WheelOrder,
-                _pause?.Position ?? (_current is { } current ? BombeMachine.PositionAt(current.Step) : null),
-                _pause,
-                _stops.Count,
+                _step,
+                _status == RunStatus.Running ? BombeMachine.PositionAt(Math.Min(_step, DrumPosition.Count - 1)) : null,
+                _pause?.Stop,
+                _pause?.Index,
+                _stops,
                 _error,
                 _time.GetElapsedTime(_started, _ended ?? _time.GetTimestamp()));
-        }
-    }
-
-    /// <summary>The check of the <paramref name="index"/>th stop (0 = the first), started when first asked for.</summary>
-    public StopCheck Check(int index)
-    {
-        lock (_lock)
-        {
-            if (index < 0 || index >= _stops.Count)
-            {
-                throw new NotFoundException($"There is no stop {index}.");
-            }
-
-            if (!_checks.TryGetValue(index, out var check))
-            {
-                check = new StopCheck(_stops[index], Reflector, Placement);
-                _checks[index] = check;
-            }
-
-            return check;
-        }
-    }
-
-    /// <summary>The verdict given on the <paramref name="index"/>th stop.</summary>
-    public StopVerdict VerdictOn(int index)
-    {
-        lock (_lock)
-        {
-            return _checks.TryGetValue(index, out var check) ? check.Verdict : StopVerdict.Unchecked;
-        }
-    }
-
-    /// <summary>The stops found so far, from the <paramref name="from"/>th on, at most <paramref name="count"/> (null: all).</summary>
-    public IReadOnlyList<BombeStop> Stops(int from, int? count = null)
-    {
-        lock (_lock)
-        {
-            return [.. _stops.Skip(Math.Max(0, from)).Take(Math.Max(0, count ?? int.MaxValue))];
         }
     }
 
@@ -204,15 +172,31 @@ public sealed class BombeRun
     {
         try
         {
-            while (!_cancelled && Array.IndexOf(_done, false) is var next and >= 0)
+            var budget = 0.0;
+            var last = _time.GetTimestamp();
+            while (!_cancelled && _step < DrumPosition.Count)
             {
-                if (Speed is null)
+                if (Speed is not { } speed)
                 {
-                    RunFullSpeed();
+                    Test(_step, Math.Min(_step + FullSpeedChunk, DrumPosition.Count), pause: false);
+                    (budget, last) = (0, _time.GetTimestamp());
+                    continue;
                 }
-                else
+
+                var now = _time.GetTimestamp();
+                budget += _time.GetElapsedTime(last, now).TotalSeconds * speed;
+                last = now;
+                var count = (int)Math.Min(budget, DrumPosition.Count - _step);
+                budget -= count;
+                Test(_step, _step + count, pause: true);
+                if (IsPaused)
                 {
-                    await RunPacedAsync(next).ConfigureAwait(false);
+                    await WaitWhilePausedAsync().ConfigureAwait(false);
+                    (budget, last) = (0, _time.GetTimestamp());
+                }
+                else if (_step < DrumPosition.Count)
+                {
+                    await Task.Delay(Tick, _time).ConfigureAwait(false);
                 }
             }
         }
@@ -227,62 +211,9 @@ public sealed class BombeRun
         {
             lock (_lock)
             {
-                _current = null;
                 _pause = null;
                 _ended = _time.GetTimestamp();
                 _status = _error is not null ? RunStatus.Failed : _cancelled ? RunStatus.Cancelled : RunStatus.Finished;
-            }
-        }
-    }
-
-    // Finishes the wheel order in hand, then runs the others in parallel until a speed is set.
-    private void RunFullSpeed()
-    {
-        if (_current is { } current)
-        {
-            Test(current.Machine, current.Order, current.Step, DrumPosition.Count);
-        }
-
-        Parallel.ForEach(Enumerable.Range(0, WheelOrders.Count).Where(order => !_done[order]), (order, loop) =>
-        {
-            if (_cancelled || Speed is not null)
-            {
-                loop.Stop();
-                return;
-            }
-
-            Test(_machine(WheelOrders[order]), order, 0, DrumPosition.Count);
-        });
-    }
-
-    // Runs one wheel order at the set speed, until it is done, cancelled or the speed is set to full. Waits at each stop
-    // until the run is continued.
-    private async Task RunPacedAsync(int order)
-    {
-        var (machine, _, step) = _current ?? (_machine(WheelOrders[order]), order, 0);
-        lock (_lock)
-        {
-            _current = (machine, order, step);
-        }
-
-        var budget = 0.0;
-        var last = _time.GetTimestamp();
-        while (step < DrumPosition.Count && !_cancelled && Speed is { } speed)
-        {
-            var now = _time.GetTimestamp();
-            budget += _time.GetElapsedTime(last, now).TotalSeconds * speed;
-            last = now;
-            var count = (int)Math.Min(budget, DrumPosition.Count - step);
-            budget -= count;
-            step = Test(machine, order, step, step + count, pause: true);
-            if (IsPaused)
-            {
-                await WaitWhilePausedAsync().ConfigureAwait(false);
-                (budget, last) = (0, _time.GetTimestamp());
-            }
-            else if (step < DrumPosition.Count)
-            {
-                await Task.Delay(Tick, _time).ConfigureAwait(false);
             }
         }
     }
@@ -295,59 +226,69 @@ public sealed class BombeRun
         }
     }
 
-    // Tests the steps [from, to) of a wheel order and records its stops; returns the next step. With pause, it stops
-    // after the first stop and pauses the run there.
-    private int Test(BombeMachine machine, int order, int from, int to, bool pause = false)
+    // Tests the steps [from, to) on every group and prints the stops, by step and then group. With pause, it stops after
+    // the first step with a stop and pauses the run at its first stop.
+    private void Test(int from, int to, bool pause)
     {
-        var stops = new List<BombeStop>();
-        for (var step = from; step < to; step++)
+        var found = new List<(int Step, int Group, PrintedStop Stop)>[_machines.Length];
+        Parallel.For(0, _machines.Length, index =>
         {
-            if (machine.Test(BombeMachine.PositionAt(step)) is { } stop)
+            var (group, machine) = (_machines[index].Group, _machines[index].Machine);
+            var stops = new List<(int, int, PrintedStop)>();
+            for (var step = from; step < to; step++)
             {
-                stops.Add(stop);
-                if (pause)
+                var letters = BombeMachine.PositionAt(step);
+                if (machine.LiveWiresAt(letters) is { } live)
                 {
-                    to = step + 1;
+                    stops.Add((step, index, new PrintedStop(group.Chains, group.WheelOrder, letters, machine.TestRegister, live)));
+                    if (pause)
+                    {
+                        break;
+                    }
                 }
             }
+
+            found[index] = stops;
+        });
+
+        var stops = found.SelectMany(stops => stops).OrderBy(stop => stop.Step).ThenBy(stop => stop.Group).ToList();
+        if (pause && stops.Count > 0)
+        {
+            var first = stops[0].Step;
+            stops = [.. stops.Where(stop => stop.Step == first)];
+            to = first + 1;
         }
 
+        var index = _printout.Add(stops.Select(stop => stop.Stop));
+        _log?.Add(
+            stops.Select(stop => stop.Stop).Where(stop => stop.WheelOrder is not null).Select(stop =>
+                new BombeStop(stop.WheelOrder!, stop.WheelOrder!.CorePositions(stop.DrumLetters), stop.TestRegister, stop.LiveWires)),
+            Reflector,
+            _placement!,
+            _solution);
         lock (_lock)
         {
-            _stops.AddRange(stops);
+            _step = to;
+            _stops += stops.Count;
             if (pause && stops.Count > 0)
             {
-                _pause = stops[0];
-            }
-
-            if (to < DrumPosition.Count)
-            {
-                _current = (machine, order, to);
-            }
-            else
-            {
-                _done[order] = true;
-                _ordersDone++;
-                _current = _current?.Order == order ? null : _current;
+                _pause = (stops[0].Stop, index);
             }
         }
-
-        return to;
     }
 }
 
 /// <summary>
-/// How far a run has got. The wheel order and drum position in hand are known while the run is paced; a paused run
-/// gives the stop it waits at.
+/// How far a run has got: the positions tested, the upper drums' letters while it runs, the stop a paused run waits at
+/// with its index on the printout, and the stops it found.
 /// </summary>
 public sealed record RunProgress(
     RunStatus Status,
     double? Speed,
-    int WheelOrdersDone,
-    long PositionsTested,
-    WheelOrder? WheelOrder,
+    int PositionsTested,
     DrumPosition? Position,
-    BombeStop? Pause,
+    PrintedStop? Pause,
+    int? PauseIndex,
     int Stops,
     string? Error,
     TimeSpan Elapsed);

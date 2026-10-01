@@ -72,6 +72,7 @@ public sealed class BombeSourceHandlerTests
 
         // Assert
         Assert.Equal("STEUEREJTANAFJORD", crib.Crib);
+        Assert.StartsWith("At the very start", crib.Place, StringComparison.Ordinal);
         Assert.Equal("B", solution.Reflector);
         Assert.Equal("III VI VIII", solution.WheelOrder);
         Assert.Equal([1, 8, 13], solution.Rings);
@@ -128,7 +129,9 @@ public sealed class BombeSourceHandlerTests
         Assert.NotNull(state.Source?.Message);
         Assert.Equal("t", solution.Exercise?.SheetId);
         Assert.Equal("1944-06", solution.Exercise?.Month);
-        Assert.Contains(new GetSourceCribHandler(_store).Handle(new GetSourceCrib()).Crib, solution.Plaintext, StringComparison.Ordinal);
+        var crib = new GetSourceCribHandler(_store).Handle(new GetSourceCrib());
+        Assert.Contains(crib.Crib, solution.Plaintext, StringComparison.Ordinal);
+        Assert.StartsWith("At or near the start", crib.Place, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -143,5 +146,58 @@ public sealed class BombeSourceHandlerTests
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
         Assert.Contains("M3 key sheets", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Should_suggest_the_crib_of_the_message_type_When_pasted_text_is_given_one()
+    {
+        // Arrange
+        new SetCipherTextHandler(_store).Handle(new SetCipherText("QWERT ZUIOP"));
+
+        // Act
+        var crib = new GetSourceCribHandler(_store).Handle(new GetSourceCrib("convoy"));
+
+        // Assert
+        Assert.Equal("FEINDLICHERGELEITZUG", crib.Crib);
+        Assert.StartsWith("At or near the start", crib.Place, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Should_suggest_the_intercepts_own_crib_When_a_message_type_is_given()
+    {
+        // Arrange
+        new LoadInterceptHandler(_store).Handle(new LoadIntercept("barbarossa-1941-2"));
+
+        // Act
+        var crib = new GetSourceCribHandler(_store).Handle(new GetSourceCrib("weather"));
+
+        // Assert
+        Assert.Equal("AUFFLIEGERSTRASZE", crib.Crib);
+        Assert.StartsWith("About 80 letters in", crib.Place, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Should_say_not_found_When_the_message_type_is_unknown()
+    {
+        // Arrange
+        new SetCipherTextHandler(_store).Handle(new SetCipherText("QWERT ZUIOP"));
+
+        // Act
+        void Act() => new GetSourceCribHandler(_store).Handle(new GetSourceCrib("letter"));
+
+        // Assert
+        Assert.Throws<NotFoundException>(Act);
+    }
+
+    [Fact]
+    public void Should_list_the_exercise_message_types_When_asked()
+    {
+        // Arrange
+        // Act
+        var types = ListMessageTypesHandler.Handle(new ListMessageTypes());
+
+        // Assert
+        Assert.Equal(["weather", "nothing-to-report", "own-position", "convoy"], types.Select(type => type.Id));
+        Assert.Equal("Weather forecast", types[0].Name);
     }
 }

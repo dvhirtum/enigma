@@ -13,7 +13,7 @@ public sealed class StopCheckTests
     private static readonly Letter Q = Letter.FromChar('Q');
 
     [Fact]
-    public void Should_start_with_the_stops_stecker_and_the_drums_at_the_stop_When_created()
+    public void Should_start_with_the_stops_stecker_When_created()
     {
         // Arrange
         var stop = CarterStop("VMB");
@@ -23,23 +23,56 @@ public sealed class StopCheckTests
 
         // Assert
         Assert.Equal("GQ", check.Steckers.ToString());
-        Assert.Equal("WPC", check.MachinePosition.ToString());
         Assert.Equal(StopVerdict.Unchecked, check.Verdict);
     }
 
     [Fact]
-    public void Should_light_the_partner_of_the_other_letter_When_the_checking_machine_is_set_to_a_link()
+    public void Should_write_the_lamp_as_the_other_letters_partner_When_a_key_is_pressed_at_a_link()
     {
         // Arrange
-        // Link G–R at offset 6: with G/Q, Q on the machine at the stop plus 6 lights R's partner, R itself.
+        // Link G–R at offset 6: with G/Q, Q at the link's position lights R, so R is unsteckered.
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
-        check.MachinePosition = check.MachinePosition.Advance(6);
+        var link = CarterStop("VMB").Position.Advance(6);
 
         // Act
-        var lamp = check.Press(Q);
+        var written = check.Record(link, Q, Letter.FromChar('R'));
 
         // Assert
-        Assert.Equal(Letter.FromChar('R'), lamp);
+        Assert.True(written);
+        Assert.Equal("GQ RR", check.Sheet.ToString());
+    }
+
+    [Fact]
+    public void Should_write_a_contradiction_and_leave_the_letter_unknown_When_a_lamp_gives_another_partner()
+    {
+        // Arrange
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
+        var link = CarterStop("VMB").Position.Advance(6);
+        check.Record(link, Q, Letter.FromChar('R'));
+
+        // Act
+        check.Record(link, Q, Letter.FromChar('X'));
+
+        // Assert
+        Assert.Equal("GQ RR RX", check.Sheet.ToString());
+        Assert.Null(check.Steckers.PartnerOf(Letter.FromChar('R')));
+    }
+
+    [Fact]
+    public void Should_write_nothing_When_the_key_is_no_known_partner_or_the_drums_are_at_no_link()
+    {
+        // Arrange
+        var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
+        var link = CarterStop("VMB").Position.Advance(6);
+
+        // Act
+        var unknownKey = check.Record(link, Letter.FromChar('A'), Letter.FromChar('B'));
+        var noLink = check.Record(CarterStop("VMB").Position.Advance(100), Q, Letter.FromChar('B'));
+
+        // Assert
+        Assert.False(unknownKey);
+        Assert.False(noLink);
+        Assert.Equal("GQ", check.Sheet.ToString());
     }
 
     [Fact]
@@ -113,7 +146,6 @@ public sealed class StopCheckTests
         Assert.True(solution.VerdictCorrect);
         Assert.Empty(solution.WrongPairs);
         Assert.Empty(solution.MissingPairs);
-        Assert.True(solution.RightRingCorrect);
     }
 
     [Fact]
