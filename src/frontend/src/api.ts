@@ -302,6 +302,77 @@ export interface BombeState {
   run: BombeRun | null;
   stops: number;
   printed: number;
+  /** The day's traffic once a pinch of the key sheet day is taken. */
+  day: DayTraffic | null;
+}
+
+/** A message of the day: the radio message, its indicator groups and the groups written down (null: not yet), each marked right or wrong. */
+export interface DayMessage {
+  message: string;
+  indicator: string;
+  schluesselkenngruppe: string | null;
+  schluesselkenngruppeRight: boolean | null;
+  verfahrenkenngruppe: string | null;
+  verfahrenkenngruppeRight: boolean | null;
+}
+
+/**
+ * The day's traffic read with a pinch: the key sheet day, its Grundstellung, the bigram table in force (swaps such as
+ * "ABCD": AB and CD swap) and the messages, the broken one first.
+ */
+export interface DayTraffic {
+  sheetId: string;
+  network: string;
+  /** yyyy-MM */
+  month: string;
+  day: number;
+  grundstellung: string;
+  table: number;
+  swaps: string[];
+  messages: DayMessage[];
+}
+
+/** How a bundled intercept or an exercise was encrypted: its key (rings 1–26), message key, plain text and notes. */
+export interface SourceSolution {
+  reflector: string;
+  wheelOrder: string;
+  rings: number[];
+  plugs: string[];
+  messageKey: string;
+  plaintext: string;
+  notes: string;
+}
+
+/** A row of the ring table: left and middle rings (1–26), the Spruchschlüssel they give and the cores it leads to at the crib. */
+export interface RingRow {
+  left: number;
+  middle: number;
+  spruchschluessel: string;
+  cores: string;
+}
+
+/** The ring table of a check: the Grundstellung and Verfahrenkenngruppe, the right ring, the stop's cores at the crib and 676 rows. */
+export interface RingTable {
+  grundstellung: string;
+  verfahrenkenngruppe: string;
+  rightRing: number;
+  cores: string;
+  rows: RingRow[];
+}
+
+/** The rings read from the indicator: the whole key (the Spruchschlüssel as message key), its decrypt, and whether the rings are right (null without a solution). */
+export interface Reading {
+  left: number;
+  middle: number;
+  key: CheckedKey;
+  decrypt: string;
+  ringsRight: boolean | null;
+}
+
+/** The groups of an indicator to write down; those left out stay, an empty one is rubbed out. */
+export interface IndicatorChange {
+  schluesselkenngruppe?: string;
+  verfahrenkenngruppe?: string;
 }
 
 /** A crib letter at its offset, and whether the steckers found so far encipher it to its cipher letter. */
@@ -337,6 +408,8 @@ export interface BombeCheck {
   crib: CribLetter[];
   decrypt: string;
   key: CheckedKey;
+  /** The rings read from the indicator, or null. */
+  reading: Reading | null;
 }
 
 /** The lamp a key lit, and the check of the stop the checking machine is set up for, with what the lamp wrote down. */
@@ -473,6 +546,8 @@ export interface BombeApi {
   messageTypes: Call<[], MessageType[]>;
   /** The likely crib of the loaded message: its own, or else that of the message type `type`. */
   suggestCrib: Call<[type?: string], CribSuggestion>;
+  /** The key and plain text of the loaded intercept or exercise. */
+  getSolution: Call<[], SourceSolution>;
   loadIntercept: Call<[id: string], BombeState>;
   generateExercise: Call<[], BombeState>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */
@@ -528,6 +603,14 @@ export interface BombeApi {
   suggestSteckers: Call<[stop: number], Suggestion>;
   /** Scores the 26 right rings and sets the lowest best. */
   findRightRing: Call<[stop: number], RingFind>;
+  /** Takes a pinch of the message's key sheet day: an exercise's own, or for a pasted radio message the sheet and day given. */
+  takePinch: Call<[sheetId?: string, day?: number], BombeState>;
+  /** Writes down the groups of the indicator of a message of the day (0 = the broken message). */
+  writeIndicator: Call<[message: number, change: IndicatorChange], BombeState>;
+  fillInIndicator: Call<[message: number], BombeState>;
+  getRingTable: Call<[stop: number], RingTable>;
+  /** Reads the left and middle rings (1–26) off the ring table; null forgets them. */
+  readRings: Call<[stop: number, left: number | null, middle: number | null], BombeCheck>;
 }
 
 /** An HTML document to print to the PDF file `name`. */

@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { BombeState } from '../api';
-import { carterBombe, carterChecked, carterMenu, carterPaused, emptyBombe, withCrib } from '../test/fakeApi';
+import { carterBombe, carterChecked, carterChecker, carterMenu, carterPaused, carterRead, emptyBombe, fakeDay, withCrib } from '../test/fakeApi';
 import { renderBombe } from '../test/renderBombe';
 import { Hut8Notebook } from './Hut8Notebook';
 
@@ -14,6 +14,18 @@ async function currentStep() {
 
 async function expectCurrent(title: string) {
   await waitFor(async () => expect(within(await currentStep()).getByRole('heading', { level: 3 })).toHaveTextContent(title));
+}
+
+const exercise: BombeState = {
+  ...finished,
+  source: { ...carterBombe.source!, kind: 'Exercise', title: 'Exercise, 19 June 1944', message: fakeDay.messages[0].message },
+};
+
+/** Checks Carter's stop and confirms it true. */
+async function confirmTrue() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Check stop 1' }));
+  await expectCurrent('Check the stop');
+  fireEvent.click(screen.getByRole('button', { name: 'True stop' }));
 }
 
 describe('Hut8Notebook', () => {
@@ -67,6 +79,42 @@ describe('Hut8Notebook', () => {
     await expectCurrent('Read the message');
     expect(api.bombe.confirmCheck).toHaveBeenCalledWith(0, 'True');
     expect(screen.getByRole('button', { name: 'Set up Enigma' })).toBeInTheDocument();
+  });
+
+  it('ends with reading the message when its indicators cannot be read', async () => {
+    renderBombe(<Hut8Notebook />, finished);
+    await confirmTrue();
+
+    await expectCurrent('Read the message');
+    expect(await screen.findByText(/The key sheet day of this intercept is not known/)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Read the indicators' })).not.toBeInTheDocument();
+  });
+
+  it('goes on to read the indicators of an exercise', async () => {
+    renderBombe(<Hut8Notebook />, exercise, (fake) => fake.bombe.setUpChecker.mockResolvedValue({ ok: true, value: { ...exercise, checker: carterChecker } }));
+    await confirmTrue();
+    await expectCurrent('Read the message');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Read the indicators' }));
+
+    await expectCurrent('Read the indicators');
+    expect(screen.getByRole('button', { name: 'Take the pinch' })).toBeInTheDocument();
+  });
+
+  it("goes on to the day's traffic once the rings are read", async () => {
+    const pinched: BombeState = { ...exercise, day: fakeDay };
+    renderBombe(<Hut8Notebook />, pinched, (fake) => {
+      fake.bombe.setUpChecker.mockResolvedValue({ ok: true, value: { ...pinched, checker: carterChecker } });
+      fake.bombe.confirmCheck.mockResolvedValue({
+        ok: true,
+        value: { verdict: 'True', cribMismatches: [], cribUnknown: [], solution: null, check: carterRead },
+      });
+    });
+    await confirmTrue();
+
+    await expectCurrent("Read the day's traffic");
+    expect(screen.getByRole('listitem', { name: 'Read the indicators' })).toHaveTextContent('Rings C N Z, Spruchschlüssel ULA');
+    expect(screen.getByRole('list', { name: 'Messages of the day' })).toBeInTheDocument();
   });
 
   it('goes back to the stops after a false verdict', async () => {

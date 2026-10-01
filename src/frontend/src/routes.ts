@@ -62,6 +62,7 @@ export const bombeRoutes: Routes<BombeApi> = {
   intercepts: () => ({ method: 'GET', path: `${bombe}/intercepts` }),
   messageTypes: () => ({ method: 'GET', path: `${bombe}/message-types` }),
   suggestCrib: (type) => ({ method: 'GET', path: `${bombe}/source/crib${type ? `?type=${encodeURIComponent(type)}` : ''}` }),
+  getSolution: () => ({ method: 'GET', path: `${bombe}/source/solution` }),
   loadIntercept: (id) => ({ method: 'POST', path: `${bombe}/source/intercept`, body: { id } }),
   generateExercise: () => ({ method: 'POST', path: `${bombe}/source/exercise` }),
   pasteCipherText: (text) => ({ method: 'PUT', path: `${bombe}/cipher-text`, body: { text } }),
@@ -94,4 +95,9 @@ export const bombeRoutes: Routes<BombeApi> = {
   confirmCheck: (stop, verdict) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/verdict`, body: { verdict } }),
   suggestSteckers: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/suggest` }),
   findRightRing: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/find` }),
+  takePinch: (sheetId, day) => ({ method: 'POST', path: `${bombe}/pinch`, body: { sheetId, day } }),
+  writeIndicator: (message, change) => ({ method: 'PUT', path: `${bombe}/day/messages/${message}/indicator`, body: change }),
+  fillInIndicator: (message) => ({ method: 'POST', path: `${bombe}/day/messages/${message}/indicator/fill-in` }),
+  getRingTable: (stop) => ({ method: 'GET', path: `${bombe}/stops/${stop}/check/ring-table` }),
+  readRings: (stop, left, middle) => ({ method: 'PUT', path: `${bombe}/stops/${stop}/check/rings`, body: { left, middle } }),
 };

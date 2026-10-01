@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { BackendStatus, BombeCheck, BombeMachine, BombeResult, BombeRun, BombeState, BombeStop, CheckingMachine, EnigmaApi, PrintedStop, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, MessageType, OperatorState, TauschtafelSet } from '../api';
+import type { BackendStatus, BombeCheck, DayTraffic, RingTable, BombeMachine, BombeResult, BombeRun, BombeState, BombeStop, CheckingMachine, EnigmaApi, PrintedStop, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, MessageType, OperatorState, TauschtafelSet } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -141,6 +141,7 @@ export const emptyBombe: BombeState = {
   run: null,
   stops: 0,
   printed: 0,
+  day: null,
 };
 
 export const carterBombe: BombeState = {
@@ -239,6 +240,7 @@ export const carterCheck: BombeCheck = {
   crib: [...carterCrib].map((plain, index) => ({ offset: index + 1, plain, cipher: 'SNMKGGSTZZUGARLV'[index], match: 'Unknown' })),
   decrypt: 'XGTMBRVOAHEJSAGF',
   key: { reflector: 'B', wheelOrder: 'II V III', rings: [26, 26, 26], plugs: ['GQ'], messageKey: 'ULA' },
+  reading: null,
 };
 
 /** Carter's check with every stecker found: the crib matches and decrypts. */
@@ -319,6 +321,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       intercepts: vi.fn().mockResolvedValue({ ok: true, value: intercepts }),
       messageTypes: vi.fn().mockResolvedValue({ ok: true, value: messageTypes }),
       suggestCrib: vi.fn().mockResolvedValue({ ok: true, value: { crib: 'WETTERVORHERSAGE', place: 'At or near the start, after at most a short prefix such as AN ALLE or the hour.' } }),
+      getSolution: vi.fn().mockResolvedValue({ ok: true, value: { reflector: 'B', wheelOrder: 'II V III', rings: [3, 14, 26], plugs: [], messageKey: 'ULA', plaintext: 'WETTERVORHERSAGE', notes: '' } }),
       loadIntercept: bombe(carterBombe),
       generateExercise: bombe(),
       pasteCipherText: bombe(),
@@ -369,6 +372,11 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
           check: { ...carterChecked, rightRing: 1 },
         },
       }),
+      takePinch: bombe({ ...emptyBombe, day: fakeDay }),
+      writeIndicator: bombe({ ...emptyBombe, day: fakeDay }),
+      fillInIndicator: bombe({ ...emptyBombe, day: fakeDay }),
+      getRingTable: vi.fn().mockResolvedValue({ ok: true, value: carterRingTable }),
+      readRings: vi.fn().mockResolvedValue({ ok: true, value: carterRead }),
     },
     clipboard: {
       writeText: vi.fn().mockResolvedValue(undefined),
@@ -425,3 +433,66 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
 
   return { api, pushStatus, pushState, pushKeySheetsChanged, pushMode, pushBombeResult };
 }
+
+/** The day of a pinched exercise: the broken message first, then two others. */
+export const fakeDay: DayTraffic = {
+  sheetId: 'sheet',
+  network: 'Triton',
+  month: '1944-06',
+  day: 19,
+  grundstellung: 'QRS',
+  table: 3,
+  swaps: ['AAZZ', 'ABZY', 'QWER', 'TZUI'],
+  messages: [
+    {
+      message: '1840 = 32 = QWTZ ERUI SNMK GGST ZZUG ARLV QWTZ ERUI',
+      indicator: 'QWTZ ERUI',
+      schluesselkenngruppe: null,
+      schluesselkenngruppeRight: null,
+      verfahrenkenngruppe: null,
+      verfahrenkenngruppeRight: null,
+    },
+    {
+      message: '0412 = 28 = ABCD EFGH IJKL MNOP QRST ABCD EFGH',
+      indicator: 'ABCD EFGH',
+      schluesselkenngruppe: null,
+      schluesselkenngruppeRight: null,
+      verfahrenkenngruppe: null,
+      verfahrenkenngruppeRight: null,
+    },
+    {
+      message: '2215 = 24 = UVWX YZAB CDEF GHIJ UVWX YZAB',
+      indicator: 'UVWX YZAB',
+      schluesselkenngruppe: null,
+      schluesselkenngruppeRight: null,
+      verfahrenkenngruppe: null,
+      verfahrenkenngruppeRight: null,
+    },
+  ],
+};
+
+/** The ring table of Carter's check: rings C and N lead to the stop's cores VMB. */
+export const carterRingTable: RingTable = {
+  grundstellung: 'QRS',
+  verfahrenkenngruppe: 'ABC',
+  rightRing: 26,
+  cores: 'VMB',
+  rows: Array.from({ length: 676 }, (_, index) => {
+    const [left, middle] = [Math.floor(index / 26) + 1, (index % 26) + 1];
+    const found = left === 3 && middle === 14;
+    return { left, middle, spruchschluessel: found ? 'ULA' : trigram((index * 7) % 17576), cores: found ? 'VMB' : trigram((index * 11 + 5) % 17576) };
+  }),
+};
+
+/** Carter's check, confirmed true, with the rings C and N read from the indicator. */
+export const carterRead: BombeCheck = {
+  ...carterChecked,
+  verdict: 'True',
+  reading: {
+    left: 3,
+    middle: 14,
+    key: { ...carterChecked.key, rings: [3, 14, 26], messageKey: 'ULA' },
+    decrypt: carterCrib,
+    ringsRight: true,
+  },
+};

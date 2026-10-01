@@ -3,8 +3,9 @@ import type { BombeCheck, BombeMenu, BombeState } from '../api';
 import { isActive } from '../bombe/FrontView';
 import { ErrorToast } from '../ErrorToast';
 import { useMachine } from '../store';
-import { CheckStep, CheckSummary, KeyStep } from './CheckStep';
+import { CheckStep, CheckSummary, KeyStep, KeySummary } from './CheckStep';
 import { CribStep, CribSummary } from './CribStep';
+import { IndicatorsStep, IndicatorsSummary, NoIndicators, TrafficStep, canReadIndicators } from './IndicatorSteps';
 import { plural } from './letters';
 import { MenuStep, MenuSummary } from './MenuStep';
 import { MessageStep, MessageSummary } from './MessageStep';
@@ -18,6 +19,8 @@ const steps = [
   { id: 'stop', title: 'Choose a stop' },
   { id: 'check', title: 'Check the stop' },
   { id: 'key', title: 'Read the message' },
+  { id: 'indicators', title: 'Read the indicators' },
+  { id: 'traffic', title: "Read the day's traffic" },
 ] as const;
 
 type StepId = (typeof steps)[number]['id'];
@@ -40,12 +43,16 @@ function signatureOf(step: StepId, bombe: BombeState, check: BombeCheck | null):
     case 'check':
       return String(check?.verdict);
     case 'key':
+      return String(bombe.day?.grundstellung);
+    case 'indicators':
+      return `${check?.reading?.left} ${check?.reading?.middle}`;
+    case 'traffic':
       return '';
   }
 }
 
 /** Which steps are done, from the job, the open check and what was marked done in this window. */
-function doneSteps(bombe: BombeState, check: BombeCheck | null, menuSent: boolean, leftRun: boolean): Record<StepId, boolean> {
+function doneSteps(bombe: BombeState, check: BombeCheck | null, menuSent: boolean, leftRun: boolean, leftKey: boolean): Record<StepId, boolean> {
   return {
     message: bombe.source !== null,
     crib: bombe.position !== null && bombe.menu !== null,
@@ -53,7 +60,9 @@ function doneSteps(bombe: BombeState, check: BombeCheck | null, menuSent: boolea
     run: bombe.stops > 0 && (!isActive(bombe.run) || leftRun),
     stop: check !== null && check.verdict !== 'False',
     check: check?.verdict === 'True',
-    key: false,
+    key: check?.verdict === 'True' && (leftKey || bombe.day !== null),
+    indicators: check?.reading != null,
+    traffic: false,
   };
 }
 
@@ -73,6 +82,10 @@ function Summary({ step, bombe, check }: { step: StepId; bombe: BombeState; chec
     case 'check':
       return check && <CheckSummary check={check} />;
     case 'key':
+      return check && <KeySummary check={check} />;
+    case 'indicators':
+      return check && <IndicatorsSummary check={check} />;
+    case 'traffic':
       return null;
   }
 }
@@ -87,6 +100,7 @@ export function Hut8Notebook() {
   const check = useMachine((store) => store.check);
   const [sentMenu, setSentMenu] = useState<string | null>(null);
   const [leftRun, setLeftRun] = useState(false);
+  const [leftKey, setLeftKey] = useState<number | null>(null);
   const [reopened, setReopened] = useState<{ step: StepId; signature: string } | null>(null);
   const currentRef = useRef<HTMLLIElement | null>(null);
 
@@ -105,9 +119,11 @@ export function Hut8Notebook() {
     setReopened(null);
   }
 
-  const done = bombe && doneSteps(bombe, check, sentMenu !== null && sentMenu === menuKey(bombe.menu), leftRun);
-  const firstOpen = done ? steps.findIndex((step) => !done[step.id]) : 0;
-  const current = reopened && !changed ? steps.findIndex((step) => step.id === reopened.step) : firstOpen;
+  // A message whose indicators cannot be read ends with reading it.
+  const shown = bombe && !canReadIndicators(bombe) ? steps.filter((step) => step.id !== 'indicators' && step.id !== 'traffic') : steps;
+  const done = bombe && doneSteps(bombe, check, sentMenu !== null && sentMenu === menuKey(bombe.menu), leftRun, leftKey === check?.stop.index);
+  const firstOpen = done ? shown.findIndex((step) => !done[step.id]) : 0;
+  const current = reopened && !changed ? shown.findIndex((step) => step.id === reopened.step) : firstOpen;
 
   useEffect(() => {
     currentRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
@@ -138,7 +154,32 @@ export function Hut8Notebook() {
       case 'check':
         return check && <CheckStep check={check} />;
       case 'key':
-        return check && <KeyStep check={check} />;
+        return (
+          check && (
+            <>
+              <KeyStep check={check} />
+              {canReadIndicators(bombe) ? (
+                <p className="notebook-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLeftKey(check.stop.index);
+                      setReopened(null);
+                    }}
+                  >
+                    Read the indicators
+                  </button>
+                </p>
+              ) : (
+                <NoIndicators />
+              )}
+            </>
+          )
+        );
+      case 'indicators':
+        return check && <IndicatorsStep check={check} />;
+      case 'traffic':
+        return check && <TrafficStep check={check} />;
     }
   };
 
@@ -151,7 +192,7 @@ export function Hut8Notebook() {
           <p role="status">Opening the notebook...</p>
         ) : (
           <ol className="steps" aria-label="Steps">
-            {steps.map((step, index) => {
+            {shown.map((step, index) => {
               const isCurrent = index === current;
               const isDone = index < current;
               return (

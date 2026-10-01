@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ApiResult, BombeCheck, BombeStop, CheckChange } from './api';
 import { createMachineStore, stopPage } from './store';
-import { carterCheck, carterStops, createFakeApi } from './test/fakeApi';
+import { carterCheck, carterRead, carterRingTable, carterStops, createFakeApi } from './test/fakeApi';
 
 /** A promise and the function that resolves it, to answer a call later. */
 function deferred<T>() {
@@ -84,5 +84,23 @@ describe('checking in the machine store', () => {
     await more;
 
     expect(store.getState().stops).toHaveLength(stopPage);
+  });
+
+  it('forgets the ring table when another check is opened', async () => {
+    const { store } = await openStore();
+    await store.getState().loadRingTable();
+    expect(store.getState().ringTable).toBe(carterRingTable);
+
+    await store.getState().openCheck(1);
+
+    expect(store.getState().ringTable).toBeNull();
+  });
+
+  it('follows rings read in another window on the open check', async () => {
+    const { store } = await openStore();
+
+    store.getState().receiveBombe({ name: 'readRings', args: [0, 3, 14], value: carterRead });
+
+    expect(store.getState().check?.reading?.key.rings).toEqual([3, 14, 26]);
   });
 });

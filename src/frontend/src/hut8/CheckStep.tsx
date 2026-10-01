@@ -326,6 +326,15 @@ export function CheckSummary({ check }: { check: BombeCheck }) {
   );
 }
 
+/** The right ring and the plug pairs, in one line. */
+export function KeySummary({ check }: { check: BombeCheck }) {
+  return (
+    <p>
+      Right ring <Hand>{ringLetter(check.rightRing)}</Hand>, plugs <Hand>{check.key.plugs.join(' ') || '—'}</Hand>
+    </p>
+  );
+}
+
 /**
  * Checks the stop: typed letters press the checking machine, whose lamps fill in the stecker sheet by following the
  * menu, until the steckers bear the stop out or contradict it.
@@ -353,16 +362,7 @@ export function CheckStep({ check }: { check: BombeCheck }) {
  */
 export function KeyStep({ check }: { check: BombeCheck }) {
   const setUpEnigma = useMachine((store) => store.setUpEnigma);
-  const showMode = useMachine((store) => store.showMode);
-  const [confirming, setConfirming] = useState(false);
   const { key } = check;
-
-  const setUp = async () => {
-    setConfirming(false);
-    if (await setUpEnigma()) {
-      await showMode('enigma');
-    }
-  };
 
   return (
     <>
@@ -391,23 +391,40 @@ export function KeyStep({ check }: { check: BombeCheck }) {
         <dt>Message key</dt>
         <dd className="hand">{key.messageKey}</dd>
       </dl>
-      {confirming ? (
-        <p className="notebook-actions" role="group" aria-label="Confirm Enigma setup">
-          <span>This replaces the Enigma setup.</span>
-          <button type="button" onClick={() => void setUp()}>
-            Set up
-          </button>
-          <button type="button" onClick={() => setConfirming(false)}>
-            Cancel
-          </button>
-        </p>
-      ) : (
-        <p className="notebook-actions">
-          <button type="button" onClick={() => setConfirming(true)}>
-            Set up Enigma
-          </button>
-        </p>
-      )}
+      <SetUpEnigma setUp={setUpEnigma} />
     </>
+  );
+}
+
+/**
+ * Sets up the Enigma after asking, as the setup is replaced, and then switches the machine window to Enigma mode.
+ */
+export function SetUpEnigma({ setUp, label = 'Set up Enigma' }: { setUp: () => Promise<boolean>; label?: string }) {
+  const showMode = useMachine((store) => store.showMode);
+  const [confirming, setConfirming] = useState(false);
+
+  const confirm = async () => {
+    setConfirming(false);
+    if (await setUp()) {
+      await showMode('enigma');
+    }
+  };
+
+  return confirming ? (
+    <p className="notebook-actions" role="group" aria-label="Confirm Enigma setup">
+      <span>This replaces the Enigma setup.</span>
+      <button type="button" onClick={() => void confirm()}>
+        Set up
+      </button>
+      <button type="button" onClick={() => setConfirming(false)}>
+        Cancel
+      </button>
+    </p>
+  ) : (
+    <p className="notebook-actions">
+      <button type="button" onClick={() => setConfirming(true)}>
+        {label}
+      </button>
+    </p>
   );
 }

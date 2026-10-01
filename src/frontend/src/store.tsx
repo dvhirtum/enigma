@@ -11,7 +11,10 @@ import type {
   CheckChange,
   CheckerPress,
   CheckerChange,
+  IndicatorChange,
   PrintedStop,
+  RingTable,
+  SourceSolution,
   TestRegisterChange,
   Confirmation,
   RingFind,
@@ -168,6 +171,20 @@ export interface BombeSlice {
   findRightRing: () => Promise<boolean>;
   /** Sets up the Enigma with the check's key, at the message key. */
   setUpEnigma: () => Promise<boolean>;
+  /** The key and plain text of the loaded intercept or exercise, or null when it has none. */
+  loadSolution: () => Promise<SourceSolution | null>;
+  /** Takes a pinch of the message's key sheet day: an exercise's own, or for a pasted radio message the sheet and day given. */
+  takePinch: (sheetId?: string, day?: number) => Promise<boolean>;
+  /** Writes down groups of the indicator of a message of the day (0 = the broken message). */
+  writeIndicator: (message: number, change: IndicatorChange) => Promise<boolean>;
+  fillInIndicator: (message: number) => Promise<boolean>;
+  /** The ring table of the open check, once loaded. */
+  ringTable: RingTable | null;
+  loadRingTable: () => Promise<boolean>;
+  /** Reads the left and middle rings of the open check off the ring table; null forgets them. */
+  readRings: (left: number | null, middle: number | null) => Promise<boolean>;
+  /** Sets up the Enigma with the key the rings read give, at the Grundstellung, to read a message of the day. */
+  setUpDayEnigma: () => Promise<boolean>;
 }
 
 /** How many stops a page of the Stops view fetches. */
@@ -237,7 +254,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
     const forgetStops = () => {
       stopLoads++;
       checkOpenings++;
-      set({ stops: [], check: null, suggestion: null, ringScores: null, confirmation: null });
+      set({ stops: [], check: null, suggestion: null, ringScores: null, confirmation: null, ringTable: null });
     };
     /** Forgets the printout fetched when the backend has fewer stops printed. */
     const followPrinted = (printed: number) => {
@@ -263,7 +280,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
     /** Shows a check that was just opened, here or in another window. */
     const showCheck = (value: BombeCheck) => {
       checkOpenings++;
-      set({ check: value, suggestion: null, ringScores: null, confirmation: null });
+      set({ check: value, suggestion: null, ringScores: null, confirmation: null, ringTable: null });
     };
     /** Shows the checking machine once it is set up for a stop, here or in another window. */
     const showChecker = (value: BombeState) => {
@@ -356,6 +373,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       suggestion: null,
       ringScores: null,
       confirmation: null,
+      ringTable: null,
       loadBombe: async () => {
         const [listed, types, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.messageTypes()), settle(bombe.getState())]);
         if (listed.ok) {
@@ -476,6 +494,9 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
             followCheck(found.check, { ringScores: found.rings, confirmation: null });
             return;
           }
+          case 'readRings':
+            followCheck(value as BombeCheck);
+            return;
           case 'suggestSteckers':
             if (get().check?.stop.index === args[0]) {
               set({ suggestion: value as Suggestion });
@@ -487,6 +508,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           case 'suggestCrib':
           case 'getStops':
           case 'getPrintout':
+          case 'getRingTable':
+          case 'getSolution':
             return;
           default:
             applyJob(value as BombeState);
@@ -592,6 +615,33 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           return false;
         }
         return apply(api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: key.messageKey }));
+      },
+      loadSolution: async () => {
+        const result = await check(bombe.getSolution());
+        return result.ok ? result.value : null;
+      },
+      takePinch: (sheetId, day) => job(bombe.takePinch(sheetId, day)),
+      writeIndicator: (message, change) => enqueue(() => job(bombe.writeIndicator(message, change))),
+      fillInIndicator: (message) => enqueue(() => job(bombe.fillInIndicator(message))),
+      loadRingTable: async () => {
+        const current = get().check;
+        if (!current) {
+          return false;
+        }
+        const result = await check(bombe.getRingTable(current.stop.index));
+        if (result.ok && stillOpen(current.stop.index)) {
+          set({ ringTable: result.value });
+        }
+        return result.ok;
+      },
+      readRings: async (left, middle) => (await onCheck((stop) => bombe.readRings(stop, left, middle), (value) => value)) !== null,
+      setUpDayEnigma: async () => {
+        const key = get().check?.reading?.key;
+        const grundstellung = get().bombe?.day?.grundstellung;
+        if (!key || !grundstellung) {
+          return false;
+        }
+        return apply(api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: grundstellung }));
       },
       loadBook: async (id) => {
         if (get().books[id]) {
