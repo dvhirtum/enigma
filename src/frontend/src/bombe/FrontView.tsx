@@ -4,6 +4,7 @@ import { usePlugDrag } from '../components/usePlugDrag';
 import { useWheelTurn } from '../components/useWheelTurn';
 import { shiftLetter } from '../machine';
 import { stopPage, useMachine } from '../store';
+import { PushButton } from './controls';
 import { advanceBy, chainLength, chainNames, drumColours, groupsOf, indicatorOf, rotors, rowsOf, wiresOf } from './drums';
 
 const banks = 3;
@@ -27,6 +28,28 @@ const height = banksTop + banks * bankHeight + 12 + margin;
 
 export function isActive(run: BombeRun | null | undefined): boolean {
   return run?.status === 'Running' || run?.status === 'Paused';
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** The Start, Stop and Continue push buttons at `places`. */
+export function RunButtons({ bombe, places }: { bombe: BombeState; places: [Point, Point, Point] }) {
+  const speed = useMachine((store) => store.speed);
+  const startRun = useMachine((store) => store.startRun);
+  const cancelRun = useMachine((store) => store.cancelRun);
+  const continueRun = useMachine((store) => store.continueRun);
+  const active = isActive(bombe.run);
+  const [start, stop, resume] = places;
+  return (
+    <>
+      <PushButton label="Start" kind="start" {...start} disabled={active || notReady(bombe) !== null} onPress={() => void startRun(speed)} />
+      <PushButton label="Stop" kind="stop" {...stop} disabled={!active} onPress={() => void cancelRun()} />
+      <PushButton label="Continue" kind="continue" {...resume} disabled={!bombe.run?.pause} onPress={() => void continueRun()} />
+    </>
+  );
 }
 
 const drumNames = ['upper', 'middle', 'lower'];
@@ -148,7 +171,7 @@ function chainLabel(machine: BombeMachine, chain: number): string {
 
 /**
  * The front of the Bombe: the drum rack on top, and in the cabinet three banks (chains) of twelve scramblers with
- * three drums each (upper, middle, lower), with the indicator drums right of the second bank. Before a run, drag a drum from the rack
+ * three drums each (upper, middle, lower), with the indicator drums right of the second bank and Start, Stop and Continue below them. Before a run, drag a drum from the rack
  * onto a drum place, or pick it in the rack and then click the place: it fills that row of the chain from the first
  * scrambler up to the place. A click on a fitted drum, or dragging it off, takes it out; the mouse wheel or Arrow
  * Up/Down turn its letter.
@@ -293,6 +316,10 @@ function Front({ bombe }: { bombe: BombeState }) {
           <Drum key={drum} x={indicatorX} y={drumY(1, drum)} letter={indicator[drum]} rotor={null} label={`${name} indicator ${indicator[drum]}`} />
         ))}
       </g>
+      <g className="controls" role="group" aria-label="Controls">
+        <rect className="bank" x={indicatorLeft} y={bankTop(2) - 8} width={indicatorWidth} height={bankHeight - 4} rx={4} />
+        <RunButtons bombe={bombe} places={[0, 1, 2].map((row) => ({ x: indicatorX, y: drumY(2, row) - 6 })) as [Point, Point, Point]} />
+      </g>
       {held && drag?.point && (
         <circle className="held-drum" cx={drag.point.x} cy={drag.point.y} r={drumRadius} style={{ fill: drumColours[held] }} aria-hidden="true" />
       )}
@@ -379,7 +406,7 @@ function Printout({ bombe }: { bombe: BombeState }) {
   );
 }
 
-/** The front of the Bombe: the drums, the indicator and the printout. The run is worked from the side. */
+/** The front of the Bombe: the drums, the indicator, Start, Stop and Continue, and the printout. */
 export function FrontView() {
   const bombe = useMachine((store) => store.bombe);
   if (!bombe) {
@@ -392,7 +419,7 @@ export function FrontView() {
       {!active && (
         <p className="summary">
           Drag drums from the rack onto a drum, or pick them in the rack and click a drum: the row fills up to that drum. Click a drum to take it out;
-          scroll or use Arrow Up/Down to turn it. The run is started and watched on the Side tab.
+          scroll or use Arrow Up/Down to turn it. The run is set up and watched on the Side tab.
         </p>
       )}
       <div className="bombe-front-frame">

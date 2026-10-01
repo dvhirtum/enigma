@@ -64,7 +64,7 @@ When the menu is ready, click **Send the menu to the Bombe**. The notebook plugs
 
 You can also leave the notebook closed and work with pen and paper: plug up the Bombe, run it, write down the stops and set up the checking machine yourself. The machines work the same either way.
 
-The **Front** tab shows the Bombe as the operators saw it: a rack of drums, then three banks (chains) of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The three cream drums to the right of the second bank are the indicator drums: they read the position with the letters reversed. Under each scrambler are the letters its jacks are cabled to on the back.
+The **Front** tab shows the Bombe as the operators saw it: a rack of drums, then three banks (chains) of twelve scramblers, each with three drums (upper, middle, lower) standing for the Enigma's left, middle and right rotors. The drum rims are coloured by rotor, as on the real machine. The three cream drums to the right of the second bank are the indicator drums: they read the position with the letters reversed. Below them are the **Start**, **Stop** and **Continue** buttons, the same as on the Side. Under each scrambler are the letters its jacks are cabled to on the back.
 
 Each chain is a Bombe of its own, with its own drums, so a menu of up to 12 links plugged up on all three chains tests three wheel orders in one run. A longer menu takes two or three chains joined together. The notebook plugs up the menu this way: each chain's scramblers in order of the links' offsets, each scrambler set to its link's offset (ZZA, ZZB, ...).
 
@@ -85,7 +85,7 @@ The **Side** tab shows the right-hand end of the machine: the test register, and
 - set the **Diagonal board** switch. It turns Welchman's diagonal board on or off; it is on by default, and without it a menu gives many more false stops,
 - turn the **Reflector** switch to **B** or **C**,
 - plug a test register onto a common on the **Back** tab,
-- set the **Speed** knob, by dragging round it or with the arrow keys. At the left end the Bombe runs at its historical speed, a run of all 17,576 positions in about 20 minutes; further right it runs faster, and at the right end at full speed, which takes a second or so.
+- set the **Speed** knob, by dragging round it or with the arrow keys. At the left end the Bombe runs at the speed of a real Bombe, 28.2 positions a second: a run of all 17,576 positions without stops takes 10.4 minutes. This speed comes from the Bombe Speed section of the Bombe description by the Turing-Welchman Bombe rebuild project (bombe.org.uk/bombe-description). Further right it runs faster, and at the right end at full speed, which takes a second or so.
 
 Press **Start**. The drums turn through every position once, and each chain (or group of joined chains) with a test register is tested. The bar and the line under it show the chains and their wheel orders, how far the run has got, the stops found and the time taken. You can turn the speed knob while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes.
 

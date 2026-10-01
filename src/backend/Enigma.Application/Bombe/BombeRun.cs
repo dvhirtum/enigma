@@ -22,8 +22,8 @@ public enum RunStatus
 /// </summary>
 public sealed class BombeRun
 {
-    /// <summary>The speed of a real Bombe: a run in about 20 minutes.</summary>
-    public const double HistoricalSpeed = DrumPosition.Count / (20 * 60.0);
+    /// <summary>The speed of a real Bombe: a run without stops in 10.4 minutes.</summary>
+    public const double HistoricalSpeed = DrumPosition.Count / (10.4 * 60);
 
     // The positions tested at full speed between looks at the speed and the cancel flag.
     private const int FullSpeedChunk = Letter.Count * Letter.Count;

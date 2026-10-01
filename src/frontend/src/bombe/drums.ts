@@ -8,8 +8,8 @@ export function drumLetters(offset: number): string {
 
 export const rotors = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'] as const;
 
-/** A run in 20 minutes, as on a real Bombe, in positions per second. */
-export const historicalSpeed = 17_576 / (20 * 60);
+/** A run without stops in 10.4 minutes, as on a real Bombe, in positions per second. */
+export const historicalSpeed = 17_576 / (10.4 * 60);
 
 /** The colours of the Bombe drums, by rotor. */
 export const drumColours: Record<string, string> = {
@@ -67,7 +67,7 @@ export function formatSpeed(speed: number | null): string {
     return 'Full speed';
   }
   const rounded = speed < 100 ? speed.toFixed(1) : Math.round(speed).toLocaleString('en-US');
-  return `${rounded} positions/s${stepOf(speed) === 0 ? ' (historical)' : ''}`;
+  return `${rounded} positions/s`;
 }
 
 /** The chains joined into one Bombe each: chain n is joined to the one before when `joins[n - 1]`. */

@@ -757,7 +757,7 @@ body {
 
 .bombe-back .cable-sheath {
   fill: none;
-  stroke: #0b0b0a;
+  stroke: #4a0d0a;
   stroke-width: 6;
   stroke-linecap: round;
   opacity: 0.85;
@@ -765,7 +765,7 @@ body {
 
 .bombe-back .cable-core {
   fill: none;
-  stroke: #6d655b;
+  stroke: #c62f22;
   stroke-width: 3;
   stroke-linecap: round;
   opacity: 0.9;

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import type { BombeRun, BombeState, PrintedStop } from '../api';
 import { alphabet } from '../machine';
 import { useMachine } from '../store';
-import { Knob, PushButton, Selector, ToggleSwitch } from './controls';
+import { Knob, Selector, ToggleSwitch } from './controls';
 import { chainNames, formatSpeed, fullSpeedStep, speedAt, stepOf, wiresOf } from './drums';
-import { groupsLine, isActive, notReady } from './FrontView';
+import { groupsLine, isActive, notReady, RunButtons } from './FrontView';
 
 const width = 460;
 const height = 500;
@@ -94,10 +94,6 @@ function SpeedKnob({ x, y }: { x: number; y: number }) {
  */
 function Side({ bombe }: { bombe: BombeState }) {
   const configureBombe = useMachine((store) => store.configureBombe);
-  const speed = useMachine((store) => store.speed);
-  const startRun = useMachine((store) => store.startRun);
-  const cancelRun = useMachine((store) => store.cancelRun);
-  const continueRun = useMachine((store) => store.continueRun);
   const [busy, setBusy] = useState(false);
   const { run } = bombe;
   const active = isActive(run);
@@ -133,9 +129,14 @@ function Side({ bombe }: { bombe: BombeState }) {
           onSelect={(reflector) => send(configureBombe({ reflector }))}
         />
         <SpeedKnob x={370} y={switchesY} />
-        <PushButton label="Start" kind="start" x={110} y={buttonsY} disabled={active || notReady(bombe) !== null} onPress={() => void startRun(speed)} />
-        <PushButton label="Stop" kind="stop" x={centre} y={buttonsY} disabled={!active} onPress={() => void cancelRun()} />
-        <PushButton label="Continue" kind="continue" x={350} y={buttonsY} disabled={!stop} onPress={() => void continueRun()} />
+        <RunButtons
+          bombe={bombe}
+          places={[
+            { x: 110, y: buttonsY },
+            { x: centre, y: buttonsY },
+            { x: 350, y: buttonsY },
+          ]}
+        />
       </g>
     </svg>
   );

@@ -66,6 +66,18 @@ describe('FrontView', () => {
     expect(within(await scrambler(1, 1)).getByRole('img', { name: 'lower drum III at D' })).toBeInTheDocument();
   });
 
+  it('starts, stops and continues the run from the front', async () => {
+    const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
+    const controls = await screen.findByRole('group', { name: 'Controls' });
+
+    expect(within(controls).getByRole('button', { name: 'Start' })).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(within(controls).getByRole('button', { name: 'Continue' }));
+    fireEvent.click(within(controls).getByRole('button', { name: 'Stop' }));
+
+    await waitFor(() => expect(api.bombe.continueRun).toHaveBeenCalled());
+    await waitFor(() => expect(api.bombe.cancelRun).toHaveBeenCalled());
+  });
+
   it('spins the drums at full speed', async () => {
     renderBombe(<FrontView />, { ...carter, run: { ...carterPaused, status: 'Running', speed: null, pause: null, position: null } });
 

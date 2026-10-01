@@ -49,7 +49,7 @@ describe('drums', () => {
     expect(speedAt(fullSpeedStep)).toBeNull();
     expect(stepOf(speedAt(20))).toBe(20);
     expect(stepOf(null)).toBe(fullSpeedStep);
-    expect(formatSpeed(historicalSpeed)).toBe('14.6 positions/s (historical)');
+    expect(formatSpeed(historicalSpeed)).toBe('28.2 positions/s');
     expect(formatSpeed(null)).toBe('Full speed');
     expect(formatSpeed(14_646)).toBe('14,646 positions/s');
   });
