@@ -87,6 +87,51 @@ public sealed class ExerciseGeneratorTests
         Assert.Contains(positions, position => position > 0);
     }
 
+    [Theory]
+    [MemberData(nameof(Seeds))]
+    public void Should_send_3_to_5_messages_on_the_key_sheet_day_When_the_days_traffic_is_generated(int seed)
+    {
+        // Arrange
+        var key = Sheet.KeyFor(Day);
+        var context = new OperatorContext(Network, key.Grundstellung!, Book, Tables.TableFor(Month, Day));
+
+        // Act
+        var messages = ExerciseGenerator.DayTraffic(Sheet, Day, Book, Tables, new Random(seed));
+
+        // Assert
+        Assert.InRange(messages.Count, ExerciseGenerator.MinDayMessages, ExerciseGenerator.MaxDayMessages);
+        Assert.Equal(messages.Select(message => message.Message.TimeOfOrigin).Order(), messages.Select(message => message.Message.TimeOfOrigin));
+        Assert.All(messages, message =>
+        {
+            var procedure = OperatorProcedure.StartReceiving(context, message.Message);
+            Assert.Empty(procedure.Warnings);
+            Assert.Equal(
+                message.Solution!.MessageKey,
+                MessageKey.Derive(key, key.Grundstellung!, procedure.Indicator!.Verfahrenkenngruppe).Spruchschluessel);
+            Assert.Equal(message.Solution.Plaintext, message.Solution.Decrypt([.. message.Message.CipherText.Select(Letter.FromChar)]));
+            Assert.Null(message.Verfahrenkenngruppe);
+        });
+    }
+
+    [Fact]
+    public void Should_send_rendezvous_orders_mine_warnings_and_air_attack_reports_too_When_much_traffic_is_generated()
+    {
+        // Arrange
+        var random = new Random(7);
+
+        // Act
+        var plaintexts = Enumerable.Range(0, 20)
+            .SelectMany(_ => ExerciseGenerator.DayTraffic(Sheet, Day, Book, Tables, random))
+            .Select(message => message.Solution!.Plaintext)
+            .ToList();
+
+        // Assert
+        Assert.Contains(plaintexts, text => text.Contains("TREFFPUNKT", StringComparison.Ordinal));
+        Assert.Contains(plaintexts, text => text.Contains("MINENWARNUNG", StringComparison.Ordinal));
+        Assert.Contains(plaintexts, text => text.Contains("FLIEGERANGRIFF", StringComparison.Ordinal));
+        Assert.Contains(plaintexts, text => text.Contains("WETTERVORHERSAGE", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void Should_reject_the_sheet_When_it_is_for_the_M4()
     {

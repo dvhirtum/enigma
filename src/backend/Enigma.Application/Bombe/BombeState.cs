@@ -5,8 +5,8 @@ namespace Enigma.Application.Bombe;
 
 /// <summary>
 /// The Bombe job, with the loaded message, the menu, the Bombe and the checking machine as set up, the run settings, a
-/// summary of its latest run, the number of stops logged for the notebook and the number printed. Positions count from
-/// 0; crashes are crib indexes.
+/// summary of its latest run, the number of stops logged for the notebook and the number printed, and the day's traffic
+/// once a pinch is taken (null before). Positions count from 0; crashes are crib indexes.
 /// </summary>
 public sealed record BombeState(
     SourceState? Source,
@@ -20,7 +20,8 @@ public sealed record BombeState(
     BombeSettings Settings,
     RunState? Run,
     int Stops,
-    int Printed)
+    int Printed,
+    DayState? Day)
 {
     public static BombeState From(BombeJob job, BombeRun? run, IBombeSessionStore store)
     {
@@ -48,7 +49,8 @@ public sealed record BombeState(
             new BombeSettings(job.DiagonalBoard, job.Reflector.Name),
             run is null ? null : RunState.From(run, store),
             store.Stops.Count,
-            store.Printout.Count);
+            store.Printout.Count,
+            job.Traffic is null ? null : DayState.From(job.Traffic));
     }
 }
 
@@ -339,3 +341,65 @@ public sealed record ExerciseState(
     string Grundstellung,
     string Schluesselkenngruppe,
     string Verfahrenkenngruppe);
+
+/// <summary>
+/// The day's traffic read with a pinch: the key sheet, network, month and day, the Grundstellung, the bigram table in
+/// force (its number and swaps such as "ABCD": AB and CD swap), and the messages of the day, the broken one first.
+/// </summary>
+public sealed record DayState(
+    string SheetId,
+    string Network,
+    string Month,
+    int Day,
+    string Grundstellung,
+    int Table,
+    IReadOnlyList<string> Swaps,
+    IReadOnlyList<DayMessageState> Messages)
+{
+    public static DayState From(DayTraffic traffic)
+    {
+        ArgumentNullException.ThrowIfNull(traffic);
+
+        var pinch = traffic.Pinch;
+        return new DayState(
+            pinch.SheetId,
+            pinch.Network,
+            pinch.Month.ToString(),
+            pinch.Day,
+            pinch.Grundstellung.ToString(),
+            pinch.Table.Number,
+            [.. pinch.Table.Swaps.Select(swap => $"{swap.A}{swap.B}")],
+            [.. traffic.Messages.Select((message, index) =>
+            {
+                var indicator = traffic.IndicatorOf(index);
+                return new DayMessageState(
+                    message.Message.ToString(),
+                    message.Message.Indicator.ToString(),
+                    message.Schluesselkenngruppe?.ToString(),
+                    message.Schluesselkenngruppe is { } schluessel ? schluessel == indicator.Schluesselkenngruppe : null,
+                    message.Verfahrenkenngruppe?.ToString(),
+                    message.Verfahrenkenngruppe is { } verfahren ? verfahren == indicator.Verfahrenkenngruppe : null);
+            })]);
+    }
+}
+
+/// <summary>
+/// A message of the day: the radio message, its indicator groups, and the Schlüsselkenngruppe and Verfahrenkenngruppe
+/// written down (null: not yet), each with whether it is what the bigram table gives (null: not written).
+/// </summary>
+public sealed record DayMessageState(
+    string Message,
+    string Indicator,
+    string? Schluesselkenngruppe,
+    bool? SchluesselkenngruppeRight,
+    string? Verfahrenkenngruppe,
+    bool? VerfahrenkenngruppeRight);
+
+/// <summary>
+/// The ring table of a stop's check: the Grundstellung and Verfahrenkenngruppe it is worked with, the right ring, the
+/// stop's core positions at the start of the crib, and a row for each of the 676 left and middle rings.
+/// </summary>
+public sealed record RingTableState(string Grundstellung, string Verfahrenkenngruppe, int RightRing, string Cores, IReadOnlyList<RingRowState> Rows);
+
+/// <summary>A row of the ring table: left and middle rings (1–26), the Spruchschlüssel they give and the cores it leads to at the crib.</summary>
+public sealed record RingRowState(int Left, int Middle, string Spruchschluessel, string Cores);

@@ -21,8 +21,8 @@ public enum CribMatch
 public sealed record CribLetterCheck(int Offset, Letter Plain, Letter Cipher, CribMatch Match);
 
 /// <summary>
-/// The key a checked stop gives: the right ring from the turnover, the left and middle rings at Z (unknown until the
-/// indicators are read), the known plug pairs and the rotor positions the message starts from.
+/// The key a checked stop gives: the right ring from the turnover, the left and middle rings at Z, or as read from
+/// the indicator, the known plug pairs and the rotor positions the message starts from.
 /// </summary>
 public sealed record CheckedKey(
     ReflectorType Reflector,
@@ -62,6 +62,15 @@ public sealed record SteckerSuggestion(IReadOnlyList<SuggestedPair> Pairs, Steck
 
 /// <summary>A right ring's decrypt score (null when the message is shorter than three letters), and whether it is the best.</summary>
 public sealed record RingScore(RingSetting Ring, double? Score, bool Best);
+
+/// <summary>
+/// A row of the ring table: left and middle rings, the Spruchschlüssel the Verfahrenkenngruppe gives at the
+/// Grundstellung with them, and the core positions it leads to at the start of the crib.
+/// </summary>
+public sealed record RingRow(RingSetting Left, RingSetting Middle, RotorPositions Spruchschluessel, DrumPosition Cores);
+
+/// <summary>The left and middle rings read from the indicator, with the Grundstellung and Verfahrenkenngruppe they were read with.</summary>
+public sealed record IndicatorReading(RotorPositions Grundstellung, Kenngruppe Verfahrenkenngruppe, RingSetting Left, RingSetting Middle);
 
 /// <summary>
 /// The checking of a Bombe stop, worked on the checking machine (<see cref="CheckingMachine"/>). The checker writes
@@ -164,6 +173,57 @@ public sealed class StopCheck
     }
 
     public CheckedKey Key => new(Reflector, WheelOrder, Rings, Steckers.Plugs, MessageKey);
+
+    /// <summary>The left and middle rings read from the indicator, or null.</summary>
+    public IndicatorReading? Reading { get; set; }
+
+    /// <summary>
+    /// The 676 pairs of left and middle rings, left ring first, each with the Spruchschlüssel that typing
+    /// <paramref name="verfahrenkenngruppe"/> at <paramref name="grundstellung"/> gives on an Enigma with this check's
+    /// key (letters not known yet unsteckered), and the cores it leads to at the crib. The row with the stop's cores
+    /// gives the rings.
+    /// </summary>
+    public IReadOnlyList<RingRow> RingTable(RotorPositions grundstellung, Kenngruppe verfahrenkenngruppe)
+    {
+        ArgumentNullException.ThrowIfNull(grundstellung);
+
+        var rings = Enumerable.Range(1, Letter.Count).Select(RingSetting.FromNumber).ToArray();
+        return [.. from left in rings from middle in rings select Row(grundstellung, verfahrenkenngruppe, left, middle)];
+    }
+
+    /// <summary>
+    /// The whole key once the rings are read: the rings read and the right ring, the known plug pairs, and the
+    /// Spruchschlüssel of the reading's row as the message key. Null before the rings are read.
+    /// </summary>
+    public CheckedKey? ReadKey =>
+        Reading is { } reading
+            ? new CheckedKey(
+                Reflector,
+                WheelOrder,
+                [reading.Left, reading.Middle, RightRing],
+                Steckers.Plugs,
+                Row(reading.Grundstellung, reading.Verfahrenkenngruppe, reading.Left, reading.Middle).Spruchschluessel)
+            : null;
+
+    /// <summary>Decrypts the message on an Enigma with <see cref="ReadKey"/>; null before the rings are read.</summary>
+    public string? ReadDecrypt() =>
+        ReadKey is { } key
+            ? new Solution(key.Reflector, key.WheelOrder, key.Rings, key.Plugs, key.MessageKey, string.Empty, string.Empty).Decrypt(Placement.CipherText)
+            : null;
+
+    private RingRow Row(RotorPositions grundstellung, Kenngruppe verfahrenkenngruppe, RingSetting left, RingSetting middle)
+    {
+        var key = new DailyKey(1, Reflector, [WheelOrder.Left, WheelOrder.Middle, WheelOrder.Right], [left, middle, RightRing], Steckers.Plugs);
+        var spruchschluessel = KeyProcedure.MessageKey.Derive(key, grundstellung, verfahrenkenngruppe).Spruchschluessel;
+        var start = spruchschluessel.Positions;
+        var windows = (start[0].Letter, start[1].Letter, start[2].Letter);
+        for (var press = 0; press < Placement.Position; press++)
+        {
+            windows = Step(WheelOrder, windows);
+        }
+
+        return new RingRow(left, middle, spruchschluessel, Core(windows, key.Rings));
+    }
 
     /// <summary>
     /// Decrypts the whole message on an Enigma with this key, the rotors stepping, taking letters whose steckers are

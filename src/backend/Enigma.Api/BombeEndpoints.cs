@@ -22,6 +22,12 @@ internal sealed record CheckRequest(string? Steckers, int? RightRing);
 
 internal sealed record VerdictRequest(string? Verdict);
 
+internal sealed record PinchRequest(string? SheetId, int? Day);
+
+internal sealed record IndicatorRequest(string? Schluesselkenngruppe, string? Verfahrenkenngruppe);
+
+internal sealed record RingsRequest(int? Left, int? Middle);
+
 internal static class BombeEndpoints
 {
     public static IServiceCollection AddBombeHandlers(this IServiceCollection services) => services
@@ -59,7 +65,12 @@ internal static class BombeEndpoints
         .AddSingleton<SetCheckHandler>()
         .AddSingleton<ConfirmCheckHandler>()
         .AddSingleton<SuggestSteckersHandler>()
-        .AddSingleton<FindRightRingHandler>();
+        .AddSingleton<FindRightRingHandler>()
+        .AddSingleton<TakePinchHandler>()
+        .AddSingleton<WriteIndicatorHandler>()
+        .AddSingleton<FillInIndicatorHandler>()
+        .AddSingleton<GetRingTableHandler>()
+        .AddSingleton<ReadRingsHandler>();
 
     public static void MapBombeEndpoints(this IEndpointRouteBuilder app)
     {
@@ -177,5 +188,20 @@ internal static class BombeEndpoints
 
         bombe.MapPost("/stops/{stop:int}/check/find", (int stop, FindRightRingHandler handler) =>
             handler.Handle(new FindRightRing(stop)));
+
+        bombe.MapGet("/stops/{stop:int}/check/ring-table", (int stop, GetRingTableHandler handler) =>
+            handler.Handle(new GetRingTable(stop)));
+
+        bombe.MapPut("/stops/{stop:int}/check/rings", (int stop, RingsRequest request, ReadRingsHandler handler) =>
+            handler.Handle(new ReadRings(stop, request.Left, request.Middle)));
+
+        bombe.MapPost("/pinch", (PinchRequest request, TakePinchHandler handler) =>
+            handler.Handle(new TakePinch(request.SheetId, request.Day)));
+
+        bombe.MapPut("/day/messages/{message:int}/indicator", (int message, IndicatorRequest request, WriteIndicatorHandler handler) =>
+            handler.Handle(new WriteIndicator(message, request.Schluesselkenngruppe, request.Verfahrenkenngruppe)));
+
+        bombe.MapPost("/day/messages/{message:int}/indicator/fill-in", (int message, FillInIndicatorHandler handler) =>
+            handler.Handle(new FillInIndicator(message)));
     }
 }

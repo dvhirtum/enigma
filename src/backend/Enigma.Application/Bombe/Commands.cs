@@ -120,3 +120,24 @@ public sealed record SuggestSteckers(int Stop);
 
 /// <summary>Scores the 26 right rings of a stop's check and sets the lowest with the best score.</summary>
 public sealed record FindRightRing(int Stop);
+
+/// <summary>
+/// Takes a pinch of the loaded message's key sheet day, which gives its Grundstellung and bigram table, and generates
+/// the day's other messages. An exercise uses its own day; a pasted radio message the key sheet day given.
+/// </summary>
+public sealed record TakePinch(string? SheetId, int? Day);
+
+/// <summary>
+/// Writes down the groups read from the indicator of a message of the day (0 = the broken message); each left out
+/// (null) stays as it is, an empty one is rubbed out.
+/// </summary>
+public sealed record WriteIndicator(int Message, string? Schluesselkenngruppe, string? Verfahrenkenngruppe);
+
+/// <summary>Writes down the groups the indicator of a message of the day gives.</summary>
+public sealed record FillInIndicator(int Message);
+
+/// <summary>The ring table of a stop's check, worked with the pinched Grundstellung and the broken message's Verfahrenkenngruppe.</summary>
+public sealed record GetRingTable(int Stop);
+
+/// <summary>Reads the left and middle rings (1–26) of a stop's check off the ring table; both left out forget them.</summary>
+public sealed record ReadRings(int Stop, int? Left, int? Middle);

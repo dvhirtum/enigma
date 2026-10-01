@@ -28,14 +28,18 @@ public sealed class BombeJob
 
     public CheckingMachine Checker { get; } = new();
 
+    /// <summary>The day's traffic, read with a pinch of the message's key sheet day, or null before the pinch.</summary>
+    public DayTraffic? Traffic { get; private set; }
+
     /// <summary>Every position the crib fits under the cipher text, crashed or not.</summary>
     public IReadOnlyList<CribPlacement> Placements => Crib is null ? [] : CribPlacement.All(CipherText, Crib);
 
-    /// <summary>Loads a message to break, or none when null. The crib, its placement and the menu are cleared.</summary>
+    /// <summary>Loads a message to break, or none when null. The crib, its placement, the menu and the day's traffic are cleared.</summary>
     public void Load(MessageSource? source)
     {
         Source = source;
         Crib = null;
+        Traffic = null;
         ClearPlacement();
     }
 
@@ -79,6 +83,16 @@ public sealed class BombeJob
 
     /// <summary>Plugs up the Bombe with the menu.</summary>
     public void PlugUpMenu() => Machine.PlugUp(Menu ?? throw new DomainException("Draw a menu first."));
+
+    /// <summary>
+    /// Takes a pinch of the key sheet day: the loaded radio message is read with it, along with <paramref name="others"/>,
+    /// the day's other messages.
+    /// </summary>
+    public void TakePinch(Pinch pinch, IEnumerable<DayMessage> others)
+    {
+        var message = Source?.Message ?? throw new DomainException("Load a Navy radio message first: bare cipher text has no indicator.");
+        Traffic = new DayTraffic(pinch, message, others);
+    }
 
     /// <summary>Sets the run settings.</summary>
     public void Configure(bool diagonalBoard, ReflectorType reflector)
