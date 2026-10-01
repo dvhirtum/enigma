@@ -135,44 +135,6 @@ body {
   color: var(--error-fg);
 }
 
-.run-settings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 2rem;
-}
-
-.run-settings fieldset {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 0.9rem;
-  margin: 0;
-  border: none;
-  padding: 0;
-}
-
-.run-settings legend {
-  margin-bottom: 0.25rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.run-settings label {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.speed {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.speed input {
-  width: 14rem;
-}
-
 .run-progress {
   display: flex;
   flex-direction: column;
@@ -183,21 +145,6 @@ body {
   width: 100%;
   max-width: 42rem;
   accent-color: var(--accent);
-}
-
-.bombe-stop {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
-  max-width: 42rem;
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
-.bombe-stop p {
-  margin: 0;
 }
 
 .visually-hidden {
@@ -211,6 +158,11 @@ body {
 
 .letters {
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+.bombe-view.front-view,
+.bombe-view.back-view {
+  max-width: 66rem;
 }
 
 .bombe-view.checking {
@@ -378,90 +330,446 @@ body {
   font-size: 14px;
 }
 
+/* The Bombe: a black cabinet with coloured drums, cream plates and engravings, and heavy cables on the back. */
 .bombe-front,
 .bombe-back {
+  display: block;
   width: 100%;
-  max-width: 46rem;
-  border: 1px solid var(--line);
   user-select: none;
-  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-family: 'DIN Alternate', 'Bahnschrift', system-ui, sans-serif;
+}
+
+.bombe-front-frame {
+  max-width: 66rem;
+}
+
+.bombe-back {
+  max-width: 66rem;
 }
 
 .bombe-front text,
 .bombe-back text {
-  fill: var(--fg);
+  fill: #ece8df;
   text-anchor: middle;
   dominant-baseline: central;
 }
 
-.drum .rim {
-  fill: var(--bg);
-  stroke: var(--muted);
-  stroke-width: 5;
+.bombe-front .cabinet,
+.bombe-back .cabinet {
+  fill: #1c1c1a;
+  stroke: #000;
+  stroke-width: 3;
 }
 
-.drum .marker {
-  stroke: var(--fg);
-  stroke-width: 2;
+.bombe-front .bank {
+  fill: #262522;
+  stroke: #0b0b0a;
 }
 
-.drum text {
-  font-size: 14px;
+.bombe-front .label-plate,
+.bombe-back .label-plate {
+  fill: #e8dfc8;
+  stroke: #8c8169;
+}
+
+.bombe-front .chain-label,
+.bombe-back .panel-label {
+  fill: #1c1c1a;
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: start;
+}
+
+.bombe-front .engraving,
+.bombe-back .engraving {
+  fill: #cfc7b3;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.bombe-front .engraving.small,
+.bombe-back .engraving.small {
+  font-size: 8px;
+}
+
+.bombe-front .plate-text {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.bombe-front .scrambler-label {
+  fill: #cfc7b3;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.drum .body {
+  stroke: #0b0b0a;
+  stroke-width: 1.5;
+}
+
+.drum .ticks line {
+  stroke: #ece8df;
+  stroke-width: 1;
+}
+
+.drum .hub {
+  fill: #2b2a27;
+  stroke: #8f8a7e;
+  stroke-width: 1.5;
+}
+
+.drum .index-letter {
+  fill: #fff;
+  font-size: 15px;
   font-weight: bold;
 }
 
-.bombe-front.spinning .drum:not(.idle) .rim {
-  stroke-dasharray: 6 4;
-  animation: drum-spin 0.25s linear infinite;
+.drum.light .ticks line {
+  stroke: #1c1c1a;
 }
 
-.bombe-front.spinning .drum:not(.idle) .marker {
-  display: none;
+.drum.light .index-letter {
+  fill: #1c1c1a;
 }
 
-.bombe-front.spinning .drum:not(.idle) text {
+.drum.indicator .body {
+  fill: #efe6cf;
+}
+
+.drum.indicator .ticks line {
+  stroke: #6b665b;
+}
+
+.drum.indicator .index-letter {
+  fill: #1c1c1a;
+}
+
+.drum .index-mark {
+  fill: #efe6cf;
+}
+
+.drum .socket {
+  fill: #121211;
+  stroke: #45433d;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.drum .spindle {
+  fill: #8f8a7e;
+}
+
+.bombe-front.spinning .drum:not(.idle):not(.empty):not(.indicator) .ticks {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: drum-spin 0.3s linear infinite;
+}
+
+.bombe-front.spinning .drum:not(.idle):not(.empty) .index-letter {
   opacity: 0.35;
   filter: blur(1px);
 }
 
 @keyframes drum-spin {
   to {
-    stroke-dashoffset: 20;
+    transform: rotate(-360deg);
   }
-}
-
-.bombe-front-frame {
-  position: relative;
-  max-width: 46rem;
-}
-
-.bombe-front .chain-label {
-  fill: var(--muted);
-  font-size: 11px;
-  text-anchor: start;
-}
-
-.drum.empty .rim {
-  stroke: var(--line);
-  stroke-dasharray: 3 3;
 }
 
 .drum.settable {
   cursor: pointer;
 }
 
-.drum.settable:hover .rim,
-.drum.settable:focus-visible .rim {
-  stroke-width: 7;
+.drum.settable:hover .body,
+.drum.settable:hover .socket,
+.drum.settable:focus-visible .body,
+.drum.settable:focus-visible .socket {
+  stroke: #ffd76a;
+  stroke-width: 3;
+  stroke-dasharray: none;
 }
 
 .drum.settable:focus-visible {
   outline: none;
 }
 
-.bombe-front .drum-rack rect {
-  fill: color-mix(in srgb, var(--muted) 15%, var(--bg));
-  stroke: var(--line);
+.bombe-front .rack-lip {
+  fill: #3d2412;
+}
+
+.bombe-front .rack-drum circle {
+  stroke: #0b0b0a;
+  stroke-width: 2;
+}
+
+.bombe-front .rack-drum text {
+  fill: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.bombe-front .rack-drum.light text {
+  fill: #1c1c1a;
+}
+
+.bombe-front .end-plate {
+  fill: #2b2a27;
+  stroke: #0b0b0a;
+}
+
+.stop-lamp .lamp-rim {
+  fill: #8f8a7e;
+}
+
+.stop-lamp .lamp-glass {
+  fill: #4a1f18;
+}
+
+.stop-lamp.lit .lamp-glass {
+  fill: #e5372a;
+  filter: drop-shadow(0 0 4px #e5372a);
+}
+
+.bombe-front .letter-window,
+.letter-dial .dial-window {
+  fill: #f1ead8;
+  stroke: #5c5a54;
+  stroke-width: 2;
+}
+
+.bombe-front .window-letter,
+.letter-dial .dial-letter {
+  fill: #1b1a18;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.wire-lamp circle {
+  fill: #3a3833;
+  stroke: #5c5a54;
+}
+
+.wire-lamp text {
+  fill: #8f8a7e;
+  font-size: 8px;
+}
+
+.wire-lamp.lit circle {
+  fill: #ffd76a;
+}
+
+.wire-lamp.lit text {
+  fill: #1c1c1a;
+  font-weight: bold;
+}
+
+.bombe-front .stop-reading {
+  fill: #ffd76a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bombe-front .speed-reading {
+  fill: #ece8df;
+  font-size: 10px;
+}
+
+.push-button .bezel {
+  fill: #8f8a7e;
+  stroke: #45433d;
+}
+
+.push-button .cap {
+  stroke: #0b0b0a;
+}
+
+.push-button.start .cap {
+  fill: #2e7d32;
+}
+
+.push-button.stop .cap {
+  fill: #b3261e;
+}
+
+.push-button.continue .cap {
+  fill: #e0b000;
+}
+
+.push-button,
+.toggle-switch,
+.selector-position,
+.knob-control,
+.letter-dial .dial-arrow {
+  cursor: pointer;
+}
+
+.push-button:active:not([aria-disabled='true']) .cap {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.85);
+}
+
+.push-button[aria-disabled='true'],
+.toggle-switch[aria-disabled='true'],
+.selector-position[aria-disabled='true'],
+.letter-dial[aria-disabled='true'] .dial-arrow {
+  cursor: default;
+}
+
+.push-button[aria-disabled='true'] .cap {
+  opacity: 0.35;
+}
+
+.switch-plate {
+  fill: #8f8a7e;
+  stroke: #45433d;
+}
+
+.switch-nut {
+  fill: #5c5a54;
+  stroke: #2b2a27;
+}
+
+.switch-lever {
+  stroke: #d8d4ca;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.switch-tip {
+  fill: #ece8df;
+}
+
+.toggle-switch[aria-disabled='true'] .switch-lever,
+.toggle-switch[aria-disabled='true'] .switch-tip {
+  opacity: 0.5;
+}
+
+.knob {
+  fill: #2b2a27;
+  stroke: #8f8a7e;
+  stroke-width: 2;
+}
+
+.knob-pointer,
+.knob-mark {
+  fill: #efe6cf;
+  stroke: #efe6cf;
+  stroke-width: 2;
+}
+
+.knob-tick {
+  stroke: #cfc7b3;
+}
+
+.knob-control.grabbed {
+  cursor: grabbing;
+}
+
+.selector-hit {
+  fill: transparent;
+}
+
+.selector-position.selected .engraving {
+  fill: #ffd76a;
+  font-weight: bold;
+}
+
+.letter-dial .dial-arrow {
+  fill: #cfc7b3;
+}
+
+.push-button:focus-visible,
+.toggle-switch:focus-visible,
+.selector-position:focus-visible,
+.knob-control:focus-visible,
+.letter-dial:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 3px #ffd76a);
+}
+
+.bombe-back .strip {
+  fill: #2b2a27;
+  stroke: #0b0b0a;
+}
+
+.bombe-back .strip.board {
+  stroke: #b08a4a;
+  stroke-width: 2;
+}
+
+.bombe-back .common text,
+.bombe-back .scrambler-jacks text {
+  fill: #e8dfc8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bombe-back .jack {
+  cursor: pointer;
+}
+
+.bombe-back .jack-area {
+  fill: transparent;
+}
+
+.bombe-back .jack-ring {
+  fill: #8f8a7e;
+  stroke: #45433d;
+}
+
+.bombe-back .jack-hole {
+  fill: #0b0b0a;
+}
+
+.bombe-back .jack-key {
+  fill: #2b2a27;
+}
+
+.bombe-back .jack.selected .jack-ring,
+.bombe-back .jack:focus-visible .jack-ring {
+  fill: #ffd76a;
+}
+
+.bombe-back .jack:focus-visible {
+  outline: none;
+}
+
+.bombe-back .jack[aria-disabled='true'] {
+  cursor: default;
+}
+
+.bombe-back .cable {
+  pointer-events: none;
+}
+
+.bombe-back .cable-sheath {
+  fill: none;
+  stroke: #0b0b0a;
+  stroke-width: 6;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.bombe-back .cable-core {
+  fill: none;
+  stroke: #6d655b;
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+.bombe-back .plug {
+  fill: #5a3a22;
+  stroke: #0b0b0a;
+  stroke-width: 1.5;
+}
+
+.bombe-back .cable.held .cable-core {
+  stroke: #ffd76a;
 }
 
 .bombe-front .rack-drum,
@@ -473,21 +781,10 @@ body {
   cursor: grab;
 }
 
-.bombe-front .rack-drum circle {
-  stroke: var(--line);
-  stroke-width: 2;
-}
-
-.bombe-front .rack-drum text {
-  fill: #fff;
-  font-size: 12px;
-  font-weight: bold;
-  pointer-events: none;
-}
-
 .bombe-front .rack-drum.selected circle,
 .checking-machine .rack-drum.selected circle,
-.drum.selected .rim {
+.drum.selected .body,
+.drum.selected .socket {
   stroke: var(--accent);
   stroke-width: 4;
 }
@@ -512,22 +809,6 @@ body {
   margin: 0;
   padding-left: 1.25rem;
   color: var(--muted);
-}
-
-.register-lamps {
-  display: inline-flex;
-  margin: 0 0.25rem;
-  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-  font-size: 0.8em;
-}
-
-.register-lamps .lit {
-  color: var(--fg);
-  font-weight: bold;
-}
-
-.register-lamps .dark {
-  color: var(--line);
 }
 
 .printout {
@@ -555,97 +836,6 @@ body {
 
 .printout .wires {
   letter-spacing: 0.05em;
-}
-
-.scrambler-label,
-.indicator-label,
-.bombe-back .panel-label {
-  font-size: 11px;
-}
-
-.bombe-front .scrambler-label,
-.bombe-front .indicator-label,
-.bombe-back .panel-label {
-  fill: var(--muted);
-}
-
-.bombe-back .panel-label {
-  text-anchor: start;
-}
-
-.bombe-back .chain-panel .panel {
-  fill: none;
-  stroke: var(--line);
-}
-
-.test-register rect,
-.scrambler-jacks rect {
-  fill: var(--bg);
-  stroke: var(--fg);
-}
-
-.test-register text,
-.scrambler-jacks text {
-  font-size: 10px;
-}
-
-.common text {
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.bombe-back .jack {
-  cursor: pointer;
-}
-
-.bombe-back .jack circle {
-  fill: var(--bg);
-  stroke: var(--muted);
-  stroke-width: 1.5;
-}
-
-.bombe-back .jack .jack-area {
-  fill: transparent;
-  stroke: none;
-}
-
-.bombe-back .jack.selected circle:not(.jack-area),
-.bombe-back .jack:focus-visible circle:not(.jack-area) {
-  stroke: var(--accent);
-  stroke-width: 3;
-}
-
-.bombe-back .jack:focus-visible {
-  outline: none;
-}
-
-.bombe-back .jack[aria-disabled='true'] {
-  cursor: default;
-}
-
-.board-bar {
-  stroke: var(--accent);
-  stroke-width: 3;
-}
-
-.board-bar.off {
-  stroke: var(--line);
-  stroke-dasharray: 3 3;
-}
-
-.bombe-back .cable {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.5;
-  pointer-events: none;
-}
-
-.bombe-back .cable.join {
-  stroke-width: 3;
-}
-
-.bombe-back .cable.held {
-  stroke-dasharray: 4 3;
 }
 
 .checking-machine .drum-place circle,
@@ -1455,8 +1645,4 @@ button {
 
 .bombe-front .rack-drum.light text {
   fill: #1c1c1a;
-}
-
-.bombe-back {
-  max-width: 70rem;
 }

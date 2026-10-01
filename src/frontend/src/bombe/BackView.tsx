@@ -1,20 +1,25 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import type { BombeMachine, BombeState } from '../api';
 import { usePlugDrag, type Point } from '../components/usePlugDrag';
-import { alphabet } from '../machine';
+import { alphabet, shiftLetter } from '../machine';
 import { useMachine } from '../store';
+import { LetterDial, ToggleSwitch } from './controls';
 import { chainLength, chainNames, groupsOf } from './drums';
 import { isActive } from './FrontView';
 
-const margin = 24;
-const commonPitch = 27;
-const commonsY = 56;
-const jacksY = 150;
-const panelHeight = 200;
-const scramblerPitch = (alphabet.length * commonPitch) / chainLength;
-const registerX = 2 * margin + alphabet.length * commonPitch + 40;
-const width = registerX + 90;
-const height = 3 * panelHeight + margin;
+const margin = 16;
+const headerHeight = 64;
+const groupWidth = 290;
+const groupGap = 76;
+const letterPitch = 22;
+const plateTop = margin + headerHeight;
+const stripTop = plateTop + 44;
+const stripHeight = alphabet.length * letterPitch;
+const scramblerPitch = stripHeight / chainLength;
+const footTop = stripTop + stripHeight + 12;
+const footHeight = 100;
+const width = 2 * margin + 3 * groupWidth + 2 * groupGap;
+const height = footTop + footHeight + margin;
 
 /** A socket on the back: a letter's common, a scrambler's jack (0 or 1) or a test register, of a chain. */
 type Socket = { kind: 'common'; chain: number; letter: string } | { kind: 'jack'; chain: number; scrambler: number; jack: number } | { kind: 'register'; chain: number };
@@ -36,20 +41,21 @@ function socketOf(id: string | null): Socket | null {
   }
 }
 
-const panelTop = (chain: number) => margin + chain * panelHeight;
-const commonX = (letter: string) => margin + (letter.charCodeAt(0) - 65) * commonPitch + commonPitch / 2;
-const jackX = (scrambler: number, jack: number) => margin + scrambler * scramblerPitch + scramblerPitch / 2 + (jack === 0 ? -8 : 8);
+const groupLeft = (chain: number) => margin + chain * (groupWidth + groupGap);
+const commonX = (chain: number) => groupLeft(chain) + 64;
+const jacksX = (chain: number) => groupLeft(chain) + groupWidth - 64;
+const scramblerY = (scrambler: number) => stripTop + scrambler * scramblerPitch + scramblerPitch / 2;
+const footY = footTop + 40;
 
 /** Where a socket sits on the back. */
 function pointOf(socket: Socket): Point {
-  const top = panelTop(socket.chain);
   switch (socket.kind) {
     case 'common':
-      return { x: commonX(socket.letter), y: top + commonsY };
+      return { x: commonX(socket.chain), y: stripTop + (socket.letter.charCodeAt(0) - 65) * letterPitch + letterPitch / 2 };
     case 'jack':
-      return { x: jackX(socket.scrambler, socket.jack), y: top + jacksY };
+      return { x: jacksX(socket.chain) + (socket.jack === 0 ? -15 : 15), y: scramblerY(socket.scrambler) };
     case 'register':
-      return { x: registerX, y: top + commonsY };
+      return { x: groupLeft(socket.chain) + 64, y: footY };
   }
 }
 
@@ -59,15 +65,27 @@ function pluggedTo(machine: BombeMachine, socket: Socket): string | null {
   return socket.kind === 'jack' ? chain.scramblers[socket.scrambler].jacks[socket.jack] : socket.kind === 'register' ? chain.testRegister : null;
 }
 
-/** A cable from a jack or test register at `from` to a common at `to`. */
+/** A cable from a jack at `from` to a common at `to`, hanging between the strips. */
 function cablePath(from: Point, to: Point): string {
-  const bend = Math.max(30, Math.abs(from.y - to.y) / 2);
-  return `M${from.x},${from.y} C${from.x},${from.y - Math.sign(from.y - to.y || 1) * bend} ${to.x},${to.y + Math.sign(from.y - to.y || 1) * bend} ${to.x},${to.y}`;
+  const sag = 16 + Math.abs(from.y - to.y) / 4;
+  return `M${from.x},${from.y} C${from.x - 30},${from.y + sag} ${to.x + 30},${to.y + sag} ${to.x},${to.y}`;
 }
 
-/** The test register cable: it dips below the commons, clear of their letters, to its common. */
+/** The test register cable: up from the foot of the chain to its common, clear of the letters. */
 function registerPath(from: Point, to: Point): string {
-  return `M${from.x},${from.y} C${from.x},${from.y + 50} ${to.x},${to.y + 50} ${to.x},${to.y}`;
+  return `M${from.x},${from.y} C${from.x + 70},${from.y - 40} ${to.x + 70},${to.y + 20} ${to.x},${to.y}`;
+}
+
+/** A heavy 26-way cable with a plug at each end. */
+function Cable({ d, from, to, className = 'cable' }: { d: string; from: Point; to: Point; className?: string }) {
+  return (
+    <g className={className}>
+      <path className="cable-sheath" d={d} />
+      <path className="cable-core" d={d} />
+      <circle className="plug" cx={from.x} cy={from.y} r={6} />
+      <circle className="plug" cx={to.x} cy={to.y} r={6} />
+    </g>
+  );
 }
 
 interface SocketProps {
@@ -77,11 +95,10 @@ interface SocketProps {
   disabled: boolean;
   onActivate: (id: string) => void;
   onGrab: (id: string, event: PointerEvent<SVGGElement>) => void;
-  r?: number;
 }
 
-/** A jack to plug a cable into: Enter or Space picks it as a cable end, or pulls out the cable plugged into it. */
-function Jack({ socket, label, selected, disabled, onActivate, onGrab, r = 7 }: SocketProps) {
+/** A 26-way socket to plug a cable into: Enter or Space picks it as a cable end, or pulls out the cable plugged into it. */
+function Jack({ socket, label, selected, disabled, onActivate, onGrab }: SocketProps) {
   const id = socketId(socket);
   const { x, y } = pointOf(socket);
   const onKeyDown = (event: KeyboardEvent) => {
@@ -102,27 +119,39 @@ function Jack({ socket, label, selected, disabled, onActivate, onGrab, r = 7 }: 
       onKeyDown={disabled ? undefined : onKeyDown}
       onPointerDown={disabled ? undefined : (event) => onGrab(id, event)}
     >
-      <circle cx={x} cy={y} r={r + 5} className="jack-area" />
-      <circle cx={x} cy={y} r={r} />
+      <circle className="jack-area" cx={x} cy={y} r={11} />
+      <circle className="jack-ring" cx={x} cy={y} r={8} />
+      <circle className="jack-hole" cx={x} cy={y} r={5} />
+      <rect className="jack-key" x={x - 1.5} y={y - 8} width={3} height={3} />
     </g>
   );
 }
 
 /**
- * The back of the Bombe: for each chain, the commons (one per letter), the two jacks of each of its 12 scramblers and
- * its test register. Cables go from jacks and test registers to commons: drag one end onto the other, or pick the two
- * ends in turn. A click on a plugged jack pulls its cable out; dragging its end moves it, or pulls it out off the
- * commons.
+ * The back of the Bombe: a group of socket strips for each chain, with the commons (one per letter) on the left, the two
+ * jacks of each of its 12 scramblers on the right, and its test register and input wire at the foot. The diagonal board
+ * switch is at the top, and the join switches stand between the groups. Cables go from jacks and test registers to
+ * commons: drag one end onto the other, or pick the two ends in turn. A click on a plugged jack pulls its cable out;
+ * dragging its end moves it, or pulls it out off the commons.
  */
 function Back({ bombe }: { bombe: BombeState }) {
   const plugJack = useMachine((store) => store.plugJack);
   const setTestRegister = useMachine((store) => store.setTestRegister);
+  const configureBombe = useMachine((store) => store.configureBombe);
+  const joinChains = useMachine((store) => store.joinChains);
   const [selected, setSelected] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const svg = useRef<SVGSVGElement>(null);
   const { machine } = bombe;
   const locked = isActive(bombe.run);
+  const switchesLocked = locked || busy;
   const board = bombe.settings.diagonalBoard;
   const joinedIn = (chain: number) => chain > 0 && machine.joins[chain - 1];
+
+  const send = (change: Promise<boolean>) => {
+    setBusy(true);
+    void change.finally(() => setBusy(false));
+  };
 
   const plug = (end: Socket, letter: string | null) => {
     if (end.kind === 'jack') {
@@ -188,72 +217,75 @@ function Back({ bombe }: { bombe: BombeState }) {
 
   return (
     <svg ref={svg} className="bombe-back" viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Back of the Bombe" onKeyDown={onKeyDown}>
+      <rect className="cabinet" x={4} y={4} width={width - 8} height={height - 8} rx={6} />
+      <ToggleSwitch
+        label="Diagonal board"
+        x={margin + 60}
+        y={margin + 26}
+        on={board}
+        disabled={switchesLocked}
+        onToggle={(on) => send(configureBombe({ diagonalBoard: on }))}
+      />
       {machine.chains.map((chain, index) => {
-        const top = panelTop(index);
+        const left = groupLeft(index);
         const group = groupsOf(machine).find((chains) => chains.includes(index))!;
         return (
           <g key={index} className="chain-panel" role="group" aria-label={`Chain ${index + 1}`}>
-            <rect className="panel" x={margin / 2} y={top} width={width - margin} height={panelHeight - 12} rx={6} />
-            <text className="panel-label" x={margin} y={top + 14}>
+            <rect className="label-plate" x={left} y={plateTop} width={groupWidth} height={20} rx={2} />
+            <text className="panel-label" x={left + 8} y={plateTop + 10}>
               Chain {index + 1}
               {joinedIn(index) ? ` · joined to chain ${index}` : group.length > 1 ? ` · joined to ${chainNames(group.slice(1)).toLowerCase()}` : ''}
-              {!joinedIn(index) ? ` · diagonal board ${board ? 'on' : 'off'}` : ''}
             </text>
-            <line className={board ? 'board-bar' : 'board-bar off'} x1={margin} y1={top + commonsY - 34} x2={margin + alphabet.length * commonPitch} y2={top + commonsY - 34} />
+            <text className="engraving" x={commonX(index)} y={plateTop + 34}>
+              {board && !joinedIn(index) ? 'COMMONS · BOARD' : 'COMMONS'}
+            </text>
+            <text className="engraving" x={jacksX(index)} y={plateTop + 34}>
+              SCRAMBLERS
+            </text>
+            <rect className={board ? 'strip board' : 'strip'} x={commonX(index) - 44} y={stripTop - 4} width={64} height={stripHeight + 8} rx={3} />
+            <rect className="strip" x={jacksX(index) - 32} y={stripTop - 4} width={96} height={stripHeight + 8} rx={3} />
             {[...alphabet].map((letter) => {
               const socket: Socket = { kind: 'common', chain: index, letter };
+              const { y } = pointOf(socket);
               return (
                 <g key={letter} className="common">
-                  <Jack
-                    socket={socket}
-                    label={`Chain ${index + 1} common ${letter}`}
-                    selected={selected === socketId(socket)}
-                    disabled={locked}
-                    onActivate={activate}
-                    onGrab={grab}
-                    r={8}
-                  />
-                  <text x={commonX(letter)} y={top + commonsY - 17}>
+                  <text x={commonX(index) - 26} y={y}>
                     {letter}
                   </text>
+                  <Jack socket={socket} label={`Chain ${index + 1} common ${letter}`} selected={selected === socketId(socket)} disabled={locked} onActivate={activate} onGrab={grab} />
                 </g>
               );
             })}
-            {chain.scramblers.map((scrambler, s) => {
-              const x = margin + s * scramblerPitch + scramblerPitch / 2;
-              return (
-                <g key={s} className="scrambler-jacks">
-                  <rect x={x - 19} y={top + jacksY - 12} width={38} height={36} rx={3} />
-                  <text x={x} y={top + jacksY + 17}>
-                    {s + 1}
-                  </text>
-                  {[0, 1].map((jack) => {
-                    const socket: Socket = { kind: 'jack', chain: index, scrambler: s, jack };
-                    const letter = scrambler.jacks[jack];
-                    return (
-                      <Jack
-                        key={jack}
-                        socket={socket}
-                        label={`Chain ${index + 1} scrambler ${s + 1} jack ${jack + 1}${letter ? `, plugged to ${letter}` : ''}`}
-                        selected={selected === socketId(socket)}
-                        disabled={locked}
-                        onActivate={activate}
-                        onGrab={grab}
-                        r={5}
-                      />
-                    );
-                  })}
-                </g>
-              );
-            })}
-            <g className="test-register">
-              <rect x={registerX - 30} y={top + 24} width={100} height={52} rx={4} />
-              <text className="panel-label" x={registerX - 24} y={top + 34}>
-                Test register
+            {chain.scramblers.map((scrambler, s) => (
+              <g key={s} className="scrambler-jacks">
+                <text x={jacksX(index) + 44} y={scramblerY(s)}>
+                  {s + 1}
+                </text>
+                {[0, 1].map((jack) => {
+                  const socket: Socket = { kind: 'jack', chain: index, scrambler: s, jack };
+                  const letter = scrambler.jacks[jack];
+                  return (
+                    <Jack
+                      key={jack}
+                      socket={socket}
+                      label={`Chain ${index + 1} scrambler ${s + 1} jack ${jack + 1}${letter ? `, plugged to ${letter}` : ''}`}
+                      selected={selected === socketId(socket)}
+                      disabled={locked}
+                      onActivate={activate}
+                      onGrab={grab}
+                    />
+                  );
+                })}
+              </g>
+            ))}
+            <g className="chain-foot">
+              <rect className="strip" x={left} y={footTop} width={groupWidth} height={footHeight - 12} rx={3} />
+              <text className="engraving" x={left + 64} y={footY + 30}>
+                TEST REGISTER
               </text>
               {joinedIn(index) ? (
-                <text x={registerX + 20} y={top + commonsY + 14}>
-                  chain {index}
+                <text className="engraving" x={left + 64} y={footY}>
+                  CHAIN {index}
                 </text>
               ) : (
                 <>
@@ -265,8 +297,16 @@ function Back({ bombe }: { bombe: BombeState }) {
                     onActivate={activate}
                     onGrab={grab}
                   />
-                  <text x={registerX + 35} y={top + commonsY + 4}>
-                    {chain.testRegister ? `${chain.testRegister} · ${chain.input}` : '—'}
+                  <LetterDial
+                    label={`Chain ${index + 1} input wire`}
+                    x={left + groupWidth - 64}
+                    y={footY - 4}
+                    letter={chain.input}
+                    disabled={switchesLocked}
+                    onTurn={(steps) => send(setTestRegister(index, { input: shiftLetter(chain.input, steps) }))}
+                  />
+                  <text className="engraving" x={left + groupWidth - 64} y={footY + 30}>
+                    INPUT WIRE
                   </text>
                 </>
               )}
@@ -274,89 +314,53 @@ function Back({ bombe }: { bombe: BombeState }) {
           </g>
         );
       })}
+      {machine.joins.map((joined, join) => (
+        <ToggleSwitch
+          key={join}
+          label={`Join chains ${join + 1}–${join + 2}`}
+          caption="Join"
+          x={groupLeft(join + 1) - groupGap / 2 - 10}
+          y={footY - 6}
+          on={joined}
+          disabled={switchesLocked}
+          onToggle={(on) => send(joinChains(join, on))}
+        />
+      ))}
       <g className="cables" aria-hidden="true">
         {cables
           .filter(({ end }) => !(dragged && socketId(dragged) === socketId(end)))
-          .map(({ end, letter }) => (
-            <path key={socketId(end)} className="cable" d={end.kind === 'register' ? registerPath(pointOf(end), pointOf({ kind: 'common', chain: end.chain, letter })) : cablePath(pointOf(end), pointOf({ kind: 'common', chain: end.chain, letter }))} />
-          ))}
-        {machine.joins.map(
-          (joined, join) =>
-            joined && (
-              <path
-                key={join}
-                className="cable join"
-                d={`M${width - margin},${panelTop(join) + commonsY} C${width},${panelTop(join) + panelHeight / 2} ${width},${panelTop(join + 1)} ${width - margin},${panelTop(join + 1) + commonsY}`}
-              />
-            ),
-        )}
-        {dragged && drag?.point && <path className="cable held" d={cablePath(pointOf(dragged), drag.point)} />}
+          .map(({ end, letter }) => {
+            const from = pointOf(end);
+            const to = pointOf({ kind: 'common', chain: end.chain, letter });
+            return <Cable key={socketId(end)} d={end.kind === 'register' ? registerPath(from, to) : cablePath(from, to)} from={from} to={to} />;
+          })}
+        {machine.joins.map((joined, join) => {
+          if (!joined) {
+            return null;
+          }
+          const from = { x: groupLeft(join) + groupWidth - 12, y: footTop + 14 };
+          const to = { x: groupLeft(join + 1) + 12, y: footTop + 14 };
+          return <Cable key={join} className="cable join" d={`M${from.x},${from.y} C${from.x + 24},${from.y - 30} ${to.x - 24},${to.y - 30} ${to.x},${to.y}`} from={from} to={to} />;
+        })}
+        {dragged && drag?.point && <Cable className="cable held" d={cablePath(pointOf(dragged), drag.point)} from={pointOf(dragged)} to={drag.point} />}
       </g>
     </svg>
   );
 }
 
-/** A chain group's test register input wire: the guessed stecker partner of the test register letter. */
-function InputWire({ bombe, chain, disabled, send }: { bombe: BombeState; chain: number; disabled: boolean; send: (change: Promise<boolean>) => void }) {
-  const setTestRegister = useMachine((store) => store.setTestRegister);
-  const { input } = bombe.machine.chains[chain];
-  return (
-    <label>
-      Chain {chain + 1} input wire{' '}
-      <select value={input} disabled={disabled} onChange={(event) => send(setTestRegister(chain, { input: event.target.value }))}>
-        {[...alphabet].map((letter) => (
-          <option key={letter}>{letter}</option>
-        ))}
-      </select>
-
-    </label>
-  );
-}
-
-/** The back of the Bombe: the cables, the join cables between chains, the diagonal board switch and the input wires. */
+/** The back of the Bombe: the cables, the test registers and input wires, the join switches and the diagonal board switch. */
 export function BackView() {
   const bombe = useMachine((store) => store.bombe);
-  const configureBombe = useMachine((store) => store.configureBombe);
-  const joinChains = useMachine((store) => store.joinChains);
-  const [busy, setBusy] = useState(false);
   if (!bombe) {
     return null;
   }
-  const disabled = busy || isActive(bombe.run);
-  const groups = groupsOf(bombe.machine);
-
-  const send = (change: Promise<boolean>) => {
-    setBusy(true);
-    void change.finally(() => setBusy(false));
-  };
 
   return (
     <div className="bombe-view back-view">
-      <div className="crib-controls">
-        <label>
-          <input
-            type="checkbox"
-            checked={bombe.settings.diagonalBoard}
-            disabled={disabled}
-            onChange={(event) => send(configureBombe({ diagonalBoard: event.target.checked }))}
-          />
-          Diagonal board
-        </label>
-        {bombe.machine.joins.map((joined, join) => (
-          <label key={join}>
-            <input type="checkbox" checked={joined} disabled={disabled} onChange={(event) => send(joinChains(join, event.target.checked))} />
-            Join chains {join + 1}–{join + 2}
-          </label>
-        ))}
-      </div>
-      <div className="crib-controls">
-        {groups.map((chains) => (
-          <InputWire key={chains[0]} bombe={bombe} chain={chains[0]} disabled={disabled} send={send} />
-        ))}
-      </div>
       <p className="summary">
         Cable each scrambler's two jacks to the commons of its letters, and the test register to the common it watches: drag one end onto the other, or
-        click them in turn. Click a plugged jack to pull its cable out.
+        click them in turn. Click a plugged jack to pull its cable out. The switches set the diagonal board and join the chains; the input wire turns with
+        its arrows or Arrow Up/Down.
       </p>
       <Back bombe={bombe} />
     </div>

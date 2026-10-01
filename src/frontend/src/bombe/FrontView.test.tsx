@@ -62,9 +62,17 @@ describe('FrontView', () => {
   it('asks for a test register before a run, and lists what the run will not use', async () => {
     renderBombe(<FrontView />, { ...emptyBombe, machine: { ...emptyMachine(), warnings: ['Chain 1, scrambler 1 has drums but no cables.'] } });
 
-    expect(await screen.findByRole('button', { name: 'Start' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Start' })).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByText('Plug a test register onto a common on the Back tab.')).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Warnings' })).toHaveTextContent('Chain 1, scrambler 1 has drums but no cables.');
+  });
+
+  it('continues only at a stop', async () => {
+    renderBombe(<FrontView />, carter);
+
+    expect(await screen.findByRole('button', { name: 'Continue' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('img', { name: 'Stop lamp' })).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('turns the drums to the stop the run is paused at and shows the test register', async () => {
@@ -72,9 +80,10 @@ describe('FrontView', () => {
 
     expect(await screen.findByRole('group', { name: 'Indicator DKX' })).toBeInTheDocument();
     expect(within(await scrambler(1, 1)).getByRole('img', { name: 'lower drum III at D' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Chains 1–2 stopped on II V III: indicator DKX. Test register G:');
+    expect(screen.getByRole('img', { name: 'Stop lamp, lit' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Live wires ABCDEFGHIJKLMNOPRSTUVWXYZ' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('stecker G/Q.');
+    expect(screen.getByRole('status')).toHaveTextContent('Chains 1–2 · II V III');
+    expect(screen.getByRole('status')).toHaveTextContent('Stecker G/Q');
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
@@ -111,25 +120,26 @@ describe('FrontView', () => {
 
   it('starts a run at the chosen speed', async () => {
     const api = renderBombe(<FrontView />, carter);
-    const slider = await screen.findByRole('slider', { name: /Speed/ });
-    fireEvent.change(slider, { target: { value: '40' } });
-    fireEvent.pointerUp(slider);
+    const knob = await screen.findByRole('slider', { name: 'Speed' });
+    fireEvent.keyDown(knob, { key: 'End' });
+    fireEvent.keyUp(knob, { key: 'End' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(api.bombe.startRun).toHaveBeenCalledWith(null));
   });
 
-  it('changes the speed of the running run when the drag ends', async () => {
+  it('changes the speed of the running run when the key press ends', async () => {
     const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
-    const slider = await screen.findByRole('slider', { name: /Speed/ });
+    const knob = await screen.findByRole('slider', { name: 'Speed' });
 
-    fireEvent.change(slider, { target: { value: '20' } });
-    fireEvent.change(slider, { target: { value: '40' } });
+    fireEvent.keyDown(knob, { key: 'PageUp' });
+    fireEvent.keyDown(knob, { key: 'End' });
 
+    expect(knob).toHaveAttribute('aria-valuetext', 'Full speed');
     expect(screen.getByText('Full speed')).toBeInTheDocument();
     expect(api.bombe.setRunSpeed).not.toHaveBeenCalled();
-    fireEvent.pointerUp(slider);
+    fireEvent.keyUp(knob, { key: 'End' });
     await waitFor(() => expect(api.bombe.setRunSpeed).toHaveBeenCalledWith(null));
     expect(api.bombe.setRunSpeed).toHaveBeenCalledOnce();
   });
@@ -137,7 +147,8 @@ describe('FrontView', () => {
   it('stops a run and locks the settings while it runs', async () => {
     const api = renderBombe(<FrontView />, { ...carter, run: carterPaused });
 
-    expect(await screen.findByRole('radio', { name: 'C' })).toBeDisabled();
+    expect(await screen.findByRole('radio', { name: 'C' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Start' })).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByRole('img', { name: 'lower drum III at D' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
 

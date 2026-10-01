@@ -78,19 +78,19 @@ The label above each chain gives its wheel order. The Bombe runs with whatever i
 
 The Bombe drums are lettered ahead of the Enigma rotors: drums I, II, III, VI, VII and VIII by one letter, IV by two and V by three. The drums and the indicator show these historical letters, so to get the ring settings to try on the Enigma, add the offsets to the indicator reading. On Carter's weather crib (wheel order II V III) the indicator reads DKX, as Carter reports; adding 1, 3 and 1 gives the ring settings ENY.
 
-Before you start:
+The controls are on the right-hand end of the machine, under the indicator drums and the test register. Before you start:
 
-- choose reflector **B** or **C**,
+- turn the **Reflector** switch to **B** or **C**,
 - plug a test register onto a common on the **Back** tab,
-- set the speed. At the left end the Bombe runs at its historical speed, a run of all 17,576 positions in about 20 minutes; further right it runs faster, and at the right end at full speed, which takes a second or so.
+- set the **Speed** knob, by dragging round it or with the arrow keys. At the left end the Bombe runs at its historical speed, a run of all 17,576 positions in about 20 minutes; further right it runs faster, and at the right end at full speed, which takes a second or so.
 
-Click **Start**. The drums turn through every position once, and each chain (or group of joined chains) with a test register is tested. The bar and the line under it show the chains and their wheel orders, how far the run has got, the stops found and the time taken. You can change the speed while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes.
+Press **Start**. The drums turn through every position once, and each chain (or group of joined chains) with a test register is tested. The bar and the line under it show the chains and their wheel orders, how far the run has got, the stops found and the time taken. You can turn the speed knob while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes.
 
-At a set speed the drums turn with the run, and the Bombe halts at each stop, as the real one did. It shows the chains, the indicator reading, the 26 wires of the test register with the live ones lit, and the stecker partner of the test register letter. Click **Continue** to run on. At full speed the Bombe does not halt.
+At a set speed the drums turn with the run, and the Bombe halts at each stop, as the real one did. The stop lamp lights, the indicator drums give the reading, and the test register shows its letter and its 26 wires with the live ones lit, with the chains, wheel order and stecker partner under them. Press **Continue** to run on. At full speed the Bombe does not halt.
 
 ## The back of the Bombe
 
-The **Back** tab shows each chain's commons (one per letter, the letters above them), the two jacks of each of its twelve scramblers, and its test register. Cable them as on the plugboard:
+The **Back** tab shows a group of socket strips for each chain: the commons on the left (one per letter), the two jacks of each of its twelve scramblers on the right, and the test register and input wire at the foot. Cable them as on the plugboard:
 
 - drag a jack onto a common, or a common onto a jack,
 - or click one and then the other,
@@ -98,9 +98,9 @@ The **Back** tab shows each chain's commons (one per letter, the letters above t
 
 A jack plugs into the commons of its own chain. The test register is plugged onto a common the same way: it watches that letter's cable.
 
-- **Diagonal board** switches Welchman's diagonal board on or off. It is on by default; without it a menu gives many more false stops.
-- **Join chains 1–2** and **Join chains 2–3** cable a chain to the next, for menus of more than 12 links. Joined chains share their commons and the first chain's test register.
-- **Input wire** sets the wire of each test register cable that the current goes into: the guessed stecker partner of the test register letter. It is A, or B when the test register is on A.
+- The **Diagonal board** switch at the top turns Welchman's diagonal board on or off. It is on by default; without it a menu gives many more false stops.
+- The **Join** switches between the chains cable a chain to the next, for menus of more than 12 links. Joined chains share their commons and the first chain's test register.
+- **Input wire**, turned with its arrows or Arrow Up/Down, sets the wire of each test register cable that the current goes into: the guessed stecker partner of the test register letter. It is A, or B when the test register is on A.
 
 Nothing on the Bombe can change while it runs or waits at a stop.
 

@@ -17,7 +17,8 @@ describe('BackView', () => {
     expect(await jack(2, 1, 2)).toHaveAccessibleName('Chain 2 scrambler 1 jack 2, plugged to E');
     expect(await jack(2, 2, 1)).toHaveAccessibleName('Chain 2 scrambler 2 jack 1');
     expect(screen.getByRole('button', { name: 'Chain 1 test register, plugged to G' })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Join chains 1–2' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Join chains 1–2' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('switch', { name: 'Diagonal board' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('cables a jack to a common clicked in turn', async () => {
@@ -67,9 +68,9 @@ describe('BackView', () => {
   it('joins chains and switches the diagonal board off', async () => {
     const api = renderBombe(<BackView />, emptyBombe);
 
-    fireEvent.click(await screen.findByRole('checkbox', { name: 'Join chains 2–3' }));
+    fireEvent.click(await screen.findByRole('switch', { name: 'Join chains 2–3' }));
     await waitFor(() => expect(api.bombe.joinChains).toHaveBeenCalledWith(1, true));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Diagonal board' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Diagonal board' }));
 
     await waitFor(() => expect(api.bombe.configure).toHaveBeenCalledWith({ diagonalBoard: false }));
   });
@@ -77,18 +78,20 @@ describe('BackView', () => {
   it('puts the input on another wire of the test register cable', async () => {
     const api = renderBombe(<BackView />, carterMenu);
 
-    const input = await screen.findByRole('combobox', { name: /Chain 1 input wire/ });
-    expect(screen.queryByRole('combobox', { name: /Chain 2 input wire/ })).not.toBeInTheDocument();
+    const input = await screen.findByRole('spinbutton', { name: 'Chain 1 input wire' });
+    expect(input).toHaveAttribute('aria-valuetext', 'A');
+    expect(screen.queryByRole('spinbutton', { name: 'Chain 2 input wire' })).not.toBeInTheDocument();
 
-    fireEvent.change(input, { target: { value: 'Q' } });
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
 
-    await waitFor(() => expect(api.bombe.setTestRegister).toHaveBeenCalledWith(0, { input: 'Q' }));
+    await waitFor(() => expect(api.bombe.setTestRegister).toHaveBeenCalledWith(0, { input: 'Z' }));
   });
 
   it('locks the switches and jacks while the Bombe runs', async () => {
     renderBombe(<BackView />, { ...carterMenu, run: carterPaused });
 
-    expect(await screen.findByRole('checkbox', { name: 'Diagonal board' })).toBeDisabled();
+    expect(await screen.findByRole('switch', { name: 'Diagonal board' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('spinbutton', { name: 'Chain 1 input wire' })).toHaveAttribute('aria-disabled', 'true');
     expect(await jack(1, 1, 1)).toHaveAttribute('aria-disabled', 'true');
     expect(within(screen.getByRole('group', { name: 'Back of the Bombe' })).getAllByRole('button', { name: /common/ })[0]).toHaveAttribute('aria-disabled', 'true');
   });
