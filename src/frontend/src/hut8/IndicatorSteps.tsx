@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import type { BombeCheck, BombeState, DayMessage, DayTraffic, RingTable } from '../api';
 import { alphabet } from '../machine';
 import { Field, Hand, Squares } from '../notebook/paper';
+import { KeySheetSelects, shownMonth } from '../panels/KeySheetSelects';
 import { useMachine } from '../store';
 import { SetUpEnigma } from './CheckStep';
 import { cribLetters, groups } from './letters';
@@ -48,13 +49,20 @@ function DayPicker({ day }: { day: DayTraffic | null }) {
   const loadKeySheets = useMachine((store) => store.loadKeySheets);
   const takePinch = useMachine((store) => store.takePinch);
   const sheets = keySheets.filter((sheet) => sheet.model === 'M3');
+  const [chosenMonth, setChosenMonth] = useState(day?.month ?? null);
   const [sheetId, setSheetId] = useState(day?.sheetId ?? '');
   const [dayNumber, setDayNumber] = useState(day?.day ?? 1);
-  const chosen = sheetId || sheets[0]?.id;
+  const month = shownMonth(sheets, chosenMonth);
+  const chosen = sheets.some((sheet) => sheet.id === sheetId && sheet.month === month) ? sheetId : '';
 
   useEffect(() => {
     void loadKeySheets();
   }, [loadKeySheets]);
+
+  const chooseMonth = (value: string) => {
+    setChosenMonth(value);
+    setSheetId('');
+  };
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -66,16 +74,7 @@ function DayPicker({ day }: { day: DayTraffic | null }) {
   return (
     <form className="notebook-form" aria-label="Day of the pinch" onSubmit={onSubmit}>
       <p className="notebook-actions">
-        <label className="inline-label">
-          Key sheet
-          <select value={chosen ?? ''} onChange={(event) => setSheetId(event.target.value)} disabled={sheets.length === 0}>
-            {sheets.map((sheet) => (
-              <option key={sheet.id} value={sheet.id}>
-                {sheet.network} {sheet.month}
-              </option>
-            ))}
-          </select>
-        </label>
+        <KeySheetSelects sheets={sheets} month={month} sheetId={chosen} onMonth={chooseMonth} onSheet={setSheetId} labelClassName="inline-label" />
         <label className="inline-label">
           Day
           <input type="number" min={1} max={31} value={dayNumber} onChange={(event) => setDayNumber(Number(event.target.value))} />

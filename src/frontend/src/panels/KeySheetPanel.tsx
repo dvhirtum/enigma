@@ -1,59 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { DailyKey, KeySheet, KeySheetSummary } from '../api';
+import type { DailyKey, KeySheet } from '../api';
 import { models } from '../machine';
 import { useMachine } from '../store';
-
-const provenanceLabels: Record<string, string> = {
-  Historical: 'historical',
-  Generated: 'generated',
-  UserDefined: 'user-defined',
-};
+import { KeySheetSelects, provenanceLabels, shownMonth } from './KeySheetSelects';
 
 function currentYear(): number {
   return new Date().getFullYear();
 }
 
-function currentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-const monthName = (month: string) => `${monthNames[Number(month.slice(5, 7)) - 1]} ${month.slice(0, 4)}`;
-
-function sheetLabel(sheet: KeySheetSummary): string {
-  return `${sheet.network} (${provenanceLabels[sheet.provenance] ?? sheet.provenance})`;
-}
-
-/** Groups items by key, keeping the order of the items. */
-function groupBy<T>(items: T[], key: (item: T) => string): [string, T[]][] {
-  const groups = new Map<string, T[]>();
-  for (const item of items) {
-    groups.set(key(item), [...(groups.get(key(item)) ?? []), item]);
-  }
-  return [...groups];
-}
-
 const ring = (value: number) => String(value).padStart(2, '0');
-
-/** The months that have sheets, newest first. */
-function sheetMonths(sheets: KeySheetSummary[]): string[] {
-  return [...new Set(sheets.map((sheet) => sheet.month))].sort().reverse();
-}
-
-/** The months that have sheets by year: the newest year first, its months in calendar order. */
-function monthsByYear(months: string[]): [string, string[]][] {
-  return groupBy([...months].sort(), (month) => month.slice(0, 4)).reverse();
-}
-
-/** The sheets of `month` by model; in each model historical sheets first, then by network. */
-function sheetsByModel(sheets: KeySheetSummary[], month: string): [string, KeySheetSummary[]][] {
-  const sorted = sheets
-    .filter((sheet) => sheet.month === month)
-    .sort((a, b) => a.model.localeCompare(b.model) || Number(b.readOnly) - Number(a.readOnly) || a.network.localeCompare(b.network));
-  return groupBy(sorted, (sheet) => sheet.model);
-}
 
 type Mode = 'view' | 'generate';
 
@@ -210,9 +165,7 @@ export function KeySheetPanel() {
   const [mode, setMode] = useState<Mode>('view');
   const [chosenMonth, setChosenMonth] = useState<string | null>(null);
   const view = () => setMode('view');
-  const months = sheetMonths(sheets);
-  const fallback = months.includes(currentMonth()) ? currentMonth() : (months[0] ?? '');
-  const month = sheet?.month ?? (chosenMonth !== null && months.includes(chosenMonth) ? chosenMonth : fallback);
+  const month = sheet?.month ?? shownMonth(sheets, chosenMonth);
 
   useEffect(() => {
     void loadKeySheets();
@@ -225,36 +178,13 @@ export function KeySheetPanel() {
 
   return (
     <div className="key-sheets">
-      <label>
-        Month
-        <select value={month} disabled={months.length === 0} onChange={(event) => chooseMonth(event.target.value)}>
-          {months.length === 0 && <option value="">No key sheets yet</option>}
-          {monthsByYear(months).map(([year, yearMonths]) => (
-            <optgroup key={year} label={year}>
-              {yearMonths.map((value) => (
-                <option key={value} value={value}>
-                  {monthName(value)}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </label>
-      <label>
-        Key sheet
-        <select value={sheet?.id ?? ''} disabled={months.length === 0} onChange={(event) => void openKeySheet(event.target.value || null).then(view)}>
-          <option value="">Choose a sheet</option>
-          {sheetsByModel(sheets, month).map(([model, modelSheets]) => (
-            <optgroup key={model} label={model}>
-              {modelSheets.map((summary) => (
-                <option key={summary.id} value={summary.id}>
-                  {sheetLabel(summary)}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </label>
+      <KeySheetSelects
+        sheets={sheets}
+        month={month}
+        sheetId={sheet?.id ?? ''}
+        onMonth={chooseMonth}
+        onSheet={(id) => void openKeySheet(id || null).then(view)}
+      />
       <div className="sheet-actions">
         <button type="button" onClick={() => setMode('generate')}>
           Generate

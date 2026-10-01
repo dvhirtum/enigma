@@ -50,8 +50,10 @@ describe('IndicatorsStep', () => {
     const api = renderStep('indicators', pasted);
     api.keySheets.list.mockResolvedValue({ ok: true, value: [summaryOf({ ...generatedSheet, id: 'm3', model: 'M3' })] });
     const form = await screen.findByRole('form', { name: 'Day of the pinch' });
-    await within(form).findByRole('option', { name: 'Triton 1944-06' });
+    await within(form).findByRole('option', { name: 'June 1944' });
+    expect(within(form).getByRole('button', { name: 'Take the pinch' })).toBeDisabled();
 
+    fireEvent.change(within(form).getByRole('combobox', { name: 'Key sheet' }), { target: { value: 'm3' } });
     fireEvent.change(within(form).getByRole('spinbutton', { name: 'Day' }), { target: { value: '19' } });
     fireEvent.click(within(form).getByRole('button', { name: 'Take the pinch' }));
 
