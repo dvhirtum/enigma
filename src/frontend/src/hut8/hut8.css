@@ -616,8 +616,13 @@ input.hand-box:focus-visible {
 }
 
 .group-box input.group-input {
-  width: calc(var(--sq) * 3);
-  box-shadow: inset 0 -1px 0 var(--grid);
+  width: calc(var(--sq) * 4);
+  height: var(--sq);
+  margin-left: 0.4rem;
+  font-family: 'Kalam', cursive;
+  letter-spacing: 0.3em;
+  text-align: center;
+  box-shadow: inset 0 -2.5px var(--pencil);
 }
 
 .group-box input[aria-invalid] {
