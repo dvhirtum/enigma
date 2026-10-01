@@ -99,7 +99,7 @@ describe('IndicatorsStep', () => {
     const key = await screen.findByRole('region', { name: 'Key' });
     expect(key).toHaveTextContent('C N Z');
     expect(key).toHaveTextContent('These are the rings of the key sheet.');
-    expect(within(key).getByRole('group', { name: 'Decrypt with the whole key' })).toHaveTextContent('WETTE');
+    expect(within(key).getByRole('group', { name: 'Decrypt with the whole key' })).toHaveTextContent('WETT ERVO');
     expect(await screen.findByRole('button', { name: 'Rings C N: Spruchschlüssel ULA, cores VMB', pressed: true })).toBeInTheDocument();
   });
 });

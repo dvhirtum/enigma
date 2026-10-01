@@ -127,7 +127,7 @@ describe('KeyStep', () => {
   it('reads the message with the steckers found so far', async () => {
     await openCarterCheck('key');
 
-    expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('XGTMB');
+    expect(screen.getByRole('group', { name: 'Decrypt' })).toHaveTextContent('XGTM BRVO');
     expect(screen.getByRole('textbox', { name: 'Partner of G' })).toHaveValue('Q');
   });
 

@@ -24,7 +24,7 @@ The first step loads the message to break:
 - **New exercise**: a Navy message sent on a random day of one of your M3 key sheets. Generate or import M3 key sheets first.
 - **Radio message or cipher text**: paste a Navy radio message, as the operator's notebook writes it, or bare cipher text, and click **Load pasted text**.
 
-The notebook writes down the message, a hint for intercepts and exercises, and the cipher text in groups of five. Loading a message removes the crib.
+The notebook writes down the message, a hint for intercepts and exercises, and the cipher text in groups of four. Loading a message removes the crib.
 
 ## Placing the crib
 

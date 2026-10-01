@@ -40,7 +40,7 @@ describe('Hut8Notebook', () => {
 
     await expectCurrent('Place the crib');
     expect(screen.getByRole('listitem', { name: 'Choose the message' })).toHaveAttribute('data-done');
-    expect(screen.getByRole('group', { name: 'Cipher text' })).toHaveTextContent('SNMKG');
+    expect(screen.getByRole('group', { name: 'Cipher text' })).toHaveTextContent('SNMK GGST');
   });
 
   it('draws the menu of the placed crib, then runs the Bombe', async () => {
