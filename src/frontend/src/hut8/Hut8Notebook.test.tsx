@@ -133,6 +133,22 @@ describe('Hut8Notebook', () => {
     expect(screen.queryByRole('list', { name: 'Messages of the day' })).not.toBeInTheDocument();
   });
 
+  it('stays on the indicators when the middle ring read garbles the message', async () => {
+    const pinched: BombeState = { ...exercise, day: fakeDay };
+    const garbled: BombeCheck = { ...carterRead, reading: { ...carterRead.reading!, middleRingFits: false } };
+    renderBombe(<Hut8Notebook />, pinched, (fake) => {
+      fake.bombe.setUpChecker.mockResolvedValue({ ok: true, value: { ...pinched, checker: carterChecker } });
+      fake.bombe.confirmCheck.mockResolvedValue({
+        ok: true,
+        value: { verdict: 'True', cribMismatches: [], cribUnknown: [], solution: null, check: garbled },
+      });
+    });
+    await confirmTrue();
+
+    await expectCurrent('Read the indicators');
+    expect(screen.queryByRole('list', { name: 'Messages of the day' })).not.toBeInTheDocument();
+  });
+
   it('goes back to the stops after a false verdict', async () => {
     renderBombe(<Hut8Notebook />, finished, (fake) =>
       fake.bombe.confirmCheck.mockResolvedValue({
