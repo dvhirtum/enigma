@@ -35,6 +35,7 @@ public sealed class TakePinchHandler(IBombeSessionStore store, KeySheetLinker li
             }
 
             job.TakePinch(pinch, others);
+            store.Stops.ClearReadings();
             return BombeState.From(job, store.Run, store);
         });
     }

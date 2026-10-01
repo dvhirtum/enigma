@@ -110,6 +110,24 @@ public sealed class IndicatorHandlerTests
     }
 
     [Fact]
+    public async Task Should_forget_the_rings_read_When_the_pinch_is_taken_again()
+    {
+        // Arrange
+        var solution = GenerateExercise();
+        var stop = await RunTrueStopAsync(solution);
+        TakePinch();
+        new FillInIndicatorHandler(_store).Handle(new FillInIndicator(0));
+        new ReadRingsHandler(_store).Handle(new ReadRings(stop, solution.Rings[0], solution.Rings[1]));
+
+        // Act
+        TakePinch();
+        var check = new GetCheckHandler(_store).Handle(new GetCheck(stop));
+
+        // Assert
+        Assert.Null(check.Reading);
+    }
+
+    [Fact]
     public async Task Should_refuse_the_ring_table_When_the_Verfahrenkenngruppe_is_not_written_down()
     {
         // Arrange
