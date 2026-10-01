@@ -217,7 +217,7 @@ body {
   max-width: 68rem;
 }
 
-/* The checking machine: a sloped black panel, a cream reflector wheel, coloured drums, lamps and keys. */
+/* The checking machine: a sloped black panel, a reflector cartridge, a cream dummy drum, coloured drums, lamps and keys. */
 .checking-machine {
   width: 100%;
   user-select: none;
@@ -276,16 +276,51 @@ body {
   fill: #1c1c1a;
 }
 
-.checking-machine .reflector-wheel circle {
+.checking-machine .dummy-drum circle {
   fill: #efe6cf;
   stroke: #b9ad8c;
   stroke-width: 4;
 }
 
-.checking-machine .reflector-wheel text {
-  fill: #1c1c1a;
-  font-size: 26px;
+.checking-machine .dummy-drum .hub {
+  fill: #6b4a2b;
+  stroke: #4a3220;
+}
+
+.checking-machine .cartridge-rack > rect {
+  fill: #2c2b28;
+  stroke: #45433d;
+}
+
+.checking-machine .cartridge rect {
+  fill: #2b2b2b;
+  stroke: #8f8a7e;
+  stroke-width: 2;
+}
+
+.checking-machine .cartridge.in-use rect {
+  fill: none;
+  stroke: #45433d;
+  stroke-dasharray: 4 4;
+}
+
+.checking-machine .cartridge.selected rect {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.checking-machine .cartridge text {
+  fill: #ece8df;
+  font-size: 14px;
   font-weight: bold;
+  pointer-events: none;
+}
+
+.checking-machine .held-cartridge {
+  fill: #2b2b2b;
+  stroke: #8f8a7e;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .check-drum .rim {
@@ -432,7 +467,9 @@ body {
 .bombe-front .rack-drum,
 .checking-machine .rack-drum,
 .checking-machine .drum-body,
-.checking-machine .drum-place {
+.checking-machine .drum-place,
+.checking-machine .cartridge,
+.checking-machine .dummy-drum {
   cursor: grab;
 }
 
@@ -458,7 +495,9 @@ body {
 .bombe-front .rack-drum:focus-visible,
 .checking-machine .rack-drum:focus-visible,
 .checking-machine .drum-body:focus-visible,
-.checking-machine .drum-place:focus-visible {
+.checking-machine .drum-place:focus-visible,
+.checking-machine .cartridge:focus-visible,
+.checking-machine .dummy-drum:focus-visible {
   outline: none;
   filter: drop-shadow(0 0 3px var(--accent));
 }
@@ -609,14 +648,16 @@ body {
   stroke-dasharray: 4 3;
 }
 
-.checking-machine .drum-place circle {
+.checking-machine .drum-place circle,
+.checking-machine .drum-place rect {
   fill: transparent;
   stroke: #45433d;
   stroke-width: 3;
   stroke-dasharray: 6 6;
 }
 
-.checking-machine .drum-place.ready circle {
+.checking-machine .drum-place.ready circle,
+.checking-machine .drum-place.ready rect {
   stroke: #ffd76a;
 }
 

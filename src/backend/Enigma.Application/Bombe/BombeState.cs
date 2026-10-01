@@ -106,10 +106,10 @@ public sealed record ChainState(string? TestRegister, string Input, IReadOnlyLis
 public sealed record ScramblerState(IReadOnlyList<string?> Jacks, IReadOnlyList<string?> Drums, string Start);
 
 /// <summary>
-/// The checking machine: reflector, rotor of each drum left to right (null: none), ring and window letters, and the
-/// logged stop it was set up for (null when set by hand).
+/// The checking machine: reflector cartridge (null: none), whether the dummy drum is fitted, rotor of each drum left to
+/// right (null: none), ring and window letters, and the logged stop it was set up for (null when set by hand).
 /// </summary>
-public sealed record CheckingMachineState(string Reflector, IReadOnlyList<string?> Drums, string Rings, string Windows, StopState? Stop)
+public sealed record CheckingMachineState(string? Reflector, bool Dummy, IReadOnlyList<string?> Drums, string Rings, string Windows, StopState? Stop)
 {
     public static CheckingMachineState From(CheckingMachine checker, StopLog stops)
     {
@@ -120,7 +120,8 @@ public sealed record CheckingMachineState(string Reflector, IReadOnlyList<string
             ? StopState.From(found, index, stops.VerdictOn(index))
             : null;
         return new CheckingMachineState(
-            checker.Reflector.Name,
+            checker.Reflector?.Name,
+            checker.Dummy,
             [.. checker.Drums.Select(rotor => rotor?.Name)],
             checker.Rings.ToString(),
             checker.Windows.ToString(),

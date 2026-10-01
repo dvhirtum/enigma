@@ -118,16 +118,80 @@ public sealed class CheckingMachineTests
     }
 
     [Fact]
-    public void Should_refuse_the_reflector_When_it_is_thin()
+    public void Should_have_the_dummy_drum_and_reflector_B_When_new()
+    {
+        // Arrange
+        // Act
+        var checker = new CheckingMachine();
+
+        // Assert
+        Assert.True(checker.Dummy);
+        Assert.Equal(ReflectorType.B, checker.Reflector);
+    }
+
+    [Fact]
+    public void Should_refuse_a_key_When_the_dummy_drum_is_taken_out()
     {
         // Arrange
         var checker = new CheckingMachine();
+        checker.SetUp(0, CarterStop(), ReflectorType.B);
 
         // Act
-        void Act() => checker.SetReflector(ReflectorType.BThin);
+        checker.FitDummy(false);
+        void Act() => checker.Press(Q);
 
         // Assert
         Assert.Throws<DomainException>(Act);
+        Assert.Null(checker.Stop);
+    }
+
+    [Fact]
+    public void Should_refuse_a_key_When_the_reflector_is_taken_out()
+    {
+        // Arrange
+        var checker = new CheckingMachine();
+        checker.SetUp(0, CarterStop(), ReflectorType.B);
+
+        // Act
+        checker.SetReflector(null);
+        void Act() => checker.Press(Q);
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+        Assert.Null(checker.Stop);
+    }
+
+    [Fact]
+    public void Should_light_the_lamp_of_the_thin_reflector_When_a_thin_cartridge_is_fitted()
+    {
+        // Arrange
+        var checker = new CheckingMachine();
+        checker.SetUp(0, CarterStop(), ReflectorType.B);
+        var core = checker.CorePositions!.Value;
+
+        // Act
+        checker.SetReflector(ReflectorType.BThin);
+        var lamp = checker.Press(Q);
+
+        // Assert
+        Assert.Equal(Scrambler.Encipher(checker.WheelOrder!, ReflectorType.BThin, core, Q), lamp);
+        Assert.NotEqual(Scrambler.Encipher(checker.WheelOrder!, ReflectorType.B, core, Q), lamp);
+    }
+
+    [Fact]
+    public void Should_fit_the_dummy_drum_When_set_up_for_a_stop()
+    {
+        // Arrange
+        var checker = new CheckingMachine();
+        checker.FitDummy(false);
+        checker.SetReflector(null);
+
+        // Act
+        checker.SetUp(0, CarterStop(), ReflectorType.C);
+
+        // Assert
+        Assert.True(checker.Dummy);
+        Assert.Equal(ReflectorType.C, checker.Reflector);
     }
 
     private static BombeStop CarterStop() => new(WheelOrder.Parse("II V III"), DrumPosition.Parse("VMB"), G, [Q]);

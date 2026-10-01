@@ -11,7 +11,7 @@ public sealed class SetCheckingMachineHandler(IBombeSessionStore store)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        var reflector = command.Reflector is null ? null : Input.Reflector(command.Reflector);
+        var reflector = string.IsNullOrEmpty(command.Reflector) ? null : Input.Reflector(command.Reflector);
         IReadOnlyList<RotorType?>? drums = command.Drums is null
             ? null
             : [.. command.Drums.Select(rotor => string.IsNullOrEmpty(rotor) ? null : Input.Rotor(rotor))];
@@ -20,9 +20,14 @@ public sealed class SetCheckingMachineHandler(IBombeSessionStore store)
         return store.Use(job =>
         {
             var checker = job.Checker;
-            if (reflector is not null)
+            if (command.Reflector is not null)
             {
                 checker.SetReflector(reflector);
+            }
+
+            if (command.Dummy is { } dummy)
+            {
+                checker.FitDummy(dummy);
             }
 
             if (drums is not null)

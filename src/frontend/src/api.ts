@@ -185,11 +185,12 @@ export interface BombeMachine {
 }
 
 /**
- * The checking machine: reflector, rotor of each drum left to right (null: none), ring and window letters, and the
- * stop the notebook set it up for (null when set by hand).
+ * The checking machine: reflector cartridge (null: none), whether the dummy drum is fitted, rotor of each drum left to
+ * right (null: none), ring and window letters, and the stop the notebook set it up for (null when set by hand).
  */
 export interface CheckingMachine {
-  reflector: string;
+  reflector: string | null;
+  dummy: boolean;
   drums: (string | null)[];
   rings: string;
   windows: string;
@@ -261,9 +262,10 @@ export interface TestRegisterChange {
   input?: string;
 }
 
-/** Checking machine fields to change; those left out stay as they are. */
+/** Checking machine fields to change; those left out stay as they are. An empty reflector takes the cartridge out. */
 export interface CheckerChange {
   reflector?: string;
+  dummy?: boolean;
   drums?: (string | null)[];
   rings?: string;
   windows?: string;

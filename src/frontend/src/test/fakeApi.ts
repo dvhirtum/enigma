@@ -125,7 +125,7 @@ export function emptyMachine(): BombeMachine {
   };
 }
 
-export const emptyChecker: CheckingMachine = { reflector: 'B', drums: [null, null, null], rings: 'ZZZ', windows: 'ZZZ', stop: null };
+export const emptyChecker: CheckingMachine = { reflector: 'B', dummy: true, drums: [null, null, null], rings: 'ZZZ', windows: 'ZZZ', stop: null };
 
 export const emptyBombe: BombeState = {
   source: null,
@@ -223,7 +223,8 @@ export const carterStops: BombeStop[] = [
   { index: 1, wheelOrder: 'II V III', position: 'KQF', indicator: 'NFO', testRegister: 'G', liveWires: 'ABCDEFHIJKLMNOPQRSTUVWXYZ', stecker: 'G', verdict: 'Unchecked' },
 ];
 
-/** The checking machine as the notebook sets it up for Carter's true stop. */export const carterChecker: CheckingMachine = { reflector: 'B', drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterStops[0] };
+/** The checking machine as the notebook sets it up for Carter's true stop. */
+export const carterChecker: CheckingMachine = { reflector: 'B', dummy: true, drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterStops[0] };
 const carterCrib = 'WETTERVORHERSAGE';
 
 /** The check of Carter's true stop as it starts: the rings at the indicator, the windows at ZZZ, only G/Q known. */

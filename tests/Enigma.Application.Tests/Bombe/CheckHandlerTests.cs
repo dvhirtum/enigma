@@ -71,6 +71,36 @@ public sealed class CheckHandlerTests
     }
 
     [Fact]
+    public async Task Should_take_out_the_cartridge_and_dummy_drum_When_they_are_set_empty()
+    {
+        // Arrange
+        var stop = await RunCarterAsync(intercept: false);
+        new SetUpCheckingMachineHandler(_store).Handle(new SetUpCheckingMachine(stop));
+
+        // Act
+        var state = new SetCheckingMachineHandler(_store).Handle(new SetCheckingMachine("", null, null, null, Dummy: false));
+
+        // Assert
+        Assert.Null(state.Checker.Reflector);
+        Assert.False(state.Checker.Dummy);
+        Assert.Null(state.Checker.Stop);
+    }
+
+    [Fact]
+    public async Task Should_fit_a_thin_cartridge_When_it_is_set()
+    {
+        // Arrange
+        await RunCarterAsync(intercept: false);
+
+        // Act
+        var state = new SetCheckingMachineHandler(_store).Handle(new SetCheckingMachine("C-thin", null, null, null));
+
+        // Assert
+        Assert.Equal("C-thin", state.Checker.Reflector);
+        Assert.True(state.Checker.Dummy);
+    }
+
+    [Fact]
     public async Task Should_keep_the_verdict_on_the_stop_When_it_is_confirmed()
     {
         // Arrange

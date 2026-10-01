@@ -150,6 +150,8 @@ test('plugs a scrambler and fits drums on the Bombe by hand', async () => {
   await page.getByRole('button', { name: 'Drum II', exact: true }).click();
   await page.getByRole('button', { name: 'left drum place, empty' }).click();
   await expect(page.getByRole('img', { name: 'left drum II at Z, ring Z' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Take the dummy drum out' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Take reflector B out' })).toBeVisible();
   await page.getByRole('tab', { name: 'Front' }).click();
   await page.getByRole('button', { name: 'Enigma' }).click();
 });

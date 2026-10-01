@@ -3,11 +3,14 @@ import { useMachine } from '../store';
 import type { Keys } from '../useKeys';
 
 /**
- * Presses one key at a time on the checking machine, once its drums are fitted; the lamp stays lit while the key is
- * held. Used by the machine window and by the Hut 8 notebook while a stop is checked.
+ * Presses one key at a time on the checking machine, once its reflector and drums are fitted; the lamp stays lit while
+ * the key is held. Used by the machine window and by the Hut 8 notebook while a stop is checked.
  */
 export function useCheckKeys(): Keys {
-  const ready = useMachine((store) => store.bombe?.checker.drums.every(Boolean) ?? false);
+  const ready = useMachine((store) => {
+    const checker = store.bombe?.checker;
+    return Boolean(checker?.reflector && checker.dummy && checker.drums.every(Boolean));
+  });
   const pressCheckKey = useMachine((store) => store.pressCheckKey);
   const releaseCheckKey = useMachine((store) => store.releaseCheckKey);
   const held = useRef<string | null>(null);

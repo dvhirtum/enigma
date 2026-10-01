@@ -86,10 +86,11 @@ public sealed record GetSourceCrib;
 public sealed record GetSolution;
 
 /// <summary>
-/// Sets up the checking machine; each field left out (null) stays as it is. The drums are rotors left to right, such
+/// Sets up the checking machine; each field left out (null) stays as it is. The reflector is a cartridge such as "B" or
+/// "C-thin" (empty: none); the dummy says whether the dummy drum is fitted. The drums are rotors left to right, such
 /// as ["II", null, "III"] (null or empty: no drum); rings and windows are letters such as "SNY" and "ZZE".
 /// </summary>
-public sealed record SetCheckingMachine(string? Reflector, IReadOnlyList<string?>? Drums, string? Rings, string? Windows);
+public sealed record SetCheckingMachine(string? Reflector, IReadOnlyList<string?>? Drums, string? Rings, string? Windows, bool? Dummy = null);
 
 /// <summary>Presses a key on the checking machine.</summary>
 public sealed record PressCheckingKey(string? Key);

@@ -3,15 +3,20 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// The Hut 8 checking machine: a reflector and three drums with Bombe drum letters and a ring each, without plugboard or
-/// stepping; the drums turn only by their thumbwheels. The drum letters are the window letters less the rings. It can
-/// be set up for a Bombe stop, which it remembers until its drums or reflector are changed.
+/// The Hut 8 checking machine: a reflector cartridge, a dummy drum that passes every letter straight through, and three
+/// drums with Bombe drum letters and a ring each, without plugboard or stepping; the drums turn only by their
+/// thumbwheels. The drum letters are the window letters less the rings. It can be set up for a Bombe stop, which it
+/// remembers until its drums or reflector are changed.
 /// </summary>
 public sealed class CheckingMachine
 {
     private readonly RotorType?[] _drums = new RotorType?[3];
 
-    public ReflectorType Reflector { get; private set; } = ReflectorType.B;
+    /// <summary>The reflector cartridge in its slot, or null when the slot is empty. Any reflector fits, thin ones too.</summary>
+    public ReflectorType? Reflector { get; private set; } = ReflectorType.B;
+
+    /// <summary>Whether the dummy drum is in the left drum place.</summary>
+    public bool Dummy { get; private set; } = true;
 
     /// <summary>The rotor of each drum, left to right; null where none is fitted.</summary>
     public IReadOnlyList<RotorType?> Drums => _drums;
@@ -37,16 +42,17 @@ public sealed class CheckingMachine
     /// <summary>The stop it was set up for, until its drums or reflector are changed.</summary>
     public int? Stop { get; private set; }
 
-    public void SetReflector(ReflectorType reflector)
+    /// <summary>Puts a reflector cartridge in the slot, or takes it out (null).</summary>
+    public void SetReflector(ReflectorType? reflector)
     {
-        ArgumentNullException.ThrowIfNull(reflector);
-
-        if (reflector.IsThin)
-        {
-            throw new DomainException("The checking machine takes reflector B or C.");
-        }
-
         Reflector = reflector;
+        Stop = null;
+    }
+
+    /// <summary>Puts the dummy drum in the left drum place, or takes it out.</summary>
+    public void FitDummy(bool fitted)
+    {
+        Dummy = fitted;
         Stop = null;
     }
 
@@ -79,14 +85,17 @@ public sealed class CheckingMachine
     }
 
     /// <summary>
-    /// Sets the machine up for a stop: its reflector and wheel order, the rings at the stop's indicator and the windows at
-    /// ZZZ, so the drums show the stop's drum letters and each menu link is at its menu position (ZZA, ZZB, ...).
+    /// Sets the machine up for a stop: its reflector, the dummy drum and the wheel order, the rings at the stop's indicator
+    /// and the windows at ZZZ, so the drums show the stop's drum letters and each menu link is at its menu position (ZZA,
+    /// ZZB, ...).
     /// </summary>
     public void SetUp(int stop, BombeStop found, ReflectorType reflector)
     {
         ArgumentNullException.ThrowIfNull(found);
+        ArgumentNullException.ThrowIfNull(reflector);
 
         SetReflector(reflector);
+        FitDummy(true);
         Fit([found.WheelOrder.Left, found.WheelOrder.Middle, found.WheelOrder.Right]);
         (Rings, Windows, Stop) = (found.Indicator, DrumPosition.ZZZ, stop);
     }
@@ -94,7 +103,11 @@ public sealed class CheckingMachine
     /// <summary>Presses <paramref name="key"/> and returns the lamp that lights.</summary>
     public Letter Press(Letter key)
     {
-        var order = WheelOrder ?? throw new DomainException("Fit all three drums first.");
-        return Scrambler.Encipher(order, Reflector, order.CorePositions(DrumLetters), key);
+        if (WheelOrder is not { } order || !Dummy || Reflector is not { } reflector)
+        {
+            throw new DomainException("Fit the reflector, the dummy drum and all three drums first.");
+        }
+
+        return Scrambler.Encipher(order, reflector, order.CorePositions(DrumLetters), key);
     }
 }

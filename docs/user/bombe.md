@@ -110,15 +110,15 @@ While the Hut 8 notebook is open, a run also writes its stops in the notebook, w
 
 ## Checking a stop
 
-Most stops are false. Hut 8 tested each one on a checking machine: an Enigma without plugboard whose rotors do not step, with Bombe drums. The **Checking** tab of the machine window shows it, with its reflector wheel, three drum places and the spare drums in the rack above. Each drum has its letters round the face, the window letter at the mark on top, and a coloured ring with a black dot at the ring letter.
+Most stops are false. Hut 8 tested each one on a checking machine: an Enigma without plugboard whose rotors do not step, with Bombe drums. The **Checking** tab of the machine window shows it, with the reflector cartridge in the slot on its side, four drum places and the spare drums and cartridges in the racks above. The left place holds a dummy drum that passes every letter straight through, so the machine works as a three-rotor Enigma; it is fitted by default. Each drum has its letters round the face, the window letter at the mark on top, and a coloured ring with a black dot at the ring letter.
 
-Checking a stop in the notebook sets the machine up for it: the stop's reflector and drums, the rings at the stop's indicator and the windows at ZZZ. If you set the machine up by hand, the notebook asks first. To check a stop from the printout, set it up yourself:
+Checking a stop in the notebook sets the machine up for it: the stop's reflector, the dummy drum and the stop's drums, the rings at the stop's indicator and the windows at ZZZ. If you set the machine up by hand, the notebook asks first. To check a stop from the printout, set it up yourself:
 
-- **Choose the reflector**, B or C, above the machine.
-- **Fit a drum**: drag it from the rack onto a drum place, or click it in the rack and then the place. Click a fitted drum, or drag it off, to put it back.
+- **Fit the reflector**: drag a cartridge (B, C, B thin or C thin) from its rack into the slot, or click it and then the slot. Click the fitted cartridge, or drag it off, to put it back.
+- **Fit a drum**: drag it from the rack onto a drum place, or click it in the rack and then the place. The dummy drum fits only the left place, rotors I–VIII only the other three. Click a fitted drum, or drag it off, to put it back.
 - **Turn a drum** with its thumbwheel: click the top half to turn it up, the bottom half to turn it down, or drag. The ring turns with it.
 - **Set a ring** by dragging the coloured ring round the drum, or with Arrow Up/Down on it.
-- **Press a key**, by clicking it or typing the letter; once all three drums are fitted, the lamp of the letter it goes to lights while the key is held. While the notebook checks a stop, letters typed in the notebook press the checking machine too.
+- **Press a key**, by clicking it or typing the letter; once the reflector, the dummy drum and all three drums are fitted, the lamp of the letter it goes to lights while the key is held. While the notebook checks a stop, letters typed in the notebook press the checking machine too.
 
 To check the stop, follow the links from the stecker the Bombe found. The notebook's **Crib** gives a column for each crib letter, headed by its link's drum position (ZZA, ZZB, ...), with the cipher letter on top and the crib letter at the bottom. Between them it writes the partners found so far: under the cipher letter its partner, above the crib letter its partner. A column with one partner and a gap is a link you can test next. For a link at ZZE, turn the drums to ZZE, press the stecker partner of one letter and read the lamp: that is the stecker partner of the other letter. For example, for a stop with indicator SNY and G/D, turn the drums to ZZE for link G–E and press D: lamp P lights, so E/P.
 

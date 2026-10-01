@@ -307,7 +307,7 @@ describe('bombe results from other windows', () => {
   it('shows the checking machine another window set up for a stop', () => {
     const { api } = createFakeApi();
     const store = createMachineStore(api);
-    const checker = { reflector: 'B', drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterCheck.stop };
+    const checker = { reflector: 'B', dummy: true, drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterCheck.stop };
 
     store.getState().receiveBombe({ name: 'setUpChecker', args: [0], value: { ...carterMenu, checker } });
 
