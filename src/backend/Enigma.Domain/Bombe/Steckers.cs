@@ -36,6 +36,10 @@ public sealed class Steckers : IEquatable<Steckers>
 
     public Letter? PartnerOf(Letter letter) => _partners[letter.Index];
 
+    /// <summary>These steckers with every unknown letter taken as unsteckered.</summary>
+    public Steckers WithUnknownUnsteckered() =>
+        new([.. _partners.Select((partner, index) => partner ?? Letter.FromIndex(index))]);
+
     /// <summary>Adds the pair <paramref name="a"/>/<paramref name="b"/>; refused when either letter has another partner.</summary>
     public Steckers With(Letter a, Letter b)
     {

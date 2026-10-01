@@ -232,10 +232,11 @@ export const carterCheck: BombeCheck = {
   stop: carterStops[0],
   steckers: 'GQ',
   contradicted: '',
+  checkedSteckers: '',
   rightRing: 26,
   verdict: 'Unchecked',
   crib: [...carterCrib].map((plain, index) => ({ offset: index + 1, plain, cipher: 'SNMKGGSTZZUGARLV'[index], match: 'Unknown' })),
-  decrypt: '?'.repeat(16),
+  decrypt: 'XGTMBRVOAHEJSAGF',
   key: { reflector: 'B', wheelOrder: 'II V III', rings: [26, 26, 26], plugs: ['GQ'], messageKey: 'ULA' },
 };
 

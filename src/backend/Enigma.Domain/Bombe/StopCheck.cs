@@ -54,10 +54,13 @@ public sealed record SuggestedPair(Letter First, Letter Second, double Gain)
     public override string ToString() => First.Index <= Second.Index ? $"{First}{Second}" : $"{Second}{First}";
 }
 
-/// <summary>The proposed steckers in the order found, the steckers with them added and the decrypt they give.</summary>
-public sealed record SteckerSuggestion(IReadOnlyList<SuggestedPair> Pairs, Steckers Steckers, IReadOnlyList<Letter?> Decrypt);
+/// <summary>
+/// The proposed steckers in the order found, the steckers with them added and the decrypt they give, letters still
+/// unknown taken as unsteckered.
+/// </summary>
+public sealed record SteckerSuggestion(IReadOnlyList<SuggestedPair> Pairs, Steckers Steckers, IReadOnlyList<Letter> Decrypt);
 
-/// <summary>A right ring's decrypt score (null when no three letters in a row are known), and whether it is the best.</summary>
+/// <summary>A right ring's decrypt score (null when the message is shorter than three letters), and whether it is the best.</summary>
 public sealed record RingScore(RingSetting Ring, double? Score, bool Best);
 
 /// <summary>
@@ -106,6 +109,9 @@ public sealed class StopCheck
     public RingSetting RightRing { get; set; } = RingSetting.FromChar('Z');
 
     public StopVerdict Verdict { get; private set; }
+
+    /// <summary>The steckers found by checking, as they stood when the stop was confirmed true; none otherwise.</summary>
+    public Steckers Checked { get; private set; } = Steckers.None;
 
     /// <summary>The ring settings: left and middle at Z, the right one as turned.</summary>
     public IReadOnlyList<RingSetting> Rings => [RingSetting.FromChar('Z'), RingSetting.FromChar('Z'), RightRing];
@@ -160,10 +166,10 @@ public sealed class StopCheck
     public CheckedKey Key => new(Reflector, WheelOrder, Rings, Steckers.Plugs, MessageKey);
 
     /// <summary>
-    /// Decrypts the whole message on an Enigma with this key, the rotors stepping. A letter is null where a stecker
-    /// it needs is not known yet.
+    /// Decrypts the whole message on an Enigma with this key, the rotors stepping, taking letters whose steckers are
+    /// not known yet as unsteckered.
     /// </summary>
-    public IReadOnlyList<Letter?> Decrypt() => Decrypt(Steckers, MessageScrambles(RightRing));
+    public IReadOnlyList<Letter> Decrypt() => DecryptAssumed(Steckers, MessageScrambles(RightRing));
 
     /// <summary>
     /// Proposes steckers for the letters still unknown, one at a time, without changing the check. Each partner of an
@@ -185,19 +191,19 @@ public sealed class StopCheck
             pairs.Add(pair);
         }
 
-        return new SteckerSuggestion(pairs, steckers, Decrypt(steckers, scrambles));
+        return new SteckerSuggestion(pairs, steckers, DecryptAssumed(steckers, scrambles));
     }
 
     /// <summary>
-    /// Scores the decrypt with each right ring, the core positions kept, by its gain against random letters, and sets
-    /// the lowest ring with the best score. Rings that give the same decrypt tie. When no ring has three known letters
-    /// in a row, all tie and the ring stays.
+    /// Scores the decrypt with each right ring, the core positions kept and unknown letters taken as unsteckered, by its
+    /// gain against random letters, and sets the lowest ring with the best score. Rings that give the same decrypt tie.
+    /// When the message is too short to score, all tie and the ring stays.
     /// </summary>
     public IReadOnlyList<RingScore> FindRightRing()
     {
         var scores = Enumerable.Range(1, Letter.Count)
             .Select(RingSetting.FromNumber)
-            .Select(ring => (Ring: ring, Score: LanguageModel.Gain(Decrypt(Steckers, MessageScrambles(ring)))))
+            .Select(ring => (Ring: ring, Score: LanguageModel.Gain(Decrypt(Steckers.WithUnknownUnsteckered(), MessageScrambles(ring)))))
             .ToArray();
         var best = scores.Max(ring => ring.Score ?? double.NegativeInfinity);
         RingScore[] rings = [.. scores.Select(ring => new RingScore(ring.Ring, ring.Score, (ring.Score ?? double.NegativeInfinity) == best))];
@@ -213,6 +219,7 @@ public sealed class StopCheck
     public CheckConfirmation Confirm(StopVerdict verdict, Solution? solution)
     {
         Verdict = verdict;
+        Checked = verdict == StopVerdict.True ? Steckers : Steckers.None;
         var crib = Crib();
         return new CheckConfirmation(
             verdict,
@@ -259,6 +266,9 @@ public sealed class StopCheck
     }
 
     private Letter?[] Decrypt(Steckers steckers, Letter[][] scrambles) => Decrypt(steckers, scrambles, Placement.CipherText);
+
+    private Letter[] DecryptAssumed(Steckers steckers, Letter[][] scrambles) =>
+        [.. Decrypt(steckers.WithUnknownUnsteckered(), scrambles).Select(letter => letter!.Value)];
 
     // The scrambler of each message letter with the right ring, the rotors stepping: the output for each input.
     private Letter[][] MessageScrambles(RingSetting rightRing)

@@ -24,3 +24,13 @@ export function contradictionsOf(sheet: string): Set<string> {
   const partners = partnersOf(sheet);
   return new Set(Object.entries(partners).flatMap(([letter, own]) => (own.length > 1 ? [letter, ...own] : [])));
 }
+
+/**
+ * The sheet with `letter` paired to `partner` (itself: unsteckered), or rubbed out when `partner` is null. Every pair
+ * either letter had before is rubbed out, so their old partners become unknown.
+ */
+export function withPartner(sheet: string, letter: string, partner: string | null): string {
+  const kept = partner === null ? sheet : withoutLetter(sheet, partner);
+  const pair = partner === null ? [] : [[letter, partner].sort().join('')];
+  return [...withoutLetter(kept, letter).split(' ').filter(Boolean), ...pair].sort().join(' ');
+}

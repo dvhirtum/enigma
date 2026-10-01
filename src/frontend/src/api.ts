@@ -321,13 +321,15 @@ export interface CheckedKey {
 
 /**
  * The check of a stop: the stecker sheet as written ("AD ET EX RR", contradictions and all), the right ring (1–26),
- * the verdict, each crib letter's match, the decrypt ('?' where a stecker is unknown) and the key.
+ * the verdict, each crib letter's match, the decrypt (unknown letters taken as unsteckered) and the key.
  */
 export interface BombeCheck {
   stop: BombeStop;
   steckers: string;
   /** The letters with more than one partner written. */
   contradicted: string;
+  /** The steckers found by checking, as they stood when the stop was confirmed true; empty otherwise. */
+  checkedSteckers: string;
   rightRing: number;
   verdict: BombeStop['verdict'];
   crib: CribLetter[];
