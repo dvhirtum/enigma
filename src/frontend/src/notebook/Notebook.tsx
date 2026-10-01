@@ -7,9 +7,13 @@ import { Field, Hand, Squares } from './paper';
 
 type Direction = OperatorState['direction'];
 
-const tabs: { direction: Direction; label: string }[] = [
-  { direction: 'Send', label: 'Encrypt' },
-  { direction: 'Receive', label: 'Decrypt' },
+/** A notebook page: one of the procedures, or the lamp pad. */
+type Page = Direction | 'Lamps';
+
+const tabs: { page: Page; label: string }[] = [
+  { page: 'Send', label: 'Encrypt' },
+  { page: 'Receive', label: 'Decrypt' },
+  { page: 'Lamps', label: 'Lamps' },
 ];
 
 const stepLabels: Record<OperatorStep, string> = {
@@ -537,9 +541,27 @@ function Send() {
   );
 }
 
+/** Every lamp lit on the machine, written down in groups of 4, with a button to clear the page. */
+function LampPad() {
+  const lamps = useMachine((store) => store.machine?.lamps ?? '');
+  const clearLamps = useMachine((store) => store.clearLamps);
+  return (
+    <>
+      <p>Every lamp that lights on the machine is written down here. {keyboardHint}</p>
+      {lamps ? <Squares text={groups(lamps).join(' ')} label="Lamps" /> : <p>No lamps yet.</p>}
+      <p className="notebook-actions">
+        {lamps && <CopyButton text={groups(lamps).join(' ')} />}
+        <button type="button" disabled={!lamps} onClick={() => void clearLamps()}>
+          Clear
+        </button>
+      </p>
+    </>
+  );
+}
+
 /** Shown on the other tab while a message is in progress. */
 function Busy({ running, onShow }: { running: Direction; onShow: () => void }) {
-  const other = tabs.find((tab) => tab.direction === running)!;
+  const other = tabs.find((tab) => tab.page === running)!;
   return (
     <>
       <p role="status">
@@ -559,7 +581,7 @@ export function Notebook() {
   const load = useMachine((store) => store.load);
   const appliedKey = useMachine((store) => store.machine?.appliedKey);
   const operator = useMachine((store) => store.machine?.operator);
-  const [chosen, setChosen] = useState<Direction | null>(null);
+  const [chosen, setChosen] = useState<Page | null>(null);
   const selected = chosen ?? operator?.direction ?? 'Send';
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   usePhysicalKeyboard(useKeys());
@@ -574,13 +596,15 @@ export function Notebook() {
       return;
     }
     event.preventDefault();
-    const next = (tabs.findIndex((tab) => tab.direction === selected) + step + tabs.length) % tabs.length;
-    setChosen(tabs[next].direction);
+    const next = (tabs.findIndex((tab) => tab.page === selected) + step + tabs.length) % tabs.length;
+    setChosen(tabs[next].page);
     tabRefs.current[next]?.focus();
   };
 
   let content: ReactNode;
-  if (operator && operator.direction === selected) {
+  if (selected === 'Lamps') {
+    content = <LampPad />;
+  } else if (operator && operator.direction === selected) {
     content = <Procedure operator={operator} />;
   } else if (operator && operator.step !== 'Done') {
     content = <Busy running={operator.direction} onShow={() => setChosen(operator.direction)} />;
@@ -593,17 +617,17 @@ export function Notebook() {
       <div className="notebook-tabs" role="tablist" aria-label="Notebook" onKeyDown={onTabKeyDown}>
         {tabs.map((tab, index) => (
           <button
-            key={tab.direction}
+            key={tab.page}
             ref={(element) => {
               tabRefs.current[index] = element;
             }}
             type="button"
             role="tab"
-            id={`notebook-tab-${tab.direction}`}
-            aria-selected={tab.direction === selected}
+            id={`notebook-tab-${tab.page}`}
+            aria-selected={tab.page === selected}
             aria-controls="notebook-page"
-            tabIndex={tab.direction === selected ? 0 : -1}
-            onClick={() => setChosen(tab.direction)}
+            tabIndex={tab.page === selected ? 0 : -1}
+            onClick={() => setChosen(tab.page)}
           >
             {tab.label}
           </button>

@@ -29,6 +29,7 @@ export const machineRoutes: Routes<MachineApi> = {
   movePlug: (from, to) => ({ method: 'PUT', path: `${machine}/plugs/${segment(from)}`, body: { to } }),
   pressKey: (key) => ({ method: 'POST', path: `${machine}/keyboard/press`, body: { key } }),
   releaseKey: () => ({ method: 'POST', path: `${machine}/keyboard/release` }),
+  clearLamps: () => ({ method: 'DELETE', path: `${machine}/lamps` }),
   applyDailyKey: (sheetId, day) => ({ method: 'POST', path: `${machine}/daily-key`, body: { sheetId, day } }),
   setUpMachine: (key) => ({ method: 'PUT', path: `${machine}/key`, body: key }),
   startSending: () => ({ method: 'POST', path: `${operator}/send` }),

@@ -18,6 +18,8 @@ export interface MachineState {
   plugs: string[];
   heldKey: string | null;
   litLamp: string | null;
+  /** Every lamp lit since the record was last cleared. */
+  lamps: string;
   appliedKey: AppliedKey | null;
   /** The running operator procedure, or null. */
   operator: OperatorState | null;
@@ -424,6 +426,8 @@ export interface MachineApi {
   movePlug: MachineCall<[from: string, to: string]>;
   pressKey: MachineCall<[key: string]>;
   releaseKey: MachineCall<[]>;
+  /** Clears the record of lit lamps. */
+  clearLamps: MachineCall<[]>;
   applyDailyKey: MachineCall<[sheetId: string, day: number]>;
   /** Replaces the machine with one set up with the whole key. */
   setUpMachine: MachineCall<[key: MachineKey]>;

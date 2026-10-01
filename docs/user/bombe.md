@@ -148,6 +148,15 @@ The scoring counts letters, pairs and triples of letters from the Navy messages 
 
 The Bombe finds the rotor cores, not the ring settings. For the right rotor, 26 pairs of ring and window letter give the same core; they differ only in where the middle rotor turns over. The **Right ring** picks one of them. A wrong right ring garbles the message from the wrong turnover on. Turn it with ◀ and ▶ (the core positions stay), or click **Find**. Find scores the decrypt with each of the 26 rings and sets the lowest ring with the best score. The bars show every ring's score, with the best ones highlighted. When several rings tie, the ring is not settled yet: find or accept more steckers, then click **Find** again. A good order is Find, Suggest, Find. The left and middle rings stay at Z until the indicators are read.
 
+### The left and middle rings
+
+The left and middle rings hardly change the message: the left rotor only moves when the middle one turns over, and the left one turns nothing. They do matter for the day's other messages, whose start positions come from their indicators. The bigram tables turn a message's indicator into its Verfahrenkenngruppe. The operator typed that trigram at the day's Grundstellung, and the lamps gave the message key. The Grundstellung was printed on the secret key sheet and changed daily. One broken message therefore leaves 676 possibilities: for every pair of left and middle rings there is a Grundstellung that turns its Verfahrenkenngruppe into its message key. The Army sent its Grundstellung in the clear, so there the one ring pair that fits can be read off a table of all 676. With the Navy that table fits on every row.
+
+Hut 8 had two other ways to find the rings:
+
+- **Paired days.** The wheel order and the rings changed every other day, the steckers and the Grundstellung daily. Rings found on one day held for its paired day, which was often broken next on the known wheel order.
+- **Grundstellung alphabets.** Each broken message of the day gives a trigram and the start position it was typed to. Messages broken one by one on cribs or the EINS catalogue (the four letters EINS enciphered at all 17,576 positions and looked up in the cipher texts), or set in depth by Banburismus, built up for each trigram letter the start position it gives: the Grundstellung alphabets. With enough messages they fix the Grundstellung and the rings, and every other message of the day can be set up from its indicator. Short signals from U-boats served the same purpose.
+
 ### The key
 
 The step ends with the key: the reflector, wheel order, rings, plugs and the message key: the rotor positions at the start of the message. **Set up Enigma** asks first, then sets up the Enigma with this key at the message key and switches the machine window to Enigma mode, ready to type the cipher text.

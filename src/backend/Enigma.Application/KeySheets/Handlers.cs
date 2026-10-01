@@ -130,7 +130,7 @@ public sealed class ApplyDailyKeyHandler(KeySheetLinker linker, IMachineSessionS
         var key = sheet.KeyFor(command.Day);
         var machine = key.SetUp();
         var appliedKey = new AppliedKey(sheet.Id, sheet.Network, sheet.Month.ToString(), key);
-        var state = MachineState.From(machine, appliedKey);
+        var state = MachineState.From(machine, appliedKey, null, store.Lamps);
         store.Replace(machine, appliedKey);
         return state;
     }

@@ -30,6 +30,9 @@ public sealed record PressKey(string Key);
 
 public sealed record ReleaseKey;
 
+/// <summary>Clears the record of lit lamps.</summary>
+public sealed record ClearLamps;
+
 public sealed record GetMachineState;
 
 /// <summary>

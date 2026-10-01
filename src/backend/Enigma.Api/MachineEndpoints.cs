@@ -24,6 +24,7 @@ internal static class MachineEndpoints
         .AddSingleton<TurnRotorHandler>()
         .AddSingleton<PressKeyHandler>()
         .AddSingleton<ReleaseKeyHandler>()
+        .AddSingleton<ClearLampsHandler>()
         .AddSingleton<GetMachineStateHandler>()
         .AddSingleton<SetUpMachineHandler>();
 
@@ -69,5 +70,8 @@ internal static class MachineEndpoints
 
         machine.MapPost("/keyboard/release", (ReleaseKeyHandler handler) =>
             handler.Handle(new ReleaseKey()));
+
+        machine.MapDelete("/lamps", (ClearLampsHandler handler) =>
+            handler.Handle(new ClearLamps()));
     }
 }

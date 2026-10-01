@@ -15,6 +15,8 @@ See the [user guide](docs/user/README.md) for how to use it, and [docs/design.md
 - Frode Weierud, [Scharnhorst's Last Message?](https://cryptocellar.org/bgac/scharnhorst.html) on [CryptoCellar](https://cryptocellar.org/): the Scharnhorst intercept.
 - [M4 Message Breaking Project](https://www.bytereef.org/m4_project.html): the broken U-264 message and the Scharnhorst key.
 - Dirk Rijmenants, [Enigma Sim](https://www.ciphermachinesandcryptology.com/en/enigmasim.htm): its manual gives the Operation Barbarossa messages.
+- A. P. Mahon, [The History of Hut Eight 1939–1945](http://www.ellsbury.com/hut8/hut8-000.htm) (National Archives HW 25/2) on ellsbury.com: the Navy indicating system, paired days, Grundstellung alphabets and the Ringstellung.
+- Tony Sale, [Lecture on Naval Enigma](https://www.codesandciphers.org.uk/virtualbp/navenigma/navenig1.htm) on Codes and Ciphers: the Navy key, Banburismus and how the [day's settings follow from a Bombe stop](https://www.codesandciphers.org.uk/virtualbp/navenigma/navenig10.htm).
 - Theodor Fontane, [Effi Briest](https://www.gutenberg.org/ebooks/5323) (Project Gutenberg): the German text for the letter frequencies.
 
 ## Development

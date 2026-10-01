@@ -116,7 +116,7 @@ internal static class OperatorSessionStoreExtensions
         {
             store.Procedure = procedure;
             procedure?.Observe(machine);
-            return MachineState.From(machine, store.AppliedKey, procedure);
+            return MachineState.From(machine, store.AppliedKey, procedure, store.Lamps);
         });
 
     /// <summary>Applies <paramref name="action"/> to the running procedure.</summary>
@@ -126,6 +126,6 @@ internal static class OperatorSessionStoreExtensions
             var procedure = store.Procedure ?? throw new DomainException("No operator procedure is running.");
             action(procedure);
             procedure.Observe(machine);
-            return MachineState.From(machine, store.AppliedKey, procedure);
+            return MachineState.From(machine, store.AppliedKey, procedure, store.Lamps);
         });
 }

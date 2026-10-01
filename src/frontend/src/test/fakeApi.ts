@@ -58,6 +58,7 @@ export const defaultM3: MachineState = {
   plugs: [],
   heldKey: null,
   litLamp: null,
+  lamps: '',
   appliedKey: null,
   operator: null,
 };
@@ -292,6 +293,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       movePlug: ok(),
       pressKey: ok(),
       releaseKey: ok(),
+      clearLamps: ok(),
       applyDailyKey: ok(),
       setUpMachine: ok(),
       startSending: ok(),
