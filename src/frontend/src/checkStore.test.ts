@@ -107,6 +107,29 @@ describe('checking in the machine store', () => {
     expect(store.getState().check?.reading?.key.rings).toEqual([3, 14, 26]);
   });
 
+  it('forgets the middle ring scores when the right ring is turned or found, and keeps them otherwise', async () => {
+    const { store } = await openStore();
+    await store.getState().findMiddleRing();
+    expect(store.getState().middleRingScores).toHaveLength(26);
+
+    await store.getState().stepMiddleRing(1);
+    expect(store.getState().middleRingScores).toHaveLength(26);
+
+    await store.getState().findRightRing();
+
+    expect(store.getState().ringScores).toHaveLength(26);
+    expect(store.getState().middleRingScores).toBeNull();
+  });
+
+  it('forgets the right ring scores when the middle ring is turned, here or in another window', async () => {
+    const { store } = await openStore();
+    await store.getState().findRightRing();
+
+    store.getState().receiveBombe({ name: 'setCheck', args: [0, { middleRing: 3 }], value: { ...store.getState().check!, middleRing: 3 } });
+
+    expect(store.getState().ringScores).toBeNull();
+  });
+
   it('forgets the rings read when the pinch is taken again', async () => {
     const { api, store } = await openStore();
     store.getState().receiveBombe({ name: 'readRings', args: [0, 3, 14], value: carterRead });

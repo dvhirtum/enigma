@@ -108,9 +108,12 @@ export function Hut8Notebook() {
     void loadBombe();
   }, [loadBombe]);
 
-  // Leaving a run to check its stops lasts until the stops are cleared.
+  // Leaving a run to check its stops, and leaving a stop's message to read the indicators, last until the stops are cleared.
   if (leftRun && bombe?.stops === 0) {
     setLeftRun(false);
+  }
+  if (leftKey !== null && bombe?.stops === 0) {
+    setLeftKey(null);
   }
 
   // A reopened step closes once it changes; the steps after it follow from the job again.

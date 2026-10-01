@@ -295,11 +295,16 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       keyPresses++;
       set({ checkLamp: null, bombeView: 'bombe-checking' });
     };
+    /** Forgets each ring's scores once the other ring changes, as they were scored with it. */
+    const staleScores = (current: BombeCheck | null, next: BombeCheck): Partial<MachineStore> => ({
+      ...(current?.rightRing !== next.rightRing ? { middleRingScores: null } : {}),
+      ...(current?.middleRing !== next.middleRing ? { ringScores: null } : {}),
+    });
     /** Follows a check changed in another window, when it is the open one. */
     const followCheck = (next: BombeCheck, changes: Partial<MachineStore> = {}) => {
       set((state) => ({
         stops: state.stops.map((stop) => (stop.index === next.stop.index ? next.stop : stop)),
-        ...(state.check?.stop.index === next.stop.index ? { check: next, ...changes } : {}),
+        ...(state.check?.stop.index === next.stop.index ? { check: next, ...staleScores(state.check, next), ...changes } : {}),
       }));
     };
     /** Forgets the rings read on the open check, as the backend does when a pinch is taken. */
@@ -320,6 +325,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       set((state) => ({
         check: next,
         stops: state.stops.map((stop) => (stop.index === next.stop.index ? next.stop : stop)),
+        ...staleScores(state.check, next),
         ...changes,
       }));
       return result.value;

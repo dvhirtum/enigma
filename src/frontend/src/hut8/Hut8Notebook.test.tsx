@@ -1,7 +1,8 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { BombeCheck, BombeState } from '../api';
+import type { BombeCheck, BombeResult, BombeState } from '../api';
 import { carterBombe, carterChecked, carterChecker, carterMenu, carterPaused, carterRead, emptyBombe, fakeDay, withCrib } from '../test/fakeApi';
+import { useMachine } from '../store';
 import { renderBombe } from '../test/renderBombe';
 import { Hut8Notebook } from './Hut8Notebook';
 
@@ -26,6 +27,12 @@ async function confirmTrue() {
   fireEvent.click(await screen.findByRole('button', { name: 'Check stop 1' }));
   await expectCurrent('Check the stop');
   fireEvent.click(screen.getByRole('button', { name: 'True stop' }));
+}
+
+/** Hands the test the store's receiveBombe, to play what another window did. */
+function Receiver({ onReady }: { onReady: (receive: (result: BombeResult) => void) => void }) {
+  onReady(useMachine((store) => store.receiveBombe));
+  return null;
 }
 
 describe('Hut8Notebook', () => {
@@ -115,6 +122,29 @@ describe('Hut8Notebook', () => {
     await expectCurrent("Read the day's traffic");
     expect(screen.getByRole('listitem', { name: 'Read the indicators' })).toHaveTextContent('Rings C N Z, Spruchschlüssel ULA');
     expect(screen.getByRole('list', { name: 'Messages of the day' })).toBeInTheDocument();
+  });
+
+  it('reads the message again when the same stop of a new message is confirmed true', async () => {
+    let receive: (result: BombeResult) => void = () => undefined;
+    renderBombe(
+      <>
+        <Hut8Notebook />
+        <Receiver onReady={(value) => (receive = value)} />
+      </>,
+      exercise,
+      (fake) => fake.bombe.setUpChecker.mockResolvedValue({ ok: true, value: { ...exercise, checker: carterChecker } }),
+    );
+    await confirmTrue();
+    await expectCurrent('Read the message');
+    fireEvent.click(screen.getByRole('button', { name: 'Read the indicators' }));
+    await expectCurrent('Read the indicators');
+
+    act(() => receive({ name: 'generateExercise', args: [], value: { ...exercise, stops: 0 } }));
+    await expectCurrent('Run the Bombe');
+    act(() => receive({ name: 'clearStops', args: [], value: exercise }));
+    act(() => receive({ name: 'getCheck', args: [0], value: { ...carterChecked, verdict: 'True' } }));
+
+    await expectCurrent('Read the message');
   });
 
   it('stays on the indicators when the square read does not lead to the stop', async () => {
