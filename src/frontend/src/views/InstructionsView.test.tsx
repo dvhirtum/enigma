@@ -25,7 +25,7 @@ describe('InstructionsView', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'Glossary' }));
 
-    expect(screen.getByRole('table')).toHaveTextContent('Spruchschlüssel');
+    expect(screen.getAllByRole('table')[0]).toHaveTextContent('Spruchschlüssel');
   });
 
   it('writes plain code blocks by hand, one character per square', () => {

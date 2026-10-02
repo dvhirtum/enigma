@@ -144,6 +144,11 @@ function Pinch({ day }: { day: DayTraffic | null }) {
         Hut 8 sometimes held a day&apos;s Grundstellung and bigram tables, captured from a ship or a weather trawler (a pinch).
         {pasted ? ' Choose the key sheet day the message was sent on.' : ' Take the pinch of the day this exercise was sent on.'}
       </p>
+      <p className="hut8-note">
+        Without a pinch, Hut 8 had two other ways to the rings. The wheel order and rings held for two days, so rings found on the paired day held for this one.
+        Or the day&apos;s other messages, broken one by one on cribs and the EINS catalogue or set in depth by Banburismus, each gave a Verfahrenkenngruppe and
+        its Spruchschlüssel. Together they built up the Grundstellung alphabets, which fix the Grundstellung and the rings.
+      </p>
       {pasted ? (
         <DayPicker day={day} />
       ) : (

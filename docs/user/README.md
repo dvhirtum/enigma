@@ -13,7 +13,9 @@ These instructions open in their own window with the book button at the top righ
 5. [Receiving by hand](receiving-by-hand.md): decrypting a message yourself, plus two historical messages to try.
 6. [Operator's notebook](operator-mode.md): the same procedures with the application guiding each step.
 7. [The Bombe](bombe.md): switching to Bombe mode to break Enigma messages.
-8. [Glossary](glossary.md): the German terms used in the application.
+8. [How the Bombe broke Enigma](bombe-history.md): the Bombe's history, cribs, menus and loops, the diagonal board, the middle rotor under the crib, and Banburismus.
+9. [Breaking a message](breaking-a-message.md): a worked example on Carter's weather crib, and an outline of an exercise.
+10. [Glossary](glossary.md): the German terms used in the application, and the words and abbreviations in the Bombe's messages.
 
 ## Quick start
 

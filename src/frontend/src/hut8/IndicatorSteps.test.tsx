@@ -45,6 +45,12 @@ describe('IndicatorsStep', () => {
     await waitFor(() => expect(api.bombe.takePinch).toHaveBeenCalledWith(undefined, undefined));
   });
 
+  it('explains how Hut 8 found the rings without a pinch', async () => {
+    renderStep('indicators', exercise);
+
+    expect(await screen.findByText(/^Without a pinch, Hut 8 had two other ways to the rings/)).toBeVisible();
+  });
+
   it('takes the pinch of the key sheet day chosen for a pasted message', async () => {
     const pasted: BombeState = { ...exercise, source: { ...exercise.source!, kind: 'Pasted' } };
     const api = renderStep('indicators', pasted);
