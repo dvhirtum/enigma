@@ -26,7 +26,6 @@ const slots = ['left', 'middle', 'right'];
 /** Drums light enough to need dark lettering. */
 const lightDrums = new Set(['IV', 'VIII']);
 
-
 const letterIndex = (letter: string) => letter.charCodeAt(0) - 65;
 const degreesPerLetter = 360 / 26;
 
@@ -79,7 +78,7 @@ function CheckDrum({ x, rotor, window, ring, slot, onTurn, onTurnRing, socket, o
       return;
     }
     const turned = pointerAngle(event.currentTarget, event, x) - drag.current.start;
-    setDragSteps(Math.round((((turned % 360) + 540) % 360 - 180) / degreesPerLetter));
+    setDragSteps(Math.round(((((turned % 360) + 540) % 360) - 180) / degreesPerLetter));
   };
   const onPointerUp = (event: ReactPointerEvent<SVGCircleElement>) => {
     if (drag.current?.pointer !== event.pointerId) {
@@ -148,7 +147,11 @@ function CheckDrum({ x, rotor, window, ring, slot, onTurn, onTurnRing, socket, o
           </text>
         ))}
         <circle className="ring-dot" cx={x} cy={wheelY - rimRadius} r={4} transform={`rotate(${dotAngle} ${x} ${wheelY})`} aria-hidden="true" />
-        <path className="index-mark" d={`M ${x - 7} ${wheelY - drumRadius - 12} L ${x + 7} ${wheelY - drumRadius - 12} L ${x} ${wheelY - drumRadius - 2} Z`} aria-hidden="true" />
+        <path
+          className="index-mark"
+          d={`M ${x - 7} ${wheelY - drumRadius - 12} L ${x + 7} ${wheelY - drumRadius - 12} L ${x} ${wheelY - drumRadius - 2} Z`}
+          aria-hidden="true"
+        />
         <text className="drum-window" x={x} y={wheelY} role="img" aria-label={`${slot} drum ${rotor} at ${window}, ring ${shownRing}`}>
           {window}
         </text>
@@ -315,7 +318,14 @@ export function CheckingMachine() {
   const slotRect = <rect x={slotX - cartridgeWidth} y={wheelY - cartridgeHeight / 2} width={cartridgeWidth * 2} height={cartridgeHeight} rx={4} />;
 
   return (
-    <svg ref={svg} className="checking-machine" viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Checking machine" onKeyDown={(event) => event.key === 'Escape' && setPicked(null)}>
+    <svg
+      ref={svg}
+      className="checking-machine"
+      viewBox={`0 0 ${width} ${height}`}
+      role="group"
+      aria-label="Checking machine"
+      onKeyDown={(event) => event.key === 'Escape' && setPicked(null)}
+    >
       <rect className="panel" x={4} y={4} width={width - 8} height={height - 8} rx={16} />
       <g className="drum-rack" role="group" aria-label="Drum rack">
         <rect x={rackLeft - 44} y={rackY - 34} width={(rackDrums.length - 1) * rackPitch + 88} height={68} rx={8} />
@@ -326,7 +336,9 @@ export function CheckingMachine() {
           return (
             <g
               key={rotor}
-              className={['rack-drum', inUse ? 'in-use' : '', !inUse && (isDummy || lightDrums.has(rotor)) ? 'light' : '', picked === id ? 'selected' : ''].filter(Boolean).join(' ')}
+              className={['rack-drum', inUse ? 'in-use' : '', !inUse && (isDummy || lightDrums.has(rotor)) ? 'light' : '', picked === id ? 'selected' : '']
+                .filter(Boolean)
+                .join(' ')}
               role="button"
               tabIndex={inUse ? undefined : 0}
               aria-label={`${isDummy ? 'Dummy drum' : `Drum ${rotor}`}${inUse ? ', fitted' : ''}`}
@@ -465,11 +477,27 @@ export function CheckingMachine() {
       {[...alphabet].map((letter, index) => (
         <Key key={letter} letter={letter} down={down === letter} x={margin + pitch / 2 + index * pitch} y={keyY} keys={keys} />
       ))}
-      {held && drag?.point &&
+      {held &&
+        drag?.point &&
         (held.kind === 'reflector' ? (
-          <rect className="held-cartridge" x={drag.point.x - cartridgeWidth / 2} y={drag.point.y - cartridgeHeight / 2} width={cartridgeWidth} height={cartridgeHeight} rx={4} aria-hidden="true" />
+          <rect
+            className="held-cartridge"
+            x={drag.point.x - cartridgeWidth / 2}
+            y={drag.point.y - cartridgeHeight / 2}
+            width={cartridgeWidth}
+            height={cartridgeHeight}
+            rx={4}
+            aria-hidden="true"
+          />
         ) : (
-          <circle className="held-drum" cx={drag.point.x} cy={drag.point.y} r={drumRadius / 2} style={{ fill: held.kind === 'dummy' ? dummyColour : drumColours[held.rotor] }} aria-hidden="true" />
+          <circle
+            className="held-drum"
+            cx={drag.point.x}
+            cy={drag.point.y}
+            r={drumRadius / 2}
+            style={{ fill: held.kind === 'dummy' ? dummyColour : drumColours[held.rotor] }}
+            aria-hidden="true"
+          />
         ))}
     </svg>
   );

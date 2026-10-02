@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { carterMachine, emptyMachine } from '../test/fakeApi';
-import { advance, advanceBy, chainNames, formatSpeed, fullSpeedStep, groupsOf, historicalSpeed, indicatorOf, rowsOf, scramblersOf, speedAt, stepOf, wiresOf } from './drums';
+import {
+  advance,
+  advanceBy,
+  chainNames,
+  formatSpeed,
+  fullSpeedStep,
+  groupsOf,
+  historicalSpeed,
+  indicatorOf,
+  rowsOf,
+  scramblersOf,
+  speedAt,
+  stepOf,
+  wiresOf,
+} from './drums';
 
 describe('drums', () => {
   it('turns each drum on by its letter of the offset, without carrying', () => {

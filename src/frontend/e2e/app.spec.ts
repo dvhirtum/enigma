@@ -180,7 +180,11 @@ test('runs the Bombe on a menu, checks the stop and reads the message', async ()
   await expect(step.getByRole('heading', { level: 3 })).toHaveText('Run the Bombe');
 
   await page.getByRole('tab', { name: 'Front' }).click();
-  for (const [row, rotor] of [['upper', 'II'], ['middle', 'V'], ['lower', 'III']]) {
+  for (const [row, rotor] of [
+    ['upper', 'II'],
+    ['middle', 'V'],
+    ['lower', 'III'],
+  ]) {
     for (const chain of [1, 2]) {
       await page.getByRole('button', { name: `Drums ${rotor}`, exact: true }).click();
       const scrambler = page.getByRole('group', { name: new RegExp(`^Chain ${chain} scrambler 12:`) });
@@ -192,7 +196,9 @@ test('runs the Bombe on a menu, checks the stop and reads the message', async ()
   await page.getByRole('slider', { name: 'Speed' }).press('End');
   await expect(page.getByRole('slider', { name: 'Speed' })).toHaveAttribute('aria-valuetext', 'Full speed');
   await page.getByRole('button', { name: 'Start' }).click();
-  await expect(page.getByLabel('Run progress')).toHaveText(/^Finished · Chain 1 II V III, Chain 2 II V III · 17,576 of 17,576 positions · 8 stops/, { timeout: 60_000 });
+  await expect(page.getByLabel('Run progress')).toHaveText(/^Finished · Chain 1 II V III, Chain 2 II V III · 17,576 of 17,576 positions · 8 stops/, {
+    timeout: 60_000,
+  });
 
   await expect(step.getByRole('heading', { level: 3 })).toHaveText('Choose a stop');
   await expect(step.getByRole('row', { name: /^3 II V III DKX G\/Q/ })).toBeVisible();
@@ -417,9 +423,7 @@ test('forwards machine operations to the backend', async () => {
 });
 
 test('runs machine operations in the order they were sent', async () => {
-  const results = await page.evaluate(() =>
-    Promise.all([window.enigma.machine.pressKey('A'), window.enigma.machine.releaseKey()]),
-  );
+  const results = await page.evaluate(() => Promise.all([window.enigma.machine.pressKey('A'), window.enigma.machine.releaseKey()]));
 
   expect(results).toMatchObject([
     { ok: true, value: { heldKey: 'A' } },

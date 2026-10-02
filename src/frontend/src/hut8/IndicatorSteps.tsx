@@ -254,8 +254,8 @@ function RingTableGrid({ check, table }: { check: BombeCheck; table: RingTable }
       <h4>Ring table</h4>
       <p>
         Each square is a pair of left (row) and middle (column) rings. Set up with them, the Enigma turns the Verfahrenkenngruppe{' '}
-        <Hand>{table.verfahrenkenngruppe}</Hand> at the Grundstellung <Hand>{table.grundstellung}</Hand> into a Spruchschlüssel; from there it steps
-        to the start of the crib, where the Bombe would read the indicator written in the square. Find the square with the stop&apos;s indicator reading and click it.
+        <Hand>{table.verfahrenkenngruppe}</Hand> at the Grundstellung <Hand>{table.grundstellung}</Hand> into a Spruchschlüssel; from there it steps to the
+        start of the crib, where the Bombe would read the indicator written in the square. Find the square with the stop&apos;s indicator reading and click it.
       </p>
       <Field label="Stop's indicator" value={table.indicator} />
       <div className="ring-table-scroll">
@@ -329,8 +329,8 @@ function ReadingResult({ check, table }: { check: BombeCheck; table: RingTable |
       )}
       {!reading.middleRingFits && (
         <p className="notebook-warning">
-          The middle ring <Hand>{ringLetter(reading.middle)}</Hand> reads the message worse than the best middle ring: the left rotor turns over at
-          the wrong letter.
+          The middle ring <Hand>{ringLetter(reading.middle)}</Hand> reads the message worse than the best middle ring: the left rotor turns over at the wrong
+          letter.
         </p>
       )}
       {reading.ringsRight !== null && (
@@ -368,16 +368,16 @@ export function IndicatorsStep({ check }: { check: BombeCheck }) {
   return (
     <>
       <p>
-        The left and middle rings hardly change the message, but the day&apos;s other messages need them: each starts from the Spruchschlüssel its
-        indicator gives at the Grundstellung.
+        The left and middle rings hardly change the message, but the day&apos;s other messages need them: each starts from the Spruchschlüssel its indicator
+        gives at the Grundstellung.
       </p>
       <Pinch day={day} />
       {broken && (
         <section className="notebook-section" aria-label="Indicator">
           <h4>Indicator</h4>
           <p>
-            Swap each vertical pair of the indicator groups with the bigram table. The upper row then holds a filler and the Schlüsselkenngruppe, the
-            lower row the Verfahrenkenngruppe and a filler.
+            Swap each vertical pair of the indicator groups with the bigram table. The upper row then holds a filler and the Schlüsselkenngruppe, the lower row
+            the Verfahrenkenngruppe and a filler.
           </p>
           <IndicatorWriting index={0} message={broken} />
         </section>

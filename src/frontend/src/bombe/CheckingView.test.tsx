@@ -7,7 +7,10 @@ import { renderBombe } from '../test/renderBombe';
 import { CheckingView } from './CheckingView';
 
 /** The checking machine as the notebook sets it up for Carter's true stop. */
-const carter: BombeState = { ...carterMenu, checker: { reflector: 'B', dummy: true, drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterStops[0] } };
+const carter: BombeState = {
+  ...carterMenu,
+  checker: { reflector: 'B', dummy: true, drums: ['II', 'V', 'III'], rings: 'DKX', windows: 'ZZZ', stop: carterStops[0] },
+};
 
 describe('CheckingView', () => {
   it('shows the stop the notebook set it up for', async () => {

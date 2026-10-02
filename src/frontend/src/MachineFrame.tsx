@@ -23,9 +23,7 @@ function MachineSummary() {
   }
 
   const rotors =
-    machine.rotors.length > 0
-      ? (slots[machine.model] ?? []).map((slot) => machine.rotors.find((rotor) => rotor.slot === slot)?.rotor ?? '–').join(' ')
-      : '';
+    machine.rotors.length > 0 ? (slots[machine.model] ?? []).map((slot) => machine.rotors.find((rotor) => rotor.slot === slot)?.rotor ?? '–').join(' ') : '';
   return (
     <p className="summary" aria-label="Machine">
       {machine.model} · UKW {machine.reflector} · {rotors || 'rotors out'}

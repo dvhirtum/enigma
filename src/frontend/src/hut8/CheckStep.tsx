@@ -193,9 +193,7 @@ function RingFinder({ check, part }: { check: BombeCheck; part: 'middle' | 'righ
           {best.length > 1 && (
             <p className="notebook-warning">
               Not determined yet: {best.length === 26 ? 'every ring ties' : `rings ${best.map((score) => ringLetter(score.ring)).join(', ')} tie`}.{' '}
-              {part === 'right'
-                ? 'Find more steckers, then Find again.'
-                : `The message may be too short for ${turnover} to turn over; any of them reads it.`}
+              {part === 'right' ? 'Find more steckers, then Find again.' : `The message may be too short for ${turnover} to turn over; any of them reads it.`}
             </p>
           )}
         </>
@@ -343,7 +341,8 @@ export function CheckSummary({ check }: { check: BombeCheck }) {
 export function KeySummary({ check }: { check: BombeCheck }) {
   return (
     <p>
-      Middle ring <Hand>{ringLetter(check.middleRing)}</Hand>, right ring <Hand>{ringLetter(check.rightRing)}</Hand>, plugs <Hand>{check.key.plugs.join(' ') || '—'}</Hand>
+      Middle ring <Hand>{ringLetter(check.middleRing)}</Hand>, right ring <Hand>{ringLetter(check.rightRing)}</Hand>, plugs{' '}
+      <Hand>{check.key.plugs.join(' ') || '—'}</Hand>
     </p>
   );
 }
@@ -357,9 +356,9 @@ export function CheckStep({ check }: { check: BombeCheck }) {
   return (
     <>
       <p>
-        Test the stop on the checking machine on the <strong>Checking</strong> tab of the machine window: turn the drums to a link's position and type
-        the partner of one of its letters, here or in the machine window. The lamp is written down as the partner of the other letter. Follow the menu
-        until the steckers bear the stop out or contradict it.
+        Test the stop on the checking machine on the <strong>Checking</strong> tab of the machine window: turn the drums to a link's position and type the
+        partner of one of its letters, here or in the machine window. The lamp is written down as the partner of the other letter. Follow the menu until the
+        steckers bear the stop out or contradict it.
       </p>
       <CheckerSetup check={check} />
       <CribCheck check={check} />
@@ -380,8 +379,8 @@ export function KeyStep({ check }: { check: BombeCheck }) {
   return (
     <>
       <p>
-        Read the message as on the Enigma: find the right ring and the steckers the menu does not reach, with Suggest and Find or by writing partners
-        on the sheet, then the middle ring, until the message reads as German.
+        Read the message as on the Enigma: find the right ring and the steckers the menu does not reach, with Suggest and Find or by writing partners on the
+        sheet, then the middle ring, until the message reads as German.
       </p>
       <RingFinder check={check} part="right" />
       <RingFinder check={check} part="middle" />

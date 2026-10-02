@@ -100,7 +100,10 @@ describe('KeySheetPanel', () => {
     const month = await screen.findByRole('combobox', { name: 'Month' });
     await waitFor(() => expect(month).toHaveValue('1944-07'));
     const groupsOf = (name: string) =>
-      [...screen.getByRole('combobox', { name }).querySelectorAll('optgroup')].map((group) => [group.label, [...group.querySelectorAll('option')].map((option) => option.textContent)]);
+      [...screen.getByRole('combobox', { name }).querySelectorAll('optgroup')].map((group) => [
+        group.label,
+        [...group.querySelectorAll('option')].map((option) => option.textContent),
+      ]);
 
     expect(groupsOf('Month')).toEqual([
       ['1944', ['June 1944', 'July 1944']],
@@ -158,7 +161,12 @@ describe('KeySheetPanel', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Print to PDF' }));
 
-    await waitFor(() => expect(api.files.printToFolder).toHaveBeenCalledWith([expect.objectContaining({ name: 'Hydra-1944-06.pdf' }), expect.objectContaining({ name: 'Kenngruppenbuch-Tauschtafeln-1944.pdf' })]));
+    await waitFor(() =>
+      expect(api.files.printToFolder).toHaveBeenCalledWith([
+        expect.objectContaining({ name: 'Hydra-1944-06.pdf' }),
+        expect.objectContaining({ name: 'Kenngruppenbuch-Tauschtafeln-1944.pdf' }),
+      ]),
+    );
   });
 
   it('prints only the open sheet when the Kenngruppenbuch is left out', async () => {
@@ -168,7 +176,9 @@ describe('KeySheetPanel', () => {
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Also print the Kenngruppenbuch and Tauschtafeln' }));
     fireEvent.click(screen.getByRole('button', { name: 'Print to PDF' }));
 
-    await waitFor(() => expect(api.files.printKeySheet).toHaveBeenCalledWith('Hydra-1944-06.pdf', expect.stringContaining('Schlüsseltafel für das Schlüsselnetz')));
+    await waitFor(() =>
+      expect(api.files.printKeySheet).toHaveBeenCalledWith('Hydra-1944-06.pdf', expect.stringContaining('Schlüsseltafel für das Schlüsselnetz')),
+    );
     expect(api.files.printToFolder).not.toHaveBeenCalled();
   });
 
@@ -198,9 +208,7 @@ describe('KeySheetPanel', () => {
 
   it('generates once while a request is running', async () => {
     let finish: (value: unknown) => void = () => undefined;
-    const api = renderMachine(<KeySheetPanel />, undefined, (fake) =>
-      fake.keySheets.generate.mockReturnValue(new Promise((resolve) => (finish = resolve))),
-    );
+    const api = renderMachine(<KeySheetPanel />, undefined, (fake) => fake.keySheets.generate.mockReturnValue(new Promise((resolve) => (finish = resolve))));
 
     fireEvent.click(await screen.findByRole('button', { name: 'Generate' }));
     const submit = within(screen.getByRole('form', { name: 'Generate key sheets' })).getByRole('button', { name: 'Generate' });

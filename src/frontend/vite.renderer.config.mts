@@ -15,9 +15,7 @@ const contentSecurityPolicy = [
 const csp: Plugin = {
   name: 'content-security-policy',
   apply: 'build',
-  transformIndexHtml: () => [
-    { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: contentSecurityPolicy }, injectTo: 'head-prepend' },
-  ],
+  transformIndexHtml: () => [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: contentSecurityPolicy }, injectTo: 'head-prepend' }],
 };
 
 export default defineConfig({

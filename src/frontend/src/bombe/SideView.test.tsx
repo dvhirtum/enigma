@@ -18,7 +18,11 @@ describe('SideView', () => {
 
   it('asks for drums when no chain with a test register has a working scrambler', async () => {
     const machine = emptyMachine();
-    machine.chains[0] = { ...machine.chains[0], testRegister: 'G', scramblers: machine.chains[0].scramblers.map((scrambler) => ({ ...scrambler, jacks: ['G', 'Q'] })) };
+    machine.chains[0] = {
+      ...machine.chains[0],
+      testRegister: 'G',
+      scramblers: machine.chains[0].scramblers.map((scrambler) => ({ ...scrambler, jacks: ['G', 'Q'] })),
+    };
     renderBombe(<SideView />, { ...emptyBombe, machine });
 
     expect(await screen.findByRole('button', { name: 'Start' })).toHaveAttribute('aria-disabled', 'true');

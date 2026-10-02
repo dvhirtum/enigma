@@ -22,10 +22,15 @@ const width = 2 * margin + 3 * groupWidth + 2 * groupGap;
 const height = footTop + footHeight + margin;
 
 /** A socket on the back: a letter's common, a scrambler's jack (0 or 1) or a test register, of a chain. */
-type Socket = { kind: 'common'; chain: number; letter: string } | { kind: 'jack'; chain: number; scrambler: number; jack: number } | { kind: 'register'; chain: number };
+type Socket =
+  { kind: 'common'; chain: number; letter: string } | { kind: 'jack'; chain: number; scrambler: number; jack: number } | { kind: 'register'; chain: number };
 
 const socketId = (socket: Socket) =>
-  socket.kind === 'common' ? `common-${socket.chain}-${socket.letter}` : socket.kind === 'jack' ? `jack-${socket.chain}-${socket.scrambler}-${socket.jack}` : `register-${socket.chain}`;
+  socket.kind === 'common'
+    ? `common-${socket.chain}-${socket.letter}`
+    : socket.kind === 'jack'
+      ? `jack-${socket.chain}-${socket.scrambler}-${socket.jack}`
+      : `register-${socket.chain}`;
 
 function socketOf(id: string | null): Socket | null {
   const [kind, chain, a, b] = id?.split('-') ?? [];
@@ -243,7 +248,14 @@ function Back({ bombe }: { bombe: BombeState }) {
                   <text x={commonX(index) - 26} y={y}>
                     {letter}
                   </text>
-                  <Jack socket={socket} label={`Chain ${index + 1} common ${letter}`} selected={selected === socketId(socket)} disabled={locked} onActivate={activate} onGrab={grab} />
+                  <Jack
+                    socket={socket}
+                    label={`Chain ${index + 1} common ${letter}`}
+                    selected={selected === socketId(socket)}
+                    disabled={locked}
+                    onActivate={activate}
+                    onGrab={grab}
+                  />
                 </g>
               );
             })}
@@ -331,7 +343,15 @@ function Back({ bombe }: { bombe: BombeState }) {
           }
           const from = { x: groupLeft(join) + groupWidth - 12, y: footTop + 14 };
           const to = { x: groupLeft(join + 1) + 12, y: footTop + 14 };
-          return <Cable key={join} className="cable join" d={`M${from.x},${from.y} C${from.x + 24},${from.y - 30} ${to.x - 24},${to.y - 30} ${to.x},${to.y}`} from={from} to={to} />;
+          return (
+            <Cable
+              key={join}
+              className="cable join"
+              d={`M${from.x},${from.y} C${from.x + 24},${from.y - 30} ${to.x - 24},${to.y - 30} ${to.x},${to.y}`}
+              from={from}
+              to={to}
+            />
+          );
         })}
         {dragged && drag?.point && <Cable className="cable held" d={cablePath(pointOf(dragged), drag.point)} from={pointOf(dragged)} to={drag.point} />}
       </g>
@@ -349,9 +369,8 @@ export function BackView() {
   return (
     <div className="bombe-view back-view">
       <p className="summary">
-        Cable each scrambler's two jacks to the commons of its letters, and the test register to the common it watches: drag one end onto the other, or
-        click them in turn. Click a plugged jack to pull its cable out. The switches join the chains; the input wire turns with
-        its arrows or Arrow Up/Down.
+        Cable each scrambler's two jacks to the commons of its letters, and the test register to the common it watches: drag one end onto the other, or click
+        them in turn. Click a plugged jack to pull its cable out. The switches join the chains; the input wire turns with its arrows or Arrow Up/Down.
       </p>
       <Back bombe={bombe} />
     </div>

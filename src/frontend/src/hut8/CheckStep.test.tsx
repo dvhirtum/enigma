@@ -122,7 +122,12 @@ describe('CheckStep', () => {
   });
 });
 
-describe('CheckSummary', () => {  it('lists only the plug pairs, without unsteckered letters', () => {    render(<CheckSummary check={{ ...carterChecked, verdict: 'True' }} />);    expect(screen.getByText(/True stop/)).toHaveTextContent('True stop: steckers AD ET FU GQ HM IK JL NV OX PZ');  });});
+describe('CheckSummary', () => {
+  it('lists only the plug pairs, without unsteckered letters', () => {
+    render(<CheckSummary check={{ ...carterChecked, verdict: 'True' }} />);
+    expect(screen.getByText(/True stop/)).toHaveTextContent('True stop: steckers AD ET FU GQ HM IK JL NV OX PZ');
+  });
+});
 describe('KeyStep', () => {
   it('reads the message with the steckers found so far', async () => {
     await openCarterCheck('key');

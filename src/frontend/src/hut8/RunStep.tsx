@@ -31,7 +31,8 @@ export function RunStep({ onDone }: { onDone: () => void }) {
     <>
       <p>
         The Bombe in the machine window is plugged up with the menu. Fit the drums on the <strong>Front</strong> tab and check the cables on the{' '}
-        <strong>Back</strong> tab, then set the diagonal board and Start on the <strong>Side</strong> tab. While this notebook is open, each stop is written down here.
+        <strong>Back</strong> tab, then set the diagonal board and Start on the <strong>Side</strong> tab. While this notebook is open, each stop is written
+        down here.
       </p>
       {!bombe.machine.pluggedForMenu && !isActive(run) && (
         <p className="notebook-warning">
@@ -142,7 +143,8 @@ export function StopsStep() {
 export function StopLine({ stop }: { stop: BombeStop }) {
   return (
     <p>
-      Stop {stop.index + 1}: <Hand>{stop.wheelOrder}</Hand> at <Hand>{stop.indicator}</Hand>, {stop.stecker ? <Hand>{`${stop.testRegister}/${stop.stecker}`}</Hand> : 'no stecker'}
+      Stop {stop.index + 1}: <Hand>{stop.wheelOrder}</Hand> at <Hand>{stop.indicator}</Hand>,{' '}
+      {stop.stecker ? <Hand>{`${stop.testRegister}/${stop.stecker}`}</Hand> : 'no stecker'}
     </p>
   );
 }

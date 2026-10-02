@@ -268,7 +268,9 @@ export function CribStep() {
       <p>Write down the plain text you expect somewhere in the message, then slide it along the cipher text to a place where no letter crashes.</p>
       <CribForm key={crib ?? ''} />
       {crib && placements.length === 0 && <p className="notebook-warning">The crib is longer than the cipher text.</p>}
-      {crib && placements.length > 0 && <CribStrip key={`${cipherText} ${crib}`} cipherText={cipherText} crib={crib} placements={placements} placed={position} />}
+      {crib && placements.length > 0 && (
+        <CribStrip key={`${cipherText} ${crib}`} cipherText={cipherText} crib={crib} placements={placements} placed={position} />
+      )}
     </>
   );
 }
