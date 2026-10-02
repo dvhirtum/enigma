@@ -160,6 +160,77 @@ test('plugs a scrambler and fits drums on the Bombe by hand', async () => {
   await page.getByRole('button', { name: 'Enigma' }).click();
 });
 
+test('runs the Bombe on a menu, checks the stop and reads the message', async () => {
+  await page.getByRole('button', { name: 'Bombe' }).click();
+  const opened = app.waitForEvent('window');
+  await page.getByRole('button', { name: 'Hut 8 notebook' }).click();
+  const notebook = await opened;
+  const step = notebook.locator('[aria-current="step"]');
+  await notebook.getByRole('button', { name: 'Change: Place the crib' }).click();
+  await notebook.getByRole('button', { name: 'Suggest crib' }).click();
+  await expect(notebook.getByRole('textbox', { name: 'Crib' })).toHaveValue('WETTERVORHERSAGE');
+  await notebook.getByRole('button', { name: 'Set crib' }).click();
+  await notebook.getByRole('button', { name: 'Place crib' }).click();
+  await expect(notebook.getByLabel('Menu size')).toHaveText('12 links, 11 letters, 2 loops · test register on G');
+  await notebook.getByRole('button', { name: 'Send the menu to the Bombe' }).click();
+  await notebook.getByRole('alert').getByRole('button', { name: 'Plug up the menu' }).click();
+  await expect(step.getByRole('heading', { level: 3 })).toHaveText('Run the Bombe');
+
+  await page.getByRole('tab', { name: 'Front' }).click();
+  for (const [row, rotor] of [['upper', 'II'], ['middle', 'V'], ['lower', 'III']]) {
+    for (const chain of [1, 2]) {
+      await page.getByRole('button', { name: `Drums ${rotor}`, exact: true }).click();
+      const scrambler = page.getByRole('group', { name: new RegExp(`^Chain ${chain} scrambler 12:`) });
+      await scrambler.getByRole('spinbutton', { name: `${row} drum empty` }).click();
+      await expect(scrambler.getByRole('spinbutton', { name: new RegExp(`^${row} drum ${rotor} at [A-Z]$`) })).toBeVisible();
+    }
+  }
+  await page.getByRole('tab', { name: 'Side' }).click();
+  await page.getByRole('slider', { name: 'Speed' }).press('End');
+  await expect(page.getByRole('slider', { name: 'Speed' })).toHaveAttribute('aria-valuetext', 'Full speed');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByLabel('Run progress')).toHaveText(/^Finished · Chain 1 II V III, Chain 2 II V III · 17,576 of 17,576 positions · 8 stops/, { timeout: 60_000 });
+
+  await expect(step.getByRole('heading', { level: 3 })).toHaveText('Choose a stop');
+  await expect(step.getByRole('row', { name: /^3 II V III DKX G\/Q/ })).toBeVisible();
+  await step.getByRole('button', { name: 'Check stop 3' }).click();
+  await notebook.getByRole('alert').getByRole('button', { name: 'Set it up' }).click();
+  await page.getByRole('tab', { name: 'Checking' }).click();
+  await expect(page.getByText('Set up for stop 3: II V III, indicator DKX, G/Q.', { exact: false })).toBeVisible();
+  for (let turn = 0; turn < 5; turn++) {
+    await page.getByTestId('thumbwheel-right-up').click();
+  }
+  await expect(page.getByRole('img', { name: /^right drum III at E,/ })).toBeVisible();
+  await notebook.keyboard.press('q');
+  await expect(step.getByRole('button', { name: 'Partner of E: T' })).toBeVisible();
+  await step.getByRole('button', { name: 'True stop' }).click();
+
+  await expect(step.getByRole('heading', { level: 3 })).toHaveText('Read the message');
+  for (const pair of ['AD', 'HM', 'LJ', 'NV', 'UF', 'ZP']) {
+    await step.getByRole('textbox', { name: `Partner of ${pair[0]}`, exact: true }).fill(pair[1]);
+    await expect(step.getByRole('textbox', { name: `Partner of ${pair[1]}`, exact: true })).toHaveValue(pair[0]);
+  }
+  await step.getByRole('button', { name: 'Suggest' }).click();
+  await step.getByRole('button', { name: 'Accept all' }).click();
+  await step.getByRole('button', { name: 'Find the right ring' }).click();
+  await expect(step.getByRole('img', { name: 'Scores of the right rings' })).toBeVisible();
+  await expect(step.getByRole('group', { name: 'Decrypt', exact: true })).toHaveText('WETTERVORHERSAGE'.replace(/(.{4})(?!$)/g, '$1 '));
+  await expect(step.getByLabel('Key')).toContainText('Wheel orderII V III');
+  await expect(step.getByLabel('Key')).toContainText('PlugsAD ET FU GQ HM IK JL NV OX PZ');
+
+  await page.getByRole('tab', { name: 'Front' }).click();
+  await step.getByRole('button', { name: 'Set up Enigma' }).click();
+  await step.getByRole('group', { name: 'Confirm Enigma setup' }).getByRole('button', { name: 'Set up' }).click();
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · II V III');
+  await expect(page).toHaveTitle('Enigma');
+  await notebook.close();
+  for (const model of ['M4', 'M3']) {
+    await page.getByRole('combobox', { name: 'Model' }).selectOption(model);
+    await page.getByRole('button', { name: 'Switch' }).click();
+  }
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
+});
+
 test('lights a lamp while a key is held on the physical keyboard', async () => {
   await page.getByRole('tab', { name: 'Top-down' }).click();
 

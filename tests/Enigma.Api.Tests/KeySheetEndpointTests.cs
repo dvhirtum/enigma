@@ -270,7 +270,7 @@ public sealed class KeySheetEndpointTests : IDisposable
 
     private HttpClient CreateClient(string? userPath = null)
     {
-        var root = new WebApplicationFactory<Program>();
+        var root = new ApiFactory();
         var factory = root.WithWebHostBuilder(builder => builder
             .UseSetting("KeySheets:HistoricalPath", HistoricalPath)
             .UseSetting("KeySheets:UserPath", userPath ?? UserPath));

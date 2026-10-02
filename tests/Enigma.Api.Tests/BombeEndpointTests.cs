@@ -14,7 +14,7 @@ public sealed class BombeEndpointTests : IDisposable
         ["SW1", "NE2", "GE5", "GR6", "SV7", "ZR9", "HZ10", "EU11", "GR12", "AS13", "RA14", "LG15", "EV16"];
 
 
-    private readonly WebApplicationFactory<Program> _factory = new();
+    private readonly ApiFactory _factory = new();
     private readonly HttpClient _client;
 
     public BombeEndpointTests() => _client = _factory.CreateClient();
@@ -83,6 +83,108 @@ public sealed class BombeEndpointTests : IDisposable
         Assert.Null(continued.Pause);
         using var response = await _client.DeleteAsync(Url("/api/bombe/run"), Token);
         response.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Should_change_the_speed_of_a_paused_run_When_it_is_set_to_full_speed()
+    {
+        // Arrange
+        await SetUpCarterAsync();
+        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = 1_000_000.0, notebook = false });
+        await WaitForRunAsync();
+
+        // Act
+        var run = await SendAsync<RunState>(HttpMethod.Put, "/api/bombe/run/speed", new { speed = (double?)null });
+
+        // Assert
+        Assert.Null(run.Speed);
+        Assert.Equal("Paused", run.Status);
+        var cancelled = await SendAsync<RunState>(HttpMethod.Delete, "/api/bombe/run", new { });
+        Assert.Equal("Cancelled", cancelled.Status);
+    }
+
+    [Fact]
+    public async Task Should_print_the_stops_and_clear_them_When_a_full_speed_run_has_finished()
+    {
+        // Arrange
+        await SetUpCarterAsync();
+        await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null, notebook = true });
+        await WaitForRunAsync();
+
+        // Act
+        var printed = await _client.GetFromJsonAsync<IReadOnlyList<PrintedStopState>>(Url("/api/bombe/printout?from=1&count=1"), Token);
+        var logged = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=1&count=5"), Token);
+        var noPrintout = await SendAsync<BombeState>(HttpMethod.Delete, "/api/bombe/printout", new { });
+        var noStops = await SendAsync<BombeState>(HttpMethod.Delete, "/api/bombe/stops", new { });
+
+        // Assert
+        var stop = Assert.Single(printed!);
+        Assert.Equal(1, stop.Index);
+        Assert.Equal([0, 1], stop.Chains);
+        Assert.Equal(1, Assert.Single(logged!).Index);
+        Assert.Equal(0, noPrintout.Printed);
+        Assert.Equal(2, noPrintout.Stops);
+        Assert.Equal(0, noStops.Stops);
+    }
+
+    [Fact]
+    public async Task Should_build_a_menu_When_the_crib_is_placed()
+    {
+        // Arrange
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/cipher-text", new { text = "SNMKG GSTZZ UGARL V" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/crib", new { crib = "WETTERVORHERSAGE" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
+
+        // Act
+        var state = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/menu/build", new { });
+        var read = await _client.GetFromJsonAsync<BombeState>(Url("/api/bombe"), Token);
+
+        // Assert
+        Assert.NotEmpty(state.Menu!.Links);
+        Assert.Matches("^[A-Z]$", state.Menu.TestRegister);
+        Assert.Equal(state.Menu.Links, read!.Menu!.Links);
+    }
+
+    [Fact]
+    public async Task Should_set_up_the_machine_by_hand_When_each_machine_endpoint_is_called()
+    {
+        // Arrange
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/rows/0", new { rotor = "I", upTo = 1 });
+
+        // Act
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/jacks/0", new { letter = "a" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/jacks/1", new { letter = "B" });
+        await SendAsync<BombeState>(HttpMethod.Delete, "/api/bombe/machine/chains/1/scramblers/1/drums/0", new { });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/start", new { start = "qrs" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/test-register", new { letter = "C", input = "D" });
+        var state = await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/joins/1", new { joined = true });
+
+        // Assert
+        var chain = state.Machine.Chains[1];
+        Assert.Equal(["A", "B"], chain.Scramblers[0].Jacks);
+        Assert.Equal("I", chain.Scramblers[0].Drums[0]);
+        Assert.Null(chain.Scramblers[1].Drums[0]);
+        Assert.Equal("QRS", chain.Scramblers[0].Start);
+        Assert.Equal("C", chain.TestRegister);
+        Assert.Equal("D", chain.Input);
+        Assert.Equal([false, true], state.Machine.Joins);
+        Assert.True(state.Machine.PluggedByHand);
+    }
+
+    [Fact]
+    public async Task Should_set_up_the_checking_machine_When_it_is_set_by_hand()
+    {
+        // Arrange
+        // Act
+        var state = await SendAsync<BombeState>(
+            HttpMethod.Put, "/api/bombe/checking", new { reflector = "C", dummy = true, drums = new[] { "III", null, "I" }, rings = "abc", windows = "XYZ" });
+
+        // Assert
+        Assert.Equal("C", state.Checker.Reflector);
+        Assert.True(state.Checker.Dummy);
+        Assert.Equal(["III", null, "I"], state.Checker.Drums);
+        Assert.Equal("ABC", state.Checker.Rings);
+        Assert.Equal("XYZ", state.Checker.Windows);
     }
 
     [Fact]
@@ -160,8 +262,11 @@ public sealed class BombeEndpointTests : IDisposable
         var suggestion = await suggestResponse.Content.ReadFromJsonAsync<SuggestionState>(Token);
         using var findResponse = await _client.PostAsync(Url($"/api/bombe/stops/{stop}/check/find"), null, Token);
         var found = await findResponse.Content.ReadFromJsonAsync<FindState>(Token);
+        var middle = await SendAsync<FindState>(HttpMethod.Post, $"/api/bombe/stops/{stop}/check/find-middle", new { });
 
         // Assert
+        Assert.Equal(26, middle.Rings.Count);
+        Assert.Contains(middle.Rings, ring => ring.Best && ring.Ring == middle.Check.MiddleRing);
         Assert.Equal(HttpStatusCode.OK, suggestResponse.StatusCode);
         Assert.Equal(["IK", "OX"], suggestion!.Pairs.Select(pair => pair.Pair).Order());
         Assert.Equal("WETTERVORHERSAGE", suggestion.Decrypt);
@@ -280,6 +385,16 @@ public sealed class BombeEndpointTests : IDisposable
     }
 
     private static Uri Url(string path) => new(path, UriKind.Relative);
+
+    // Places Carter's crib and menu and fits the drums.
+    private async Task SetUpCarterAsync()
+    {
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/cipher-text", new { text = "SNMKG GSTZZ UGARL V" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/crib", new { crib = "WETTERVORHERSAGE" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
+        await FitCarterDrumsAsync();
+    }
 
     // Fits drums II, V and III in the rows of chain 1 and plugs up the menu.
     private async Task<BombeState> FitCarterDrumsAsync()
