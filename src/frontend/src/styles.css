@@ -1645,7 +1645,10 @@ button {
   position: sticky;
   top: 1.5rem;
   flex: 0 0 15rem;
-  max-height: calc(100vh - 3rem);
+  box-sizing: border-box;
+  height: calc(100vh - 3rem);
+  padding-right: 1rem;
+  border-right: 1px solid var(--line);
   overflow-y: auto;
   font-size: 0.9rem;
 }
@@ -1656,12 +1659,14 @@ button {
   list-style: none;
 }
 
-.guide-contents ul ul {
-  padding-left: 1.25rem;
+.guide-contents li {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  margin: 0.25rem 0;
 }
 
-.guide-contents li {
-  margin: 0.25rem 0;
+.guide-contents li > ul {
+  grid-column: 2;
 }
 
 .guide-contents a {
@@ -1692,8 +1697,7 @@ button {
   cursor: pointer;
 }
 
-.guide-hide,
-.guide-show {
+.guide-hide {
   padding: 0.2rem 0.5rem;
   border: 1px solid var(--line);
   background: none;
@@ -1706,6 +1710,20 @@ button {
   position: sticky;
   top: 1.5rem;
   flex: none;
+  display: flex;
+  justify-content: center;
+  width: 1.75rem;
+  height: calc(100vh - 3rem);
+  padding: 0.25rem 0 0;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.guide-show:hover {
+  color: var(--accent);
 }
 
 .guide table {

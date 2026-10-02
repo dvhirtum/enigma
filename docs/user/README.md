@@ -2,7 +2,7 @@
 
 This application simulates the Enigma M3 and M4 used by the Kriegsmarine, and the Bombe that broke it. It covers the machine, the monthly key sheets, the Navy indicator procedure for sending and receiving messages, and breaking a message with the Bombe.
 
-These instructions open in their own window with the book button at the top right of the machine window. The contents beside the page open any page; click ▸ to open a section and ▾ to close it, or hide the contents with **Hide contents**. Examples of what the operator writes down are handwritten, as in the operator's notebook.
+These instructions open in their own window with the book button at the top right of the machine window. The contents beside the page open any page; click ▸ to open a section and ▾ to close it, or hide the contents with **Hide contents** and bring them back with the bar on the left. Examples of what the operator writes down are handwritten, as in the operator's notebook.
 
 ## Contents
 
