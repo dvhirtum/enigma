@@ -48,6 +48,7 @@ const api: EnigmaApi = {
     suggestCrib: (type) => invoke('bombe:suggestCrib', type),
     getSolution: () => invoke('bombe:getSolution'),
     showWheelOrders: () => invoke('bombe:showWheelOrders'),
+    showCribPositions: () => invoke('bombe:showCribPositions'),
     loadIntercept: (id) => invoke('bombe:loadIntercept', id),
     generateExercise: () => invoke('bombe:generateExercise'),
     pasteCipherText: (text) => invoke('bombe:pasteCipherText', text),

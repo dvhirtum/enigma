@@ -34,12 +34,15 @@ public sealed class BombeJob
     /// <summary>Whether the message's three wheel orders have been shown.</summary>
     public bool WheelOrdersShown { get; private set; }
 
+    /// <summary>Whether the message's two crib positions have been shown.</summary>
+    public bool CribPositionsShown { get; private set; }
+
     /// <summary>Every position the crib fits under the cipher text, crashed or not.</summary>
     public IReadOnlyList<CribPlacement> Placements => Crib is null ? [] : CribPlacement.All(CipherText, Crib);
 
     /// <summary>
     /// Loads a message to break, or none when null. The crib, its placement, the menu, the day's traffic and the shown
-    /// wheel orders are cleared.
+    /// wheel orders and crib positions are cleared.
     /// </summary>
     public void Load(MessageSource? source)
     {
@@ -47,6 +50,7 @@ public sealed class BombeJob
         Crib = null;
         Traffic = null;
         WheelOrdersShown = false;
+        CribPositionsShown = false;
         ClearPlacement();
     }
 
@@ -59,6 +63,17 @@ public sealed class BombeJob
         }
 
         WheelOrdersShown = true;
+    }
+
+    /// <summary>Shows the message's two crib positions, one of them the crib's.</summary>
+    public void ShowCribPositions()
+    {
+        if (Source?.CribPositions is null)
+        {
+            throw new DomainException("This message has no known crib position.");
+        }
+
+        CribPositionsShown = true;
     }
 
     /// <summary>Replaces the crib, or removes it when null. The placement and the menu are cleared.</summary>

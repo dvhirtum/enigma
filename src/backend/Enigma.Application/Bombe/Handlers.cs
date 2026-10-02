@@ -397,3 +397,17 @@ public sealed class GetMenuStopsHandler(IBombeSessionStore store)
         }
     }
 }
+
+public sealed class ShowCribPositionsHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(ShowCribPositions command) =>
+        store.Update(job =>
+        {
+            if (GetSourceCribHandler.Loaded(job).CribPositions is null)
+            {
+                throw new NotFoundException("This message has no known crib position.");
+            }
+
+            job.ShowCribPositions();
+        });
+}

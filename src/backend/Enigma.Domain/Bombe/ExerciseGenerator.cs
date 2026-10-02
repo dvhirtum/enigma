@@ -24,6 +24,9 @@ public static class ExerciseGenerator
     /// <summary>The fewest loops of the menu built at the crib's true position.</summary>
     public const int MinLoops = 2;
 
+    /// <summary>The furthest into the message the crib of an exercise starts: after the longest prefix.</summary>
+    public const int MaxCribStart = 27;
+
     private static readonly string[] Digits = ["NUL", "EINS", "ZWO", "DREI", "VIER", "FUENF", "SEQS", "SIEBEN", "AQT", "NEUN"];
 
     private static readonly string[] Directions = ["NORD", "NORDOST", "OST", "SUEDOST", "SUED", "SUEDWEST", "WEST", "NORDWEST"];
@@ -87,7 +90,9 @@ public static class ExerciseGenerator
     /// <summary>
     /// Generates an exercise sent on <paramref name="day"/> of an M3 <paramref name="sheet"/>, with a message key at
     /// which the middle rotor does not turn over while the crib is enciphered, and the menu built at the crib's position
-    /// has at least <see cref="MinLoops"/> loops.
+    /// has at least <see cref="MinLoops"/> loops. The exercise also gives two crib positions as from earlier messages of
+    /// the operator: the crib's and a decoy, a crash-free position up to <see cref="MaxCribStart"/> whose menu also has
+    /// at least <see cref="MinLoops"/> loops.
     /// </summary>
     public static MessageSource Generate(KeySheet sheet, int day, Kenngruppenbuch book, TauschtafelSet tables, Random random)
     {
@@ -101,13 +106,18 @@ public static class ExerciseGenerator
         var crib = template.Type!.Crib.Length;
         var (message, solution) = Enumerable.Range(0, MaxAttempts)
             .Select(_ => Send(sheet, day, book, tables, random, allotment, plaintext))
-            .FirstOrDefault(sent => !MiddleTurnsOver(sent.Solution, prefix.Length, crib) && HasLoops(sent.Message, template.Type, prefix.Length));
+            .FirstOrDefault(sent => !MiddleTurnsOver(sent.Solution, prefix.Length, crib)
+                && HasLoops(sent.Message, template.Type, prefix.Length)
+                && Decoys(sent.Message, template.Type, prefix.Length).Any());
         if (solution is null)
         {
-            throw new DomainException("No message key keeps the middle rotor still during the crib and gives a menu with loops.");
+            throw new DomainException("No message key keeps the middle rotor still during the crib and gives menus with loops.");
         }
 
         solution = solution with { Notes = $"{solution.Notes} The crib starts at position {prefix.Length}." };
+        var decoys = Decoys(message, template.Type, prefix.Length).ToList();
+        int[] positions = [prefix.Length, decoys[random.Next(decoys.Count)]];
+        Array.Sort(positions);
 
         var date = new DateOnly(sheet.Month.Year, sheet.Month.Month, day);
         var type = template.Type!;
@@ -121,7 +131,8 @@ public static class ExerciseGenerator
             type.Crib,
             solution,
             type.Place,
-            WheelOrder.Hint(solution.WheelOrder, order => order.Right.Notches.Count == 1, random));
+            WheelOrder.Hint(solution.WheelOrder, order => order.Right.Notches.Count == 1, random),
+            positions);
     }
 
     /// <summary>
@@ -208,6 +219,15 @@ public static class ExerciseGenerator
     // Whether the menu built with the crib at its position has at least MinLoops loops.
     private static bool HasLoops(RadioMessage message, MessageType type, int position) =>
         Menu.Build(new CribPlacement(MessageSource.Letters(message.CipherText), type.Crib, position)).Loops >= MinLoops;
+
+    // The crash-free positions up to MaxCribStart, other than the crib's, whose menu has at least MinLoops loops.
+    private static IEnumerable<int> Decoys(RadioMessage message, MessageType type, int position)
+    {
+        var cipherText = MessageSource.Letters(message.CipherText);
+        return Enumerable.Range(0, Math.Min(MaxCribStart, cipherText.Count - type.Crib.Length) + 1)
+            .Where(start => start != position)
+            .Where(start => !new CribPlacement(cipherText, type.Crib, start).Crashed && HasLoops(message, type, start));
+    }
 
     // Whether the middle rotor turns over while the letters from start on are enciphered, from the message key.
     private static bool MiddleTurnsOver(Solution solution, int start, int length)

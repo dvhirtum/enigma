@@ -203,6 +203,21 @@ public sealed class BombeJobTests
         Assert.False(job.WheelOrdersShown);
     }
 
+    [Fact]
+    public void Should_refuse_to_show_crib_positions_When_the_message_is_an_intercept()
+    {
+        // Arrange
+        var job = new BombeJob();
+        job.Load(Intercepts.Find("carter-weather")!.Source);
+
+        // Act
+        void Act() => job.ShowCribPositions();
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+        Assert.False(job.CribPositionsShown);
+    }
+
     private static BombeJob CarterJob()
     {
         var job = new BombeJob();

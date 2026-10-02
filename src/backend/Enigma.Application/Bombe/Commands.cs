@@ -93,6 +93,9 @@ public sealed record GetSolution;
 /// <summary>Shows the three wheel orders of the loaded intercept or exercise, one of them the key's.</summary>
 public sealed record ShowWheelOrders;
 
+/// <summary>Shows the two crib positions of the loaded exercise, one of them the crib's.</summary>
+public sealed record ShowCribPositions;
+
 /// <summary>The stops per wheel order the menu gives, measured on a sample of wheel orders and reflectors.</summary>
 public sealed record GetMenuStops;
 

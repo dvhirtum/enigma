@@ -13,7 +13,8 @@ public enum SourceKind
 /// <summary>
 /// The message a Bombe job breaks: where it came from, a hint, the transcript as received, the Navy radio message when
 /// it is one, and the cipher text the crib goes under. Intercepts and exercises also know a likely crib, where it is
-/// likely to stand, the solution, and three wheel orders, one of them the key's.
+/// likely to stand, the solution, and three wheel orders, one of them the key's. Exercises also give two crib positions
+/// (from 0), one of them the crib's.
 /// </summary>
 public sealed record MessageSource(
     SourceKind Kind,
@@ -25,7 +26,8 @@ public sealed record MessageSource(
     Crib? Crib = null,
     Solution? Solution = null,
     string? CribPlace = null,
-    IReadOnlyList<WheelOrder>? WheelOrders = null)
+    IReadOnlyList<WheelOrder>? WheelOrders = null,
+    IReadOnlyList<int>? CribPositions = null)
 {
     /// <summary>
     /// The likely crib and where it is likely to stand: the message's own, or else the crib of a message of

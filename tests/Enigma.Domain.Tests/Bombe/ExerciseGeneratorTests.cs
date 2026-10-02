@@ -232,4 +232,29 @@ public sealed class ExerciseGeneratorTests
         Assert.Equal(4, menus.Select(menu => menu.Crib).Distinct().Count());
         Assert.All(menus, menu => Assert.True(menu.Menu.Loops >= ExerciseGenerator.MinLoops, $"{menu.Crib}: {menu.Menu.Loops} loops"));
     }
+
+    [Fact]
+    public void Should_give_the_crib_position_and_a_plausible_decoy_When_an_exercise_is_generated()
+    {
+        // Arrange
+        var sources = Enumerable.Range(0, 100).Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
+
+        // Act
+        var hints = sources.Select(source => (
+            Position: source.Solution!.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal),
+            Positions: source.CribPositions!,
+            Placements: source.CribPositions!.Select(position => new CribPlacement(source.CipherText, source.Crib, position)).ToList())).ToList();
+
+        // Assert
+        Assert.All(hints, hint =>
+        {
+            Assert.Equal(2, hint.Positions.Distinct().Count());
+            Assert.Contains(hint.Position, hint.Positions);
+            Assert.All(hint.Positions, position => Assert.InRange(position, 0, ExerciseGenerator.MaxCribStart));
+            Assert.All(hint.Placements, placement => Assert.False(placement.Crashed));
+            Assert.All(hint.Placements, placement => Assert.True(Menu.Build(placement).Loops >= ExerciseGenerator.MinLoops));
+        });
+        Assert.Contains(hints, hint => hint.Positions[0] == hint.Position);
+        Assert.Contains(hints, hint => hint.Positions[1] == hint.Position);
+    }
 }

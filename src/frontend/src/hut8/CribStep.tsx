@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import type { Placement } from '../api';
+import { Hand } from '../notebook/paper';
 import { useMachine } from '../store';
 import { isFormControl } from '../useKeys';
 import { cribLetters, plural } from './letters';
@@ -255,6 +256,33 @@ export function CribSummary() {
   );
 }
 
+/** Two crib positions of an exercise, one of them the crib's, written down once asked for. */
+function CribPositionHint() {
+  const source = useMachine((store) => store.bombe?.source ?? null);
+  const showCribPositions = useMachine((store) => store.showCribPositions);
+  if (!source?.hasCribPositions) {
+    return null;
+  }
+
+  const hint = source.cribPositions;
+  if (!hint) {
+    return (
+      <p className="notebook-actions">
+        <button type="button" onClick={() => void showCribPositions()}>
+          Earlier messages from this operator
+        </button>
+      </p>
+    );
+  }
+
+  const [first, second] = hint.positions.map((position) => position + 1);
+  return (
+    <p aria-label="Crib positions">
+      Given earlier messages from this operator, expect <Hand>{hint.crib}</Hand> at position <Hand>{first}</Hand> or <Hand>{second}</Hand>.
+    </p>
+  );
+}
+
 /** Slides the crib along the cipher text to a position without crashes and places it there. */
 export function CribStep() {
   const bombe = useMachine((store) => store.bombe);
@@ -271,6 +299,7 @@ export function CribStep() {
       {crib && placements.length > 0 && (
         <CribStrip key={`${cipherText} ${crib}`} cipherText={cipherText} crib={crib} placements={placements} placed={position} />
       )}
+      {crib && placements.length > 0 && <CribPositionHint />}
     </>
   );
 }

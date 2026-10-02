@@ -29,7 +29,7 @@ public sealed record BombeState(
         ArgumentNullException.ThrowIfNull(store);
 
         return new BombeState(
-            job.Source is null ? null : SourceState.From(job.Source, job.WheelOrdersShown),
+            job.Source is null ? null : SourceState.From(job.Source, job.WheelOrdersShown, job.CribPositionsShown),
             string.Concat(job.CipherText),
             job.Crib?.ToString(),
             [.. job.Placements.Select(p => new PlacementState(p.Position, p.Crashes))],
@@ -246,8 +246,8 @@ public sealed record StopState(
 
 /// <summary>
 /// The loaded message: its kind (Intercept, Exercise or Pasted), title, hint, transcript as received, the Navy radio
-/// message when it is one, whether a crib, a solution and wheel orders can be asked for, and the three wheel orders
-/// once shown (null before).
+/// message when it is one, whether a crib, a solution, wheel orders and crib positions can be asked for, the three wheel
+/// orders once shown, and the crib with its two positions (from 0) once shown (null before).
 /// </summary>
 public sealed record SourceState(
     string Kind,
@@ -258,9 +258,11 @@ public sealed record SourceState(
     bool HasCrib,
     bool HasSolution,
     bool HasWheelOrders,
-    IReadOnlyList<string>? WheelOrders)
+    IReadOnlyList<string>? WheelOrders,
+    bool HasCribPositions,
+    CribPositionsState? CribPositions)
 {
-    public static SourceState From(MessageSource source, bool wheelOrdersShown)
+    public static SourceState From(MessageSource source, bool wheelOrdersShown, bool cribPositionsShown)
     {
         ArgumentNullException.ThrowIfNull(source);
 
@@ -273,9 +275,14 @@ public sealed record SourceState(
             source.Crib is not null,
             source.Solution is not null,
             source.WheelOrders is not null,
-            wheelOrdersShown && source.WheelOrders is { } orders ? [.. orders.Select(order => order.ToString())] : null);
+            wheelOrdersShown && source.WheelOrders is { } orders ? [.. orders.Select(order => order.ToString())] : null,
+            source.CribPositions is not null,
+            cribPositionsShown && source is { CribPositions: { } positions, Crib: { } crib } ? new CribPositionsState(crib.ToString(), positions) : null);
     }
 }
+
+/// <summary>The message's crib and the two positions (from 0) the operator's earlier messages put it at.</summary>
+public sealed record CribPositionsState(string Crib, IReadOnlyList<int> Positions);
 
 /// <summary>A bundled intercept. The date is yyyy-MM-dd, or null when unknown.</summary>
 public sealed record InterceptState(string Id, string Title, string? Date, string? Hint)

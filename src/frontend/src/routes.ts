@@ -64,6 +64,7 @@ export const bombeRoutes: Routes<BombeApi> = {
   suggestCrib: (type) => ({ method: 'GET', path: `${bombe}/source/crib${type ? `?type=${encodeURIComponent(type)}` : ''}` }),
   getSolution: () => ({ method: 'GET', path: `${bombe}/source/solution` }),
   showWheelOrders: () => ({ method: 'POST', path: `${bombe}/source/wheel-orders` }),
+  showCribPositions: () => ({ method: 'POST', path: `${bombe}/source/crib-positions` }),
   loadIntercept: (id) => ({ method: 'POST', path: `${bombe}/source/intercept`, body: { id } }),
   generateExercise: () => ({ method: 'POST', path: `${bombe}/source/exercise` }),
   pasteCipherText: (text) => ({ method: 'PUT', path: `${bombe}/cipher-text`, body: { text } }),

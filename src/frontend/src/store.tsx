@@ -86,6 +86,8 @@ export interface BombeSlice {
   generateExercise: () => Promise<boolean>;
   /** Shows three wheel orders of the loaded intercept or exercise, one of them the key's. */
   showWheelOrders: () => Promise<boolean>;
+  /** Shows two crib positions of the loaded exercise, one of them the crib's. */
+  showCribPositions: () => Promise<boolean>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */
   pasteCipherText: (text: string) => Promise<boolean>;
   /** Replaces the crib, or removes it when empty. */
@@ -428,6 +430,7 @@ export function createMachineStore({
       },
       generateExercise: () => job(bombe.generateExercise()),
       showWheelOrders: () => job(bombe.showWheelOrders()),
+      showCribPositions: () => job(bombe.showCribPositions()),
       pasteCipherText: (text) => job(bombe.pasteCipherText(text)),
       setCrib: (crib) => job(bombe.setCrib(crib)),
       placeCrib: (position) => job(bombe.placeCrib(position)),

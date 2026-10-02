@@ -402,6 +402,33 @@ public sealed class BombeEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_show_two_crib_positions_until_another_message_is_loaded_When_asked_for_an_exercise()
+    {
+        // Arrange
+        using var paths = new TemporaryKeySheetPaths();
+        using var factory = paths.Configure(_factory);
+        using var client = factory.CreateClient();
+        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M3", year = 1944 });
+        var loaded = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/exercise", new { });
+        var solution = await client.GetFromJsonAsync<SolutionState>(Url("/api/bombe/source/solution"), Token);
+
+        // Act
+        var shown = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/crib-positions", new { });
+        var intercept = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/intercept", new { id = "carter-weather" });
+        using var none = await client.PostAsJsonAsync(Url("/api/bombe/source/crib-positions"), new { }, Token);
+
+        // Assert
+        Assert.True(loaded.Source?.HasCribPositions);
+        Assert.Null(loaded.Source?.CribPositions);
+        var hint = Assert.IsType<CribPositionsState>(shown.Source?.CribPositions);
+        Assert.Equal(2, hint.Positions.Count);
+        Assert.Contains(solution!.Plaintext.IndexOf(hint.Crib, StringComparison.Ordinal), hint.Positions);
+        Assert.Null(intercept.Source?.CribPositions);
+        Assert.False(intercept.Source?.HasCribPositions);
+        Assert.Equal(HttpStatusCode.NotFound, none.StatusCode);
+    }
+
+    [Fact]
     public async Task Should_take_the_pinch_and_read_the_indicator_When_asked_through_the_api()
     {
         // Arrange

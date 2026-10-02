@@ -40,6 +40,8 @@ The notebook writes the cipher text in squares, with the crib on a slip under it
 
 Under the strip you see the position and the number of crashes. **Place crib** places the crib at a position without crashes and builds the menu from it.
 
+For an exercise, **Earlier messages from this operator** under the strip narrows the search: operators started their messages the same way day after day, so the notebook writes down the crib and two positions to expect it at, counted from 1. One is the right one. The other is a decoy without crashes whose menu is just as good, so you have to try both. The positions stay written down until you load another message.
+
 ## The menu
 
 The notebook sketches the menu built from the placed crib. Each crib letter and the cipher letter above it form a link, numbered by its place in the crib. On the Bombe one scrambler joins the two letters, set that many steps from the first (1 = ZZA). The sketch shows every link of the crib:

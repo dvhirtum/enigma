@@ -38,6 +38,7 @@ internal static class BombeEndpoints
         .AddSingleton<GetSourceCribHandler>()
         .AddSingleton<GetSolutionHandler>()
         .AddSingleton<ShowWheelOrdersHandler>()
+        .AddSingleton<ShowCribPositionsHandler>()
         .AddSingleton<SetCribHandler>()
         .AddSingleton<PlaceCribHandler>()
         .AddSingleton<SetMenuHandler>()
@@ -105,6 +106,9 @@ internal static class BombeEndpoints
 
         bombe.MapPost("/source/wheel-orders", (ShowWheelOrdersHandler handler) =>
             handler.Handle(new ShowWheelOrders()));
+
+        bombe.MapPost("/source/crib-positions", (ShowCribPositionsHandler handler) =>
+            handler.Handle(new ShowCribPositions()));
 
         bombe.MapPut("/crib", (SetCrib command, SetCribHandler handler) =>
             handler.Handle(command));

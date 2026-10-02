@@ -26,6 +26,36 @@ describe('CribStep', () => {
     await waitFor(() => expect(api.bombe.setCrib).toHaveBeenCalledWith('WETTERVOR'));
   });
 
+  it('asks for the crib positions of earlier messages from the operator', async () => {
+    const api = renderBombe(<CribStep />, { ...carterWetter, source: { ...carterWetter.source!, kind: 'Exercise', hasCribPositions: true } });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Earlier messages from this operator' }));
+
+    await waitFor(() => expect(api.bombe.showCribPositions).toHaveBeenCalledOnce());
+  });
+
+  it('writes down the two crib positions counted from 1 once shown', async () => {
+    const source = {
+      ...carterWetter.source!,
+      kind: 'Exercise' as const,
+      hasCribPositions: true,
+      cribPositions: { crib: 'WETTERVORHERSAGE', positions: [0, 7] },
+    };
+    renderBombe(<CribStep />, { ...carterWetter, source });
+
+    expect(await screen.findByLabelText('Crib positions')).toHaveTextContent(
+      'Given earlier messages from this operator, expect WETTERVORHERSAGE at position 1 or 8.',
+    );
+    expect(screen.queryByRole('button', { name: 'Earlier messages from this operator' })).not.toBeInTheDocument();
+  });
+
+  it('offers no crib positions for an intercept', async () => {
+    renderBombe(<CribStep />, carterWetter);
+
+    expect(await screen.findByRole('slider', { name: 'Crib position' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Earlier messages from this operator' })).not.toBeInTheDocument();
+  });
+
   it("fills in an intercept's own crib and where it is likely to stand", async () => {
     const api = renderBombe(<CribStep />, carterBombe);
 

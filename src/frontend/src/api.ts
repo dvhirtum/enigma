@@ -136,6 +136,9 @@ export interface BombeSource {
   hasWheelOrders: boolean;
   /** Three wheel orders, one of them the key's, once shown (null before). */
   wheelOrders: string[] | null;
+  hasCribPositions: boolean;
+  /** The crib and two positions (from 0), one of them the crib's, once shown (null before). */
+  cribPositions: { crib: string; positions: number[] } | null;
 }
 
 /** A suggested crib and where in the message it is likely to stand (empty when unknown). */
@@ -560,6 +563,8 @@ export interface BombeApi {
   getSolution: Call<[], SourceSolution>;
   /** Shows three wheel orders of the loaded intercept or exercise, one of them the key's. */
   showWheelOrders: Call<[], BombeState>;
+  /** Shows two crib positions of the loaded exercise, one of them the crib's. */
+  showCribPositions: Call<[], BombeState>;
   /** The stops per wheel order the menu gives, measured on a sample of wheel orders and reflectors. */
   menuStops: Call<[], MenuStops>;
   loadIntercept: Call<[id: string], BombeState>;
