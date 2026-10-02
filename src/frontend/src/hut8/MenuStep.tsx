@@ -151,7 +151,9 @@ function MenuSketch({
         >
           <circle className="paper" cx={point.x} cy={point.y} r={radius} />
           <circle className="stroke" cx={point.x} cy={point.y} r={radius} />
-          {letter === menu.testRegister && <ellipse className="ring" cx={point.x} cy={point.y} rx={radius + 6} ry={radius + 4} transform={`rotate(-12 ${point.x} ${point.y})`} />}
+          {letter === menu.testRegister && (
+            <ellipse className="ring" cx={point.x} cy={point.y} rx={radius + 6} ry={radius + 4} transform={`rotate(-12 ${point.x} ${point.y})`} />
+          )}
           <text x={point.x} y={point.y}>
             {letter}
           </text>
@@ -172,8 +174,8 @@ export function MenuSummary({ menu, diagonalBoard }: { menu: BombeMenu; diagonal
         <Hand>{menu.testRegister}</Hand>
       </p>
       <p aria-label="Estimated false stops">
-        Expect <Hand>{formatStops(menu.stopsWithBoard)}</Hand> false stops per wheel order with the diagonal board, <Hand>{formatStops(menu.stopsWithoutBoard)}</Hand>{' '}
-        without{diagonalBoard ? ' (the board is on)' : ' (the board is off)'}.
+        Expect <Hand>{formatStops(menu.stopsWithBoard)}</Hand> false stops per wheel order with the diagonal board,{' '}
+        <Hand>{formatStops(menu.stopsWithoutBoard)}</Hand> without{diagonalBoard ? ' (the board is on)' : ' (the board is off)'}.
       </p>
       {loose.length > 0 && (
         <p className="notebook-warning" role="status">
@@ -264,8 +266,8 @@ export function MenuStep({ onDone }: { onDone: () => void }) {
   return (
     <div className="notebook-form" aria-busy={busy}>
       <p>
-        Each crib letter and its cipher letter make a link, numbered by its place in the crib. Click a link to plug it in or out, and a letter to put the
-        test register on it. Loops make a good menu.
+        Each crib letter and its cipher letter make a link, numbered by its place in the crib. Click a link to plug it in or out, and a letter to put the test
+        register on it. Loops make a good menu.
       </p>
       <MenuSummary menu={menu} diagonalBoard={bombe.settings.diagonalBoard} />
       <MenuSketch

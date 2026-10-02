@@ -1,10 +1,9 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Enigma.Api.Tests;
 
-public sealed class HealthEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointTests(ApiFactory factory)
+    : IClassFixture<ApiFactory>
 {
     [Fact]
     public async Task Should_return_ok_When_health_is_requested()

@@ -25,8 +25,7 @@ const api: EnigmaApi = {
     setUpMachine: (key) => invoke('machine:setUpMachine', key),
     startSending: () => invoke('machine:startSending'),
     startReceiving: (message, sheetId, day) => invoke('machine:startReceiving', message, sheetId, day),
-    chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
-      invoke('machine:chooseGroups', schluesselkenngruppe, verfahrenkenngruppe, fillers),
+    chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) => invoke('machine:chooseGroups', schluesselkenngruppe, verfahrenkenngruppe, fillers),
     finishMessage: () => invoke('machine:finishMessage'),
     cancelOperator: () => invoke('machine:cancelOperator'),
   },

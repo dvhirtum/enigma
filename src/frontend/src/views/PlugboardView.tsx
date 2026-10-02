@@ -33,7 +33,15 @@ function plugAt(letter: string): Point {
 
 /** The partner of each plugged letter. */
 function partners(plugs: string[]): Map<string, string> {
-  return new Map(plugs.flatMap(([a, b]) => [[a, b], [b, a]] as const));
+  return new Map(
+    plugs.flatMap(
+      ([a, b]) =>
+        [
+          [a, b],
+          [b, a],
+        ] as const,
+    ),
+  );
 }
 
 /** A slotted screw head. */
@@ -211,7 +219,8 @@ export function PlugboardView() {
         {plugs.length > 0 ? plugs.join(' ') : 'No cables'} · {plugs.length} of {maxCables}
       </p>
       <p className="hint">
-        Drag a cable between two sockets, or pick two sockets in turn. Click a plugged socket to remove its cable, or drag its plug to another socket or off the board.
+        Drag a cable between two sockets, or pick two sockets in turn. Click a plugged socket to remove its cable, or drag its plug to another socket or off the
+        board.
       </p>
     </section>
   );

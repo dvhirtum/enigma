@@ -30,9 +30,7 @@ export function advance(position: string, offset: number): string {
 
 /** Turns each drum of `position` on by its letter of `start` (Z = 0, A = 1), without carrying: a scrambler set to `start`. */
 export function advanceBy(position: string, start: string): string {
-  return [...position]
-    .map((letter, drum) => String.fromCharCode(65 + ((letter.charCodeAt(0) - 65 + ((start.charCodeAt(drum) - 64) % 26)) % 26)))
-    .join('');
+  return [...position].map((letter, drum) => String.fromCharCode(65 + ((letter.charCodeAt(0) - 65 + ((start.charCodeAt(drum) - 64) % 26)) % 26))).join('');
 }
 
 /** The scramblers of a chain (a bank of 12). */

@@ -22,5 +22,5 @@ Navy Enigma simulator (M3 + M4) with a Bombe mode for breaking it. Electron + Re
 ## Commands
 
 - Backend: `dotnet build Enigma.slnx`, `dotnet test --solution Enigma.slnx`, `dotnet run --project src/backend/Enigma.Api`.
-- Frontend (in `src/frontend`): `npm start`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run make`, then `npm run test:e2e`.
+- Frontend (in `src/frontend`): `npm start`, `npm run lint`, `npm run format` (Prettier; CI runs `npm run format:check`), `npm run typecheck`, `npm test`, `npm run make`, then `npm run test:e2e`.
 - Version: `dotnet tool restore`, then `dotnet gitversion`.

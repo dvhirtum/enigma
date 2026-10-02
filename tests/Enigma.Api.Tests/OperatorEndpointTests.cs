@@ -150,6 +150,22 @@ public sealed class OperatorEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_stop_the_procedure_When_the_operator_cancels()
+    {
+        // Arrange
+        var client = CreateClient();
+        await Send(client, HttpMethod.Post, "/api/machine/daily-key", new { sheetId = "historical-hydra-1943-12", day = 26 });
+        var sending = await Send(client, HttpMethod.Post, "/api/operator/send", null);
+
+        // Act
+        var cancelled = await Send(client, HttpMethod.Delete, "/api/operator", null);
+
+        // Assert
+        Assert.Equal("ChooseGroups", sending.Operator?.Step);
+        Assert.Null(cancelled.Operator);
+    }
+
+    [Fact]
     public async Task Should_keep_the_filled_in_Grundstellung_of_a_historical_sheet_When_the_backend_restarts()
     {
         // Arrange
@@ -205,7 +221,7 @@ public sealed class OperatorEndpointTests : IDisposable
 
     private HttpClient CreateClient()
     {
-        var root = new WebApplicationFactory<Program>();
+        var root = new ApiFactory();
         var factory = root.WithWebHostBuilder(builder => builder
             .UseSetting("KeySheets:HistoricalPath", HistoricalPath)
             .UseSetting("KeySheets:UserPath", UserPath));

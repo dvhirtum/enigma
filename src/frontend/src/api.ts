@@ -485,10 +485,7 @@ export interface Problem {
 
 export type ApiResult<T> = { ok: true; value: T } | { ok: false; problem: Problem };
 
-export type BackendStatus =
-  | { state: 'starting' }
-  | { state: 'running' }
-  | { state: 'failed'; message: string };
+export type BackendStatus = { state: 'starting' } | { state: 'running' } | { state: 'failed'; message: string };
 
 type MachineCall<Args extends unknown[]> = (...args: Args) => Promise<ApiResult<MachineState>>;
 

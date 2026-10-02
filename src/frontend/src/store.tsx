@@ -227,7 +227,16 @@ async function settle<T>(call: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
   }
 }
 
-export function createMachineStore({ machine: api, keySheets: sheets, procedure, bombe, files, clipboard, windows, health }: EnigmaApi): StoreApi<MachineStore> {
+export function createMachineStore({
+  machine: api,
+  keySheets: sheets,
+  procedure,
+  bombe,
+  files,
+  clipboard,
+  windows,
+  health,
+}: EnigmaApi): StoreApi<MachineStore> {
   return createStore<MachineStore>()((set, get) => {
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
@@ -386,7 +395,8 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       checkLamp: null,
       checkKey: null,
       suggestion: null,
-      ringScores: null, middleRingScores: null,
+      ringScores: null,
+      middleRingScores: null,
       confirmation: null,
       ringTable: null,
       loadBombe: async () => {
@@ -541,7 +551,13 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       },
       changeCheck: async (change) => {
         const steckers = change.steckers !== undefined ? { suggestion: null, ringScores: null, middleRingScores: null } : {};
-        return (await onCheck((stop) => bombe.setCheck(stop, change), (value) => value, { ...steckers, confirmation: null })) !== null;
+        return (
+          (await onCheck(
+            (stop) => bombe.setCheck(stop, change),
+            (value) => value,
+            { ...steckers, confirmation: null },
+          )) !== null
+        );
       },
       setChecker: (change) => enqueue(() => job(bombe.setChecker(change))),
       setUpChecker: async (stop) => {
@@ -599,7 +615,10 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         set({ checkKey: null, checkLamp: null });
       },
       confirmCheck: async (verdict) => {
-        const confirmation = await onCheck((stop) => bombe.confirmCheck(stop, verdict), (value) => value.check);
+        const confirmation = await onCheck(
+          (stop) => bombe.confirmCheck(stop, verdict),
+          (value) => value.check,
+        );
         if (confirmation) {
           set({ confirmation });
         }
@@ -623,7 +642,11 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
             return false;
           }
           const steckers = [current.steckers, ...pairs].filter(Boolean).join(' ');
-          const accepted = await onCheck((stop) => bombe.setCheck(stop, { steckers }), (value) => value, { ringScores: null, middleRingScores: null, confirmation: null });
+          const accepted = await onCheck(
+            (stop) => bombe.setCheck(stop, { steckers }),
+            (value) => value,
+            { ringScores: null, middleRingScores: null, confirmation: null },
+          );
           const suggestion = get().suggestion;
           if (accepted && suggestion) {
             const left = suggestion.pairs.filter((pair) => !pairs.includes(pair.pair));
@@ -632,14 +655,22 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           return accepted !== null;
         }),
       findRightRing: async () => {
-        const found = await onCheck((stop) => bombe.findRightRing(stop), (value) => value.check, { confirmation: null });
+        const found = await onCheck(
+          (stop) => bombe.findRightRing(stop),
+          (value) => value.check,
+          { confirmation: null },
+        );
         if (found) {
           set({ ringScores: found.rings });
         }
         return found !== null;
       },
       findMiddleRing: async () => {
-        const found = await onCheck((stop) => bombe.findMiddleRing(stop), (value) => value.check, { confirmation: null });
+        const found = await onCheck(
+          (stop) => bombe.findMiddleRing(stop),
+          (value) => value.check,
+          { confirmation: null },
+        );
         if (found) {
           set({ middleRingScores: found.rings });
         }
@@ -650,7 +681,9 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         if (!key) {
           return false;
         }
-        return apply(api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: key.messageKey }));
+        return apply(
+          api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: key.messageKey }),
+        );
       },
       loadSolution: async () => {
         const result = await check(bombe.getSolution());
@@ -676,14 +709,20 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
         }
         return result.ok;
       },
-      readRings: async (left, middle) => (await onCheck((stop) => bombe.readRings(stop, left, middle), (value) => value)) !== null,
+      readRings: async (left, middle) =>
+        (await onCheck(
+          (stop) => bombe.readRings(stop, left, middle),
+          (value) => value,
+        )) !== null,
       setUpDayEnigma: async () => {
         const key = get().check?.reading?.key;
         const grundstellung = get().bombe?.day?.grundstellung;
         if (!key || !grundstellung) {
           return false;
         }
-        return apply(api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: grundstellung }));
+        return apply(
+          api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: grundstellung }),
+        );
       },
       loadBook: async (id) => {
         if (get().books[id]) {
@@ -788,7 +827,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           if (bookHtml === null) {
             return (await files.printKeySheet(name, html)) !== null;
           }
-          return (await files.printToFolder([{ name, html }, { name: `${procedureName(result.value)}.pdf`, html: bookHtml }])) !== null;
+          return (
+            (await files.printToFolder([
+              { name, html },
+              { name: `${procedureName(result.value)}.pdf`, html: bookHtml },
+            ])) !== null
+          );
         } catch (error) {
           return fail({ status: 0, title: 'The PDF could not be saved.', detail: String(error) });
         }
@@ -833,8 +877,7 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       setUpMachine: (key) => apply(api.setUpMachine(key)),
       startSending: () => apply(api.startSending()),
       startReceiving: (message, sheetId, day) => apply(api.startReceiving(message, sheetId, day)),
-      chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
-        apply(api.chooseGroups(schluesselkenngruppe, verfahrenkenngruppe, fillers)),
+      chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) => apply(api.chooseGroups(schluesselkenngruppe, verfahrenkenngruppe, fillers)),
       finishMessage: () => apply(api.finishMessage()),
       cancelOperator: () => apply(api.cancelOperator()),
     };

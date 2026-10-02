@@ -39,13 +39,7 @@ export function ModeSwitch({ disabled = false }: { disabled?: boolean }) {
   return (
     <h1 className="mode-switch" aria-label="Mode">
       {modes.map(({ id, label }) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={id === context.mode}
-          disabled={disabled && id !== context.mode}
-          onClick={() => context.setMode(id)}
-        >
+        <button key={id} type="button" aria-pressed={id === context.mode} disabled={disabled && id !== context.mode} onClick={() => context.setMode(id)}>
           {label}
         </button>
       ))}

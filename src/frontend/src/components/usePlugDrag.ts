@@ -32,11 +32,7 @@ function socketAt(event: PointerEvent): string | null {
  * Drags cable ends between the sockets of `svg`. A press without a drag calls `onClick`;
  * a drag calls `onDrop` with the socket under the pointer, or null off the sockets.
  */
-export function usePlugDrag(
-  svg: RefObject<SVGSVGElement | null>,
-  onClick: (letter: string) => void,
-  onDrop: (from: string, to: string | null) => void,
-) {
+export function usePlugDrag(svg: RefObject<SVGSVGElement | null>, onClick: (letter: string) => void, onDrop: (from: string, to: string | null) => void) {
   const [drag, setDrag] = useState<Drag | null>(null);
   const stop = useRef<(() => void) | null>(null);
 

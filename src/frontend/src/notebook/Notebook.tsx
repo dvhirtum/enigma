@@ -146,8 +146,8 @@ function ChooseGroups({ operator, current }: { operator: OperatorState; current:
 
   const instruction = (
     <p>
-      Pick a Schlüsselkenngruppe from the columns allotted to {operator.network} ({allotment.first}–{allotment.last}) and a Verfahrenkenngruppe
-      from columns {book.verfahrenkenngruppen.first}–{book.verfahrenkenngruppen.last}.
+      Pick a Schlüsselkenngruppe from the columns allotted to {operator.network} ({allotment.first}–{allotment.last}) and a Verfahrenkenngruppe from columns{' '}
+      {book.verfahrenkenngruppen.first}–{book.verfahrenkenngruppen.last}.
     </p>
   );
 
@@ -166,7 +166,13 @@ function ChooseGroups({ operator, current }: { operator: OperatorState; current:
   return (
     <form className="notebook-form" aria-label="Choose the groups" onSubmit={submit}>
       {instruction}
-      <TrigramPicker label="Schlüsselkenngruppe" book={book} range={netRange} value={schluessel ?? { column: netRange.first, trigram: null }} onChange={setSchluessel} />
+      <TrigramPicker
+        label="Schlüsselkenngruppe"
+        book={book}
+        range={netRange}
+        value={schluessel ?? { column: netRange.first, trigram: null }}
+        onChange={setSchluessel}
+      />
       <TrigramPicker
         label="Verfahrenkenngruppe"
         book={book}
@@ -176,7 +182,14 @@ function ChooseGroups({ operator, current }: { operator: OperatorState; current:
       />
       <label className="inline-label">
         Fillers (before and after)
-        <input className="hand-input fillers" value={fillers} maxLength={2} required pattern="[A-Za-z]{2}" onChange={(event) => setFillers(event.target.value)} />
+        <input
+          className="hand-input fillers"
+          value={fillers}
+          maxLength={2}
+          required
+          pattern="[A-Za-z]{2}"
+          onChange={(event) => setFillers(event.target.value)}
+        />
       </label>
       <p className="notebook-actions">
         <button type="button" onClick={random}>
@@ -248,12 +261,12 @@ function IndicatorExplanation({ operator }: { operator: OperatorState }) {
   return (
     <>
       <p>
-        The indicator groups <Hand>{indicator}</Hand> stand at the start and the end of the message. Undo the bigram swaps of Tauschtafel{' '}
-        {operator.table} to get the two rows written below them.
+        The indicator groups <Hand>{indicator}</Hand> stand at the start and the end of the message. Undo the bigram swaps of Tauschtafel {operator.table} to
+        get the two rows written below them.
       </p>
       <p>
-        The upper row holds a filler and the Schlüsselkenngruppe <Hand>{schluesselkenngruppe}</Hand>, which stands in column {schluesselColumn ?? '—'} of
-        the Kenngruppenbuch.{' '}
+        The upper row holds a filler and the Schlüsselkenngruppe <Hand>{schluesselkenngruppe}</Hand>, which stands in column {schluesselColumn ?? '—'} of the
+        Kenngruppenbuch.{' '}
         {allotment
           ? `Columns ${allotment.first}–${allotment.last} are allotted to ${allotment.network}, so the message belongs to that network and was sent with its key.`
           : 'That column is not allotted to any network.'}
@@ -276,9 +289,9 @@ function PreambleExplanation({ message, cipherLength }: { message: string; ciphe
   const [, hours, minutes, count] = preamble;
   return (
     <p>
-      The first number, <Hand>{hours + minutes}</Hand>, is the time of origin: the message was written at {hours}:{minutes}. The second,{' '}
-      <Hand>{count}</Hand>, is the letter count: every letter after it, so the two indicator groups at the start, the {cipherLength} letters of
-      cipher text and the indicator groups again at the end (8 + {cipherLength} + 8). The receiver checks it to see whether letters went missing.
+      The first number, <Hand>{hours + minutes}</Hand>, is the time of origin: the message was written at {hours}:{minutes}. The second, <Hand>{count}</Hand>,
+      is the letter count: every letter after it, so the two indicator groups at the start, the {cipherLength} letters of cipher text and the indicator groups
+      again at the end (8 + {cipherLength} + 8). The receiver checks it to see whether letters went missing.
     </p>
   );
 }

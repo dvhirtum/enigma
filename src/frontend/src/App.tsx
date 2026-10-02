@@ -62,11 +62,7 @@ export function App({ api, page = 'machine' }: { api: EnigmaApi; page?: Page }) 
     );
   }
 
-  return (
-    <MachineStoreProvider api={api}>
-      {page === 'notebook' ? <Notebook /> : page === 'hut8' ? <Hut8Notebook /> : <Modes api={api} />}
-    </MachineStoreProvider>
-  );
+  return <MachineStoreProvider api={api}>{page === 'notebook' ? <Notebook /> : page === 'hut8' ? <Hut8Notebook /> : <Modes api={api} />}</MachineStoreProvider>;
 }
 
 const titles: Record<Mode, string> = { enigma: 'Enigma', bombe: 'Bombe' };

@@ -8,7 +8,7 @@ namespace Enigma.Api.Tests;
 
 public sealed class MachineEndpointTests : IDisposable
 {
-    private readonly WebApplicationFactory<Program> _factory = new();
+    private readonly ApiFactory _factory = new();
     private readonly HttpClient _client;
 
     public MachineEndpointTests() => _client = _factory.CreateClient();
@@ -157,6 +157,21 @@ public sealed class MachineEndpointTests : IDisposable
         Assert.Equal("AAB", string.Concat(pressed.Rotors.Select(r => r.Position)));
         Assert.Null(released.LitLamp);
         Assert.Null(released.HeldKey);
+    }
+
+    [Fact]
+    public async Task Should_rub_out_the_lamps_When_the_lamp_record_is_cleared()
+    {
+        // Arrange
+        await SendAsync(HttpMethod.Post, "/api/machine/keyboard/press", new { key = "A" });
+        var released = await SendAsync(HttpMethod.Post, "/api/machine/keyboard/release");
+
+        // Act
+        var cleared = await SendAsync(HttpMethod.Delete, "/api/machine/lamps");
+
+        // Assert
+        Assert.Equal("B", released.Lamps);
+        Assert.Empty(cleared.Lamps);
     }
 
     [Fact]

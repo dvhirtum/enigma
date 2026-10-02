@@ -138,7 +138,7 @@ export function Hut8Notebook() {
     }
     switch (step) {
       case 'message':
-        return <MessageStep />;
+        return <MessageStep onDone={() => setReopened(null)} />;
       case 'crib':
         return <CribStep />;
       case 'menu':

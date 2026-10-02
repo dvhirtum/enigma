@@ -23,11 +23,15 @@ function publishBackend(platform: string, arch: string): void {
   execFileSync(
     'dotnet',
     [
-      'publish', backendProject,
-      '--configuration', 'Release',
-      '--runtime', `${runtimeIdentifiers[platform]}-${arch}`,
+      'publish',
+      backendProject,
+      '--configuration',
+      'Release',
+      '--runtime',
+      `${runtimeIdentifiers[platform]}-${arch}`,
       '--self-contained',
-      '--output', backendOutput,
+      '--output',
+      backendOutput,
       `-p:Version=${version}`,
       '-p:DebugType=none',
     ],
@@ -49,9 +53,7 @@ const config: ForgeConfig = {
       return Promise.resolve();
     },
   },
-  makers: [
-    new MakerSquirrel({ name: 'Enigma', setupIcon: path.resolve(__dirname, 'assets/icon.ico') }),
-  ],
+  makers: [new MakerSquirrel({ name: 'Enigma', setupIcon: path.resolve(__dirname, 'assets/icon.ico') })],
   plugins: [
     new VitePlugin({
       build: [

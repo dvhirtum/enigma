@@ -170,7 +170,16 @@ export function Knob({ label, x, y, max, value, valueText, onDraft, onCommit, ch
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
-    const next = { ArrowUp: value + 1, ArrowRight: value + 1, ArrowDown: value - 1, ArrowLeft: value - 1, PageUp: value + 5, PageDown: value - 5, Home: 0, End: max }[event.key];
+    const next = {
+      ArrowUp: value + 1,
+      ArrowRight: value + 1,
+      ArrowDown: value - 1,
+      ArrowLeft: value - 1,
+      PageUp: value + 5,
+      PageDown: value - 5,
+      Home: 0,
+      End: max,
+    }[event.key];
     if (next !== undefined) {
       event.preventDefault();
       onDraft(Math.min(max, Math.max(0, next)));

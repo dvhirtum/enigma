@@ -49,7 +49,14 @@ export function TopDownView() {
         <rect className="lid" x={28} y={26} width={width - 56} height={342} rx={8} />
 
         <g aria-label="Rotors" role="group">
-          <rect className="rotor-plate" x={width / 2 - (machineSlots.length * rotorPitch) / 2} y={rotorsY - 50} width={machineSlots.length * rotorPitch} height={100} rx={8} />
+          <rect
+            className="rotor-plate"
+            x={width / 2 - (machineSlots.length * rotorPitch) / 2}
+            y={rotorsY - 50}
+            width={machineSlots.length * rotorPitch}
+            height={100}
+            rx={8}
+          />
           {machineSlots.map((slot, index) => {
             const rotor = machine.rotors.find((r) => r.slot === slot);
             const x = width / 2 + (index - (machineSlots.length - 1) / 2) * rotorPitch - 12;

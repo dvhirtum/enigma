@@ -12,7 +12,9 @@ describe('MenuStep', () => {
     renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu);
 
     expect(await screen.findByLabelText('Menu size')).toHaveTextContent('13 links, 12 letters, 2 loops · test register on G');
-    expect(screen.getByLabelText('Estimated false stops')).toHaveTextContent('Expect 0.4 false stops per wheel order with the diagonal board, 721 without (the board is on).');
+    expect(screen.getByLabelText('Estimated false stops')).toHaveTextContent(
+      'Expect 0.4 false stops per wheel order with the diagonal board, 721 without (the board is on).',
+    );
   });
 
   it('lists every crib link, the plugged ones ticked', async () => {
@@ -82,7 +84,9 @@ describe('MenuStep', () => {
 
   it('locks the menu until the backend has answered a change', async () => {
     let answer: (value: unknown) => void = () => undefined;
-    const api = renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu, (fake) => fake.bombe.setMenu.mockReturnValue(new Promise((resolve) => (answer = resolve))));
+    const api = renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu, (fake) =>
+      fake.bombe.setMenu.mockReturnValue(new Promise((resolve) => (answer = resolve))),
+    );
 
     fireEvent.click(await screen.findByRole('checkbox', { name: /T–O at 8/ }));
     fireEvent.click(screen.getByRole('checkbox', { name: /M–T at 3/ }));

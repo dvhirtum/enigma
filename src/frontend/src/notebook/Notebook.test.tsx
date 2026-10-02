@@ -288,10 +288,14 @@ describe('Notebook', () => {
     expect(await within(step).findByText(/Columns 101–120 are allotted to Triton/)).toHaveTextContent(
       'Schlüsselkenngruppe DWA, which stands in column 101 of the Kenngruppenbuch. Columns 101–120 are allotted to Triton, so the message belongs to that network',
     );
-    expect(within(step).getByText(/The lower row holds/)).toHaveTextContent('Verfahrenkenngruppe AAB and a filler. The Verfahrenkenngruppe stands in column 1, one of the Verfahrenkenngruppen columns 1–100.');
+    expect(within(step).getByText(/The lower row holds/)).toHaveTextContent(
+      'Verfahrenkenngruppe AAB and a filler. The Verfahrenkenngruppe stands in column 1, one of the Verfahrenkenngruppen columns 1–100.',
+    );
     expect(within(step).getByText(/The indicator groups/)).toHaveTextContent('JWDZ ZZYC');
     const indicator = within(step).getByRole('region', { name: 'Indicator' });
-    const groupsFirst = within(indicator).getByRole('group', { name: 'Groups' }).compareDocumentPosition(within(indicator).getByRole('group', { name: 'Upper row' }));
+    const groupsFirst = within(indicator)
+      .getByRole('group', { name: 'Groups' })
+      .compareDocumentPosition(within(indicator).getByRole('group', { name: 'Upper row' }));
     expect(groupsFirst & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(indicator).getByLabelText('Swaps')).toHaveTextContent('JZ→QA');
   });

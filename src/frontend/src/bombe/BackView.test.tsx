@@ -5,7 +5,8 @@ import { click, dragTo } from '../test/pointer';
 import { renderBombe } from '../test/renderBombe';
 import { BackView } from './BackView';
 
-const jack = (chain: number, scrambler: number, jack: number) => screen.findByRole('button', { name: new RegExp(`^Chain ${chain} scrambler ${scrambler} jack ${jack}\\b`) });
+const jack = (chain: number, scrambler: number, jack: number) =>
+  screen.findByRole('button', { name: new RegExp(`^Chain ${chain} scrambler ${scrambler} jack ${jack}\\b`) });
 const common = (chain: number, letter: string) => screen.findByRole('button', { name: `Chain ${chain} common ${letter}` });
 
 describe('BackView', () => {
@@ -90,6 +91,9 @@ describe('BackView', () => {
     expect(await screen.findByRole('switch', { name: 'Join chains 2–3' })).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByRole('spinbutton', { name: 'Chain 1 input wire' })).toHaveAttribute('aria-disabled', 'true');
     expect(await jack(1, 1, 1)).toHaveAttribute('aria-disabled', 'true');
-    expect(within(screen.getByRole('group', { name: 'Back of the Bombe' })).getAllByRole('button', { name: /common/ })[0]).toHaveAttribute('aria-disabled', 'true');
+    expect(within(screen.getByRole('group', { name: 'Back of the Bombe' })).getAllByRole('button', { name: /common/ })[0]).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 });

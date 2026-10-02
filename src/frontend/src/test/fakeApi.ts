@@ -1,5 +1,26 @@
 import { vi } from 'vitest';
-import type { BackendStatus, BombeCheck, DayTraffic, RingTable, BombeMachine, BombeResult, BombeRun, BombeState, BombeStop, CheckingMachine, EnigmaApi, PrintedStop, Intercept, Kenngruppenbuch, KeySheet, KeySheetSummary, MachineState, MessageType, OperatorState, TauschtafelSet } from '../api';
+import type {
+  BackendStatus,
+  BombeCheck,
+  DayTraffic,
+  RingTable,
+  BombeMachine,
+  BombeResult,
+  BombeRun,
+  BombeState,
+  BombeStop,
+  CheckingMachine,
+  EnigmaApi,
+  PrintedStop,
+  Intercept,
+  Kenngruppenbuch,
+  KeySheet,
+  KeySheetSummary,
+  MachineState,
+  MessageType,
+  OperatorState,
+  TauschtafelSet,
+} from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const trigram = (index: number) => alphabet[Math.floor(index / 676)] + alphabet[Math.floor(index / 26) % 26] + alphabet[index % 26];
@@ -200,7 +221,16 @@ export const carterMenu: BombeState = {
   machine: carterMachine(),
 };
 
-/** Carter's true stop as the Bombe prints it. */export const carterPrinted: PrintedStop = {  index: 0,  chains: [0, 1],  wheelOrder: 'II V III',  drumLetters: 'WPC',  indicator: 'DKX',  testRegister: 'G',  liveWires: 'ABCDEFGHIJKLMNOPRSTUVWXYZ',  stecker: 'Q',};
+/** Carter's true stop as the Bombe prints it. */ export const carterPrinted: PrintedStop = {
+  index: 0,
+  chains: [0, 1],
+  wheelOrder: 'II V III',
+  drumLetters: 'WPC',
+  indicator: 'DKX',
+  testRegister: 'G',
+  liveWires: 'ABCDEFGHIJKLMNOPRSTUVWXYZ',
+  stecker: 'Q',
+};
 /** A paced run of Carter's menu on II V III, paused at the true stop. */
 export const carterPaused: BombeRun = {
   status: 'Paused',
@@ -222,7 +252,16 @@ export const carterPaused: BombeRun = {
 /** The two stops of Carter's menu on II V III: the true one at VMB and a false one. */
 export const carterStops: BombeStop[] = [
   { index: 0, wheelOrder: 'II V III', position: 'VMB', indicator: 'DKX', testRegister: 'G', liveWires: 'Q', stecker: 'Q', verdict: 'Unchecked' },
-  { index: 1, wheelOrder: 'II V III', position: 'KQF', indicator: 'NFO', testRegister: 'G', liveWires: 'ABCDEFHIJKLMNOPQRSTUVWXYZ', stecker: 'G', verdict: 'Unchecked' },
+  {
+    index: 1,
+    wheelOrder: 'II V III',
+    position: 'KQF',
+    indicator: 'NFO',
+    testRegister: 'G',
+    liveWires: 'ABCDEFHIJKLMNOPQRSTUVWXYZ',
+    stecker: 'G',
+    verdict: 'Unchecked',
+  },
 ];
 
 /** The checking machine as the notebook sets it up for Carter's true stop. */
@@ -321,8 +360,14 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       getState: bombe(),
       intercepts: vi.fn().mockResolvedValue({ ok: true, value: intercepts }),
       messageTypes: vi.fn().mockResolvedValue({ ok: true, value: messageTypes }),
-      suggestCrib: vi.fn().mockResolvedValue({ ok: true, value: { crib: 'WETTERVORHERSAGE', place: 'At or near the start, after at most a short prefix such as AN ALLE or the hour.' } }),
-      getSolution: vi.fn().mockResolvedValue({ ok: true, value: { reflector: 'B', wheelOrder: 'II V III', rings: [3, 14, 26], plugs: [], messageKey: 'ULA', plaintext: 'WETTERVORHERSAGE', notes: '' } }),
+      suggestCrib: vi.fn().mockResolvedValue({
+        ok: true,
+        value: { crib: 'WETTERVORHERSAGE', place: 'At or near the start, after at most a short prefix such as AN ALLE or the hour.' },
+      }),
+      getSolution: vi.fn().mockResolvedValue({
+        ok: true,
+        value: { reflector: 'B', wheelOrder: 'II V III', rings: [3, 14, 26], plugs: [], messageKey: 'ULA', plaintext: 'WETTERVORHERSAGE', notes: '' },
+      }),
       loadIntercept: bombe(carterBombe),
       generateExercise: bombe(),
       pasteCipherText: bombe(),
@@ -343,7 +388,12 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       clearPrintout: bombe(),
       setChecker: bombe(),
       pressCheckerKey: vi.fn().mockResolvedValue({ ok: true, value: { lamp: 'R', check: null } }),
-      setUpChecker: bombe({ ...carterMenu, run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 }, stops: 2, checker: carterChecker }),
+      setUpChecker: bombe({
+        ...carterMenu,
+        run: { ...carterPaused, status: 'Finished', pause: null, stops: 2, allStops: 2 },
+        stops: 2,
+        checker: carterChecker,
+      }),
       startRun: run(),
       setRunSpeed: run(),
       continueRun: run(),
@@ -364,7 +414,14 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       }),
       suggestSteckers: vi.fn().mockResolvedValue({
         ok: true,
-        value: { pairs: [{ pair: 'IK', gain: 12.5 }, { pair: 'OX', gain: 9.1 }], steckers: 'AD ET FU GQ HM IK JL NV OX PZ RR SS WW', decrypt: carterCrib },
+        value: {
+          pairs: [
+            { pair: 'IK', gain: 12.5 },
+            { pair: 'OX', gain: 9.1 },
+          ],
+          steckers: 'AD ET FU GQ HM IK JL NV OX PZ RR SS WW',
+          decrypt: carterCrib,
+        },
       }),
       findRightRing: vi.fn().mockResolvedValue({
         ok: true,

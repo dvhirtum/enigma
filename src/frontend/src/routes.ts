@@ -72,7 +72,11 @@ export const bombeRoutes: Routes<BombeApi> = {
   buildMenu: () => ({ method: 'POST', path: `${bombe}/menu/build` }),
   configure: (settings) => ({ method: 'PUT', path: `${bombe}/settings`, body: settings }),
   plugUpMenu: () => ({ method: 'POST', path: `${bombe}/machine/plug-up` }),
-  plugJack: (chain, scrambler, jack, letter) => ({ method: 'PUT', path: `${bombe}/machine/chains/${chain}/scramblers/${scrambler}/jacks/${jack}`, body: { letter: letter ?? '' } }),
+  plugJack: (chain, scrambler, jack, letter) => ({
+    method: 'PUT',
+    path: `${bombe}/machine/chains/${chain}/scramblers/${scrambler}/jacks/${jack}`,
+    body: { letter: letter ?? '' },
+  }),
   fitRow: (chain, row, upTo, rotor) => ({ method: 'PUT', path: `${bombe}/machine/chains/${chain}/rows/${row}`, body: { rotor, upTo } }),
   removeDrum: (chain, scrambler, row) => ({ method: 'DELETE', path: `${bombe}/machine/chains/${chain}/scramblers/${scrambler}/drums/${row}` }),
   turnScrambler: (chain, scrambler, start) => ({ method: 'PUT', path: `${bombe}/machine/chains/${chain}/scramblers/${scrambler}/start`, body: { start } }),

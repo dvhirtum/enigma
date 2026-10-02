@@ -113,7 +113,15 @@ function Drum({ x, y, letter, rotor, label, empty = false, idle = false, selecte
       onActivate();
     }
   };
-  const classes = ['drum', empty ? 'empty' : '', rotor ? '' : 'indicator', rotor && lightDrums.has(rotor) ? 'light' : '', idle ? 'idle' : '', interactive ? 'settable' : '', selected ? 'selected' : ''];
+  const classes = [
+    'drum',
+    empty ? 'empty' : '',
+    rotor ? '' : 'indicator',
+    rotor && lightDrums.has(rotor) ? 'light' : '',
+    idle ? 'idle' : '',
+    interactive ? 'settable' : '',
+    selected ? 'selected' : '',
+  ];
 
   return (
     <g
@@ -229,7 +237,13 @@ function Front({ bombe }: { bombe: BombeState }) {
   const held = drag?.point && (rotorOf(drag.from) ?? (placeOf(drag.from) && rotorAt(placeOf(drag.from)!)));
 
   return (
-    <svg ref={svg} className={spinning ? 'bombe-front spinning' : 'bombe-front'} viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Front of the Bombe">
+    <svg
+      ref={svg}
+      className={spinning ? 'bombe-front spinning' : 'bombe-front'}
+      viewBox={`0 0 ${width} ${height}`}
+      role="group"
+      aria-label="Front of the Bombe"
+    >
       <g className="drum-rack" role="group" aria-label="Drum rack">
         <rect className="wood" x={rackLeft - 44} y={rackTop} width={(rotors.length - 1) * rackPitch + 88} height={rackHeight - 8} rx={4} />
         <rect className="rack-lip" x={rackLeft - 44} y={rackTop + rackHeight - 14} width={(rotors.length - 1) * rackPitch + 88} height={6} />
@@ -418,8 +432,8 @@ export function FrontView() {
     <div className="bombe-view front-view">
       {!active && (
         <p className="summary">
-          Drag drums from the rack onto a drum, or pick them in the rack and click a drum: the row fills up to that drum. Click a drum to take it out;
-          scroll or use Arrow Up/Down to turn it. The run is set up and watched on the Side tab.
+          Drag drums from the rack onto a drum, or pick them in the rack and click a drum: the row fills up to that drum. Click a drum to take it out; scroll or
+          use Arrow Up/Down to turn it. The run is set up and watched on the Side tab.
         </p>
       )}
       <div className="bombe-front-frame">

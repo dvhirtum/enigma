@@ -221,4 +221,16 @@ describe('Hut8Notebook', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Keep as it is' })).not.toBeInTheDocument());
     await expectCurrent('Place the crib');
   });
+
+  it('closes the reopened message once the same message is loaded again', async () => {
+    renderBombe(<Hut8Notebook />, carterMenu);
+    await expectCurrent('Draw the menu');
+    fireEvent.click(screen.getByRole('button', { name: 'Change: Choose the message' }));
+    await expectCurrent('Choose the message');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Load intercept' }));
+
+    await expectCurrent('Place the crib');
+    expect(screen.queryByRole('button', { name: 'Keep as it is' })).not.toBeInTheDocument();
+  });
 });

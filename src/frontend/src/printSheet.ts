@@ -58,7 +58,10 @@ function keyTable(file: KeySheetFile, model: string): string {
 }
 
 function allotments(book: Kenngruppenbuch): string {
-  const rows = [{ name: 'Verfahrenkenngruppen', ...book.verfahrenkenngruppen }, ...book.allotments.map((a) => ({ name: a.network, first: a.first, last: a.last }))];
+  const rows = [
+    { name: 'Verfahrenkenngruppen', ...book.verfahrenkenngruppen },
+    ...book.allotments.map((a) => ({ name: a.network, first: a.first, last: a.last })),
+  ];
   return `<section class="page">
   ${heading(1, 'Kenngruppenbuch')}
   <p class="lead">Ausgabe ${escape(book.created.slice(0, 10))}</p>
