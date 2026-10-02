@@ -538,6 +538,7 @@ test('sends a message with the indicator procedure and receives it again', async
   expect(app.windows()).toHaveLength(1);
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M4');
   await page.getByRole('button', { name: 'Switch' }).click();
+  await expect(page.getByLabel('Machine')).toHaveText(/^M4 /);
   await page.getByRole('combobox', { name: 'Model' }).selectOption('M3');
   await page.getByRole('button', { name: 'Switch' }).click();
   await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
