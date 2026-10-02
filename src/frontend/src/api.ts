@@ -371,8 +371,8 @@ export interface Reading {
   decrypt: string;
   /** Whether the rings lead to the stop's cores at the crib. */
   fitsStop: boolean;
-  /** Whether the middle ring reads the message as well as the best middle ring does. */
-  middleRingFits: boolean;
+  /** How many letters the decrypt reads differently from the check's decrypt, with its middle ring. */
+  differences: number;
   ringsRight: boolean | null;
 }
 

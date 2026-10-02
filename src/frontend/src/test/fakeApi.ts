@@ -562,7 +562,7 @@ export const carterRead: BombeCheck = {
     key: { ...carterChecked.key, rings: [3, 14, 26], messageKey: 'ULA' },
     decrypt: carterCrib,
     fitsStop: true,
-    middleRingFits: true,
+    differences: 0,
     ringsRight: true,
   },
 };

@@ -163,9 +163,9 @@ describe('Hut8Notebook', () => {
     expect(screen.queryByRole('list', { name: 'Messages of the day' })).not.toBeInTheDocument();
   });
 
-  it('stays on the indicators when the middle ring read garbles the message', async () => {
+  it("goes on to the day's traffic when the middle ring read reads letters differently", async () => {
     const pinched: BombeState = { ...exercise, day: fakeDay };
-    const garbled: BombeCheck = { ...carterRead, reading: { ...carterRead.reading!, middleRingFits: false } };
+    const garbled: BombeCheck = { ...carterRead, reading: { ...carterRead.reading!, differences: 1 } };
     renderBombe(<Hut8Notebook />, pinched, (fake) => {
       fake.bombe.setUpChecker.mockResolvedValue({ ok: true, value: { ...pinched, checker: carterChecker } });
       fake.bombe.confirmCheck.mockResolvedValue({
@@ -175,8 +175,8 @@ describe('Hut8Notebook', () => {
     });
     await confirmTrue();
 
-    await expectCurrent('Read the indicators');
-    expect(screen.queryByRole('list', { name: 'Messages of the day' })).not.toBeInTheDocument();
+    await expectCurrent("Read the day's traffic");
+    expect(screen.getByRole('list', { name: 'Messages of the day' })).toBeInTheDocument();
   });
 
   it('goes back to the stops after a false verdict', async () => {

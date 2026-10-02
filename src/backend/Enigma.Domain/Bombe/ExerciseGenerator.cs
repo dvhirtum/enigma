@@ -141,12 +141,12 @@ public static class ExerciseGenerator
         ];
     }
 
-    /// <summary>The plain text of a random template, before padding.</summary>
+    /// <summary>The plain text of a random template, padded with X to whole groups as sent.</summary>
     public static string PlainText(Random random)
     {
         ArgumentNullException.ThrowIfNull(random);
 
-        return Compose(Templates, random).PlainText;
+        return Padded(Compose(Templates, random).PlainText);
     }
 
     // Checks the day can send Navy messages, and gives the network's Kenngruppen columns.
@@ -174,8 +174,7 @@ public static class ExerciseGenerator
     {
         var key = sheet.KeyFor(day);
         var grundstellung = key.Grundstellung!;
-        var group = RadioMessage.GroupLength;
-        plaintext += new string('X', (group - (plaintext.Length % group)) % group);
+        plaintext = Padded(plaintext);
 
         var indicator = new Indicator(
             RandomKenngruppe(book, allotment.Columns, random),
@@ -201,6 +200,10 @@ public static class ExerciseGenerator
         var groups = indicator.Encrypt(tables.TableFor(sheet.Month, day));
         return (RadioMessage.Create(time, groups, solution.Decrypt(MessageSource.Letters(plaintext))), solution);
     }
+
+    // The plain text with X added to fill the last group.
+    private static string Padded(string plaintext) =>
+        plaintext + new string('X', (RadioMessage.GroupLength - (plaintext.Length % RadioMessage.GroupLength)) % RadioMessage.GroupLength);
 
     // Whether the menu built with the crib at its position has at least MinLoops loops.
     private static bool HasLoops(RadioMessage message, MessageType type, int position) =>

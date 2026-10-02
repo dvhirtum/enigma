@@ -70,6 +70,7 @@ public sealed class IndicatorHandlerTests
         // Arrange
         var solution = GenerateExercise();
         var stop = await RunTrueStopAsync(solution);
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, null, null, solution.Rings[1]));
         TakePinch();
         new FillInIndicatorHandler(_store).Handle(new FillInIndicator(0));
 
@@ -86,7 +87,7 @@ public sealed class IndicatorHandlerTests
         Assert.Equal(solution.MessageKey, row.Spruchschluessel);
         var reading = Assert.IsType<ReadingState>(check.Reading);
         Assert.True(reading.RingsRight);
-        Assert.True(reading.MiddleRingFits);
+        Assert.Equal(0, reading.Differences);
         Assert.True(reading.FitsStop);
         Assert.Equal(solution.Rings, reading.Key.Rings);
         Assert.Equal(solution.MessageKey, reading.Key.MessageKey);
