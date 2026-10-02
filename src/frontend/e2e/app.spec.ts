@@ -166,7 +166,10 @@ test('runs the Bombe on a menu, checks the stop and reads the message', async ()
   await page.getByRole('button', { name: 'Hut 8 notebook' }).click();
   const notebook = await opened;
   const step = notebook.locator('[aria-current="step"]');
-  await notebook.getByRole('button', { name: 'Change: Place the crib' }).click();
+  await notebook.getByRole('button', { name: 'Change: Choose the message' }).click();
+  await notebook.getByRole('combobox', { name: 'Intercept' }).selectOption({ label: "Carter's weather crib" });
+  await notebook.getByRole('button', { name: 'Load intercept' }).click();
+  await expect(step.getByRole('heading', { level: 3 })).toHaveText('Place the crib');
   await notebook.getByRole('button', { name: 'Suggest crib' }).click();
   await expect(notebook.getByRole('textbox', { name: 'Crib' })).toHaveValue('WETTERVORHERSAGE');
   await notebook.getByRole('button', { name: 'Set crib' }).click();

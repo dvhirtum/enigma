@@ -6,7 +6,7 @@ import { groups, plural } from './letters';
 
 const kinds: Record<BombeSource['kind'], string> = { Intercept: 'Historical intercept', Exercise: 'Exercise', Pasted: 'Pasted' };
 
-function InterceptPicker() {
+function InterceptPicker({ onLoaded }: { onLoaded: () => void }) {
   const intercepts = useMachine((store) => store.intercepts);
   const loadIntercept = useMachine((store) => store.loadIntercept);
   const [id, setId] = useState('');
@@ -25,20 +25,20 @@ function InterceptPicker() {
           ))}
         </select>
       </label>
-      <button type="button" disabled={!chosen} onClick={() => chosen && void loadIntercept(chosen)}>
+      <button type="button" disabled={!chosen} onClick={() => chosen && void loadIntercept(chosen).then((loaded) => loaded && onLoaded())}>
         Load intercept
       </button>
     </p>
   );
 }
 
-function PasteForm() {
+function PasteForm({ onLoaded }: { onLoaded: () => void }) {
   const pasteCipherText = useMachine((store) => store.pasteCipherText);
   const [text, setText] = useState('');
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    void pasteCipherText(text);
+    void pasteCipherText(text).then((loaded) => loaded && onLoaded());
   };
 
   return (
@@ -82,20 +82,20 @@ export function MessageSummary() {
   );
 }
 
-/** Loads the message to break: a historical intercept, a new exercise or pasted text. */
-export function MessageStep() {
+/** Loads the message to break: a historical intercept, a new exercise or pasted text. `onDone` follows a load. */
+export function MessageStep({ onDone }: { onDone: () => void }) {
   const generateExercise = useMachine((store) => store.generateExercise);
 
   return (
     <>
       <p>Take a message from the day's traffic: a historical intercept, an exercise made from a key sheet, or a message of your own.</p>
-      <InterceptPicker />
+      <InterceptPicker onLoaded={onDone} />
       <p className="notebook-actions">
-        <button type="button" onClick={() => void generateExercise()}>
+        <button type="button" onClick={() => void generateExercise().then((loaded) => loaded && onDone())}>
           New exercise
         </button>
       </p>
-      <PasteForm />
+      <PasteForm onLoaded={onDone} />
     </>
   );
 }
