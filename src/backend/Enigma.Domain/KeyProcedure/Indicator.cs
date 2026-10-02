@@ -15,14 +15,21 @@ public sealed record IndicatorGroups(string First, string Second)
             : throw new DomainException($"'{first} {second}' are not two indicator groups of 4 letters.");
     }
 
-    public override string ToString() => $"{First} {Second}";
+    public override string ToString()
+    {
+        return $"{First} {Second}";
+    }
 }
 
 /// <summary>
-/// The unencrypted indicator: the Schlüsselkenngruppe with a filler letter in front, written above the
-/// Verfahrenkenngruppe with a filler letter behind. Swapping the vertical bigrams encrypts it.
+///     The unencrypted indicator: the Schlüsselkenngruppe with a filler letter in front, written above the
+///     Verfahrenkenngruppe with a filler letter behind. Swapping the vertical bigrams encrypts it.
 /// </summary>
-public sealed record Indicator(Kenngruppe Schluesselkenngruppe, Kenngruppe Verfahrenkenngruppe, Letter FillerBefore, Letter FillerAfter)
+public sealed record Indicator(
+    Kenngruppe Schluesselkenngruppe,
+    Kenngruppe Verfahrenkenngruppe,
+    Letter FillerBefore,
+    Letter FillerAfter)
 {
     /// <summary>The four vertical bigrams, left to right.</summary>
     public IReadOnlyList<Bigram> Bigrams
@@ -50,7 +57,8 @@ public sealed record Indicator(Kenngruppe Schluesselkenngruppe, Kenngruppe Verfa
         ArgumentNullException.ThrowIfNull(groups);
         ArgumentNullException.ThrowIfNull(table);
 
-        var bigrams = groups.First.Zip(groups.Second, (t, b) => table.Swap(new Bigram(Letter.FromChar(t), Letter.FromChar(b)))).ToList();
+        var bigrams = groups.First
+            .Zip(groups.Second, (t, b) => table.Swap(new Bigram(Letter.FromChar(t), Letter.FromChar(b)))).ToList();
         return new Indicator(
             Kenngruppe.FromLetters(bigrams[1].First, bigrams[2].First, bigrams[3].First),
             Kenngruppe.FromLetters(bigrams[0].Second, bigrams[1].Second, bigrams[2].Second),

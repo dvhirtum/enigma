@@ -4,14 +4,17 @@ namespace Enigma.Api;
 
 internal static class OperatorEndpoints
 {
-    public static IServiceCollection AddOperatorHandlers(this IServiceCollection services) => services
-        .AddSingleton<OperatorContexts>()
-        .AddSingleton<StartSendingHandler>()
-        .AddSingleton<FindReceivingKeysHandler>()
-        .AddSingleton<StartReceivingHandler>()
-        .AddSingleton<ChooseGroupsHandler>()
-        .AddSingleton<FinishMessageHandler>()
-        .AddSingleton<CancelOperatorHandler>();
+    public static IServiceCollection AddOperatorHandlers(this IServiceCollection services)
+    {
+        return services
+            .AddSingleton<OperatorContexts>()
+            .AddSingleton<StartSendingHandler>()
+            .AddSingleton<FindReceivingKeysHandler>()
+            .AddSingleton<StartReceivingHandler>()
+            .AddSingleton<ChooseGroupsHandler>()
+            .AddSingleton<FinishMessageHandler>()
+            .AddSingleton<CancelOperatorHandler>();
+    }
 
     public static void MapOperatorEndpoints(this IEndpointRouteBuilder app)
     {

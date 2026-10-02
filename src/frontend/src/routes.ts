@@ -1,4 +1,4 @@
-import type { KeySheetApi, MachineApi, ProcedureApi } from './api';
+import type { BombeApi, KeySheetApi, MachineApi, ProcedureApi } from './api';
 
 export interface Route {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -11,6 +11,7 @@ type Routes<Api> = { [K in keyof Api]: Api[K] extends (...args: infer Args) => u
 const machine = '/api/machine';
 const keySheets = '/api/keysheets';
 const operator = '/api/operator';
+const bombe = '/api/bombe';
 const segment = encodeURIComponent;
 
 export const healthRoute: Route = { method: 'GET', path: '/api/health' };
@@ -28,7 +29,9 @@ export const machineRoutes: Routes<MachineApi> = {
   movePlug: (from, to) => ({ method: 'PUT', path: `${machine}/plugs/${segment(from)}`, body: { to } }),
   pressKey: (key) => ({ method: 'POST', path: `${machine}/keyboard/press`, body: { key } }),
   releaseKey: () => ({ method: 'POST', path: `${machine}/keyboard/release` }),
+  clearLamps: () => ({ method: 'DELETE', path: `${machine}/lamps` }),
   applyDailyKey: (sheetId, day) => ({ method: 'POST', path: `${machine}/daily-key`, body: { sheetId, day } }),
+  setUpMachine: (key) => ({ method: 'PUT', path: `${machine}/key`, body: key }),
   startSending: () => ({ method: 'POST', path: `${operator}/send` }),
   startReceiving: (message, sheetId, day) => ({ method: 'POST', path: `${operator}/receive`, body: { message, sheetId, day } }),
   chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) => ({
@@ -52,4 +55,57 @@ export const keySheetRoutes: Routes<KeySheetApi> = {
   generate: (model, year) => ({ method: 'POST', path: `${keySheets}/generate`, body: { model, year } }),
   import: (file) => ({ method: 'POST', path: `${keySheets}/import`, body: file }),
   export: (id) => ({ method: 'GET', path: `${keySheets}/${segment(id)}/export` }),
+};
+
+export const bombeRoutes: Routes<BombeApi> = {
+  getState: () => ({ method: 'GET', path: bombe }),
+  intercepts: () => ({ method: 'GET', path: `${bombe}/intercepts` }),
+  messageTypes: () => ({ method: 'GET', path: `${bombe}/message-types` }),
+  suggestCrib: (type) => ({ method: 'GET', path: `${bombe}/source/crib${type ? `?type=${encodeURIComponent(type)}` : ''}` }),
+  getSolution: () => ({ method: 'GET', path: `${bombe}/source/solution` }),
+  showWheelOrders: () => ({ method: 'POST', path: `${bombe}/source/wheel-orders` }),
+  showCribPositions: () => ({ method: 'POST', path: `${bombe}/source/crib-positions` }),
+  loadIntercept: (id) => ({ method: 'POST', path: `${bombe}/source/intercept`, body: { id } }),
+  generateExercise: () => ({ method: 'POST', path: `${bombe}/source/exercise` }),
+  pasteCipherText: (text) => ({ method: 'PUT', path: `${bombe}/cipher-text`, body: { text } }),
+  setCrib: (crib) => ({ method: 'PUT', path: `${bombe}/crib`, body: { crib } }),
+  placeCrib: (position) => ({ method: 'PUT', path: `${bombe}/placement`, body: { position } }),
+  setMenu: (links, testRegister) => ({ method: 'PUT', path: `${bombe}/menu`, body: { links, testRegister } }),
+  buildMenu: () => ({ method: 'POST', path: `${bombe}/menu/build` }),
+  menuStops: () => ({ method: 'GET', path: `${bombe}/menu/stops` }),
+  configure: (settings) => ({ method: 'PUT', path: `${bombe}/settings`, body: settings }),
+  plugUpMenu: () => ({ method: 'POST', path: `${bombe}/machine/plug-up` }),
+  plugJack: (chain, scrambler, jack, letter) => ({
+    method: 'PUT',
+    path: `${bombe}/machine/chains/${chain}/scramblers/${scrambler}/jacks/${jack}`,
+    body: { letter: letter ?? '' },
+  }),
+  fitRow: (chain, row, upTo, rotor) => ({ method: 'PUT', path: `${bombe}/machine/chains/${chain}/rows/${row}`, body: { rotor, upTo } }),
+  removeDrum: (chain, scrambler, row) => ({ method: 'DELETE', path: `${bombe}/machine/chains/${chain}/scramblers/${scrambler}/drums/${row}` }),
+  turnScrambler: (chain, scrambler, start) => ({ method: 'PUT', path: `${bombe}/machine/chains/${chain}/scramblers/${scrambler}/start`, body: { start } }),
+  setTestRegister: (chain, change) => ({ method: 'PUT', path: `${bombe}/machine/chains/${chain}/test-register`, body: change }),
+  joinChains: (join, joined) => ({ method: 'PUT', path: `${bombe}/machine/joins/${join}`, body: { joined } }),
+  startRun: (speed, notebook = false) => ({ method: 'POST', path: `${bombe}/run`, body: { speed, notebook } }),
+  setRunSpeed: (speed) => ({ method: 'PUT', path: `${bombe}/run/speed`, body: { speed } }),
+  continueRun: () => ({ method: 'POST', path: `${bombe}/run/continue` }),
+  cancelRun: () => ({ method: 'DELETE', path: `${bombe}/run` }),
+  getRun: () => ({ method: 'GET', path: `${bombe}/run` }),
+  getStops: (from, count) => ({ method: 'GET', path: `${bombe}/stops?from=${from}&count=${count}` }),
+  clearStops: () => ({ method: 'DELETE', path: `${bombe}/stops` }),
+  getPrintout: (from, count) => ({ method: 'GET', path: `${bombe}/printout?from=${from}&count=${count}` }),
+  clearPrintout: () => ({ method: 'DELETE', path: `${bombe}/printout` }),
+  setChecker: (change) => ({ method: 'PUT', path: `${bombe}/checking`, body: change }),
+  pressCheckerKey: (key) => ({ method: 'POST', path: `${bombe}/checking/press`, body: { key } }),
+  setUpChecker: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/checking` }),
+  getCheck: (stop) => ({ method: 'GET', path: `${bombe}/stops/${stop}/check` }),
+  setCheck: (stop, change) => ({ method: 'PUT', path: `${bombe}/stops/${stop}/check`, body: change }),
+  confirmCheck: (stop, verdict) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/verdict`, body: { verdict } }),
+  suggestSteckers: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/suggest` }),
+  findRightRing: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/find` }),
+  findMiddleRing: (stop) => ({ method: 'POST', path: `${bombe}/stops/${stop}/check/find-middle` }),
+  takePinch: (sheetId, day) => ({ method: 'POST', path: `${bombe}/pinch`, body: { sheetId, day } }),
+  writeIndicator: (message, change) => ({ method: 'PUT', path: `${bombe}/day/messages/${message}/indicator`, body: change }),
+  fillInIndicator: (message) => ({ method: 'POST', path: `${bombe}/day/messages/${message}/indicator/fill-in` }),
+  getRingTable: (stop) => ({ method: 'GET', path: `${bombe}/stops/${stop}/check/ring-table` }),
+  readRings: (stop, left, middle) => ({ method: 'PUT', path: `${bombe}/stops/${stop}/check/rings`, body: { left, middle } }),
 };

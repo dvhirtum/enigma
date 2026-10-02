@@ -7,8 +7,8 @@ using Enigma.Domain.Machine;
 namespace Enigma.Application.KeySheets;
 
 /// <summary>
-/// A daily key as stored and exchanged: rotors left to right, rings 1–26, plugs such as "AT", and a Grundstellung
-/// such as "QRS" (or null).
+///     A daily key as stored and exchanged: rotors left to right, rings 1–26, plugs such as "AT", and a Grundstellung
+///     such as "QRS" (or null).
 /// </summary>
 public sealed record DailyKeyDocument(
     int Day,
@@ -19,9 +19,10 @@ public sealed record DailyKeyDocument(
     string? Grundstellung);
 
 /// <summary>
-/// A key sheet file. <see cref="Provenance"/> is Historical, Generated or UserDefined; <see cref="Source"/> names the
-/// document a historical sheet was transcribed from. Imports ignore the id and provenance. An exported file also holds
-/// the linked <see cref="Kenngruppenbuch"/> and <see cref="Tauschtafeln"/>, so another installation can use them.
+///     A key sheet file. <see cref="Provenance" /> is Historical, Generated or UserDefined; <see cref="Source" /> names
+///     the
+///     document a historical sheet was transcribed from. Imports ignore the id and provenance. An exported file also holds
+///     the linked <see cref="Kenngruppenbuch" /> and <see cref="Tauschtafeln" />, so another installation can use them.
 /// </summary>
 public sealed record KeySheetDocument(
     string? Id,
@@ -32,8 +33,10 @@ public sealed record KeySheetDocument(
     IReadOnlyList<DailyKeyDocument> Days,
     string? KenngruppenbuchId = null,
     string? TauschtafelSetId = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] KenngruppenbuchDocument? Kenngruppenbuch = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] TauschtafelSetDocument? Tauschtafeln = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    KenngruppenbuchDocument? Kenngruppenbuch = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    TauschtafelSetDocument? Tauschtafeln = null);
 
 public sealed record KeySheetSummary(
     string Id,
@@ -90,23 +93,19 @@ public static class KeySheetMapper
             sheet.KenngruppenbuchId, sheet.TauschtafelSetId);
     }
 
-    /// <summary>Builds a sheet from a document. Bad data throws <see cref="DomainException"/>.</summary>
+    /// <summary>Builds a sheet from a document. Bad data throws <see cref="DomainException" />.</summary>
     public static KeySheet FromDocument(KeySheetDocument document, string id, Provenance provenance)
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        if (document.Days is null)
-        {
-            throw new DomainException("A key sheet file needs a list of days.");
-        }
+        if (document.Days is null) throw new DomainException("A key sheet file needs a list of days.");
 
         var sheet = new KeySheet(
             id, document.Network, KeyMonth.Parse(document.Month ?? string.Empty), provenance,
             [.. document.Days.Select(FromDocument)]);
-        if (!string.IsNullOrWhiteSpace(document.KenngruppenbuchId) && !string.IsNullOrWhiteSpace(document.TauschtafelSetId))
-        {
+        if (!string.IsNullOrWhiteSpace(document.KenngruppenbuchId) &&
+            !string.IsNullOrWhiteSpace(document.TauschtafelSetId))
             sheet.Link(document.KenngruppenbuchId, document.TauschtafelSetId);
-        }
 
         return sheet;
     }
@@ -120,24 +119,25 @@ public static class KeySheetMapper
         {
             "Historical" => Provenance.Historical(document.Source ?? string.Empty),
             "Generated" => Provenance.Generated,
-            _ => Provenance.UserDefined,
+            _ => Provenance.UserDefined
         };
     }
 
-    private static DailyKeyDocument ToDocument(DailyKey key) => new(
-        key.Day,
-        key.Reflector.Name,
-        [.. key.Rotors.Select(r => r.Name)],
-        [.. key.Rings.Select(r => r.Number)],
-        [.. key.Plugs.Select(p => p.ToString())],
-        key.Grundstellung?.ToString());
+    private static DailyKeyDocument ToDocument(DailyKey key)
+    {
+        return new DailyKeyDocument(
+            key.Day,
+            key.Reflector.Name,
+            [.. key.Rotors.Select(r => r.Name)],
+            [.. key.Rings.Select(r => r.Number)],
+            [.. key.Plugs.Select(p => p.ToString())],
+            key.Grundstellung?.ToString());
+    }
 
     private static DailyKey FromDocument(DailyKeyDocument day)
     {
-        if (day?.Rotors is null || day.Rings is null || day.Plugs is null)
-        {
+        if (day is not { Rotors: not null, Rings: not null, Plugs: not null })
             throw new DomainException("Each day of a key sheet needs rotors, rings and plugs.");
-        }
 
         try
         {
@@ -155,12 +155,18 @@ public static class KeySheetMapper
         }
     }
 
-    private static string ProvenanceName(Provenance provenance) => provenance switch
+    private static string ProvenanceName(Provenance provenance)
     {
-        HistoricalProvenance => "Historical",
-        GeneratedProvenance => "Generated",
-        _ => "UserDefined",
-    };
+        return provenance switch
+        {
+            HistoricalProvenance => "Historical",
+            GeneratedProvenance => "Generated",
+            _ => "UserDefined"
+        };
+    }
 
-    private static string? Source(Provenance provenance) => (provenance as HistoricalProvenance)?.Source;
+    private static string? Source(Provenance provenance)
+    {
+        return (provenance as HistoricalProvenance)?.Source;
+    }
 }

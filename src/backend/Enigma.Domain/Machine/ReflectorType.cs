@@ -27,8 +27,13 @@ public sealed class ReflectorType
     /// <summary>True for the thin reflectors of the M4.</summary>
     public bool IsThin { get; }
 
-    public static ReflectorType FromName(string name) =>
-        All.FirstOrDefault(r => r.Name == name) ?? throw new DomainException($"Unknown reflector '{name}'.");
+    public static ReflectorType FromName(string name)
+    {
+        return All.FirstOrDefault(r => r.Name == name) ?? throw new DomainException($"Unknown reflector '{name}'.");
+    }
 
-    public override string ToString() => Name;
+    public override string ToString()
+    {
+        return Name;
+    }
 }

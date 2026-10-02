@@ -52,7 +52,7 @@ const openPage = (page: string) => {
     existing.focus();
     return;
   }
-  const window = createWindow({ width: 760, height: 900, minWidth: 560, minHeight: 480 });
+  const window = createWindow({ width: page === 'instructions' ? 1040 : 760, height: 900, minWidth: 560, minHeight: 480 });
   pageWindows.set(page, window);
   window.on('closed', () => pageWindows.delete(page));
   load(window, page);
@@ -60,7 +60,12 @@ const openPage = (page: string) => {
 
 const run = () => {
   const backend = createBackend();
-  registerIpc(backend, { openNotebook: () => openPage('notebook'), openInstructions: () => openPage('instructions') });
+  registerIpc(backend, {
+    openNotebook: () => openPage('notebook'),
+    openHut8Notebook: () => openPage('hut8'),
+    isHut8Open: () => pageWindows.has('hut8'),
+    openInstructions: () => openPage('instructions'),
+  });
 
   void app.whenReady().then(() => {
     harden(MAIN_WINDOW_VITE_DEV_SERVER_URL);

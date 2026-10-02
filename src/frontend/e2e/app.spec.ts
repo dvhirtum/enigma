@@ -42,7 +42,7 @@ test('keeps its data in the temporary user data folder', async () => {
 
 test('shows the default machine and the backend version', async () => {
   await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
-  await expect(page.getByText(/^Backend v.+/)).toBeVisible();
+  await expect(page.getByRole('contentinfo')).toHaveText(/^Backend v.+/);
 });
 
 test('switches between the views', async () => {
@@ -59,12 +59,187 @@ test('shows the user guide in its own window and follows its links', async () =>
   const guide = instructions.getByRole('article', { name: 'Instructions' });
   await expect(guide.getByRole('heading', { level: 1 })).toHaveText('Enigma user guide');
 
-  await guide.getByRole('link', { name: 'Key sheets' }).click();
+  const contents = instructions.getByRole('navigation', { name: 'Contents' });
+  await contents.getByRole('button', { name: 'The Enigma' }).click();
+  await contents.getByRole('link', { name: 'Key sheets' }).click();
 
   await expect(guide.getByRole('heading', { level: 1 })).toHaveText('Key sheets');
   await page.getByRole('button', { name: 'Instructions' }).click();
   expect(app.windows()).toHaveLength(2);
   await instructions.close();
+});
+
+test('switches to Bombe mode and back', async () => {
+  await page.getByRole('tab', { name: 'Plugboard' }).click();
+
+  await page.getByRole('button', { name: 'Bombe' }).click();
+
+  await expect(page.getByRole('tablist', { name: 'Bombe views' })).toBeVisible();
+  await expect(page).toHaveTitle('Bombe');
+  await page.keyboard.press('a');
+  await page.getByRole('button', { name: 'Enigma' }).click();
+  await expect(page.getByRole('tab', { name: 'Plugboard' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveTitle('Enigma');
+  await page.getByRole('tab', { name: 'Top-down' }).click();
+  await expect(page.getByRole('spinbutton', { name: 'Right rotor' })).toHaveAttribute('aria-valuetext', 'A');
+});
+
+test('places a crib and draws the menu in the Hut 8 notebook', async () => {
+  await page.getByRole('button', { name: 'Bombe' }).click();
+  await expect(page.getByRole('tablist', { name: 'Bombe views' })).toHaveText('FrontSideBackChecking');
+  const opened = app.waitForEvent('window');
+  await page.getByRole('button', { name: 'Hut 8 notebook' }).click();
+  const notebook = await opened;
+  await expect(notebook).toHaveTitle('Hut 8 notebook');
+  const step = notebook.locator('[aria-current="step"]');
+
+  await notebook.getByRole('combobox', { name: 'Intercept' }).selectOption({ label: "Carter's weather crib" });
+  await notebook.getByRole('button', { name: 'Load intercept' }).click();
+  await expect(notebook.getByRole('group', { name: 'Cipher text' })).toHaveText('SNMK GGST ZZUG ARLV');
+
+  await expect(step.getByRole('heading')).toHaveText('Place the crib');
+  await notebook.getByRole('button', { name: 'Suggest crib' }).click();
+  await expect(notebook.getByRole('textbox', { name: 'Crib' })).toHaveValue('WETTERVORHERSAGE');
+  await expect(notebook.getByText(/^Likely place: The whole message/)).toBeVisible();
+  await notebook.getByRole('textbox', { name: 'Crib' }).fill('wetter');
+  await notebook.getByRole('button', { name: 'Set crib' }).click();
+  const slider = notebook.getByRole('slider', { name: 'Crib position' });
+  await expect(slider).toHaveAttribute('aria-valuenow', '1');
+  for (let press = 0; press < 4; press++) {
+    await notebook.keyboard.press('ArrowRight');
+  }
+  await expect(slider).toHaveAttribute('aria-valuetext', 'Position 5, 1 crash');
+  await expect(notebook.getByRole('button', { name: 'Place crib' })).toBeDisabled();
+  await notebook.getByRole('button', { name: 'Slide left' }).click();
+  await notebook.getByRole('button', { name: 'Place crib' }).click();
+
+  await expect(step.getByRole('heading')).toHaveText('Draw the menu');
+  await expect(notebook.getByText('Placed at position 4, no crashes.')).toBeVisible();
+  await expect(notebook.getByLabel('Menu size')).toHaveText('4 links, 4 letters, 1 loop · test register on T');
+  await page.getByRole('tab', { name: 'Back' }).click();
+  await expect(page.getByRole('button', { name: 'Chain 1 test register' })).toBeVisible();
+
+  await notebook.getByRole('checkbox', { name: 'Link K–W at 1 (ZZA)' }).click();
+  await expect(notebook.getByRole('checkbox', { name: 'Link K–W at 1 (ZZA)' })).toBeChecked();
+  await expect(notebook.getByRole('status')).toHaveText(/KW1/);
+  await notebook.getByRole('button', { name: 'Letter G' }).click();
+  await expect(notebook.getByLabel('Menu size')).toHaveText('4 links, 4 letters, 1 loop · test register on G');
+  await notebook.getByRole('button', { name: 'Build menu again' }).click();
+  await expect(notebook.getByLabel('Menu size')).toHaveText(/test register on T/);
+
+  await notebook.getByRole('button', { name: 'Send the menu to the Bombe' }).click();
+  await expect(step.getByRole('heading')).toHaveText('Run the Bombe');
+  await expect(page.getByRole('button', { name: 'Chain 1 test register, plugged to T' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Chain 3 test register, plugged to T' })).toBeVisible();
+  await notebook.close();
+  await page.getByRole('tab', { name: 'Front' }).click();
+  await page.getByRole('button', { name: 'Enigma' }).click();
+});
+
+test('plugs a scrambler and fits drums on the Bombe by hand', async () => {
+  await page.getByRole('button', { name: 'Bombe' }).click();
+  await page.getByRole('tab', { name: 'Back' }).click();
+
+  await page.getByRole('button', { name: 'Chain 3 scrambler 12 jack 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Chain 3 common Z' }).click();
+  await expect(page.getByRole('button', { name: 'Chain 3 scrambler 12 jack 1, plugged to Z' })).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Front' }).click();
+  await page.getByRole('button', { name: 'Drums VIII' }).click();
+  const scrambler = page.getByRole('group', { name: /^Chain 3 scrambler 12:/ });
+  await scrambler.getByRole('spinbutton', { name: 'upper drum empty' }).click();
+  await expect(scrambler.getByRole('spinbutton', { name: 'upper drum VIII at Z' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Side' }).click();
+  await expect(page.getByRole('list', { name: 'Warnings' })).toContainText('Chain 3, scrambler 12 has only one jack cabled.');
+
+  await page.getByRole('tab', { name: 'Checking' }).click();
+  await page.getByRole('button', { name: 'Drum II', exact: true }).click();
+  await page.getByRole('button', { name: 'left drum place, empty' }).click();
+  await expect(page.getByRole('img', { name: 'left drum II at Z, ring Z' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Take the dummy drum out' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Take reflector B out' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Front' }).click();
+  await page.getByRole('button', { name: 'Enigma' }).click();
+});
+
+test('runs the Bombe on a menu, checks the stop and reads the message', async () => {
+  await page.getByRole('button', { name: 'Bombe' }).click();
+  const opened = app.waitForEvent('window');
+  await page.getByRole('button', { name: 'Hut 8 notebook' }).click();
+  const notebook = await opened;
+  const step = notebook.locator('[aria-current="step"]');
+  await notebook.getByRole('button', { name: 'Change: Choose the message' }).click();
+  await notebook.getByRole('combobox', { name: 'Intercept' }).selectOption({ label: "Carter's weather crib" });
+  await notebook.getByRole('button', { name: 'Load intercept' }).click();
+  await expect(step.getByRole('heading', { level: 3 })).toHaveText('Place the crib');
+  await notebook.getByRole('button', { name: 'Suggest crib' }).click();
+  await expect(notebook.getByRole('textbox', { name: 'Crib' })).toHaveValue('WETTERVORHERSAGE');
+  await notebook.getByRole('button', { name: 'Set crib' }).click();
+  await notebook.getByRole('button', { name: 'Place crib' }).click();
+  await expect(notebook.getByLabel('Menu size')).toHaveText('12 links, 11 letters, 2 loops · test register on G');
+  await notebook.getByRole('button', { name: 'Send the menu to the Bombe' }).click();
+  await notebook.getByRole('alert').getByRole('button', { name: 'Plug up the menu' }).click();
+  await expect(step.getByRole('heading', { level: 3 })).toHaveText('Run the Bombe');
+
+  await page.getByRole('tab', { name: 'Front' }).click();
+  for (const [row, rotor] of [
+    ['upper', 'II'],
+    ['middle', 'V'],
+    ['lower', 'III'],
+  ]) {
+    for (const chain of [1, 2]) {
+      await page.getByRole('button', { name: `Drums ${rotor}`, exact: true }).click();
+      const scrambler = page.getByRole('group', { name: new RegExp(`^Chain ${chain} scrambler 12:`) });
+      await scrambler.getByRole('spinbutton', { name: `${row} drum empty` }).click();
+      await expect(scrambler.getByRole('spinbutton', { name: new RegExp(`^${row} drum ${rotor} at [A-Z]$`) })).toBeVisible();
+    }
+  }
+  await page.getByRole('tab', { name: 'Side' }).click();
+  await page.getByRole('slider', { name: 'Speed' }).press('End');
+  await expect(page.getByRole('slider', { name: 'Speed' })).toHaveAttribute('aria-valuetext', 'Full speed');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByLabel('Run progress')).toHaveText(/^Finished · Chain 1 II V III, Chain 2 II V III · 17,576 of 17,576 positions · 8 stops/, {
+    timeout: 60_000,
+  });
+
+  await expect(step.getByRole('heading', { level: 3 })).toHaveText('Choose a stop');
+  await expect(step.getByRole('row', { name: /^3 II V III DKX G\/Q/ })).toBeVisible();
+  await step.getByRole('button', { name: 'Check stop 3' }).click();
+  await notebook.getByRole('alert').getByRole('button', { name: 'Set it up' }).click();
+  await page.getByRole('tab', { name: 'Checking' }).click();
+  await expect(page.getByText('Set up for stop 3: II V III, indicator DKX, G/Q.', { exact: false })).toBeVisible();
+  for (let turn = 0; turn < 5; turn++) {
+    await page.getByTestId('thumbwheel-right-up').click();
+  }
+  await expect(page.getByRole('img', { name: /^right drum III at E,/ })).toBeVisible();
+  await notebook.keyboard.press('q');
+  await expect(step.getByRole('button', { name: 'Partner of E: T' })).toBeVisible();
+  await step.getByRole('button', { name: 'True stop' }).click();
+
+  await expect(step.getByRole('heading', { level: 3 })).toHaveText('Read the message');
+  for (const pair of ['AD', 'HM', 'LJ', 'NV', 'UF', 'ZP']) {
+    await step.getByRole('textbox', { name: `Partner of ${pair[0]}`, exact: true }).fill(pair[1]);
+    await expect(step.getByRole('textbox', { name: `Partner of ${pair[1]}`, exact: true })).toHaveValue(pair[0]);
+  }
+  await step.getByRole('button', { name: 'Suggest' }).click();
+  await step.getByRole('button', { name: 'Accept all' }).click();
+  await step.getByRole('button', { name: 'Find the right ring' }).click();
+  await expect(step.getByRole('img', { name: 'Scores of the right rings' })).toBeVisible();
+  await expect(step.getByRole('group', { name: 'Decrypt', exact: true })).toHaveText('WETTERVORHERSAGE'.replace(/(.{4})(?!$)/g, '$1 '));
+  await expect(step.getByLabel('Key')).toContainText('Wheel orderII V III');
+  await expect(step.getByLabel('Key')).toContainText('PlugsAD ET FU GQ HM IK JL NV OX PZ');
+
+  await page.getByRole('tab', { name: 'Front' }).click();
+  await step.getByRole('button', { name: 'Set up Enigma' }).click();
+  await step.getByRole('group', { name: 'Confirm Enigma setup' }).getByRole('button', { name: 'Set up' }).click();
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · II V III');
+  await expect(page).toHaveTitle('Enigma');
+  await notebook.close();
+  for (const model of ['M4', 'M3']) {
+    await page.getByRole('combobox', { name: 'Model' }).selectOption(model);
+    await page.getByRole('button', { name: 'Switch' }).click();
+  }
+  await expect(page.getByLabel('Machine')).toHaveText('M3 · UKW B · I II III');
 });
 
 test('lights a lamp while a key is held on the physical keyboard', async () => {
@@ -250,9 +425,7 @@ test('forwards machine operations to the backend', async () => {
 });
 
 test('runs machine operations in the order they were sent', async () => {
-  const results = await page.evaluate(() =>
-    Promise.all([window.enigma.machine.pressKey('A'), window.enigma.machine.releaseKey()]),
-  );
+  const results = await page.evaluate(() => Promise.all([window.enigma.machine.pressKey('A'), window.enigma.machine.releaseKey()]));
 
   expect(results).toMatchObject([
     { ok: true, value: { heldKey: 'A' } },

@@ -1,9 +1,10 @@
 # The machine
 
-[Back to the contents](README.md)
+[Back to The Enigma](README.md)
 
 ## Header
 
+- The title switches between Enigma and [Bombe](../bombe/README.md) mode.
 - **Model** switches between the M3 and the M4. The machine resets, so the application asks first.
 - The summary shows the model, the reflector (UKW) and the rotors from left to right.
 - **Key** shows the applied daily key and its Grundstellung. It says "(modified)" once the reflector, rotors, rings or plugs differ from the key. Turning the rotors does not count.

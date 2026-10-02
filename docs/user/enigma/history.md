@@ -1,6 +1,6 @@
 # The Enigma in the Kriegsmarine
 
-[Back to the contents](README.md)
+[Back to The Enigma](README.md)
 
 ## The machine
 

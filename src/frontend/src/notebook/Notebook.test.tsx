@@ -63,6 +63,21 @@ describe('Notebook', () => {
     expect(screen.getByRole('tab', { name: 'Decrypt' })).toHaveFocus();
   });
 
+  it('writes down the lamps in groups of 4 on the Lamps page, copies and clears them', async () => {
+    const api = renderMachine(<Notebook />, { ...defaultM3, lamps: 'WETTERV' });
+    api.machine.clearLamps.mockResolvedValue({ ok: true, value: { ...defaultM3, lamps: '' } });
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Lamps' }));
+
+    expect(await screen.findByRole('group', { name: 'Lamps' })).toHaveTextContent('WETT ERV');
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+    expect(api.clipboard.writeText).toHaveBeenCalledWith('WETT ERV');
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(await screen.findByText('No lamps yet.')).toBeInTheDocument();
+    expect(api.machine.clearLamps).toHaveBeenCalled();
+  });
+
   it('warns when the setup differs from the daily key', async () => {
     renderNotebook(null, true);
 
@@ -273,10 +288,14 @@ describe('Notebook', () => {
     expect(await within(step).findByText(/Columns 101–120 are allotted to Triton/)).toHaveTextContent(
       'Schlüsselkenngruppe DWA, which stands in column 101 of the Kenngruppenbuch. Columns 101–120 are allotted to Triton, so the message belongs to that network',
     );
-    expect(within(step).getByText(/The lower row holds/)).toHaveTextContent('Verfahrenkenngruppe AAB and a filler. The Verfahrenkenngruppe stands in column 1, one of the Verfahrenkenngruppen columns 1–100.');
+    expect(within(step).getByText(/The lower row holds/)).toHaveTextContent(
+      'Verfahrenkenngruppe AAB and a filler. The Verfahrenkenngruppe stands in column 1, one of the Verfahrenkenngruppen columns 1–100.',
+    );
     expect(within(step).getByText(/The indicator groups/)).toHaveTextContent('JWDZ ZZYC');
     const indicator = within(step).getByRole('region', { name: 'Indicator' });
-    const groupsFirst = within(indicator).getByRole('group', { name: 'Groups' }).compareDocumentPosition(within(indicator).getByRole('group', { name: 'Upper row' }));
+    const groupsFirst = within(indicator)
+      .getByRole('group', { name: 'Groups' })
+      .compareDocumentPosition(within(indicator).getByRole('group', { name: 'Upper row' }));
     expect(groupsFirst & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(indicator).getByLabelText('Swaps')).toHaveTextContent('JZ→QA');
   });

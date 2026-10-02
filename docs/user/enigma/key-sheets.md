@@ -1,6 +1,6 @@
 # Key sheets
 
-[Back to the contents](README.md)
+[Back to The Enigma](README.md)
 
 A key sheet (Schlüsseltafel) holds one month of daily keys for one network. Open the panel with the **Key sheets** button at the top right.
 

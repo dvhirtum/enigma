@@ -7,7 +7,7 @@ public interface IKeySheetRepository
 {
     IReadOnlyList<KeySheet> List();
 
-    /// <summary>The sheet with <paramref name="id"/>, or null.</summary>
+    /// <summary>The sheet with <paramref name="id" />, or null.</summary>
     KeySheet? Find(string id);
 
     /// <summary>Adds or replaces a generated or user-defined sheet.</summary>

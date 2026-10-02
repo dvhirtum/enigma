@@ -7,7 +7,10 @@ using Enigma.Domain.Machine;
 
 namespace Enigma.Infrastructure.Procedure;
 
-/// <summary>Keeps one JSON file per item in <paramref name="path"/>, cached after the first read. Unreadable files are skipped.</summary>
+/// <summary>
+///     Keeps one JSON file per item in <paramref name="path" />, cached after the first read. Unreadable files are
+///     skipped.
+/// </summary>
 internal sealed class JsonFileStore<TItem, TDocument>(
     string path,
     JsonTypeInfo<TDocument> typeInfo,
@@ -38,10 +41,7 @@ internal sealed class JsonFileStore<TItem, TDocument>(
     public void Save(TItem item)
     {
         var id = idOf(item);
-        if (!IsValidId(id))
-        {
-            throw new DomainException($"'{id}' is not a valid id.");
-        }
+        if (!IsValidId(id)) throw new DomainException($"'{id}' is not a valid id.");
 
         lock (_lock)
         {
@@ -51,14 +51,14 @@ internal sealed class JsonFileStore<TItem, TDocument>(
         }
     }
 
-    private Dictionary<string, TItem> Items() => _items ??= Load();
+    private Dictionary<string, TItem> Items()
+    {
+        return _items ??= Load();
+    }
 
     private Dictionary<string, TItem> Load()
     {
-        if (!Directory.Exists(path))
-        {
-            return [];
-        }
+        if (!Directory.Exists(path)) return [];
 
         return Directory.EnumerateFiles(path, "*.json")
             .Where(file => IsValidId(Path.GetFileNameWithoutExtension(file)))
@@ -75,40 +75,63 @@ internal sealed class JsonFileStore<TItem, TDocument>(
             var item = document is null ? null : fromDocument(document);
             return item is not null && idOf(item) == Path.GetFileNameWithoutExtension(file) ? item : null;
         }
-        catch (Exception exception) when (exception is JsonException or DomainException or IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is JsonException or DomainException or IOException
+                                              or UnauthorizedAccessException)
         {
             return null;
         }
     }
 
-    private static bool IsValidId(string id) =>
-        !string.IsNullOrEmpty(id) && id.All(c => char.IsAsciiLetterOrDigit(c) || c == '-');
+    private static bool IsValidId(string id)
+    {
+        return !string.IsNullOrEmpty(id) && id.All(c => char.IsAsciiLetterOrDigit(c) || c == '-');
+    }
 }
 
-/// <summary>Stores Kenngruppenbücher as one JSON file each in <paramref name="path"/>.</summary>
+/// <summary>Stores Kenngruppenbücher as one JSON file each in <paramref name="path" />.</summary>
 public sealed class JsonKenngruppenbuchRepository(string path) : IKenngruppenbuchRepository
 {
     private readonly JsonFileStore<Kenngruppenbuch, KenngruppenbuchDocument> _store = new(
-        path, ProcedureJsonContext.Default.KenngruppenbuchDocument, b => b.Id, ProcedureMapper.ToDocument, ProcedureMapper.FromDocument);
+        path, ProcedureJsonContext.Default.KenngruppenbuchDocument, b => b.Id, ProcedureMapper.ToDocument,
+        ProcedureMapper.FromDocument);
 
-    public IReadOnlyList<Kenngruppenbuch> List() => _store.List();
+    public IReadOnlyList<Kenngruppenbuch> List()
+    {
+        return _store.List();
+    }
 
-    public Kenngruppenbuch? Find(string id) => _store.Find(id);
+    public Kenngruppenbuch? Find(string id)
+    {
+        return _store.Find(id);
+    }
 
-    public void Save(Kenngruppenbuch book) => _store.Save(book);
+    public void Save(Kenngruppenbuch book)
+    {
+        _store.Save(book);
+    }
 }
 
-/// <summary>Stores Tauschtafel sets as one JSON file each in <paramref name="path"/>.</summary>
+/// <summary>Stores Tauschtafel sets as one JSON file each in <paramref name="path" />.</summary>
 public sealed class JsonTauschtafelSetRepository(string path) : ITauschtafelSetRepository
 {
     private readonly JsonFileStore<TauschtafelSet, TauschtafelSetDocument> _store = new(
-        path, ProcedureJsonContext.Default.TauschtafelSetDocument, s => s.Id, ProcedureMapper.ToDocument, ProcedureMapper.FromDocument);
+        path, ProcedureJsonContext.Default.TauschtafelSetDocument, s => s.Id, ProcedureMapper.ToDocument,
+        ProcedureMapper.FromDocument);
 
-    public IReadOnlyList<TauschtafelSet> List() => _store.List();
+    public IReadOnlyList<TauschtafelSet> List()
+    {
+        return _store.List();
+    }
 
-    public TauschtafelSet? Find(string id) => _store.Find(id);
+    public TauschtafelSet? Find(string id)
+    {
+        return _store.Find(id);
+    }
 
-    public void Save(TauschtafelSet tauschtafelSet) => _store.Save(tauschtafelSet);
+    public void Save(TauschtafelSet tauschtafelSet)
+    {
+        _store.Save(tauschtafelSet);
+    }
 }
 
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]

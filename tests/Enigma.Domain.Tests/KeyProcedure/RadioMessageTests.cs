@@ -26,7 +26,10 @@ public sealed class RadioMessageTests
         var indicator = new IndicatorGroups("QWER", "TZUI");
 
         // Act
-        void Act() => RadioMessage.Create(new TimeOnly(18, 40), indicator, "ABCDEF");
+        void Act()
+        {
+            RadioMessage.Create(new TimeOnly(18, 40), indicator, "ABCDEF");
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -35,6 +38,8 @@ public sealed class RadioMessageTests
     [Theory]
     [InlineData("1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI", 24)]
     [InlineData("  1840=99=\nqwer tzui abcd\nefgh qwer tzui\n", 99)]
+    [InlineData("1840 21\nQWER TZUI ABCD EFGH QWER TZUI", 21)]
+    [InlineData("1840   6. QWER TZUI ABCD EFGH QWER TZUI", 6)]
     public void Should_read_the_preamble_indicator_and_cipher_text_When_a_message_is_parsed(string text, int count)
     {
         // Arrange
@@ -64,13 +69,17 @@ public sealed class RadioMessageTests
 
     [Theory]
     [InlineData("QWER TZUI ABCD QWER TZUX", "The indicator groups at the end differ from those at the start.")]
-    [InlineData("QWER TZUI QWER TZUI", "A message needs the 2 indicator groups, the cipher text and the indicator groups again.")]
+    [InlineData("QWER TZUI QWER TZUI",
+        "A message needs the 2 indicator groups, the cipher text and the indicator groups again.")]
     [InlineData("QWER TZUI AB1D QWER TZUI", "A message has only letters after its preamble.")]
     public void Should_reject_the_message_When_it_is_malformed(string text, string error)
     {
         // Arrange
         // Act
-        void Act() => RadioMessage.Parse(text);
+        void Act()
+        {
+            RadioMessage.Parse(text);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);

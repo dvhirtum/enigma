@@ -2,18 +2,41 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { createStore, useStore, type StoreApi } from 'zustand';
 import type {
   ApiResult,
+  BombeCheck,
+  BombeResult,
+  BombeRun,
+  BombeSettingsChange,
+  BombeState,
+  BombeStop,
+  CheckChange,
+  CheckerPress,
+  CheckerChange,
+  IndicatorChange,
+  PrintedStop,
+  RingTable,
+  MenuStops,
+  SourceSolution,
+  TestRegisterChange,
+  Confirmation,
+  RingFind,
+  Suggestion,
   EnigmaApi,
+  CribSuggestion,
+  Intercept,
   Kenngruppenbuch,
   KeySheet,
   KeySheetFile,
   KeySheetSummary,
   MachineApi,
   MachineState,
+  MessageType,
   Problem,
   ReceivingKey,
 } from './api';
 import { shiftLetter, shiftRing } from './machine';
 import { keySheetDocument, procedureDocument, procedureName } from './printSheet';
+import { historicalSpeed } from './bombe/drums';
+import { withPartner, withoutLetter } from './bombe/steckers';
 import { createQueue } from './queue';
 
 /** Each action resolves to true when the backend accepted the operation. */
@@ -50,7 +73,138 @@ export interface ProcedureSlice {
   copyText: (text: string) => Promise<boolean>;
 }
 
-export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
+/** The Bombe job. Each action resolves to true when the backend accepted it; problems go to `error`. */
+export interface BombeSlice {
+  bombe: BombeState | null;
+  intercepts: Intercept[];
+  messageTypes: MessageType[];
+  /** Loads the job, the list of intercepts and the message types. */
+  loadBombe: () => Promise<boolean>;
+  loadIntercept: (id: string) => Promise<boolean>;
+  /** The likely crib of the loaded message: its own, or else that of the message type `type`; null when there is none. */
+  suggestCrib: (type?: string) => Promise<CribSuggestion | null>;
+  generateExercise: () => Promise<boolean>;
+  /** Shows three wheel orders of the loaded intercept or exercise, one of them the key's. */
+  showWheelOrders: () => Promise<boolean>;
+  /** Shows two crib positions of the loaded exercise, one of them the crib's. */
+  showCribPositions: () => Promise<boolean>;
+  /** Loads a pasted radio message or bare cipher text; empty text clears the message. */
+  pasteCipherText: (text: string) => Promise<boolean>;
+  /** Replaces the crib, or removes it when empty. */
+  setCrib: (crib: string) => Promise<boolean>;
+  /** Places the crib at a position (0 = the first letter) and builds the menu. */
+  placeCrib: (position: number) => Promise<boolean>;
+  /** Plugs up links of the placed crib; without a test register letter one is chosen. */
+  setMenu: (links: string[], testRegister?: string) => Promise<boolean>;
+  /** Builds the menu from the placed crib again. */
+  buildMenu: () => Promise<boolean>;
+  /** Changes run settings; those left out stay as they are. */
+  configureBombe: (settings: BombeSettingsChange) => Promise<boolean>;
+  /** Plugs up the Bombe with the menu. */
+  plugUpMenu: () => Promise<boolean>;
+  /** Cables a jack (0 or 1) of a scrambler to a letter's common; null unplugs it. */
+  plugJack: (chain: number, scrambler: number, jack: number, letter: string | null) => Promise<boolean>;
+  /** Fits drums of a rotor in a row (0 = upper) of a chain on its scramblers 0 up to `upTo`. */
+  fitRow: (chain: number, row: number, upTo: number, rotor: string) => Promise<boolean>;
+  /** Takes one drum (row 0 = upper) of a scrambler back to the rack. */
+  removeDrum: (chain: number, scrambler: number, row: number) => Promise<boolean>;
+  /** Sets the start letters of a scrambler of a chain. */
+  turnScrambler: (chain: number, scrambler: number, start: string) => Promise<boolean>;
+  setTestRegister: (chain: number, change: TestRegisterChange) => Promise<boolean>;
+  joinChains: (join: number, joined: boolean) => Promise<boolean>;
+  /** The printed stops fetched so far, from the first. */
+  printout: PrintedStop[];
+  /** Fetches the first page of the printout again, or with `more` the next page. */
+  loadPrintout: (more?: boolean) => Promise<boolean>;
+  clearPrintout: () => Promise<boolean>;
+  /** Clears the stops found and their checks. */
+  clearStops: () => Promise<boolean>;
+  /** Starts a run at `speed` positions per second, or at full speed when null. */
+  startRun: (speed: number | null) => Promise<boolean>;
+  /** Continues a run paused at a stop. */
+  continueRun: () => Promise<boolean>;
+  cancelRun: () => Promise<boolean>;
+  /** Fetches the progress of the run. */
+  pollRun: () => Promise<boolean>;
+  /** The run speed in positions per second, or null for full speed: for the next run, and the running one. */
+  speed: number | null;
+  chooseSpeed: (speed: number | null) => Promise<boolean>;
+  /** The Bombe view shown. */
+  bombeView: string;
+  showBombeView: (id: string) => void;
+  /** The stops fetched so far, from the first. */
+  stops: BombeStop[];
+  /** Fetches the first page of stops again, or with `more` the next page. */
+  loadStops: (more?: boolean) => Promise<boolean>;
+  /** The check open in the notebook, and its last suggestion, ring scores and confirmation. */
+  check: BombeCheck | null;
+  /** The lamp lit on the checking machine. */
+  checkLamp: string | null;
+  /** The key held down on the checking machine, in this window or another. */
+  checkKey: string | null;
+  suggestion: Suggestion | null;
+  ringScores: RingFind['rings'] | null;
+  middleRingScores: RingFind['rings'] | null;
+  confirmation: Confirmation | null;
+  /** Opens the check of a stop on the Checking view. */
+  openCheck: (stop: number) => Promise<boolean>;
+  /** Follows a Bombe call another window made. */
+  receiveBombe: (result: BombeResult) => void;
+  changeCheck: (change: CheckChange) => Promise<boolean>;
+  /** Rubs out every pair of `letter` on the stecker sheet once the queued operations are done. */
+  eraseLetter: (letter: string) => Promise<boolean>;
+  /** Writes `partner` as the partner of `letter` (null rubs it out) once the queued operations are done. */
+  setPartner: (letter: string, partner: string | null) => Promise<boolean>;
+  /** Turns the right ring `steps` places on once the queued operations are done. */
+  stepRightRing: (steps: number) => Promise<boolean>;
+  /** Turns the middle ring `steps` places on once the queued operations are done. */
+  stepMiddleRing: (steps: number) => Promise<boolean>;
+  /** Changes the checking machine once the queued operations are done. */
+  setChecker: (change: CheckerChange) => Promise<boolean>;
+  /** Sets the checking machine up for a logged stop, and shows it. */
+  setUpChecker: (stop: number) => Promise<boolean>;
+  /** Turns a checking machine drum (0 = left) `steps` letters on once the queued operations are done. */
+  stepCheckDrum: (drum: number, steps: number) => Promise<boolean>;
+  /** Turns a checking machine ring (0 = left) `steps` letters on once the queued operations are done. */
+  stepCheckRing: (drum: number, steps: number) => Promise<boolean>;
+  /** Presses a key on the checking machine; its lamp stays lit until `releaseCheckKey`. */
+  pressCheckKey: (key: string) => Promise<boolean>;
+  releaseCheckKey: () => void;
+  /** Follows a key released on the checking machine in another window. */
+  receiveCheckKeyRelease: () => void;
+  confirmCheck: (verdict: BombeStop['verdict']) => Promise<boolean>;
+  suggestSteckers: () => Promise<boolean>;
+  /** Adds proposed pairs, such as "IK", to the check's steckers. */
+  acceptSuggestion: (pairs: string[]) => Promise<boolean>;
+  findRightRing: () => Promise<boolean>;
+  findMiddleRing: () => Promise<boolean>;
+  /** Sets up the Enigma with the check's key, at the message key. */
+  setUpEnigma: () => Promise<boolean>;
+  /** The key and plain text of the loaded intercept or exercise, or null when it has none. */
+  loadSolution: () => Promise<SourceSolution | null>;
+  /** The stops per wheel order the menu gives, measured; null when there is no menu or the call fails. */
+  loadMenuStops: () => Promise<MenuStops | null>;
+  /** Takes a pinch of the message's key sheet day: an exercise's own, or for a pasted radio message the sheet and day given. */
+  takePinch: (sheetId?: string, day?: number) => Promise<boolean>;
+  /** Writes down groups of the indicator of a message of the day (0 = the broken message). */
+  writeIndicator: (message: number, change: IndicatorChange) => Promise<boolean>;
+  fillInIndicator: (message: number) => Promise<boolean>;
+  /** The ring table of the open check, once loaded. */
+  ringTable: RingTable | null;
+  loadRingTable: () => Promise<boolean>;
+  /** Reads the left and middle rings of the open check off the ring table; null forgets them. */
+  readRings: (left: number | null, middle: number | null) => Promise<boolean>;
+  /** Sets up the Enigma with the key the rings read give, at the Grundstellung, to read a message of the day. */
+  setUpDayEnigma: () => Promise<boolean>;
+}
+
+/** How many stops a page of the Stops view fetches. */
+export const stopPage = 100;
+
+/** A ring (1–26) turned `steps` places on. */
+const turnRing = (ring: number, steps: number) => ((ring - 1 + steps + 26 * 26) % 26) + 1;
+
+export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice, BombeSlice {
   machine: MachineState | null;
   version: string | null;
   error: Problem | null;
@@ -58,8 +212,12 @@ export interface MachineStore extends Actions, KeySheetSlice, ProcedureSlice {
   dismissError: () => void;
   /** Opens the operator's notebook window, or brings it to the front. */
   openNotebook: () => Promise<void>;
+  /** Opens the Hut 8 notebook window, or brings it to the front. */
+  openHut8Notebook: () => Promise<void>;
   /** Opens the instructions window, or brings it to the front. */
   openInstructions: () => Promise<void>;
+  /** Shows a mode in the machine window. */
+  showMode: (mode: 'enigma' | 'bombe') => Promise<void>;
   /** Runs operations that depend on earlier ones one at a time, in order. */
   enqueue: <T>(task: () => Promise<T>) => Promise<T>;
   /** Turns a rotor `steps` letters on from its position once the queued operations are done. */
@@ -76,7 +234,16 @@ async function settle<T>(call: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
   }
 }
 
-export function createMachineStore({ machine: api, keySheets: sheets, procedure, files, clipboard, windows, health }: EnigmaApi): StoreApi<MachineStore> {
+export function createMachineStore({
+  machine: api,
+  keySheets: sheets,
+  procedure,
+  bombe,
+  files,
+  clipboard,
+  windows,
+  health,
+}: EnigmaApi): StoreApi<MachineStore> {
   return createStore<MachineStore>()((set, get) => {
     const apply = async (call: Promise<ApiResult<MachineState>>) => {
       const result = await settle(call);
@@ -101,6 +268,112 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       }
       return result.ok;
     };
+    // Counters that let late replies be dropped: of stop and printout loads, of check openings and of checking machine key presses.
+    let stopLoads = 0;
+    let printoutLoads = 0;
+    let checkOpenings = 0;
+    let keyPresses = 0;
+    /** Forgets the stops and the check, when the backend cleared them. */
+    const forgetStops = () => {
+      stopLoads++;
+      checkOpenings++;
+      set({ stops: [], check: null, suggestion: null, ringScores: null, middleRingScores: null, confirmation: null, ringTable: null });
+    };
+    /** Forgets the printout fetched when the backend has fewer stops printed. */
+    const followPrinted = (printed: number) => {
+      if (printed < get().printout.length || printed === 0) {
+        printoutLoads++;
+        set({ printout: [] });
+      }
+    };
+    const applyJob = (value: BombeState) => {
+      set({ bombe: value });
+      if (value.stops < get().stops.length || value.stops === 0) {
+        forgetStops();
+      }
+      followPrinted(value.printed);
+    };
+    const job = async (call: Promise<ApiResult<BombeState>>) => {
+      const result = await check(call);
+      if (result.ok) {
+        applyJob(result.value);
+      }
+      return result.ok;
+    };
+    /** Shows a check that was just opened, here or in another window. */
+    const showCheck = (value: BombeCheck) => {
+      checkOpenings++;
+      set({ check: value, suggestion: null, ringScores: null, middleRingScores: null, confirmation: null, ringTable: null });
+    };
+    /** Shows the checking machine once it is set up for a stop, here or in another window. */
+    const showChecker = (value: BombeState) => {
+      applyJob(value);
+      keyPresses++;
+      set({ checkLamp: null, bombeView: 'bombe-checking' });
+    };
+    /** Forgets each ring's scores once the other ring changes, as they were scored with it. */
+    const staleScores = (current: BombeCheck | null, next: BombeCheck): Partial<MachineStore> => ({
+      ...(current?.rightRing !== next.rightRing ? { middleRingScores: null } : {}),
+      ...(current?.middleRing !== next.middleRing ? { ringScores: null } : {}),
+    });
+    /** Follows a check changed in another window, when it is the open one. */
+    const followCheck = (next: BombeCheck, changes: Partial<MachineStore> = {}) => {
+      set((state) => ({
+        stops: state.stops.map((stop) => (stop.index === next.stop.index ? next.stop : stop)),
+        ...(state.check?.stop.index === next.stop.index ? { check: next, ...staleScores(state.check, next), ...changes } : {}),
+      }));
+    };
+    /** Forgets the rings read on the open check, as the backend does when a pinch is taken. */
+    const forgetReading = () => set((state) => ({ check: state.check && { ...state.check, reading: null } }));
+    /** Whether the check of `stop` is still the open one. */
+    const stillOpen = (stop: number) => get().check?.stop.index === stop;
+    /** A call on the open check; the check and the stop's verdict follow the result, unless another check was opened meanwhile. */
+    const onCheck = async <T,>(call: (stop: number) => Promise<ApiResult<T>>, checkOf: (value: T) => BombeCheck, changes: Partial<MachineStore> = {}) => {
+      const current = get().check;
+      if (!current) {
+        return null;
+      }
+      const result = await check(call(current.stop.index));
+      if (!result.ok || !stillOpen(current.stop.index)) {
+        return null;
+      }
+      const next = checkOf(result.value);
+      set((state) => ({
+        check: next,
+        stops: state.stops.map((stop) => (stop.index === next.stop.index ? next.stop : stop)),
+        ...staleScores(state.check, next),
+        ...changes,
+      }));
+      return result.value;
+    };
+    /** Turns one drum's window letter or ring letter on the checking machine `steps` letters on. */
+    const stepChecker = async (field: 'windows' | 'rings', drum: number, steps: number) => {
+      const letters = get().bombe?.checker[field];
+      if (!letters) {
+        return false;
+      }
+      const turned = [...letters];
+      turned[drum] = shiftLetter(turned[drum], steps);
+      return job(bombe.setChecker({ [field]: turned.join('') }));
+    };
+    /** Follows a run, or its end when the backend no longer has it. */
+    const applyRun = (value: BombeRun | null) => {
+      const current = get().bombe;
+      if (current) {
+        set({ bombe: { ...current, run: value, stops: value ? value.allStops : current.stops, printed: value ? value.printed : current.printed } });
+      }
+    };
+    /** A run call; a poll leaves the error as it is unless the poll fails. A run the backend no longer has is dropped. */
+    const run = async (call: Promise<ApiResult<BombeRun>>, poll = false) => {
+      const result = poll ? await settle(call) : await check(call);
+      if (poll && !result.ok) {
+        set({ error: result.problem });
+      }
+      if (result.ok || result.problem.status === 404) {
+        applyRun(result.ok ? result.value : null);
+      }
+      return result.ok;
+    };
     const show = async (call: Promise<ApiResult<KeySheet>>) => {
       const result = await check(call);
       if (!result.ok) {
@@ -118,6 +391,352 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       keySheets: [],
       keySheet: null,
       books: {},
+      bombe: null,
+      intercepts: [],
+      messageTypes: [],
+      speed: historicalSpeed,
+      bombeView: 'bombe-front',
+      stops: [],
+      printout: [],
+      check: null,
+      checkLamp: null,
+      checkKey: null,
+      suggestion: null,
+      ringScores: null,
+      middleRingScores: null,
+      confirmation: null,
+      ringTable: null,
+      loadBombe: async () => {
+        const [listed, types, state] = await Promise.all([settle(bombe.intercepts()), settle(bombe.messageTypes()), settle(bombe.getState())]);
+        if (listed.ok) {
+          set({ intercepts: listed.value });
+        }
+        if (types.ok) {
+          set({ messageTypes: types.value });
+        }
+        if (state.ok) {
+          set({ bombe: state.value });
+        }
+        const failed = [state, listed, types].find((result) => !result.ok);
+        if (failed && !failed.ok) {
+          set({ error: failed.problem });
+        }
+        return !failed;
+      },
+      loadIntercept: (id) => job(bombe.loadIntercept(id)),
+      suggestCrib: async (type) => {
+        const result = await check(bombe.suggestCrib(type));
+        return result.ok ? result.value : null;
+      },
+      generateExercise: () => job(bombe.generateExercise()),
+      showWheelOrders: () => job(bombe.showWheelOrders()),
+      showCribPositions: () => job(bombe.showCribPositions()),
+      pasteCipherText: (text) => job(bombe.pasteCipherText(text)),
+      setCrib: (crib) => job(bombe.setCrib(crib)),
+      placeCrib: (position) => job(bombe.placeCrib(position)),
+      setMenu: (links, testRegister) => job(bombe.setMenu(links, testRegister)),
+      buildMenu: () => job(bombe.buildMenu()),
+      configureBombe: (settings) => job(bombe.configure(settings)),
+      plugUpMenu: () => job(bombe.plugUpMenu()),
+      plugJack: (chain, scrambler, jack, letter) => job(bombe.plugJack(chain, scrambler, jack, letter)),
+      fitRow: (chain, row, upTo, rotor) => job(bombe.fitRow(chain, row, upTo, rotor)),
+      removeDrum: (chain, scrambler, row) => job(bombe.removeDrum(chain, scrambler, row)),
+      turnScrambler: (chain, scrambler, start) => enqueue(() => job(bombe.turnScrambler(chain, scrambler, start))),
+      setTestRegister: (chain, change) => job(bombe.setTestRegister(chain, change)),
+      joinChains: (join, joined) => job(bombe.joinChains(join, joined)),
+      clearPrintout: () => job(bombe.clearPrintout()),
+      clearStops: () => job(bombe.clearStops()),
+      startRun: (speed) => run(bombe.startRun(speed)),
+      continueRun: () => run(bombe.continueRun()),
+      cancelRun: () => run(bombe.cancelRun()),
+      pollRun: () => run(bombe.getRun(), true),
+      chooseSpeed: async (speed) => {
+        set({ speed });
+        const status = get().bombe?.run?.status;
+        return status === 'Running' || status === 'Paused' ? run(bombe.setRunSpeed(speed)) : true;
+      },
+      showBombeView: (id) => set({ bombeView: id }),
+      loadStops: async (more = false) => {
+        // A first page drops the loads before it; a next page is dropped when the list changed meanwhile.
+        const load = more ? stopLoads : ++stopLoads;
+        const from = more ? get().stops.length : 0;
+        const result = await check(bombe.getStops(from, stopPage));
+        if (result.ok && load === stopLoads && (!more || get().stops.length === from)) {
+          set((state) => ({ stops: more ? [...state.stops, ...result.value] : result.value }));
+        }
+        return result.ok;
+      },
+      loadPrintout: async (more = false) => {
+        const load = more ? printoutLoads : ++printoutLoads;
+        const from = more ? get().printout.length : 0;
+        const result = await check(bombe.getPrintout(from, stopPage));
+        if (result.ok && load === printoutLoads && (!more || get().printout.length === from)) {
+          set((state) => ({ printout: more ? [...state.printout, ...result.value] : result.value }));
+        }
+        return result.ok;
+      },
+      openCheck: async (stop) => {
+        const opening = ++checkOpenings;
+        const result = await check(bombe.getCheck(stop));
+        if (result.ok && opening === checkOpenings) {
+          showCheck(result.value);
+        }
+        return result.ok;
+      },
+      receiveBombe: ({ name, args, value }) => {
+        switch (name) {
+          case 'startRun':
+          case 'setRunSpeed':
+          case 'continueRun':
+          case 'cancelRun':
+          case 'getRun': {
+            const current = value as BombeRun;
+            applyRun(current);
+            if (name === 'startRun' || name === 'setRunSpeed') {
+              set({ speed: current.speed });
+            }
+            return;
+          }
+          case 'pressCheckerKey': {
+            const pressed = value as CheckerPress;
+            keyPresses++;
+            set({ checkKey: args[0] as string, checkLamp: pressed.lamp });
+            if (pressed.check) {
+              followCheck(pressed.check, { suggestion: null, ringScores: null, middleRingScores: null, confirmation: null });
+            }
+            return;
+          }
+          case 'setUpChecker':
+            showChecker(value as BombeState);
+            return;
+          case 'getCheck':
+            showCheck(value as BombeCheck);
+            return;
+          case 'setCheck': {
+            const next = value as BombeCheck;
+            const steckersChanged = get().check?.steckers !== next.steckers;
+            followCheck(next, { confirmation: null, ...(steckersChanged ? { suggestion: null, ringScores: null, middleRingScores: null } : {}) });
+            return;
+          }
+          case 'confirmCheck': {
+            const confirmation = value as Confirmation;
+            followCheck(confirmation.check, { confirmation });
+            return;
+          }
+          case 'findRightRing': {
+            const found = value as RingFind;
+            followCheck(found.check, { ringScores: found.rings, confirmation: null });
+            return;
+          }
+          case 'findMiddleRing': {
+            const found = value as RingFind;
+            followCheck(found.check, { middleRingScores: found.rings, confirmation: null });
+            return;
+          }
+          case 'readRings':
+            followCheck(value as BombeCheck);
+            return;
+          case 'takePinch':
+            applyJob(value as BombeState);
+            forgetReading();
+            return;
+          case 'suggestSteckers':
+            if (get().check?.stop.index === args[0]) {
+              set({ suggestion: value as Suggestion });
+            }
+            return;
+          case 'getState':
+          case 'intercepts':
+          case 'messageTypes':
+          case 'suggestCrib':
+          case 'getStops':
+          case 'getPrintout':
+          case 'getRingTable':
+          case 'getSolution':
+            return;
+          default:
+            applyJob(value as BombeState);
+        }
+      },
+      changeCheck: async (change) => {
+        const steckers = change.steckers !== undefined ? { suggestion: null, ringScores: null, middleRingScores: null } : {};
+        return (
+          (await onCheck(
+            (stop) => bombe.setCheck(stop, change),
+            (value) => value,
+            { ...steckers, confirmation: null },
+          )) !== null
+        );
+      },
+      setChecker: (change) => enqueue(() => job(bombe.setChecker(change))),
+      setUpChecker: async (stop) => {
+        const result = await check(bombe.setUpChecker(stop));
+        if (result.ok) {
+          showChecker(result.value);
+        }
+        return result.ok;
+      },
+      stepCheckDrum: (drum, steps) => enqueue(() => stepChecker('windows', drum, steps)),
+      stepCheckRing: (drum, steps) => enqueue(() => stepChecker('rings', drum, steps)),
+      eraseLetter: (letter) =>
+        enqueue(async () => {
+          const steckers = get().check?.steckers;
+          return steckers !== undefined && get().changeCheck({ steckers: withoutLetter(steckers, letter) });
+        }),
+      setPartner: (letter, partner) =>
+        enqueue(async () => {
+          const steckers = get().check?.steckers;
+          return steckers !== undefined && get().changeCheck({ steckers: withPartner(steckers, letter, partner) });
+        }),
+      stepRightRing: (steps) =>
+        enqueue(async () => {
+          const ring = get().check?.rightRing;
+          return ring !== undefined && get().changeCheck({ rightRing: turnRing(ring, steps) });
+        }),
+      stepMiddleRing: (steps) =>
+        enqueue(async () => {
+          const ring = get().check?.middleRing;
+          return ring !== undefined && get().changeCheck({ middleRing: turnRing(ring, steps) });
+        }),
+      pressCheckKey: async (key) => {
+        const press = ++keyPresses;
+        set({ checkKey: key });
+        const result = await check(bombe.pressCheckerKey(key));
+        if (!result.ok) {
+          return false;
+        }
+        // A key released before the lamp came back leaves it dark; what the lamp wrote down stays.
+        if (press === keyPresses) {
+          set({ checkLamp: result.value.lamp });
+        }
+        if (result.value.check) {
+          followCheck(result.value.check, { suggestion: null, ringScores: null, middleRingScores: null, confirmation: null });
+        }
+        return true;
+      },
+      releaseCheckKey: () => {
+        keyPresses++;
+        set({ checkKey: null, checkLamp: null });
+        void windows.releaseCheckerKey();
+      },
+      receiveCheckKeyRelease: () => {
+        keyPresses++;
+        set({ checkKey: null, checkLamp: null });
+      },
+      confirmCheck: async (verdict) => {
+        const confirmation = await onCheck(
+          (stop) => bombe.confirmCheck(stop, verdict),
+          (value) => value.check,
+        );
+        if (confirmation) {
+          set({ confirmation });
+        }
+        return confirmation !== null;
+      },
+      suggestSteckers: async () => {
+        const current = get().check;
+        if (!current) {
+          return false;
+        }
+        const result = await check(bombe.suggestSteckers(current.stop.index));
+        if (result.ok && stillOpen(current.stop.index)) {
+          set({ suggestion: result.value });
+        }
+        return result.ok;
+      },
+      acceptSuggestion: (pairs) =>
+        enqueue(async () => {
+          const current = get().check;
+          if (!current || pairs.length === 0) {
+            return false;
+          }
+          const steckers = [current.steckers, ...pairs].filter(Boolean).join(' ');
+          const accepted = await onCheck(
+            (stop) => bombe.setCheck(stop, { steckers }),
+            (value) => value,
+            { ringScores: null, middleRingScores: null, confirmation: null },
+          );
+          const suggestion = get().suggestion;
+          if (accepted && suggestion) {
+            const left = suggestion.pairs.filter((pair) => !pairs.includes(pair.pair));
+            set({ suggestion: left.length > 0 ? { ...suggestion, pairs: left } : null });
+          }
+          return accepted !== null;
+        }),
+      findRightRing: async () => {
+        const found = await onCheck(
+          (stop) => bombe.findRightRing(stop),
+          (value) => value.check,
+          { confirmation: null },
+        );
+        if (found) {
+          set({ ringScores: found.rings });
+        }
+        return found !== null;
+      },
+      findMiddleRing: async () => {
+        const found = await onCheck(
+          (stop) => bombe.findMiddleRing(stop),
+          (value) => value.check,
+          { confirmation: null },
+        );
+        if (found) {
+          set({ middleRingScores: found.rings });
+        }
+        return found !== null;
+      },
+      setUpEnigma: async () => {
+        const key = get().check?.key;
+        if (!key) {
+          return false;
+        }
+        return apply(
+          api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: key.messageKey }),
+        );
+      },
+      loadSolution: async () => {
+        const result = await check(bombe.getSolution());
+        return result.ok ? result.value : null;
+      },
+      loadMenuStops: async () => {
+        const result = await check(bombe.menuStops());
+        return result.ok ? result.value : null;
+      },
+      takePinch: async (sheetId, day) => {
+        const taken = await job(bombe.takePinch(sheetId, day));
+        if (taken) {
+          forgetReading();
+        }
+        return taken;
+      },
+      writeIndicator: (message, change) => enqueue(() => job(bombe.writeIndicator(message, change))),
+      fillInIndicator: (message) => enqueue(() => job(bombe.fillInIndicator(message))),
+      loadRingTable: async () => {
+        const current = get().check;
+        if (!current) {
+          return false;
+        }
+        const result = await check(bombe.getRingTable(current.stop.index));
+        if (result.ok && stillOpen(current.stop.index)) {
+          set({ ringTable: result.value });
+        }
+        return result.ok;
+      },
+      readRings: async (left, middle) =>
+        (await onCheck(
+          (stop) => bombe.readRings(stop, left, middle),
+          (value) => value,
+        )) !== null,
+      setUpDayEnigma: async () => {
+        const key = get().check?.reading?.key;
+        const grundstellung = get().bombe?.day?.grundstellung;
+        if (!key || !grundstellung) {
+          return false;
+        }
+        return apply(
+          api.setUpMachine({ reflector: key.reflector, rotors: key.wheelOrder.split(' '), rings: key.rings, plugs: key.plugs, positions: grundstellung }),
+        );
+      },
       loadBook: async (id) => {
         if (get().books[id]) {
           return true;
@@ -221,7 +840,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
           if (bookHtml === null) {
             return (await files.printKeySheet(name, html)) !== null;
           }
-          return (await files.printToFolder([{ name, html }, { name: `${procedureName(result.value)}.pdf`, html: bookHtml }])) !== null;
+          return (
+            (await files.printToFolder([
+              { name, html },
+              { name: `${procedureName(result.value)}.pdf`, html: bookHtml },
+            ])) !== null
+          );
         } catch (error) {
           return fail({ status: 0, title: 'The PDF could not be saved.', detail: String(error) });
         }
@@ -236,7 +860,9 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       },
       dismissError: () => set({ error: null }),
       openNotebook: () => windows.openNotebook(),
+      openHut8Notebook: () => windows.openHut8Notebook(),
       openInstructions: () => windows.openInstructions(),
+      showMode: (mode) => windows.showMode(mode),
       enqueue,
       stepRotor: (slot, steps) =>
         enqueue(async () => {
@@ -259,11 +885,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
       movePlug: (from, to) => apply(api.movePlug(from, to)),
       pressKey: (key) => apply(api.pressKey(key)),
       releaseKey: () => apply(api.releaseKey()),
+      clearLamps: () => apply(api.clearLamps()),
       applyDailyKey: (sheetId, day) => apply(api.applyDailyKey(sheetId, day)),
+      setUpMachine: (key) => apply(api.setUpMachine(key)),
       startSending: () => apply(api.startSending()),
       startReceiving: (message, sheetId, day) => apply(api.startReceiving(message, sheetId, day)),
-      chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) =>
-        apply(api.chooseGroups(schluesselkenngruppe, verfahrenkenngruppe, fillers)),
+      chooseGroups: (schluesselkenngruppe, verfahrenkenngruppe, fillers) => apply(api.chooseGroups(schluesselkenngruppe, verfahrenkenngruppe, fillers)),
       finishMessage: () => apply(api.finishMessage()),
       cancelOperator: () => apply(api.cancelOperator()),
     };
@@ -272,10 +899,12 @@ export function createMachineStore({ machine: api, keySheets: sheets, procedure,
 
 const MachineStoreContext = createContext<StoreApi<MachineStore> | null>(null);
 
-/** Provides the machine store, which follows machine states and key sheets changed by other windows. */
+/** Provides the machine store, which follows machine states, Bombe calls and key sheets changed by other windows. */
 export function MachineStoreProvider({ api, children }: { api: EnigmaApi; children: ReactNode }) {
   const [store] = useState(() => createMachineStore(api));
   useEffect(() => api.windows.onMachineState((machine) => store.setState({ machine })), [api, store]);
+  useEffect(() => api.windows.onBombeResult((result) => store.getState().receiveBombe(result)), [api, store]);
+  useEffect(() => api.windows.onCheckerKeyReleased(() => store.getState().receiveCheckKeyRelease()), [api, store]);
   useEffect(
     () =>
       api.windows.onKeySheetsChanged(() => {

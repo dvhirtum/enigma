@@ -3,12 +3,17 @@ import type { AppliedKey, Kenngruppenbuch, OperatorState, OperatorStep, Receivin
 import { ErrorToast } from '../ErrorToast';
 import { useMachine } from '../store';
 import { useKeys, usePhysicalKeyboard } from '../useKeys';
+import { CopyButton, Field, Hand, Squares } from './paper';
 
 type Direction = OperatorState['direction'];
 
-const tabs: { direction: Direction; label: string }[] = [
-  { direction: 'Send', label: 'Encrypt' },
-  { direction: 'Receive', label: 'Decrypt' },
+/** A notebook page: one of the procedures, or the lamp pad. */
+type Page = Direction | 'Lamps';
+
+const tabs: { page: Page; label: string }[] = [
+  { page: 'Send', label: 'Encrypt' },
+  { page: 'Receive', label: 'Decrypt' },
+  { page: 'Lamps', label: 'Lamps' },
 ];
 
 const stepLabels: Record<OperatorStep, string> = {
@@ -29,43 +34,6 @@ const rotorHint = 'Turn the rotors in the machine window.';
 /** Splits letters into groups of 4. */
 function groups(letters: string): string[] {
   return letters.match(/.{1,4}/g) ?? [];
-}
-
-/** Handwriting inside printed text. */
-function Hand({ children }: { children: ReactNode }) {
-  return <span className="hand">{children}</span>;
-}
-
-/**
- * Writes `text` by hand, one character per square. Each space leaves an empty square, and groups do not break across lines.
- * `stacked` writes each group on a line of its own.
- */
-function Squares({ text, label, stacked = false }: { text: string; label?: string; stacked?: boolean }) {
-  const words = text.split(' ').filter(Boolean);
-  return (
-    <span className={stacked ? 'squares squares-stacked' : 'squares'} role={label ? 'group' : undefined} aria-label={label}>
-      {words.map((word, wordIndex) => (
-        <span key={wordIndex} className="squares-group">
-          {[...word].map((letter, index) => (
-            <span key={index} className="square">
-              {letter}
-            </span>
-          ))}
-          {wordIndex < words.length - 1 && <span className="square"> </span>}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-/** A printed label with handwritten squares after it. */
-function Field({ label, value, stacked }: { label: string; value: string; stacked?: boolean }) {
-  return (
-    <p className="field">
-      <span className="field-label">{label}</span>
-      <Squares text={value} label={label} stacked={stacked} />
-    </p>
-  );
 }
 
 /**
@@ -178,8 +146,8 @@ function ChooseGroups({ operator, current }: { operator: OperatorState; current:
 
   const instruction = (
     <p>
-      Pick a Schlüsselkenngruppe from the columns allotted to {operator.network} ({allotment.first}–{allotment.last}) and a Verfahrenkenngruppe
-      from columns {book.verfahrenkenngruppen.first}–{book.verfahrenkenngruppen.last}.
+      Pick a Schlüsselkenngruppe from the columns allotted to {operator.network} ({allotment.first}–{allotment.last}) and a Verfahrenkenngruppe from columns{' '}
+      {book.verfahrenkenngruppen.first}–{book.verfahrenkenngruppen.last}.
     </p>
   );
 
@@ -198,7 +166,13 @@ function ChooseGroups({ operator, current }: { operator: OperatorState; current:
   return (
     <form className="notebook-form" aria-label="Choose the groups" onSubmit={submit}>
       {instruction}
-      <TrigramPicker label="Schlüsselkenngruppe" book={book} range={netRange} value={schluessel ?? { column: netRange.first, trigram: null }} onChange={setSchluessel} />
+      <TrigramPicker
+        label="Schlüsselkenngruppe"
+        book={book}
+        range={netRange}
+        value={schluessel ?? { column: netRange.first, trigram: null }}
+        onChange={setSchluessel}
+      />
       <TrigramPicker
         label="Verfahrenkenngruppe"
         book={book}
@@ -208,7 +182,14 @@ function ChooseGroups({ operator, current }: { operator: OperatorState; current:
       />
       <label className="inline-label">
         Fillers (before and after)
-        <input className="hand-input fillers" value={fillers} maxLength={2} required pattern="[A-Za-z]{2}" onChange={(event) => setFillers(event.target.value)} />
+        <input
+          className="hand-input fillers"
+          value={fillers}
+          maxLength={2}
+          required
+          pattern="[A-Za-z]{2}"
+          onChange={(event) => setFillers(event.target.value)}
+        />
       </label>
       <p className="notebook-actions">
         <button type="button" onClick={random}>
@@ -280,12 +261,12 @@ function IndicatorExplanation({ operator }: { operator: OperatorState }) {
   return (
     <>
       <p>
-        The indicator groups <Hand>{indicator}</Hand> stand at the start and the end of the message. Undo the bigram swaps of Tauschtafel{' '}
-        {operator.table} to get the two rows written below them.
+        The indicator groups <Hand>{indicator}</Hand> stand at the start and the end of the message. Undo the bigram swaps of Tauschtafel {operator.table} to
+        get the two rows written below them.
       </p>
       <p>
-        The upper row holds a filler and the Schlüsselkenngruppe <Hand>{schluesselkenngruppe}</Hand>, which stands in column {schluesselColumn ?? '—'} of
-        the Kenngruppenbuch.{' '}
+        The upper row holds a filler and the Schlüsselkenngruppe <Hand>{schluesselkenngruppe}</Hand>, which stands in column {schluesselColumn ?? '—'} of the
+        Kenngruppenbuch.{' '}
         {allotment
           ? `Columns ${allotment.first}–${allotment.last} are allotted to ${allotment.network}, so the message belongs to that network and was sent with its key.`
           : 'That column is not allotted to any network.'}
@@ -308,21 +289,10 @@ function PreambleExplanation({ message, cipherLength }: { message: string; ciphe
   const [, hours, minutes, count] = preamble;
   return (
     <p>
-      The first number, <Hand>{hours + minutes}</Hand>, is the time of origin: the message was written at {hours}:{minutes}. The second,{' '}
-      <Hand>{count}</Hand>, is the letter count: every letter after it, so the two indicator groups at the start, the {cipherLength} letters of
-      cipher text and the indicator groups again at the end (8 + {cipherLength} + 8). The receiver checks it to see whether letters went missing.
+      The first number, <Hand>{hours + minutes}</Hand>, is the time of origin: the message was written at {hours}:{minutes}. The second, <Hand>{count}</Hand>,
+      is the letter count: every letter after it, so the two indicator groups at the start, the {cipherLength} letters of cipher text and the indicator groups
+      again at the end (8 + {cipherLength} + 8). The receiver checks it to see whether letters went missing.
     </p>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  const copyText = useMachine((store) => store.copyText);
-  const [copied, setCopied] = useState(false);
-  const copy = async () => setCopied(await copyText(text));
-  return (
-    <button type="button" onClick={() => void copy()}>
-      {copied ? 'Copied' : 'Copy'}
-    </button>
   );
 }
 
@@ -573,9 +543,27 @@ function Send() {
   );
 }
 
+/** Every lamp lit on the machine, written down in groups of 4, with a button to clear the page. */
+function LampPad() {
+  const lamps = useMachine((store) => store.machine?.lamps ?? '');
+  const clearLamps = useMachine((store) => store.clearLamps);
+  return (
+    <>
+      <p>Every lamp that lights on the machine is written down here. {keyboardHint}</p>
+      {lamps ? <Squares text={groups(lamps).join(' ')} label="Lamps" /> : <p>No lamps yet.</p>}
+      <p className="notebook-actions">
+        {lamps && <CopyButton text={groups(lamps).join(' ')} />}
+        <button type="button" disabled={!lamps} onClick={() => void clearLamps()}>
+          Clear
+        </button>
+      </p>
+    </>
+  );
+}
+
 /** Shown on the other tab while a message is in progress. */
 function Busy({ running, onShow }: { running: Direction; onShow: () => void }) {
-  const other = tabs.find((tab) => tab.direction === running)!;
+  const other = tabs.find((tab) => tab.page === running)!;
   return (
     <>
       <p role="status">
@@ -595,7 +583,7 @@ export function Notebook() {
   const load = useMachine((store) => store.load);
   const appliedKey = useMachine((store) => store.machine?.appliedKey);
   const operator = useMachine((store) => store.machine?.operator);
-  const [chosen, setChosen] = useState<Direction | null>(null);
+  const [chosen, setChosen] = useState<Page | null>(null);
   const selected = chosen ?? operator?.direction ?? 'Send';
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   usePhysicalKeyboard(useKeys());
@@ -610,13 +598,15 @@ export function Notebook() {
       return;
     }
     event.preventDefault();
-    const next = (tabs.findIndex((tab) => tab.direction === selected) + step + tabs.length) % tabs.length;
-    setChosen(tabs[next].direction);
+    const next = (tabs.findIndex((tab) => tab.page === selected) + step + tabs.length) % tabs.length;
+    setChosen(tabs[next].page);
     tabRefs.current[next]?.focus();
   };
 
   let content: ReactNode;
-  if (operator && operator.direction === selected) {
+  if (selected === 'Lamps') {
+    content = <LampPad />;
+  } else if (operator && operator.direction === selected) {
     content = <Procedure operator={operator} />;
   } else if (operator && operator.step !== 'Done') {
     content = <Busy running={operator.direction} onShow={() => setChosen(operator.direction)} />;
@@ -629,17 +619,17 @@ export function Notebook() {
       <div className="notebook-tabs" role="tablist" aria-label="Notebook" onKeyDown={onTabKeyDown}>
         {tabs.map((tab, index) => (
           <button
-            key={tab.direction}
+            key={tab.page}
             ref={(element) => {
               tabRefs.current[index] = element;
             }}
             type="button"
             role="tab"
-            id={`notebook-tab-${tab.direction}`}
-            aria-selected={tab.direction === selected}
+            id={`notebook-tab-${tab.page}`}
+            aria-selected={tab.page === selected}
             aria-controls="notebook-page"
-            tabIndex={tab.direction === selected ? 0 : -1}
-            onClick={() => setChosen(tab.direction)}
+            tabIndex={tab.page === selected ? 0 : -1}
+            onClick={() => setChosen(tab.page)}
           >
             {tab.label}
           </button>

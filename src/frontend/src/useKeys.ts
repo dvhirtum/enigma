@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { alphabet } from './machine';
+import { useActive } from './mode';
 import { useMachine } from './store';
 
 export interface Keys {
@@ -51,7 +52,7 @@ export function useKeys(): Keys {
   return { press, release };
 }
 
-function isFormControl(target: EventTarget | null): boolean {
+export function isFormControl(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement;
 }
 
@@ -60,9 +61,17 @@ function physicalKey(event: KeyboardEvent): string {
   return event.code || event.key.toUpperCase();
 }
 
-/** Presses the machine key for a letter typed on the physical keyboard, and releases it when that physical key goes up. */
+/**
+ * Presses the machine key for a letter typed on the physical keyboard, and releases it when that physical key goes up.
+ * Does nothing while its frame is not the active mode.
+ */
 export function usePhysicalKeyboard({ press, release }: Keys): void {
+  const active = useActive();
+
   useEffect(() => {
+    if (!active) {
+      return;
+    }
     let down: string | null = null;
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -86,7 +95,7 @@ export function usePhysicalKeyboard({ press, release }: Keys): void {
       }
     };
 
-    const onBlur = () => {
+    const releaseDown = () => {
       if (down) {
         down = null;
         release();
@@ -95,11 +104,12 @@ export function usePhysicalKeyboard({ press, release }: Keys): void {
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('blur', onBlur);
+    window.addEventListener('blur', releaseDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('blur', releaseDown);
+      releaseDown();
     };
-  }, [press, release]);
+  }, [active, press, release]);
 }

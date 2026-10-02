@@ -4,16 +4,20 @@ import type { Backend } from './backend';
 import { send } from './http';
 import { createQueue } from './queue';
 import { registerFiles } from './files';
-import { healthRoute, keySheetRoutes, machineRoutes, procedureRoutes, type Route } from './routes';
+import { bombeRoutes, healthRoute, keySheetRoutes, machineRoutes, procedureRoutes, type Route } from './routes';
 
 export interface Windows {
   openNotebook: () => void;
+  openHut8Notebook: () => void;
+  /** Whether the Hut 8 notebook window is open. */
+  isHut8Open: () => boolean;
   openInstructions: () => void;
 }
 
 /**
  * Registers one IPC channel per API operation. Machine calls reach the backend one at a time, in order,
- * and the other windows receive the resulting machine state. The other windows are also told when key sheets change.
+ * and the other windows receive the resulting machine state. The other windows also receive the results of Bombe calls
+ * that change the job, and are told when key sheets change.
  */
 export function registerIpc(backend: Backend, windows: Windows): void {
   const broadcast = (sender: Electron.WebContents, channel: string, ...args: unknown[]) => {
@@ -67,6 +71,21 @@ export function registerIpc(backend: Backend, windows: Windows): void {
     ipcMain.handle(`procedure:${name}`, (_event, ...args: unknown[]) => call(route(...args)));
   }
 
+  // Reads, which change nothing.
+  const unshared = new Set(['getState', 'intercepts', 'messageTypes', 'suggestCrib', 'getSolution', 'menuStops', 'getStops', 'getPrintout', 'getRingTable']);
+  for (const [name, toRoute] of Object.entries(bombeRoutes)) {
+    const route = toRoute as (...args: unknown[]) => Route;
+    ipcMain.handle(`bombe:${name}`, async (event, ...args: unknown[]) => {
+      // A run logs its stops for the notebook while the notebook window is open.
+      const sent = name === 'startRun' ? [args[0], windows.isHut8Open()] : args;
+      const result = await call(route(...sent));
+      if (result.ok && !unshared.has(name)) {
+        broadcast(event.sender, 'bombe:result', { name, args, value: result.value });
+      }
+      return result;
+    });
+  }
+
   registerFiles();
 
   ipcMain.handle('clipboard:writeText', (_event, text: unknown) => {
@@ -77,7 +96,15 @@ export function registerIpc(backend: Backend, windows: Windows): void {
   });
 
   ipcMain.handle('windows:openNotebook', () => windows.openNotebook());
+  ipcMain.handle('windows:openHut8Notebook', () => windows.openHut8Notebook());
   ipcMain.handle('windows:openInstructions', () => windows.openInstructions());
+  ipcMain.handle('windows:releaseCheckerKey', (event) => broadcast(event.sender, 'windows:checkerKeyReleased'));
+  ipcMain.handle('windows:showMode', (event, mode: unknown) => {
+    if (mode !== 'enigma' && mode !== 'bombe') {
+      throw new Error('Unknown mode.');
+    }
+    broadcast(event.sender, 'windows:mode', mode);
+  });
 
   ipcMain.handle('backend:status', () => backend.status());
   ipcMain.handle('backend:restart', () => backend.restart());

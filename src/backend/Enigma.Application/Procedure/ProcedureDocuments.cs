@@ -3,7 +3,7 @@ using Enigma.Domain.Machine;
 
 namespace Enigma.Application.Procedure;
 
-/// <summary>Columns <see cref="First"/> to <see cref="Last"/>, numbered from 1.</summary>
+/// <summary>Columns <see cref="First" /> to <see cref="Last" />, numbered from 1.</summary>
 public sealed record ColumnRangeDocument(int First, int Last);
 
 public sealed record AllotmentDocument(string Network, int First, int Last);
@@ -19,8 +19,12 @@ public sealed record KenngruppenbuchDocument(
 /// <summary>A bigram table. Each swap is 4 letters: "ABCD" swaps AB and CD.</summary>
 public sealed record TauschtafelDocument(int Number, IReadOnlyList<string> Swaps);
 
-/// <summary>A Tauschtafel set as stored and shown. <see cref="Calendar"/> gives the table for each half month.</summary>
-public sealed record TauschtafelSetDocument(string Id, int Year, IReadOnlyList<TauschtafelDocument> Tables, IReadOnlyList<int> Calendar);
+/// <summary>A Tauschtafel set as stored and shown. <see cref="Calendar" /> gives the table for each half month.</summary>
+public sealed record TauschtafelSetDocument(
+    string Id,
+    int Year,
+    IReadOnlyList<TauschtafelDocument> Tables,
+    IReadOnlyList<int> Calendar);
 
 public static class ProcedureMapper
 {
@@ -31,25 +35,27 @@ public static class ProcedureMapper
         return new KenngruppenbuchDocument(
             book.Id,
             book.Created,
-            new ColumnRangeDocument(Kenngruppenbuch.Verfahrenkenngruppen.First, Kenngruppenbuch.Verfahrenkenngruppen.Last),
+            new ColumnRangeDocument(Kenngruppenbuch.Verfahrenkenngruppen.First,
+                Kenngruppenbuch.Verfahrenkenngruppen.Last),
             [.. book.Allotments.Select(a => new AllotmentDocument(a.Network, a.Columns.First, a.Columns.Last))],
             [.. Enumerable.Range(1, Kenngruppenbuch.ColumnCount).Select(n => string.Join(' ', book.Column(n)))]);
     }
 
-    /// <summary>Builds a book from a document. Bad data throws <see cref="DomainException"/>.</summary>
+    /// <summary>Builds a book from a document. Bad data throws <see cref="DomainException" />.</summary>
     public static Kenngruppenbuch FromDocument(KenngruppenbuchDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        if (document.Columns is null || document.Allotments is null)
-        {
+        if (document is not { Columns: not null, Allotments: not null })
             throw new DomainException("A Kenngruppenbuch file needs columns and allotments.");
-        }
 
         return new Kenngruppenbuch(
             document.Id,
             document.Created,
-            [.. document.Columns.Select(c => (IReadOnlyList<Kenngruppe>)[.. c.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(Kenngruppe.Parse)])],
+            [
+                .. document.Columns.Select(c => (IReadOnlyList<Kenngruppe>)
+                    [.. c.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(Kenngruppe.Parse)])
+            ],
             document.Allotments.Select(a => new Allotment(a.Network, new ColumnRange(a.First, a.Last))));
     }
 
@@ -68,10 +74,8 @@ public static class ProcedureMapper
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        if (document.Tables is null || document.Calendar is null)
-        {
+        if (document is not { Tables: not null, Calendar: not null })
             throw new DomainException("A Tauschtafel file needs tables and a calendar.");
-        }
 
         return new TauschtafelSet(
             document.Id,

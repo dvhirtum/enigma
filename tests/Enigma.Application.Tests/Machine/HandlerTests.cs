@@ -34,7 +34,10 @@ public sealed class HandlerTests
         var handler = new CreateMachineHandler(store);
 
         // Act
-        void Act() => handler.Handle(new CreateMachine("M5"));
+        void Act()
+        {
+            handler.Handle(new CreateMachine("M5"));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -101,7 +104,10 @@ public sealed class HandlerTests
         var handler = new InsertRotorHandler(new FakeMachineSessionStore());
 
         // Act
-        void Act() => handler.Handle(new InsertRotor(slot, rotor));
+        void Act()
+        {
+            handler.Handle(new InsertRotor(slot, rotor));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -118,7 +124,10 @@ public sealed class HandlerTests
         var handler = new SetRingSettingHandler(new FakeMachineSessionStore());
 
         // Act
-        void Act() => handler.Handle(new SetRingSetting(rotor, ring));
+        void Act()
+        {
+            handler.Handle(new SetRingSetting(rotor, ring));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -182,7 +191,8 @@ public sealed class HandlerTests
     [InlineData("right", "Q", "AAQ")]
     [InlineData("Middle", "D", "ADA")]
     [InlineData("LEFT", "z", "ZAA")]
-    public void Should_show_the_letter_in_the_window_When_a_rotor_is_turned(string slot, string position, string expected)
+    public void Should_show_the_letter_in_the_window_When_a_rotor_is_turned(string slot, string position,
+        string expected)
     {
         // Arrange
         var handler = new TurnRotorHandler(new FakeMachineSessionStore());
@@ -206,7 +216,10 @@ public sealed class HandlerTests
         var handler = new TurnRotorHandler(new FakeMachineSessionStore());
 
         // Act
-        void Act() => handler.Handle(new TurnRotor(slot, position));
+        void Act()
+        {
+            handler.Handle(new TurnRotor(slot, position));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -245,6 +258,41 @@ public sealed class HandlerTests
     }
 
     [Fact]
+    public void Should_write_down_every_lamp_and_keep_them_When_the_machine_is_set_up_anew()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var press = new PressKeyHandler(store);
+        var release = new ReleaseKeyHandler(store);
+        foreach (var key in "AAA")
+        {
+            press.Handle(new PressKey(key.ToString()));
+            release.Handle(new ReleaseKey());
+        }
+
+        // Act
+        var state = new CreateMachineHandler(store).Handle(new CreateMachine("M3"));
+
+        // Assert
+        Assert.Equal("BDZ", state.Lamps);
+    }
+
+    [Fact]
+    public void Should_clear_the_lamps_written_down_When_asked()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        new PressKeyHandler(store).Handle(new PressKey("A"));
+        new ReleaseKeyHandler(store).Handle(new ReleaseKey());
+
+        // Act
+        var state = new ClearLampsHandler(store).Handle(new ClearLamps());
+
+        // Assert
+        Assert.Equal("", state.Lamps);
+    }
+
+    [Fact]
     public void Should_decrypt_the_Scharnhorst_message_When_the_machine_is_set_up_through_handlers()
     {
         // Arrange
@@ -257,9 +305,7 @@ public sealed class HandlerTests
         new InsertRotorHandler(store).Handle(new InsertRotor("Middle", "VI"));
         new InsertRotorHandler(store).Handle(new InsertRotor("Right", "VIII"));
         foreach (var pair in "AN EZ HK IJ LR MQ OT PV SW UX".Split(' '))
-        {
             new ConnectPlugHandler(store).Handle(new ConnectPlug(pair));
-        }
 
         new TurnRotorHandler(store).Handle(new TurnRotor("Left", "U"));
         new TurnRotorHandler(store).Handle(new TurnRotor("Middle", "Z"));
@@ -278,5 +324,53 @@ public sealed class HandlerTests
 
         // Assert
         Assert.Equal("STEUEREJTANAFJORDJANSTANDORTQUAAACCCVIERNEUNNEUNZWOFAHRTZWONULSMXXSCHARNHORSTHCO", plaintext);
+    }
+
+    [Fact]
+    public void Should_decrypt_Scharnhorsts_signal_When_the_whole_key_is_set_up_in_one_call()
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var press = new PressKeyHandler(store);
+        var release = new ReleaseKeyHandler(store);
+
+        // Act
+        var state = new SetUpMachineHandler(store).Handle(new SetUpMachine(
+            "B", ["III", "VI", "VIII"], [1, 8, 13], "AN EZ HK IJ LR MQ OT PV SW UX".Split(' '), "UZV"));
+        var plaintext = string.Concat("YKAENZAPMSCHZBFOCUVMRMDPYCOFHADZIZMEFXTHFLOLPZLFGGBOTGOXGRETDWTJIQHLMXVJWKZUASTR"
+            .Select(c =>
+            {
+                var lamp = press.Handle(new PressKey(c.ToString())).LitLamp;
+                release.Handle(new ReleaseKey());
+                return lamp;
+            }));
+
+        // Assert
+        Assert.Equal("M3", state.Model);
+        Assert.Equal(10, state.Plugs.Count);
+        Assert.Equal("STEUEREJTANAFJORDJANSTANDORTQUAAACCCVIERNEUNNEUNZWOFAHRTZWONULSMXXSCHARNHORSTHCO", plaintext);
+    }
+
+    [Theory]
+    [InlineData("B", new[] { "I", "II" }, new[] { 1, 1 }, "AA")]
+    [InlineData("B", new[] { "I", "II", "III" }, new[] { 1, 1 }, "AAA")]
+    [InlineData("B", new[] { "I", "II", "III" }, new[] { 1, 1, 1 }, "AA")]
+    [InlineData("B", new[] { "I", "I", "III" }, new[] { 1, 1, 1 }, "AAA")]
+    public void Should_keep_the_machine_When_the_key_is_not_complete(string reflector, string[] rotors, int[] rings,
+        string positions)
+    {
+        // Arrange
+        var store = new FakeMachineSessionStore();
+        var original = store.Machine;
+
+        // Act
+        void Act()
+        {
+            new SetUpMachineHandler(store).Handle(new SetUpMachine(reflector, rotors, rings, [], positions));
+        }
+
+        // Assert
+        Assert.ThrowsAny<DomainException>(Act);
+        Assert.Same(original, store.Machine);
     }
 }

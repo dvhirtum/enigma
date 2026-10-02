@@ -14,6 +14,8 @@ public sealed class InMemoryMachineSessionStore : IMachineSessionStore
 
     public OperatorProcedure? Procedure { get; set; }
 
+    public string Lamps { get; set; } = string.Empty;
+
     public T Use<T>(Func<EnigmaMachine, T> action)
     {
         ArgumentNullException.ThrowIfNull(action);

@@ -15,15 +15,20 @@ public sealed class OperatorContexts(IMachineSessionStore store, KeySheetLinker 
         var applied = store.AppliedKey ?? throw new DomainException("Apply a daily key first.");
         var sheet = linker.Load(applied.SheetId);
         var grundstellung = applied.Key.Grundstellung
-            ?? sheet.KeyFor(applied.Key.Day).Grundstellung
-            ?? throw new DomainException($"Day {applied.Key.Day} of {applied.Network} {applied.Month} has no Grundstellung.");
+                            ?? sheet.KeyFor(applied.Key.Day).Grundstellung
+                            ?? throw new DomainException(
+                                $"Day {applied.Key.Day} of {applied.Network} {applied.Month} has no Grundstellung.");
         var book = linker.Book(sheet.KenngruppenbuchId!);
         var table = linker.Tables(sheet.TauschtafelSetId!).TableFor(KeyMonth.Parse(applied.Month), applied.Key.Day);
         return new OperatorContext(applied.Network, grundstellung, book, table);
     }
 }
 
-public sealed class StartSendingHandler(IMachineSessionStore store, OperatorContexts contexts, Random random, TimeProvider time)
+public sealed class StartSendingHandler(
+    IMachineSessionStore store,
+    OperatorContexts contexts,
+    Random random,
+    TimeProvider time)
 {
     public MachineState Handle(StartSending command)
     {
@@ -33,11 +38,20 @@ public sealed class StartSendingHandler(IMachineSessionStore store, OperatorCont
         return store.Begin(procedure);
     }
 
-    private Letter RandomLetter() => Letter.FromIndex(random.Next(Letter.Count));
+    private Letter RandomLetter()
+    {
+        return Letter.FromIndex(random.Next(Letter.Count));
+    }
 }
 
 /// <summary>A key sheet day that fits a received message.</summary>
-public sealed record ReceivingKey(string SheetId, string Network, string Month, int Day, string Model, string Schluesselkenngruppe);
+public sealed record ReceivingKey(
+    string SheetId,
+    string Network,
+    string Month,
+    int Day,
+    string Model,
+    string Schluesselkenngruppe);
 
 public sealed class FindReceivingKeysHandler(KeySheetLinker linker)
 {
@@ -47,7 +61,8 @@ public sealed class FindReceivingKeysHandler(KeySheetLinker linker)
         ArgumentNullException.ThrowIfNull(query);
 
         var message = RadioMessage.Parse(query.Message ?? string.Empty);
-        var date = DateOnly.TryParseExact(query.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)
+        var date = DateOnly.TryParseExact(query.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None,
+            out var parsed)
             ? parsed
             : throw new DomainException($"'{query.Date}' is not a date such as 1944-06-19.");
         var month = new KeyMonth(date.Year, date.Month);
@@ -57,16 +72,23 @@ public sealed class FindReceivingKeysHandler(KeySheetLinker linker)
             .. linker.List()
                 .Where(s => s.Month == month && s.DailyKeys.Any(k => k.Day == date.Day))
                 .Select(s => linker.Load(s.Id))
-                .Select(s => (Sheet: s, Indicator: Indicator.Decrypt(message.Indicator, linker.Tables(s.TauschtafelSetId!).TableFor(month, date.Day))))
-                .Where(x => linker.Book(x.Sheet.KenngruppenbuchId!).IsSchluesselkenngruppe(x.Sheet.Network, x.Indicator.Schluesselkenngruppe))
+                .Select(s => (Sheet: s,
+                    Indicator: Indicator.Decrypt(message.Indicator,
+                        linker.Tables(s.TauschtafelSetId!).TableFor(month, date.Day))))
+                .Where(x => linker.Book(x.Sheet.KenngruppenbuchId!)
+                    .IsSchluesselkenngruppe(x.Sheet.Network, x.Indicator.Schluesselkenngruppe))
                 .OrderBy(x => x.Sheet.Network, StringComparer.OrdinalIgnoreCase)
                 .Select(x => new ReceivingKey(
-                    x.Sheet.Id, x.Sheet.Network, month.ToString(), date.Day, x.Sheet.Model.Name, x.Indicator.Schluesselkenngruppe.ToString())),
+                    x.Sheet.Id, x.Sheet.Network, month.ToString(), date.Day, x.Sheet.Model.Name,
+                    x.Indicator.Schluesselkenngruppe.ToString()))
         ];
     }
 }
 
-public sealed class StartReceivingHandler(IMachineSessionStore store, ApplyDailyKeyHandler apply, OperatorContexts contexts)
+public sealed class StartReceivingHandler(
+    IMachineSessionStore store,
+    ApplyDailyKeyHandler apply,
+    OperatorContexts contexts)
 {
     public MachineState Handle(StartReceiving command)
     {
@@ -100,32 +122,42 @@ public sealed class ChooseGroupsHandler(IMachineSessionStore store)
 
 public sealed class FinishMessageHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(FinishMessage command) => store.Operate(p => p.Finish());
+    public MachineState Handle(FinishMessage command)
+    {
+        return store.Operate(p => p.Finish());
+    }
 }
 
 public sealed class CancelOperatorHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(CancelOperator command) => store.Begin(null);
+    public MachineState Handle(CancelOperator command)
+    {
+        return store.Begin(null);
+    }
 }
 
 internal static class OperatorSessionStoreExtensions
 {
-    /// <summary>Makes <paramref name="procedure"/> the running procedure and lets it look at the machine.</summary>
-    public static MachineState Begin(this IMachineSessionStore store, OperatorProcedure? procedure) =>
-        store.Use(machine =>
+    /// <summary>Makes <paramref name="procedure" /> the running procedure and lets it look at the machine.</summary>
+    public static MachineState Begin(this IMachineSessionStore store, OperatorProcedure? procedure)
+    {
+        return store.Use(machine =>
         {
             store.Procedure = procedure;
             procedure?.Observe(machine);
-            return MachineState.From(machine, store.AppliedKey, procedure);
+            return MachineState.From(machine, store.AppliedKey, procedure, store.Lamps);
         });
+    }
 
-    /// <summary>Applies <paramref name="action"/> to the running procedure.</summary>
-    public static MachineState Operate(this IMachineSessionStore store, Action<OperatorProcedure> action) =>
-        store.Use(machine =>
+    /// <summary>Applies <paramref name="action" /> to the running procedure.</summary>
+    public static MachineState Operate(this IMachineSessionStore store, Action<OperatorProcedure> action)
+    {
+        return store.Use(machine =>
         {
             var procedure = store.Procedure ?? throw new DomainException("No operator procedure is running.");
             action(procedure);
             procedure.Observe(machine);
-            return MachineState.From(machine, store.AppliedKey, procedure);
+            return MachineState.From(machine, store.AppliedKey, procedure, store.Lamps);
         });
+    }
 }

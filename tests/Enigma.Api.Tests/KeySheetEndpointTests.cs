@@ -1,30 +1,30 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Enigma.Api.Tests;
 
 public sealed class KeySheetEndpointTests : IDisposable
 {
     private const string HistoricalJson = """
-        {
-          "network": "Hydra",
-          "month": "1943-12",
-          "source": "Test transcription",
-          "days": [
-            { "day": 26, "reflector": "B", "rotors": ["III", "VI", "VIII"], "rings": [1, 8, 13],
-              "plugs": ["AN", "EZ", "HK", "IJ", "LR", "MQ", "OT", "PV", "SW", "UX"] }
-          ]
-        }
-        """;
+                                          {
+                                            "network": "Hydra",
+                                            "month": "1943-12",
+                                            "source": "Test transcription",
+                                            "days": [
+                                              { "day": 26, "reflector": "B", "rotors": ["III", "VI", "VIII"], "rings": [1, 8, 13],
+                                                "plugs": ["AN", "EZ", "HK", "IJ", "LR", "MQ", "OT", "PV", "SW", "UX"] }
+                                            ]
+                                          }
+                                          """;
+
+    private readonly List<IDisposable> _disposables = [];
 
     private readonly string _root = Directory.CreateTempSubdirectory("enigma-keysheets-").FullName;
-    private readonly List<IDisposable> _disposables = [];
 
     public KeySheetEndpointTests()
     {
@@ -38,14 +38,18 @@ public sealed class KeySheetEndpointTests : IDisposable
 
     private string UserPath => Path.Combine(_root, "user");
 
+    public static TheoryData<string, string> UnreadableUserFiles => new()
+    {
+        { "broken.json", "{ not json" },
+        { "bad-grundstellung.json", WithGrundstellung("\"A1B\"") },
+        { ".json", HistoricalJson }
+    };
+
     public void Dispose()
     {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
+        foreach (var disposable in _disposables) disposable.Dispose();
 
-        Directory.Delete(_root, recursive: true);
+        Directory.Delete(_root, true);
     }
 
     [Fact]
@@ -71,10 +75,12 @@ public sealed class KeySheetEndpointTests : IDisposable
     {
         // Arrange
         var imported = await SendAsync<KeySheetDetails>(
-            CreateClient(), HttpMethod.Post, "/api/keysheets/import", JsonSerializer.Deserialize<JsonElement>(HistoricalJson));
+            CreateClient(), HttpMethod.Post, "/api/keysheets/import",
+            JsonSerializer.Deserialize<JsonElement>(HistoricalJson));
 
         // Act
-        var reloaded = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url($"/api/keysheets/{imported.Id}"), Token);
+        var reloaded =
+            await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url($"/api/keysheets/{imported.Id}"), Token);
 
         // Assert
         Assert.True(File.Exists(Path.Combine(UserPath, imported.Id + ".json")));
@@ -120,7 +126,8 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(["III", "VI", "VIII"], state.Rotors.Select(r => r.Rotor));
         Assert.Equal([1, 8, 13], state.Rotors.Select(r => r.RingSetting));
         Assert.Equal(10, state.Plugs.Count);
-        Assert.Equal(new AppliedKeyState("historical-hydra-1943-12", "Hydra", "1943-12", 26, false, null), state.AppliedKey! with { Grundstellung = null });
+        Assert.Equal(new AppliedKeyState("historical-hydra-1943-12", "Hydra", "1943-12", 26, false, null),
+            state.AppliedKey! with { Grundstellung = null });
         Assert.Matches("^[A-Z]{3}$", state.AppliedKey.Grundstellung);
     }
 
@@ -147,10 +154,12 @@ public sealed class KeySheetEndpointTests : IDisposable
     {
         // Arrange
         var client = CreateClient();
-        await SendAsync<List<KeySheetSummary>>(client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M3", year = 1944 });
+        await SendAsync<List<KeySheetSummary>>(client, HttpMethod.Post, "/api/keysheets/generate",
+            new { model = "M3", year = 1944 });
 
         // Act
-        using var response = await client.PostAsJsonAsync(Url("/api/keysheets/generate"), new { model = "M3", year = 1944 }, Token);
+        using var response =
+            await client.PostAsJsonAsync(Url("/api/keysheets/generate"), new { model = "M3", year = 1944 }, Token);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -204,13 +213,6 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    public static TheoryData<string, string> UnreadableUserFiles => new()
-    {
-        { "broken.json", "{ not json" },
-        { "bad-grundstellung.json", WithGrundstellung("\"A1B\"") },
-        { ".json", HistoricalJson },
-    };
-
     [Theory]
     [MemberData(nameof(UnreadableUserFiles))]
     public async Task Should_skip_the_file_When_a_user_sheet_cannot_be_read(string fileName, string json)
@@ -227,8 +229,11 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(["historical-hydra-1943-12"], sheets!.Select(s => s.Id));
     }
 
-    private static string WithGrundstellung(string grundstellung) =>
-        HistoricalJson.Replace("\"plugs\"", $"\"grundstellung\": {grundstellung}, \"plugs\"", StringComparison.Ordinal);
+    private static string WithGrundstellung(string grundstellung)
+    {
+        return HistoricalJson.Replace("\"plugs\"", $"\"grundstellung\": {grundstellung}, \"plugs\"",
+            StringComparison.Ordinal);
+    }
 
     [Fact]
     public async Task Should_share_the_book_and_the_tables_When_a_sheet_is_exported_to_another_installation()
@@ -236,12 +241,14 @@ public sealed class KeySheetEndpointTests : IDisposable
         // Arrange
         var sender = CreateClient();
         var receiver = CreateClient(Path.Combine(_root, "other-user"));
-        var generated = await SendAsync<List<KeySheetSummary>>(sender, HttpMethod.Post, "/api/keysheets/generate", new { model = "M4", year = 1942 });
-        var created = (await sender.GetFromJsonAsync<KeySheetDetails>(Url($"/api/keysheets/{generated[0].Id}"), Token))!;
+        var generated = await SendAsync<List<KeySheetSummary>>(sender, HttpMethod.Post, "/api/keysheets/generate",
+            new { model = "M4", year = 1942 });
+        var created =
+            (await sender.GetFromJsonAsync<KeySheetDetails>(Url($"/api/keysheets/{generated[0].Id}"), Token))!;
         var file = await sender.GetStringAsync(Url($"/api/keysheets/{created.Id}/export"), Token);
 
         // Act
-        using var content = new StringContent(file, System.Text.Encoding.UTF8, "application/json");
+        using var content = new StringContent(file, Encoding.UTF8, "application/json");
         using var response = await receiver.PostAsync(Url("/api/keysheets/import"), content, Token);
 
         // Assert
@@ -257,20 +264,24 @@ public sealed class KeySheetEndpointTests : IDisposable
             await receiver.GetStringAsync(Url($"/api/tauschtafeln/{imported.TauschtafelSetId}"), Token));
     }
 
-    private static Uri Url(string path) => new(path, UriKind.Relative);
+    private static Uri Url(string path)
+    {
+        return new Uri(path, UriKind.Relative);
+    }
 
     private static async Task<T> SendAsync<T>(HttpClient client, HttpMethod method, string url, object body)
     {
-        using var request = new HttpRequestMessage(method, Url(url)) { Content = JsonContent.Create(body) };
+        using var request = new HttpRequestMessage(method, Url(url));
+        request.Content = JsonContent.Create(body);
         using var response = await client.SendAsync(request, Token);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(Token)
-            ?? throw new InvalidOperationException("Empty response.");
+               ?? throw new InvalidOperationException("Empty response.");
     }
 
     private HttpClient CreateClient(string? userPath = null)
     {
-        var root = new WebApplicationFactory<Program>();
+        var root = new ApiFactory();
         var factory = root.WithWebHostBuilder(builder => builder
             .UseSetting("KeySheets:HistoricalPath", HistoricalPath)
             .UseSetting("KeySheets:UserPath", userPath ?? UserPath));

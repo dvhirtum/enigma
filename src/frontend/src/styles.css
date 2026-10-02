@@ -62,10 +62,802 @@ body {
   text-transform: uppercase;
 }
 
+.mode-switch {
+  display: flex;
+  align-items: baseline;
+}
+
+.mode-switch button {
+  padding: 0 0.6em;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8em;
+  letter-spacing: inherit;
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+.mode-switch button:first-child {
+  padding-left: 0;
+}
+
+.mode-switch button + button {
+  border-left: 1px solid var(--line);
+}
+
+.mode-switch button[aria-pressed='true'] {
+  color: var(--fg);
+  font-size: 1em;
+  text-transform: uppercase;
+  cursor: default;
+}
+
+.mode-switch button:not([aria-pressed='true']):enabled:hover {
+  color: var(--accent);
+}
+
+.mode-switch button:disabled {
+  cursor: not-allowed;
+}
+
+/* Bombe views */
+
+.bombe-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 60rem;
+}
+
+.bombe-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.crib-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .summary {
   margin: 0;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+.menu-warning {
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  background: var(--error-bg);
+  color: var(--error-fg);
+}
+
+.run-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.run-progress progress {
+  width: 100%;
+  max-width: 42rem;
+  accent-color: var(--accent);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.letters {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+.bombe-view.front-view,
+.bombe-view.back-view {
+  max-width: 66rem;
+}
+
+.bombe-view.checking {
+  max-width: 68rem;
+}
+
+/* The checking machine: a sloped black panel, a reflector cartridge, a cream dummy drum, coloured drums, lamps and keys. */
+.checking-machine {
+  width: 100%;
+  user-select: none;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+.checking-machine text {
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.checking-machine .panel {
+  fill: #1c1c1a;
+  stroke: #000;
+  stroke-width: 3;
+}
+
+.checking-machine .drum-rack rect {
+  fill: #2c2b28;
+  stroke: #45433d;
+}
+
+.checking-machine .rack-drum circle {
+  stroke: #45433d;
+  stroke-width: 2;
+}
+
+.checking-machine .rack-drum.in-use circle {
+  fill: none;
+  stroke-dasharray: 4 4;
+}
+
+.checking-machine .rack-drum text {
+  fill: #ece8df;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.checking-machine .rack-drum.light text {
+  fill: #1c1c1a;
+}
+
+.checking-machine .lamp .lamp-glass {
+  fill: #3a3833;
+}
+
+.checking-machine .lamp .lamp-letter {
+  fill: #8f8a7e;
+}
+
+.checking-machine .lamp.lit .lamp-glass {
+  fill: #ffd76a;
+}
+
+.checking-machine .lamp.lit .lamp-letter {
+  fill: #1c1c1a;
+}
+
+.checking-machine .dummy-drum circle {
+  fill: #efe6cf;
+  stroke: #b9ad8c;
+  stroke-width: 4;
+}
+
+.checking-machine .dummy-drum .hub {
+  fill: #6b4a2b;
+  stroke: #4a3220;
+}
+
+.checking-machine .cartridge-rack > rect {
+  fill: #2c2b28;
+  stroke: #45433d;
+}
+
+.checking-machine .cartridge rect {
+  fill: #2b2b2b;
+  stroke: #8f8a7e;
+  stroke-width: 2;
+}
+
+.checking-machine .cartridge.in-use rect {
+  fill: none;
+  stroke: #45433d;
+  stroke-dasharray: 4 4;
+}
+
+.checking-machine .cartridge.selected rect {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.checking-machine .cartridge text {
+  fill: #ece8df;
+  font-size: 14px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.checking-machine .held-cartridge {
+  fill: #2b2b2b;
+  stroke: #8f8a7e;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.check-drum .rim {
+  fill: none;
+  stroke-width: 16;
+  pointer-events: stroke;
+  cursor: grab;
+}
+
+.check-drum .rim:active {
+  cursor: grabbing;
+}
+
+.check-drum .rim:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 3px #ffd76a);
+}
+
+.check-drum .face {
+  fill: #efe6cf;
+  stroke: #000;
+  stroke-width: 1;
+}
+
+.check-drum .face-letter {
+  fill: #6b665b;
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.check-drum .face-letter.at-index {
+  fill: #1c1c1a;
+  font-weight: bold;
+}
+
+.check-drum .ring-dot {
+  fill: #000;
+  stroke: #efe6cf;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.check-drum .index-mark {
+  fill: #efe6cf;
+}
+
+.check-drum .drum-window {
+  fill: #1c1c1a;
+  font-size: 26px;
+  font-weight: bold;
+}
+
+.check-drum .drum-name {
+  fill: #ece8df;
+  font-size: 14px;
+}
+
+/* The Bombe: a black cabinet with coloured drums, cream plates and engravings, and heavy cables on the back. */
+.bombe-front,
+.bombe-side,
+.bombe-back {
+  display: block;
+  width: 100%;
+  user-select: none;
+  font-family: 'DIN Alternate', 'Bahnschrift', system-ui, sans-serif;
+}
+
+.bombe-front-frame {
+  max-width: 66rem;
+}
+
+.bombe-back {
+  max-width: 66rem;
+}
+
+.bombe-side {
+  max-width: 34rem;
+}
+
+.bombe-front text,
+.bombe-side text,
+.bombe-back text {
+  fill: #ece8df;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.bombe-front .cabinet,
+.bombe-side .cabinet,
+.bombe-back .cabinet {
+  fill: #1c1c1a;
+  stroke: #000;
+  stroke-width: 3;
+}
+
+.bombe-front .bank {
+  fill: #262522;
+  stroke: #0b0b0a;
+}
+
+.bombe-front .label-plate,
+.bombe-back .label-plate {
+  fill: #e8dfc8;
+  stroke: #8c8169;
+}
+
+.bombe-front .chain-label,
+.bombe-back .panel-label {
+  fill: #1c1c1a;
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: start;
+}
+
+.bombe-front .engraving,
+.bombe-side .engraving,
+.bombe-back .engraving {
+  fill: #cfc7b3;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.bombe-side .engraving.small,
+.bombe-back .engraving.small {
+  font-size: 8px;
+}
+
+.bombe-front .plate-text,
+.bombe-side .plate-text {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.bombe-front .scrambler-label {
+  fill: #cfc7b3;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.drum .body {
+  stroke: #0b0b0a;
+  stroke-width: 1.5;
+}
+
+.drum .ticks line {
+  stroke: #ece8df;
+  stroke-width: 1;
+}
+
+.drum .hub {
+  fill: #2b2a27;
+  stroke: #8f8a7e;
+  stroke-width: 1.5;
+}
+
+.drum .index-letter {
+  fill: #fff;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.drum.light .ticks line {
+  stroke: #1c1c1a;
+}
+
+.drum.light .index-letter {
+  fill: #1c1c1a;
+}
+
+.drum.indicator .body {
+  fill: #efe6cf;
+}
+
+.drum.indicator .ticks line {
+  stroke: #6b665b;
+}
+
+.drum.indicator .index-letter {
+  fill: #1c1c1a;
+}
+
+.drum .index-mark {
+  fill: #efe6cf;
+}
+
+.drum .socket {
+  fill: #121211;
+  stroke: #45433d;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.drum .spindle {
+  fill: #8f8a7e;
+}
+
+.bombe-front.spinning .drum:not(.idle):not(.empty):not(.indicator) .ticks {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: drum-spin 0.3s linear infinite;
+}
+
+.bombe-front.spinning .drum:not(.idle):not(.empty) .index-letter {
+  opacity: 0.35;
+  filter: blur(1px);
+}
+
+@keyframes drum-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.drum.settable {
+  cursor: pointer;
+}
+
+.drum.settable:hover .body,
+.drum.settable:hover .socket,
+.drum.settable:focus-visible .body,
+.drum.settable:focus-visible .socket {
+  stroke: #ffd76a;
+  stroke-width: 3;
+  stroke-dasharray: none;
+}
+
+.drum.settable:focus-visible {
+  outline: none;
+}
+
+.bombe-front .rack-lip {
+  fill: #3d2412;
+}
+
+.bombe-front .rack-drum circle {
+  stroke: #0b0b0a;
+  stroke-width: 2;
+}
+
+.bombe-front .rack-drum text {
+  fill: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.bombe-front .rack-drum.light text {
+  fill: #1c1c1a;
+}
+
+.bombe-side .end-plate {
+  fill: #2b2a27;
+  stroke: #0b0b0a;
+}
+
+.stop-lamp .lamp-rim {
+  fill: #8f8a7e;
+}
+
+.stop-lamp .lamp-glass {
+  fill: #4a1f18;
+}
+
+.stop-lamp.lit .lamp-glass {
+  fill: #e5372a;
+  filter: drop-shadow(0 0 4px #e5372a);
+}
+
+.bombe-side .letter-window,
+.letter-dial .dial-window {
+  fill: #f1ead8;
+  stroke: #5c5a54;
+  stroke-width: 2;
+}
+
+.bombe-side .window-letter,
+.letter-dial .dial-letter {
+  fill: #1b1a18;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.wire-lamp circle {
+  fill: #3a3833;
+  stroke: #5c5a54;
+}
+
+.wire-lamp text {
+  fill: #8f8a7e;
+  font-size: 11px;
+}
+
+.wire-lamp.lit circle {
+  fill: #ffd76a;
+}
+
+.wire-lamp.lit text {
+  fill: #1c1c1a;
+  font-weight: bold;
+}
+
+.bombe-side .stop-reading {
+  fill: #ffd76a;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.bombe-side .speed-reading {
+  fill: #ece8df;
+  font-size: 10px;
+}
+
+.push-button .bezel {
+  fill: #8f8a7e;
+  stroke: #45433d;
+}
+
+.push-button .cap {
+  stroke: #0b0b0a;
+}
+
+.push-button.start .cap {
+  fill: #2e7d32;
+}
+
+.push-button.stop .cap {
+  fill: #b3261e;
+}
+
+.push-button.continue .cap {
+  fill: #e0b000;
+}
+
+.push-button,
+.toggle-switch,
+.selector-position,
+.knob-control,
+.letter-dial .dial-arrow {
+  cursor: pointer;
+}
+
+.push-button:active:not([aria-disabled='true']) .cap {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.85);
+}
+
+.push-button[aria-disabled='true'],
+.toggle-switch[aria-disabled='true'],
+.selector-position[aria-disabled='true'],
+.letter-dial[aria-disabled='true'] .dial-arrow {
+  cursor: default;
+}
+
+.push-button[aria-disabled='true'] .cap {
+  opacity: 0.35;
+}
+
+.switch-plate {
+  fill: #8f8a7e;
+  stroke: #45433d;
+}
+
+.switch-nut {
+  fill: #5c5a54;
+  stroke: #2b2a27;
+}
+
+.switch-lever {
+  stroke: #d8d4ca;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.switch-tip {
+  fill: #ece8df;
+}
+
+.toggle-switch[aria-disabled='true'] .switch-lever,
+.toggle-switch[aria-disabled='true'] .switch-tip {
+  opacity: 0.5;
+}
+
+.knob {
+  fill: #2b2a27;
+  stroke: #8f8a7e;
+  stroke-width: 2;
+}
+
+.knob-pointer,
+.knob-mark {
+  fill: #efe6cf;
+  stroke: #efe6cf;
+  stroke-width: 2;
+}
+
+.knob-tick {
+  stroke: #cfc7b3;
+}
+
+.knob-control.grabbed {
+  cursor: grabbing;
+}
+
+.selector-hit {
+  fill: transparent;
+}
+
+.selector-position.selected .engraving {
+  fill: #ffd76a;
+  font-weight: bold;
+}
+
+.letter-dial .dial-arrow {
+  fill: #cfc7b3;
+}
+
+.push-button:focus-visible,
+.toggle-switch:focus-visible,
+.selector-position:focus-visible,
+.knob-control:focus-visible,
+.letter-dial:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 3px #ffd76a);
+}
+
+.bombe-back .strip {
+  fill: #2b2a27;
+  stroke: #0b0b0a;
+}
+
+.bombe-back .strip.board {
+  stroke: #b08a4a;
+  stroke-width: 2;
+}
+
+.bombe-back .common text,
+.bombe-back .scrambler-jacks text {
+  fill: #e8dfc8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bombe-back .jack {
+  cursor: pointer;
+}
+
+.bombe-back .jack-area {
+  fill: transparent;
+}
+
+.bombe-back .jack-ring {
+  fill: #8f8a7e;
+  stroke: #45433d;
+}
+
+.bombe-back .jack-hole {
+  fill: #0b0b0a;
+}
+
+.bombe-back .jack-key {
+  fill: #2b2a27;
+}
+
+.bombe-back .jack.selected .jack-ring,
+.bombe-back .jack:focus-visible .jack-ring {
+  fill: #ffd76a;
+}
+
+.bombe-back .jack:focus-visible {
+  outline: none;
+}
+
+.bombe-back .jack[aria-disabled='true'] {
+  cursor: default;
+}
+
+.bombe-back .cable {
+  pointer-events: none;
+}
+
+.bombe-back .cable-sheath {
+  fill: none;
+  stroke: #4a0d0a;
+  stroke-width: 6;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.bombe-back .cable-core {
+  fill: none;
+  stroke: #c62f22;
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+.bombe-back .plug {
+  fill: #5a3a22;
+  stroke: #0b0b0a;
+  stroke-width: 1.5;
+}
+
+.bombe-back .cable.held .cable-core {
+  stroke: #ffd76a;
+}
+
+.bombe-front .rack-drum,
+.checking-machine .rack-drum,
+.checking-machine .drum-body,
+.checking-machine .drum-place,
+.checking-machine .cartridge,
+.checking-machine .dummy-drum {
+  cursor: grab;
+}
+
+.bombe-front .rack-drum.selected circle,
+.checking-machine .rack-drum.selected circle,
+.drum.selected .body,
+.drum.selected .socket {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.bombe-front .rack-drum:focus-visible,
+.checking-machine .rack-drum:focus-visible,
+.checking-machine .drum-body:focus-visible,
+.checking-machine .drum-place:focus-visible,
+.checking-machine .cartridge:focus-visible,
+.checking-machine .dummy-drum:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 3px var(--accent));
+}
+
+.held-drum {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.bombe-warnings {
+  max-width: 42rem;
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.printout {
+  max-width: 46rem;
+}
+
+.printout h3 {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}
+
+.printout table {
+  width: 100%;
+  border-collapse: collapse;
+  background: color-mix(in srgb, #f4efe1 60%, var(--bg));
+  font-size: 0.85rem;
+}
+
+.printout th,
+.printout td {
+  padding: 0.15rem 0.5rem;
+  border-bottom: 1px dashed var(--line);
+  text-align: left;
+}
+
+.printout .wires {
+  letter-spacing: 0.05em;
+}
+
+.checking-machine .drum-place circle,
+.checking-machine .drum-place rect {
+  fill: transparent;
+  stroke: #45433d;
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+}
+
+.checking-machine .drum-place.ready circle,
+.checking-machine .drum-place.ready rect {
+  stroke: #ffd76a;
 }
 
 .frame [role='tablist'] {
@@ -843,6 +1635,97 @@ button {
   padding: 1.5rem 2rem;
 }
 
+.guide-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.guide-contents {
+  position: sticky;
+  top: 1.5rem;
+  flex: 0 0 15rem;
+  box-sizing: border-box;
+  height: calc(100vh - 3rem);
+  padding-right: 1rem;
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  font-size: 0.9rem;
+}
+
+.guide-contents ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-contents li {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  margin: 0.25rem 0;
+}
+
+.guide-contents li > ul {
+  grid-column: 2;
+}
+
+.guide-contents a {
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.guide-contents a:hover {
+  text-decoration: underline;
+}
+
+.guide-contents a[aria-current='page'] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.guide-start {
+  margin: 0.75rem 0 0.5rem;
+}
+
+.guide-toggle {
+  display: inline-block;
+  width: 1.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.guide-hide {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.guide-show {
+  position: sticky;
+  top: 1.5rem;
+  flex: none;
+  display: flex;
+  justify-content: center;
+  width: 1.75rem;
+  height: calc(100vh - 3rem);
+  padding: 0.25rem 0 0;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.guide-show:hover {
+  color: var(--accent);
+}
+
 .guide table {
   border-collapse: collapse;
 }
@@ -858,4 +1741,8 @@ button {
 .error-fading {
   opacity: 0;
   transition: opacity 0.5s ease;
+}
+
+.bombe-front .rack-drum.light text {
+  fill: #1c1c1a;
 }

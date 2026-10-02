@@ -90,9 +90,14 @@
   padding: var(--sq) var(--sq) calc(var(--sq) * 2) calc(var(--sq) * 3);
   background-color: var(--paper);
   background-image:
-    linear-gradient(to right, transparent calc(var(--sq) * 2.5 - 1px), var(--margin-line) calc(var(--sq) * 2.5 - 1px), var(--margin-line) calc(var(--sq) * 2.5 + 1px), transparent calc(var(--sq) * 2.5 + 1px)),
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    linear-gradient(
+      to right,
+      transparent calc(var(--sq) * 2.5 - 1px),
+      var(--margin-line) calc(var(--sq) * 2.5 - 1px),
+      var(--margin-line) calc(var(--sq) * 2.5 + 1px),
+      transparent calc(var(--sq) * 2.5 + 1px)
+    ),
+    linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size:
     100% 100%,
     var(--sq) var(--sq),

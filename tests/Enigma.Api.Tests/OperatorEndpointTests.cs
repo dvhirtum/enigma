@@ -4,30 +4,28 @@ using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
 using Enigma.Application.OperatorMode;
 using Enigma.Application.Procedure;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Enigma.Api.Tests;
 
 public sealed class OperatorEndpointTests : IDisposable
 {
     private const string HistoricalJson = """
-        {
-          "network": "Hydra",
-          "month": "1943-12",
-          "source": "Test transcription",
-          "days": [
-            { "day": 26, "reflector": "B", "rotors": ["III", "VI", "VIII"], "rings": [1, 8, 13],
-              "plugs": ["AN", "EZ"], "grundstellung": "QRS" }
-          ]
-        }
-        """;
+                                          {
+                                            "network": "Hydra",
+                                            "month": "1943-12",
+                                            "source": "Test transcription",
+                                            "days": [
+                                              { "day": 26, "reflector": "B", "rotors": ["III", "VI", "VIII"], "rings": [1, 8, 13],
+                                                "plugs": ["AN", "EZ"], "grundstellung": "QRS" }
+                                            ]
+                                          }
+                                          """;
 
     private static readonly string[] Slots = ["Left", "Middle", "Right"];
+    private readonly List<IDisposable> _disposables = [];
 
     private readonly string _root = Directory.CreateTempSubdirectory("enigma-operator-").FullName;
-    private readonly List<IDisposable> _disposables = [];
 
     public OperatorEndpointTests()
     {
@@ -43,22 +41,21 @@ public sealed class OperatorEndpointTests : IDisposable
 
     public void Dispose()
     {
-        foreach (var disposable in _disposables)
-        {
-            disposable.Dispose();
-        }
+        foreach (var disposable in _disposables) disposable.Dispose();
 
-        Directory.Delete(_root, recursive: true);
+        Directory.Delete(_root, true);
     }
 
     [Fact]
     public async Task Should_keep_the_links_of_a_historical_sheet_When_the_backend_restarts()
     {
         // Arrange
-        var first = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-1943-12"), Token);
+        var first = await CreateClient()
+            .GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-1943-12"), Token);
 
         // Act
-        var second = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-1943-12"), Token);
+        var second = await CreateClient()
+            .GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-1943-12"), Token);
 
         // Assert
         Assert.NotNull(first!.KenngruppenbuchId);
@@ -72,11 +69,15 @@ public sealed class OperatorEndpointTests : IDisposable
     {
         // Arrange
         var client = CreateClient();
-        var sheet = await client.GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-1943-12"), Token);
+        var sheet = await client.GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-1943-12"),
+            Token);
 
         // Act
-        var book = await client.GetFromJsonAsync<KenngruppenbuchDocument>(Url($"/api/kenngruppenbuecher/{sheet!.KenngruppenbuchId}"), Token);
-        var tables = await client.GetFromJsonAsync<TauschtafelSetDocument>(Url($"/api/tauschtafeln/{sheet.TauschtafelSetId}"), Token);
+        var book = await client.GetFromJsonAsync<KenngruppenbuchDocument>(
+            Url($"/api/kenngruppenbuecher/{sheet!.KenngruppenbuchId}"), Token);
+        var tables =
+            await client.GetFromJsonAsync<TauschtafelSetDocument>(Url($"/api/tauschtafeln/{sheet.TauschtafelSetId}"),
+                Token);
 
         // Assert
         Assert.Equal(676, book!.Columns.Count);
@@ -120,14 +121,17 @@ public sealed class OperatorEndpointTests : IDisposable
     {
         // Arrange
         var client = CreateClient();
-        var sheet = await client.GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-1943-12"), Token);
-        var book = await client.GetFromJsonAsync<KenngruppenbuchDocument>(Url($"/api/kenngruppenbuecher/{sheet!.KenngruppenbuchId}"), Token);
+        var sheet = await client.GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-1943-12"),
+            Token);
+        var book = await client.GetFromJsonAsync<KenngruppenbuchDocument>(
+            Url($"/api/kenngruppenbuecher/{sheet!.KenngruppenbuchId}"), Token);
         var hydra = book!.Allotments.Single(a => a.Network == "Hydra");
         var schluessel = book.Columns[hydra.First - 1][..3];
         var verfahren = book.Columns[0][4..7];
         await Send(client, HttpMethod.Post, "/api/machine/daily-key", new { sheetId = sheet.Id, day = 26 });
         await Send(client, HttpMethod.Post, "/api/operator/send", null);
-        await Send(client, HttpMethod.Put, "/api/operator/groups", new { schluesselkenngruppe = schluessel, verfahrenkenngruppe = verfahren, fillers = "QX" });
+        await Send(client, HttpMethod.Put, "/api/operator/groups",
+            new { schluesselkenngruppe = schluessel, verfahrenkenngruppe = verfahren, fillers = "QX" });
         await SetUpMessageKey(client, verfahren);
         await Type(client, "ANGRIFF");
         await Type(client, "X");
@@ -138,7 +142,8 @@ public sealed class OperatorEndpointTests : IDisposable
         using var found = await client.PostAsJsonAsync(
             Url("/api/operator/receiving-keys"), new { message = sent.Operator!.Message, date = "1943-12-26" }, Token);
         var keys = await found.Content.ReadFromJsonAsync<List<ReceivingKey>>(Token);
-        var received = await Send(client, HttpMethod.Post, "/api/operator/receive", new { message = sent.Operator.Message, sheetId = keys![0].SheetId, day = keys[0].Day });
+        var received = await Send(client, HttpMethod.Post, "/api/operator/receive",
+            new { message = sent.Operator.Message, sheetId = keys![0].SheetId, day = keys[0].Day });
         await SetUpMessageKey(client, received.Operator!.Verfahrenkenngruppe!);
         var plaintext = await Type(client, received.Operator.CipherText!);
 
@@ -150,15 +155,35 @@ public sealed class OperatorEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_stop_the_procedure_When_the_operator_cancels()
+    {
+        // Arrange
+        var client = CreateClient();
+        await Send(client, HttpMethod.Post, "/api/machine/daily-key",
+            new { sheetId = "historical-hydra-1943-12", day = 26 });
+        var sending = await Send(client, HttpMethod.Post, "/api/operator/send", null);
+
+        // Act
+        var cancelled = await Send(client, HttpMethod.Delete, "/api/operator", null);
+
+        // Assert
+        Assert.Equal("ChooseGroups", sending.Operator?.Step);
+        Assert.Null(cancelled.Operator);
+    }
+
+    [Fact]
     public async Task Should_keep_the_filled_in_Grundstellung_of_a_historical_sheet_When_the_backend_restarts()
     {
         // Arrange
         await File.WriteAllTextAsync(
-            Path.Combine(HistoricalPath, "hydra-old.json"), HistoricalJson.Replace(", \"grundstellung\": \"QRS\"", string.Empty, StringComparison.Ordinal), Token);
-        var first = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-old"), Token);
+            Path.Combine(HistoricalPath, "hydra-old.json"),
+            HistoricalJson.Replace(", \"grundstellung\": \"QRS\"", string.Empty, StringComparison.Ordinal), Token);
+        var first = await CreateClient()
+            .GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-old"), Token);
 
         // Act
-        var second = await CreateClient().GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-old"), Token);
+        var second = await CreateClient()
+            .GetFromJsonAsync<KeySheetDetails>(Url("/api/keysheets/historical-hydra-old"), Token);
 
         // Assert
         var grundstellung = Assert.Single(first!.Days).Grundstellung;
@@ -175,9 +200,8 @@ public sealed class OperatorEndpointTests : IDisposable
     private static async Task Set(HttpClient client, string positions)
     {
         foreach (var (slot, position) in Slots.Zip(positions))
-        {
-            await Send(client, HttpMethod.Put, $"/api/machine/rotors/{slot}/position", new { position = position.ToString() });
-        }
+            await Send(client, HttpMethod.Put, $"/api/machine/rotors/{slot}/position",
+                new { position = position.ToString() });
     }
 
     private static async Task<string> Type(HttpClient client, string keys)
@@ -185,27 +209,32 @@ public sealed class OperatorEndpointTests : IDisposable
         var lamps = string.Empty;
         foreach (var key in keys)
         {
-            lamps += (await Send(client, HttpMethod.Post, "/api/machine/keyboard/press", new { key = key.ToString() })).LitLamp;
+            lamps += (await Send(client, HttpMethod.Post, "/api/machine/keyboard/press", new { key = key.ToString() }))
+                .LitLamp;
             await Send(client, HttpMethod.Post, "/api/machine/keyboard/release", null);
         }
 
         return lamps;
     }
 
-    private static Uri Url(string path) => new(path, UriKind.Relative);
+    private static Uri Url(string path)
+    {
+        return new Uri(path, UriKind.Relative);
+    }
 
     private static async Task<MachineState> Send(HttpClient client, HttpMethod method, string url, object? body)
     {
-        using var request = new HttpRequestMessage(method, Url(url)) { Content = body is null ? null : JsonContent.Create(body) };
+        using var request = new HttpRequestMessage(method, Url(url));
+        request.Content = body is null ? null : JsonContent.Create(body);
         using var response = await client.SendAsync(request, Token);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<MachineState>(Token)
-            ?? throw new InvalidOperationException("Empty response.");
+               ?? throw new InvalidOperationException("Empty response.");
     }
 
     private HttpClient CreateClient()
     {
-        var root = new WebApplicationFactory<Program>();
+        var root = new ApiFactory();
         var factory = root.WithWebHostBuilder(builder => builder
             .UseSetting("KeySheets:HistoricalPath", HistoricalPath)
             .UseSetting("KeySheets:UserPath", UserPath));

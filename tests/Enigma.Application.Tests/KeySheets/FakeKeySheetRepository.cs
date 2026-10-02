@@ -7,13 +7,28 @@ internal sealed class FakeKeySheetRepository(params KeySheet[] sheets) : IKeyShe
 {
     public Dictionary<string, KeySheet> Sheets { get; } = sheets.ToDictionary(s => s.Id);
 
-    public IReadOnlyList<KeySheet> List() => [.. Sheets.Values];
+    public IReadOnlyList<KeySheet> List()
+    {
+        return [.. Sheets.Values];
+    }
 
-    public KeySheet? Find(string id) => Sheets.GetValueOrDefault(id);
+    public KeySheet? Find(string id)
+    {
+        return Sheets.GetValueOrDefault(id);
+    }
 
-    public void Save(KeySheet sheet) => Sheets[sheet.Id] = sheet;
+    public void Save(KeySheet sheet)
+    {
+        Sheets[sheet.Id] = sheet;
+    }
 
-    public void SaveLinks(KeySheet sheet) => Sheets[sheet.Id] = sheet;
+    public void SaveLinks(KeySheet sheet)
+    {
+        Sheets[sheet.Id] = sheet;
+    }
 
-    public void Delete(string id) => Sheets.Remove(id);
+    public void Delete(string id)
+    {
+        Sheets.Remove(id);
+    }
 }

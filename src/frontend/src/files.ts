@@ -16,7 +16,13 @@ const safeName = (name: string) => name.replace(/[^\w.-]+/g, '-');
 
 function isPrintDocument(value: unknown): value is PrintDocument {
   const document = value as PrintDocument;
-  return typeof value === 'object' && value !== null && typeof document.html === 'string' && typeof document.name === 'string' && /^[\w.-]+\.pdf$/.test(safeName(document.name));
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof document.html === 'string' &&
+    typeof document.name === 'string' &&
+    /^[\w.-]+\.pdf$/.test(safeName(document.name))
+  );
 }
 
 function isPrintDocuments(value: unknown): value is PrintDocument[] {
@@ -100,7 +106,16 @@ export function registerFiles(): void {
       return null;
     }
     const files = documents.map(({ name, html }) => ({ name: safeName(name), html }));
-    const existing = (await Promise.all(files.map(({ name }) => access(path.join(folder, name)).then(() => name, () => null)))).filter((name) => name !== null);
+    const existing = (
+      await Promise.all(
+        files.map(({ name }) =>
+          access(path.join(folder, name)).then(
+            () => name,
+            () => null,
+          ),
+        ),
+      )
+    ).filter((name) => name !== null);
     if (existing.length > 0) {
       const question = {
         type: 'warning' as const,

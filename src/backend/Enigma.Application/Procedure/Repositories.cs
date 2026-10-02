@@ -7,7 +7,7 @@ public interface IKenngruppenbuchRepository
 {
     IReadOnlyList<Kenngruppenbuch> List();
 
-    /// <summary>The book with <paramref name="id"/>, or null.</summary>
+    /// <summary>The book with <paramref name="id" />, or null.</summary>
     Kenngruppenbuch? Find(string id);
 
     /// <summary>Adds or replaces a book.</summary>
@@ -19,7 +19,7 @@ public interface ITauschtafelSetRepository
 {
     IReadOnlyList<TauschtafelSet> List();
 
-    /// <summary>The set with <paramref name="id"/>, or null.</summary>
+    /// <summary>The set with <paramref name="id" />, or null.</summary>
     TauschtafelSet? Find(string id);
 
     void Save(TauschtafelSet tauschtafelSet);
