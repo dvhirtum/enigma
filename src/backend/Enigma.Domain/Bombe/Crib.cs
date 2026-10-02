@@ -9,10 +9,7 @@ public sealed record Crib
     {
         ArgumentNullException.ThrowIfNull(letters);
 
-        if (letters.Count == 0)
-        {
-            throw new DomainException("The crib has no letters.");
-        }
+        if (letters.Count == 0) throw new DomainException("The crib has no letters.");
 
         Letters = [.. letters];
     }
@@ -21,6 +18,11 @@ public sealed record Crib
 
     public int Length => Letters.Count;
 
+    public bool Equals(Crib? other)
+    {
+        return other is not null && Letters.SequenceEqual(other.Letters);
+    }
+
     public static Crib Parse(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -28,9 +30,13 @@ public sealed record Crib
         return new Crib([.. text.Select(Letter.FromChar)]);
     }
 
-    public bool Equals(Crib? other) => other is not null && Letters.SequenceEqual(other.Letters);
+    public override int GetHashCode()
+    {
+        return Letters.Aggregate(0, (hash, letter) => HashCode.Combine(hash, letter));
+    }
 
-    public override int GetHashCode() => Letters.Aggregate(0, (hash, letter) => HashCode.Combine(hash, letter));
-
-    public override string ToString() => string.Concat(Letters);
+    public override string ToString()
+    {
+        return string.Concat(Letters);
+    }
 }

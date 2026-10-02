@@ -30,7 +30,10 @@ public sealed class SteckersTests
     {
         // Arrange
         // Act
-        void Act() => Steckers.Parse(pairs);
+        void Act()
+        {
+            Steckers.Parse(pairs);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

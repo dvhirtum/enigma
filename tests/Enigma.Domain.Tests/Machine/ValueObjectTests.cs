@@ -25,7 +25,10 @@ public sealed class ValueObjectTests
     {
         // Arrange
         // Act
-        void Act() => Letter.FromChar(value);
+        void Act()
+        {
+            Letter.FromChar(value);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -55,7 +58,10 @@ public sealed class ValueObjectTests
     {
         // Arrange
         // Act
-        void Act() => Wiring.Parse(mapping);
+        void Act()
+        {
+            Wiring.Parse(mapping);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -83,7 +89,10 @@ public sealed class ValueObjectTests
     {
         // Arrange
         // Act
-        void Act() => RingSetting.FromNumber(number);
+        void Act()
+        {
+            RingSetting.FromNumber(number);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -107,7 +116,10 @@ public sealed class ValueObjectTests
     {
         // Arrange
         // Act
-        static void Act() => RotorType.FromName("IX");
+        static void Act()
+        {
+            RotorType.FromName("IX");
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

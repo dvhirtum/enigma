@@ -23,13 +23,13 @@ public sealed class BombeSetupTests
             setup.Turn(chain, scrambler, DrumPosition.FromOffset(link.Offset));
         }
 
-        setup.Join(0, joined: true);
+        setup.Join(0, true);
         setup.PlugTestRegister(0, G);
         FitCarterDrums(setup, 0, 11);
         FitCarterDrums(setup, 1, 0);
 
         // Act
-        var group = Assert.Single(setup.Machines(ReflectorType.B, diagonalBoard: true));
+        var group = Assert.Single(setup.Machines(ReflectorType.B, true));
 
         // Assert
         Assert.Equal([0, 1], group.Group.Chains);
@@ -57,7 +57,8 @@ public sealed class BombeSetupTests
         Assert.Null(setup.ChainSetups[1].Scramblers[1].WheelOrder);
         Assert.Equal("ZZP", setup.ChainSetups[1].Scramblers[0].Start.ToString());
         Assert.Same(BombeKeys.CarterMenu, setup.PluggedMenu);
-        Assert.Equal(Q, BombeStop.PartnerOf(setup.Machines(ReflectorType.B, true)[0].Machine.LiveWiresAt(CarterDrumLetters)!));
+        Assert.Equal(Q,
+            BombeStop.PartnerOf(setup.Machines(ReflectorType.B, true)[0].Machine.LiveWiresAt(CarterDrumLetters)!));
     }
 
     [Fact]
@@ -130,7 +131,10 @@ public sealed class BombeSetupTests
         setup.FitRow(0, 0, 3, RotorType.II);
 
         // Act
-        void Act() => setup.FitRow(0, 2, 11, RotorType.II);
+        void Act()
+        {
+            setup.FitRow(0, 2, 11, RotorType.II);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -153,18 +157,15 @@ public sealed class BombeSetupTests
         setup.Plug(0, 0, 0, G);
         setup.Plug(0, 0, 1, Q);
         FitCarterDrums(setup, 0, 1);
-        foreach (var row in new[] { 0, 1, 2 })
-        {
-            setup.RemoveDrum(0, 0, row);
-        }
+        foreach (var row in new[] { 0, 1, 2 }) setup.RemoveDrum(0, 0, row);
 
         FitCarterDrums(only, 0, 1);
 
         // Act
-        var machine = Assert.Single(setup.Machines(ReflectorType.B, diagonalBoard: false)).Machine;
+        var machine = Assert.Single(setup.Machines(ReflectorType.B, false)).Machine;
 
         // Assert
-        var alone = Assert.Single(only.Machines(ReflectorType.B, diagonalBoard: false)).Machine;
+        var alone = Assert.Single(only.Machines(ReflectorType.B, false)).Machine;
         Assert.Equal(alone.LiveWiresAt(DrumPosition.ZZZ), machine.LiveWiresAt(DrumPosition.ZZZ));
         Assert.Contains("Chain 1, scrambler 1 is cabled but has no drums.", setup.Warnings());
     }
@@ -179,12 +180,13 @@ public sealed class BombeSetupTests
         FitCarterDrums(setup, 0, 11);
 
         // Act
-        var machines = setup.Machines(ReflectorType.B, diagonalBoard: true);
+        var machines = setup.Machines(ReflectorType.B, true);
 
         // Assert
         var group = Assert.Single(machines);
         Assert.Equal([0], group.Group.Chains);
-        Assert.Contains("Chain 2 has a test register but no scrambler with cables and drums, so the run leaves it out.", setup.Warnings());
+        Assert.Contains("Chain 2 has a test register but no scrambler with cables and drums, so the run leaves it out.",
+            setup.Warnings());
     }
 
     [Fact]
@@ -195,11 +197,15 @@ public sealed class BombeSetupTests
         setup.PlugUp(new Menu([.. BombeKeys.CarterMenu.Links.Take(12)], G));
 
         // Act
-        object Act() => setup.Machines(ReflectorType.B, true);
+        object Act()
+        {
+            return setup.Machines(ReflectorType.B, true);
+        }
 
         // Assert
         var refused = Assert.Throws<DomainException>(Act);
-        Assert.Equal("Fit all three drums on a cabled scrambler of a chain with a test register first.", refused.Message);
+        Assert.Equal("Fit all three drums on a cabled scrambler of a chain with a test register first.",
+            refused.Message);
     }
 
     [Fact]
@@ -238,7 +244,8 @@ public sealed class BombeSetupTests
         // Assert
         Assert.Contains("Chain 1, scramblers 3–5, 8 are cabled but have drums missing.", warnings);
         Assert.Contains("Chain 2, scramblers 1–12 are cabled but have no drums.", warnings);
-        Assert.Contains("Chain 2 has a test register but no scrambler with cables and drums, so the run leaves it out.", warnings);
+        Assert.Contains("Chain 2 has a test register but no scrambler with cables and drums, so the run leaves it out.",
+            warnings);
     }
 
     [Fact]
@@ -249,7 +256,10 @@ public sealed class BombeSetupTests
         FitCarterDrums(setup, 0, 11);
 
         // Act
-        object Act() => setup.Machines(ReflectorType.B, true);
+        object Act()
+        {
+            return setup.Machines(ReflectorType.B, true);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -260,10 +270,13 @@ public sealed class BombeSetupTests
     {
         // Arrange
         var setup = new BombeSetup();
-        setup.Join(0, joined: true);
+        setup.Join(0, true);
 
         // Act
-        void Act() => setup.PlugTestRegister(1, G);
+        void Act()
+        {
+            setup.PlugTestRegister(1, G);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

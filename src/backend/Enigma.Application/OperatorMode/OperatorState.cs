@@ -7,9 +7,10 @@ namespace Enigma.Application.OperatorMode;
 public sealed record BigramSwapState(string From, string To);
 
 /// <summary>
-/// The running operator procedure. <see cref="Direction"/> is Send or Receive; <see cref="Step"/> is ChooseGroups,
-/// SetGrundstellung, TypeVerfahrenkenngruppe, SetSpruchschluessel, TypeMessage or Done. <see cref="Typed"/> holds the
-/// keys typed for the message and <see cref="Pad"/> the lamps they lit. <see cref="Message"/> is the radio message received, or sent once done.
+///     The running operator procedure. <see cref="Direction" /> is Send or Receive; <see cref="Step" /> is ChooseGroups,
+///     SetGrundstellung, TypeVerfahrenkenngruppe, SetSpruchschluessel, TypeMessage or Done. <see cref="Typed" /> holds the
+///     keys typed for the message and <see cref="Pad" /> the lamps they lit. <see cref="Message" /> is the radio message
+///     received, or sent once done.
 /// </summary>
 public sealed record OperatorState(
     string Direction,
@@ -49,7 +50,9 @@ public sealed record OperatorState(
             indicator?.Schluesselkenngruppe.ToString(),
             indicator?.Verfahrenkenngruppe.ToString(),
             $"{procedure.Fillers.Before}{procedure.Fillers.After}",
-            indicator is null ? [] : [.. indicator.Bigrams.Select(b => new BigramSwapState(b.ToString(), table.Swap(b).ToString()))],
+            indicator is null
+                ? []
+                : [.. indicator.Bigrams.Select(b => new BigramSwapState(b.ToString(), table.Swap(b).ToString()))],
             procedure.IndicatorGroups?.ToString(),
             Letters(procedure.SpruchschluesselLamps),
             procedure.MessageKey?.Spruchschluessel.ToString(),
@@ -62,6 +65,8 @@ public sealed record OperatorState(
             procedure.Warnings);
     }
 
-    private static string Letters<T>(IEnumerable<T> letters) =>
-        string.Concat(letters.Select(l => string.Format(CultureInfo.InvariantCulture, "{0}", l)));
+    private static string Letters<T>(IEnumerable<T> letters)
+    {
+        return string.Concat(letters.Select(l => string.Format(CultureInfo.InvariantCulture, "{0}", l)));
+    }
 }

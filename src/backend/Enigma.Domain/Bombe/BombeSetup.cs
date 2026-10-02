@@ -3,8 +3,9 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// A scrambler of the Bombe as set up by hand: the letters its two jacks are cabled to (null when unplugged), the rotor
-/// of each drum (upper, middle, lower; null when empty) and the letters its drums start at.
+///     A scrambler of the Bombe as set up by hand: the letters its two jacks are cabled to (null when unplugged), the
+///     rotor
+///     of each drum (upper, middle, lower; null when empty) and the letters its drums start at.
 /// </summary>
 public sealed class ScramblerSetup
 {
@@ -28,13 +29,15 @@ public sealed class ScramblerSetup
 }
 
 /// <summary>
-/// A chain (bank) of 12 scramblers, with the letter its test register is plugged onto (null when not plugged) and the
-/// input wire as set (null: A, or B when the test register is on A).
+///     A chain (bank) of 12 scramblers, with the letter its test register is plugged onto (null when not plugged) and the
+///     input wire as set (null: A, or B when the test register is on A).
 /// </summary>
 public sealed class ChainSetup
 {
-    internal ChainSetup() =>
+    internal ChainSetup()
+    {
         Scramblers = [.. Enumerable.Range(0, BombeSetup.ScramblersPerChain).Select(_ => new ScramblerSetup())];
+    }
 
     public IReadOnlyList<ScramblerSetup> Scramblers { get; }
 
@@ -47,10 +50,14 @@ public sealed class ChainSetup
 
     /// <summary>The rotor in each row, or null where the row has no drums.</summary>
     public IReadOnlyList<RotorType?> Rows =>
-        [.. Enumerable.Range(0, 3).Select(row => Scramblers.Select(s => s.Drums[row]).FirstOrDefault(rotor => rotor is not null))];
+    [
+        .. Enumerable.Range(0, 3)
+            .Select(row => Scramblers.Select(s => s.Drums[row]).FirstOrDefault(rotor => rotor is not null))
+    ];
 
     /// <summary>The wheel order of the rows, or null until each row has drums.</summary>
-    public WheelOrder? WheelOrder => Rows is [{ } upper, { } middle, { } lower] ? new WheelOrder(upper, middle, lower) : null;
+    public WheelOrder? WheelOrder =>
+        Rows is [{ } upper, { } middle, { } lower] ? new WheelOrder(upper, middle, lower) : null;
 }
 
 /// <summary>Chains joined by cables into one Bombe, with the test register of the first.</summary>
@@ -60,9 +67,10 @@ public sealed record ChainGroup(IReadOnlyList<int> Chains, Letter? TestRegister,
 public sealed record GroupMachine(ChainGroup Group, BombeMachine Machine);
 
 /// <summary>
-/// The Bombe as set up by hand: three chains of 12 scramblers. Each chain is a Bombe of its own, with its own commons
-/// (one per letter), test register and drums; a join cable links a chain to the next, so they share commons and the
-/// first one's test register. A scrambler's jacks are cabled to commons; its drums are fitted row by row from the rack.
+///     The Bombe as set up by hand: three chains of 12 scramblers. Each chain is a Bombe of its own, with its own commons
+///     (one per letter), test register and drums; a join cable links a chain to the next, so they share commons and the
+///     first one's test register. A scrambler's jacks are cabled to commons; its drums are fitted row by row from the
+///     rack.
 /// </summary>
 public sealed class BombeSetup
 {
@@ -72,14 +80,20 @@ public sealed class BombeSetup
 
     private readonly bool[] _joins = new bool[Chains - 1];
 
-    public BombeSetup() => ChainSetups = [.. Enumerable.Range(0, Chains).Select(_ => new ChainSetup())];
+    public BombeSetup()
+    {
+        ChainSetups = [.. Enumerable.Range(0, Chains).Select(_ => new ChainSetup())];
+    }
 
     public IReadOnlyList<ChainSetup> ChainSetups { get; }
 
     /// <summary>Whether chain n is joined to chain n + 1.</summary>
     public IReadOnlyList<bool> Joins => _joins;
 
-    /// <summary>The menu the Bombe was last plugged up with, until its cables, test registers, joins or start letters are changed by hand.</summary>
+    /// <summary>
+    ///     The menu the Bombe was last plugged up with, until its cables, test registers, joins or start letters are
+    ///     changed by hand.
+    /// </summary>
     public Menu? PluggedMenu { get; private set; }
 
     /// <summary>The chains joined into one Bombe each, in order.</summary>
@@ -95,7 +109,8 @@ public sealed class BombeSetup
                 if (chain == Chains - 1 || !_joins[chain])
                 {
                     var first = ChainSetups[chains[0]];
-                    var wheelOrder = chains.Select(c => ChainSetups[c].WheelOrder).FirstOrDefault(order => order is not null);
+                    var wheelOrder = chains.Select(c => ChainSetups[c].WheelOrder)
+                        .FirstOrDefault(order => order is not null);
                     groups.Add(new ChainGroup([.. chains], first.TestRegister, first.Input, wheelOrder));
                     chains = [];
                 }
@@ -108,18 +123,15 @@ public sealed class BombeSetup
     /// <summary>Cables a jack (0 or 1) of a scrambler to a letter's common, or unplugs it when null.</summary>
     public void Plug(int chain, int scrambler, int jack, Letter? letter)
     {
-        if (jack is < 0 or > 1)
-        {
-            throw new DomainException($"A scrambler has two jacks; there is no jack {jack + 1}.");
-        }
+        if (jack is < 0 or > 1) throw new DomainException($"A scrambler has two jacks; there is no jack {jack + 1}.");
 
         ScramblerAt(chain, scrambler).Jacks[jack] = letter;
         PluggedMenu = null;
     }
 
     /// <summary>
-    /// Fits drums of <paramref name="rotor"/> in a row (0 = upper) of a chain on scramblers 1 up to
-    /// <paramref name="upTo"/> + 1, and takes the row's other drums out.
+    ///     Fits drums of <paramref name="rotor" /> in a row (0 = upper) of a chain on scramblers 1 up to
+    ///     <paramref name="upTo" /> + 1, and takes the row's other drums out.
     /// </summary>
     public void FitRow(int chain, int row, int upTo, RotorType rotor)
     {
@@ -127,21 +139,14 @@ public sealed class BombeSetup
 
         CheckRow(row);
         ScramblerAt(chain, upTo);
-        if (rotor.IsGreek)
-        {
-            throw new DomainException("The Bombe takes rotors I–VIII only.");
-        }
+        if (rotor.IsGreek) throw new DomainException("The Bombe takes rotors I–VIII only.");
 
         var setup = ChainSetups[chain];
         if (Enumerable.Range(0, 3).Any(other => other != row && setup.Scramblers.Any(s => s.Drums[other] == rotor)))
-        {
             throw new DomainException($"Drums of rotor {rotor} are already in another row of chain {chain + 1}.");
-        }
 
         for (var index = 0; index < ScramblersPerChain; index++)
-        {
             setup.Scramblers[index].Drums[row] = index <= upTo ? rotor : null;
-        }
     }
 
     /// <summary>Takes one drum (row 0 = upper) of a scrambler back to the rack.</summary>
@@ -173,27 +178,25 @@ public sealed class BombeSetup
         ChainAt(chain).ChosenInput = input;
     }
 
-    /// <summary>Joins chain <paramref name="join"/> + 1 to the next one, or parts them. The joined chain's test register is unplugged.</summary>
+    /// <summary>
+    ///     Joins chain <paramref name="join" /> + 1 to the next one, or parts them. The joined chain's test register is
+    ///     unplugged.
+    /// </summary>
     public void Join(int join, bool joined)
     {
         if (join < 0 || join >= _joins.Length)
-        {
             throw new DomainException($"There is no join {join + 1}; chains are joined 1–2 and 2–3.");
-        }
 
         _joins[join] = joined;
-        if (joined)
-        {
-            (ChainSetups[join + 1].TestRegister, ChainSetups[join + 1].ChosenInput) = (null, null);
-        }
+        if (joined) (ChainSetups[join + 1].TestRegister, ChainSetups[join + 1].ChosenInput) = (null, null);
 
         PluggedMenu = null;
     }
 
     /// <summary>
-    /// Plugs up a menu once on each chain (or joined chains) it fits: the scramblers cabled to the links' letters in
-    /// order and set to their offsets, the test register on the menu's. Each copy's chains take the rotors of the rows
-    /// of its first chain, fitted on exactly the cabled scramblers; the other scramblers are unplugged and emptied.
+    ///     Plugs up a menu once on each chain (or joined chains) it fits: the scramblers cabled to the links' letters in
+    ///     order and set to their offsets, the test register on the menu's. Each copy's chains take the rotors of the rows
+    ///     of its first chain, fitted on exactly the cabled scramblers; the other scramblers are unplugged and emptied.
     /// </summary>
     public void PlugUp(Menu menu)
     {
@@ -201,9 +204,7 @@ public sealed class BombeSetup
 
         var chainsPerCopy = menu.ChainsPerCopy;
         for (var join = 0; join < _joins.Length; join++)
-        {
             _joins[join] = (join + 1) % chainsPerCopy != 0 && join + 1 < menu.Copies * chainsPerCopy;
-        }
 
         var rowsBefore = ChainSetups.Select(setup => setup.Rows).ToArray();
         for (var chain = 0; chain < Chains; chain++)
@@ -215,16 +216,13 @@ public sealed class BombeSetup
             (setup.TestRegister, setup.ChosenInput) = (first ? menu.TestRegister : null, null);
             for (var index = 0; index < ScramblersPerChain; index++)
             {
-                var link = ((chain % chainsPerCopy) * ScramblersPerChain) + index;
+                var link = chain % chainsPerCopy * ScramblersPerChain + index;
                 var scrambler = setup.Scramblers[index];
                 var cabled = copy < menu.Copies && link < menu.Links.Count;
                 scrambler.Jacks[0] = cabled ? menu.Links[link].First : null;
                 scrambler.Jacks[1] = cabled ? menu.Links[link].Second : null;
                 scrambler.Start = cabled ? DrumPosition.FromOffset(menu.Links[link].Offset) : DrumPosition.ZZZ;
-                for (var row = 0; row < 3; row++)
-                {
-                    scrambler.Drums[row] = cabled ? rows[row] : null;
-                }
+                for (var row = 0; row < 3; row++) scrambler.Drums[row] = cabled ? rows[row] : null;
             }
         }
 
@@ -232,8 +230,8 @@ public sealed class BombeSetup
     }
 
     /// <summary>
-    /// The groups of chains a run tests: those with a test register and at least one scrambler that passes current
-    /// (cabled at both jacks, with all three drums), each with those scramblers. Refused when there are none.
+    ///     The groups of chains a run tests: those with a test register and at least one scrambler that passes current
+    ///     (cabled at both jacks, with all three drums), each with those scramblers. Refused when there are none.
     /// </summary>
     public IReadOnlyList<GroupMachine> Machines(ReflectorType reflector, bool diagonalBoard)
     {
@@ -245,31 +243,39 @@ public sealed class BombeSetup
             .Select(group => (Group: group, Scramblers: Working(group).ToList()))
             .Where(group => group.Scramblers.Count > 0)
             .Select(group => new GroupMachine(group.Group, new BombeMachine(
-                [.. group.Scramblers.Select(scrambler => new CabledScrambler(
-                    scrambler.Jacks[0]!.Value,
-                    scrambler.Jacks[1]!.Value,
-                    Table(scrambler.WheelOrder!),
-                    scrambler.Start))],
+                [
+                    .. group.Scramblers.Select(scrambler => new CabledScrambler(
+                        scrambler.Jacks[0]!.Value,
+                        scrambler.Jacks[1]!.Value,
+                        Table(scrambler.WheelOrder!),
+                        scrambler.Start))
+                ],
                 group.Group.TestRegister!.Value,
                 group.Group.Input,
                 diagonalBoard)))
             .ToList();
-        return machines.Count > 0 ? machines
+        return machines.Count > 0
+            ? machines
             : throw new DomainException(tested.Count > 0
                 ? "Fit all three drums on a cabled scrambler of a chain with a test register first."
                 : "Plug a test register onto a common first.");
 
-        Scrambler Table(WheelOrder order) =>
-            tables.TryGetValue(order, out var table) ? table : tables[order] = new Scrambler(order, reflector);
+        Scrambler Table(WheelOrder order)
+        {
+            return tables.TryGetValue(order, out var table) ? table : tables[order] = new Scrambler(order, reflector);
+        }
     }
 
     /// <summary>The scramblers of a group that pass current: cabled at both jacks, with all three drums.</summary>
-    private IEnumerable<ScramblerSetup> Working(ChainGroup group) =>
-        group.Chains.SelectMany(chain => ChainSetups[chain].Scramblers).Where(scrambler => scrambler is { IsCabled: true, WheelOrder: not null });
+    private IEnumerable<ScramblerSetup> Working(ChainGroup group)
+    {
+        return group.Chains.SelectMany(chain => ChainSetups[chain].Scramblers)
+            .Where(scrambler => scrambler is { IsCabled: true, WheelOrder: not null });
+    }
 
     /// <summary>
-    /// What a run will not use, per chain: scramblers with one jack cabled, cabled without all drums, or with drums but no
-    /// cables; cabled chains without a test register; and chains with a test register that a run leaves out.
+    ///     What a run will not use, per chain: scramblers with one jack cabled, cabled without all drums, or with drums but no
+    ///     cables; cabled chains without a test register; and chains with a test register that a run leaves out.
     /// </summary>
     public IReadOnlyList<string> Warnings()
     {
@@ -277,11 +283,20 @@ public sealed class BombeSetup
         for (var chain = 0; chain < Chains; chain++)
         {
             var scramblers = ChainSetups[chain].Scramblers;
-            int Drums(ScramblerSetup scrambler) => scrambler.Drums.Count(rotor => rotor is not null);
-            Add(chain, scramblers, s => s.HasCable && !s.IsCabled, "has only one jack cabled", "have only one jack cabled");
-            Add(chain, scramblers, s => s.IsCabled && Drums(s) == 0, "is cabled but has no drums", "are cabled but have no drums");
-            Add(chain, scramblers, s => s.IsCabled && Drums(s) is 1 or 2, "is cabled but has drums missing", "are cabled but have drums missing");
-            Add(chain, scramblers, s => !s.HasCable && Drums(s) > 0, "has drums but no cables", "have drums but no cables");
+
+            int Drums(ScramblerSetup scrambler)
+            {
+                return scrambler.Drums.Count(rotor => rotor is not null);
+            }
+
+            Add(chain, scramblers, s => s.HasCable && !s.IsCabled, "has only one jack cabled",
+                "have only one jack cabled");
+            Add(chain, scramblers, s => s.IsCabled && Drums(s) == 0, "is cabled but has no drums",
+                "are cabled but have no drums");
+            Add(chain, scramblers, s => s.IsCabled && Drums(s) is 1 or 2, "is cabled but has drums missing",
+                "are cabled but have drums missing");
+            Add(chain, scramblers, s => !s.HasCable && Drums(s) > 0, "has drums but no cables",
+                "have drums but no cables");
         }
 
         foreach (var group in Groups)
@@ -289,26 +304,26 @@ public sealed class BombeSetup
             var scramblers = group.Chains.SelectMany(chain => ChainSetups[chain].Scramblers).ToList();
             var (names, plural) = (ChainNames(group.Chains), group.Chains.Count > 1);
             if (group.TestRegister is null && scramblers.Any(s => s.HasCable))
-            {
                 warnings.Add($"{names} {(plural ? "have" : "has")} no test register.");
-            }
             else if (group.TestRegister is not null && !Working(group).Any())
-            {
-                warnings.Add($"{names} {(plural ? "have" : "has")} a test register but no scrambler with cables and drums, so the run leaves {(plural ? "them" : "it")} out.");
-            }
+                warnings.Add(
+                    $"{names} {(plural ? "have" : "has")} a test register but no scrambler with cables and drums, so the run leaves {(plural ? "them" : "it")} out.");
         }
 
         return warnings;
 
-        void Add(int chain, IReadOnlyList<ScramblerSetup> scramblers, Func<ScramblerSetup, bool> matches, string one, string many)
+        void Add(int chain, IReadOnlyList<ScramblerSetup> scramblers, Func<ScramblerSetup, bool> matches, string one,
+            string many)
         {
-            int[] numbers = [.. scramblers.Select((s, index) => (s, index + 1)).Where(pair => matches(pair.s)).Select(pair => pair.Item2)];
+            int[] numbers =
+            [
+                .. scramblers.Select((s, index) => (s, index + 1)).Where(pair => matches(pair.s))
+                    .Select(pair => pair.Item2)
+            ];
             if (numbers.Length > 0)
-            {
                 warnings.Add(numbers.Length == 1
                     ? $"Chain {chain + 1}, scrambler {numbers[0]} {one}."
                     : $"Chain {chain + 1}, scramblers {Ranges(numbers)} {many}.");
-            }
         }
     }
 
@@ -319,10 +334,7 @@ public sealed class BombeSetup
         for (var start = 0; start < numbers.Length;)
         {
             var end = start;
-            while (end + 1 < numbers.Length && numbers[end + 1] == numbers[end] + 1)
-            {
-                end++;
-            }
+            while (end + 1 < numbers.Length && numbers[end + 1] == numbers[end] + 1) end++;
 
             ranges.Add(end > start ? $"{numbers[start]}–{numbers[end]}" : $"{numbers[start]}");
             start = end + 1;
@@ -341,26 +353,29 @@ public sealed class BombeSetup
 
     private static void CheckRow(int row)
     {
-        if (row is < 0 or > 2)
-        {
-            throw new DomainException($"There is no row {row + 1}; a scrambler has three drums.");
-        }
+        if (row is < 0 or > 2) throw new DomainException($"There is no row {row + 1}; a scrambler has three drums.");
     }
 
     private void CheckJoinedIn(int chain)
     {
         ChainAt(chain);
         if (chain > 0 && _joins[chain - 1])
-        {
-            throw new DomainException($"Chain {chain + 1} is joined to chain {chain}; use the test register of the first chain.");
-        }
+            throw new DomainException(
+                $"Chain {chain + 1} is joined to chain {chain}; use the test register of the first chain.");
     }
 
-    private ChainSetup ChainAt(int chain) =>
-        chain is >= 0 and < Chains ? ChainSetups[chain] : throw new DomainException($"There is no chain {chain + 1}.");
+    private ChainSetup ChainAt(int chain)
+    {
+        return chain is >= 0 and < Chains
+            ? ChainSetups[chain]
+            : throw new DomainException($"There is no chain {chain + 1}.");
+    }
 
-    private ScramblerSetup ScramblerAt(int chain, int scrambler) =>
-        scrambler is >= 0 and < ScramblersPerChain
+    private ScramblerSetup ScramblerAt(int chain, int scrambler)
+    {
+        return scrambler is >= 0 and < ScramblersPerChain
             ? ChainAt(chain).Scramblers[scrambler]
-            : throw new DomainException($"A chain has {ScramblersPerChain} scramblers; there is no scrambler {scrambler + 1}.");
+            : throw new DomainException(
+                $"A chain has {ScramblersPerChain} scramblers; there is no scrambler {scrambler + 1}.");
+    }
 }

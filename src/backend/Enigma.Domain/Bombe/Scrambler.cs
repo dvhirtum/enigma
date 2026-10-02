@@ -3,8 +3,8 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// A double-ended Enigma: three drums and a reflector, without plugboard. At a drum position it connects each letter
-/// to the letter the Enigma rotors would encipher it to at those core positions. The connection works both ways.
+///     A double-ended Enigma: three drums and a reflector, without plugboard. At a drum position it connects each letter
+///     to the letter the Enigma rotors would encipher it to at those core positions. The connection works both ways.
 /// </summary>
 public sealed class Scrambler
 {
@@ -15,10 +15,7 @@ public sealed class Scrambler
         ArgumentNullException.ThrowIfNull(wheelOrder);
         ArgumentNullException.ThrowIfNull(reflector);
 
-        if (reflector.IsThin)
-        {
-            throw new DomainException("The three-rotor Bombe takes reflector B or C.");
-        }
+        if (reflector.IsThin) throw new DomainException("The three-rotor Bombe takes reflector B or C.");
 
         WheelOrder = wheelOrder;
         Reflector = reflector;
@@ -29,8 +26,10 @@ public sealed class Scrambler
 
     public ReflectorType Reflector { get; }
 
-    public Letter Encipher(Letter input, DrumPosition position) =>
-        Letter.FromIndex(_table[(position.Offset * Letter.Count) + input.Index]);
+    public Letter Encipher(Letter input, DrumPosition position)
+    {
+        return Letter.FromIndex(_table[position.Offset * Letter.Count + input.Index]);
+    }
 
     /// <summary>Enciphers one letter at one drum position, without building the table.</summary>
     public static Letter Encipher(WheelOrder wheelOrder, ReflectorType reflector, DrumPosition position, Letter input)
@@ -46,7 +45,10 @@ public sealed class Scrambler
     }
 
     /// <summary>The 26 outputs at a drum position, by input letter index.</summary>
-    internal ReadOnlySpan<byte> At(int offset) => _table.AsSpan(offset * Letter.Count, Letter.Count);
+    internal ReadOnlySpan<byte> At(int offset)
+    {
+        return _table.AsSpan(offset * Letter.Count, Letter.Count);
+    }
 
     private static byte[] BuildTable(WheelOrder wheelOrder, ReflectorType reflector)
     {
@@ -57,10 +59,8 @@ public sealed class Scrambler
             var position = DrumPosition.FromOffset(offset);
             int[] cores = [position.Left.Index, position.Middle.Index, position.Right.Index];
             for (var input = 0; input < Letter.Count; input++)
-            {
-                table[(offset * Letter.Count) + input] =
+                table[offset * Letter.Count + input] =
                     (byte)Encipher(wirings, reflector.Wiring, cores, Letter.FromIndex(input)).Index;
-            }
         }
 
         return table;
@@ -68,16 +68,10 @@ public sealed class Scrambler
 
     private static Letter Encipher(Wiring[] wirings, Wiring reflector, int[] cores, Letter letter)
     {
-        for (var i = 2; i >= 0; i--)
-        {
-            letter = wirings[i].Forward(letter.Shift(cores[i])).Shift(-cores[i]);
-        }
+        for (var i = 2; i >= 0; i--) letter = wirings[i].Forward(letter.Shift(cores[i])).Shift(-cores[i]);
 
         letter = reflector.Forward(letter);
-        for (var i = 0; i < 3; i++)
-        {
-            letter = wirings[i].Backward(letter.Shift(cores[i])).Shift(-cores[i]);
-        }
+        for (var i = 0; i < 3; i++) letter = wirings[i].Backward(letter.Shift(cores[i])).Shift(-cores[i]);
 
         return letter;
     }

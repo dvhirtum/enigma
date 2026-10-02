@@ -39,7 +39,8 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
         var menu = BombeKeys.CarterMenu;
         DrumPosition[] starts = [.. menu.Links.Select(link => DrumPosition.FromOffset(link.Offset))];
         starts[3] = DrumPosition.Parse("ZZX");
-        var bombe = new BombeMachine(new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), menu, A, starts: starts);
+        var bombe = new BombeMachine(new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), menu, A,
+            starts: starts);
 
         // Act
         var stop = bombe.Test(DrumPosition.Parse("VMB"));
@@ -53,8 +54,10 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
     {
         // Arrange
         var menu = BombeKeys.CarterMenu;
-        DrumPosition[] starts = [.. menu.Links.Select(link => DrumPosition.Parse("ZZ" + (char)('A' + link.Offset - 1)))];
-        var bombe = new BombeMachine(new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), menu, A, starts: starts);
+        DrumPosition[] starts =
+            [.. menu.Links.Select(link => DrumPosition.Parse("ZZ" + (char)('A' + link.Offset - 1)))];
+        var bombe = new BombeMachine(new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B), menu, A,
+            starts: starts);
 
         // Act
         var stop = bombe.Test(DrumPosition.Parse("VMB"));
@@ -145,8 +148,8 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
         var scrambler = new Scrambler(WheelOrder.Parse("II V III"), ReflectorType.B);
 
         // Act
-        var with = new BombeMachine(scrambler, new Menu(chain, G), A, diagonalBoard: true).Run().Count();
-        var without = new BombeMachine(scrambler, new Menu(chain, G), A, diagonalBoard: false).Run().Count();
+        var with = new BombeMachine(scrambler, new Menu(chain, G), A, true).Run().Count();
+        var without = new BombeMachine(scrambler, new Menu(chain, G), A, false).Run().Count();
 
         // Assert
         output.WriteLine($"Chain menu: {with} stops with the diagonal board, {without} without.");
@@ -158,7 +161,10 @@ public sealed class BombeMachineTests(ITestOutputHelper output)
     {
         // Arrange
         // Act
-        static void Act() => MenuLink.Parse("GG3");
+        static void Act()
+        {
+            MenuLink.Parse("GG3");
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

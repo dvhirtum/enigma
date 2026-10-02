@@ -6,11 +6,16 @@ namespace Enigma.Application.Tests.Procedure;
 
 public sealed class KeySheetLinkerTests
 {
-    private static KeySheet Sheet(string id, string network, string month = "1944-06", Provenance? provenance = null) =>
-        new(id, network, KeyMonth.Parse(month), provenance ?? Provenance.Generated, KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n"));
+    private static KeySheet Sheet(string id, string network, string month = "1944-06", Provenance? provenance = null)
+    {
+        return new KeySheet(id, network, KeyMonth.Parse(month), provenance ?? Provenance.Generated,
+            KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n"));
+    }
 
-    private static Kenngruppenbuch Book(string id, DateTimeOffset created, params string[] networks) =>
-        Kenngruppenbuch.Generate(id, created, networks, new Random(3));
+    private static Kenngruppenbuch Book(string id, DateTimeOffset created, params string[] networks)
+    {
+        return Kenngruppenbuch.Generate(id, created, networks, new Random(3));
+    }
 
     [Fact]
     public void Should_generate_a_book_with_the_historical_nets_and_a_set_for_the_year_When_none_exist()
@@ -56,7 +61,8 @@ public sealed class KeySheetLinkerTests
     public void Should_leave_a_book_handed_out_earlier_unchanged_When_a_new_network_gets_columns()
     {
         // Arrange
-        var books = new FakeKenngruppenbuchRepository(Book("b", new DateTimeOffset(1944, 1, 1, 0, 0, 0, TimeSpan.Zero), "Triton"));
+        var books = new FakeKenngruppenbuchRepository(Book("b", new DateTimeOffset(1944, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            "Triton"));
         var linker = Linking.For(new FakeKeySheetRepository(), books);
         var handedOut = linker.Book("b");
 
@@ -72,7 +78,8 @@ public sealed class KeySheetLinkerTests
     public void Should_generate_a_new_book_When_the_newest_has_no_free_columns()
     {
         // Arrange
-        var full = Book("full", new DateTimeOffset(1944, 1, 1, 0, 0, 0, TimeSpan.Zero), [.. Enumerable.Range(1, 28).Select(n => $"Net {n}")]);
+        var full = Book("full", new DateTimeOffset(1944, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            [.. Enumerable.Range(1, 28).Select(n => $"Net {n}")]);
         var books = new FakeKenngruppenbuchRepository(full);
         var linker = Linking.For(new FakeKeySheetRepository(), books);
         var sheet = Sheet("s", "Seehund");
@@ -93,7 +100,8 @@ public sealed class KeySheetLinkerTests
         var book = Book("book", new DateTimeOffset(1943, 1, 1, 0, 0, 0, TimeSpan.Zero), "Triton");
         var newer = Book("newer", new DateTimeOffset(1944, 1, 1, 0, 0, 0, TimeSpan.Zero), "Triton");
         var set = TauschtafelSet.Generate("set", 1944, new Random(4));
-        var linker = Linking.For(new FakeKeySheetRepository(), new FakeKenngruppenbuchRepository(book, newer), new FakeTauschtafelSetRepository(set));
+        var linker = Linking.For(new FakeKeySheetRepository(), new FakeKenngruppenbuchRepository(book, newer),
+            new FakeTauschtafelSetRepository(set));
         var sheet = Sheet("s", "Triton");
         sheet.Link("book", "set");
 
@@ -142,7 +150,8 @@ public sealed class KeySheetLinkerTests
     {
         // Arrange
         var sheets = new FakeKeySheetRepository(
-            new KeySheet("old", "Triton", KeyMonth.Parse("1944-06"), Provenance.Generated, KeySheetText.Parse("1 B I II III 01 01 01 AT\n")));
+            new KeySheet("old", "Triton", KeyMonth.Parse("1944-06"), Provenance.Generated,
+                KeySheetText.Parse("1 B I II III 01 01 01 AT\n")));
         var linker = Linking.For(sheets);
 
         // Act
@@ -160,7 +169,10 @@ public sealed class KeySheetLinkerTests
         var handler = new GetKenngruppenbuchHandler(Linking.For(new FakeKeySheetRepository()));
 
         // Act
-        void Act() => handler.Handle(new GetKenngruppenbuch("missing"));
+        void Act()
+        {
+            handler.Handle(new GetKenngruppenbuch("missing"));
+        }
 
         // Assert
         Assert.Throws<NotFoundException>(Act);

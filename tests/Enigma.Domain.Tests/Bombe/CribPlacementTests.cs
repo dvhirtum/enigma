@@ -55,7 +55,10 @@ public sealed class CribPlacementTests
         var placement = new CribPlacement(Letters("QWERTZUIO"), Crib.Parse("ARXX"), 2);
 
         // Act
-        object Act() => placement.Links;
+        object Act()
+        {
+            return placement.Links;
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -85,7 +88,10 @@ public sealed class CribPlacementTests
         var cipher = Letters("QWERTZUIO");
 
         // Act
-        object Act() => new CribPlacement(cipher, Crib.Parse("ARXX"), position);
+        object Act()
+        {
+            return new CribPlacement(cipher, Crib.Parse("ARXX"), position);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -112,11 +118,17 @@ public sealed class CribPlacementTests
     {
         // Arrange
         // Act
-        object Act() => Crib.Parse(text);
+        object Act()
+        {
+            return Crib.Parse(text);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
     }
 
-    private static Letter[] Letters(string text) => [.. text.Select(Letter.FromChar)];
+    private static Letter[] Letters(string text)
+    {
+        return [.. text.Select(Letter.FromChar)];
+    }
 }

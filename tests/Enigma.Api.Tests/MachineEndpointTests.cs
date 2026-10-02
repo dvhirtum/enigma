@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using Enigma.Application.Machine;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,10 +8,13 @@ namespace Enigma.Api.Tests;
 
 public sealed class MachineEndpointTests : IDisposable
 {
-    private readonly ApiFactory _factory = new();
     private readonly HttpClient _client;
+    private readonly ApiFactory _factory = new();
 
-    public MachineEndpointTests() => _client = _factory.CreateClient();
+    public MachineEndpointTests()
+    {
+        _client = _factory.CreateClient();
+    }
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -38,7 +42,11 @@ public sealed class MachineEndpointTests : IDisposable
     public async Task Should_set_up_the_whole_key_When_a_key_is_put()
     {
         // Arrange
-        var key = new { reflector = "B", rotors = new[] { "II", "V", "III" }, rings = new[] { 26, 26, 26 }, plugs = new[] { "AD", "ET" }, positions = "ULA" };
+        var key = new
+        {
+            reflector = "B", rotors = new[] { "II", "V", "III" }, rings = new[] { 26, 26, 26 },
+            plugs = new[] { "AD", "ET" }, positions = "ULA"
+        };
 
         // Act
         var state = await SendAsync(HttpMethod.Put, "/api/machine/key", key);
@@ -55,7 +63,11 @@ public sealed class MachineEndpointTests : IDisposable
     public async Task Should_return_bad_request_When_the_key_has_too_few_rings()
     {
         // Arrange
-        var key = new { reflector = "B", rotors = new[] { "II", "V", "III" }, rings = new[] { 26, 26 }, plugs = Array.Empty<string>(), positions = "ULA" };
+        var key = new
+        {
+            reflector = "B", rotors = new[] { "II", "V", "III" }, rings = new[] { 26, 26 },
+            plugs = Array.Empty<string>(), positions = "ULA"
+        };
 
         // Act
         using var response = await _client.PutAsJsonAsync(Url("/api/machine/key"), key, Token);
@@ -186,17 +198,13 @@ public sealed class MachineEndpointTests : IDisposable
         await SendAsync(HttpMethod.Put, "/api/machine/rotors/middle", new { rotor = "IV" });
         await SendAsync(HttpMethod.Put, "/api/machine/rotors/right", new { rotor = "I" });
         foreach (var pair in "AT BL DF GJ HM NW OP QY RZ VX".Split(' '))
-        {
             await SendAsync(HttpMethod.Post, "/api/machine/plugs", new { pair });
-        }
 
         foreach (var (slot, position) in new[] { ("greek", "V"), ("left", "J"), ("middle", "N"), ("right", "A") })
-        {
             await SendAsync(HttpMethod.Put, $"/api/machine/rotors/{slot}/position", new { position });
-        }
 
         const string ciphertext = "NCZWVUSXPNYMINHZXMQXSFWXWLKJAHSHNMCOCCAKUQPMKCSMHKSEINJUSBLKIOSXCKUBHMLL";
-        var plaintext = new System.Text.StringBuilder();
+        var plaintext = new StringBuilder();
 
         // Act
         foreach (var key in ciphertext)
@@ -226,10 +234,7 @@ public sealed class MachineEndpointTests : IDisposable
     {
         // Arrange
         using var request = new HttpRequestMessage(new HttpMethod(method), Url(url));
-        if (body is not null)
-        {
-            request.Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
-        }
+        if (body is not null) request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
         // Act
         using var response = await _client.SendAsync(request, Token);
@@ -250,7 +255,8 @@ public sealed class MachineEndpointTests : IDisposable
         await SendAsync(HttpMethod.Post, "/api/machine/keyboard/press", new { key = "A" });
 
         // Act
-        using var response = await _client.PostAsJsonAsync(Url("/api/machine/keyboard/press"), new { key = "B" }, Token);
+        using var response =
+            await _client.PostAsJsonAsync(Url("/api/machine/keyboard/press"), new { key = "B" }, Token);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(Token);
 
         // Assert
@@ -258,19 +264,19 @@ public sealed class MachineEndpointTests : IDisposable
         Assert.Equal("Key A is still held down.", problem?.Detail);
     }
 
-    private static Uri Url(string path) => new(path, UriKind.Relative);
+    private static Uri Url(string path)
+    {
+        return new Uri(path, UriKind.Relative);
+    }
 
     private async Task<MachineState> SendAsync(HttpMethod method, string url, object? body = null)
     {
         using var request = new HttpRequestMessage(method, Url(url));
-        if (body is not null)
-        {
-            request.Content = JsonContent.Create(body);
-        }
+        if (body is not null) request.Content = JsonContent.Create(body);
 
         using var response = await _client.SendAsync(request, Token);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<MachineState>(Token)
-            ?? throw new InvalidOperationException("Empty response.");
+               ?? throw new InvalidOperationException("Empty response.");
     }
 }

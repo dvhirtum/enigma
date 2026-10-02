@@ -75,7 +75,10 @@ public sealed class KenngruppenbuchTests
         var book = Procedures.Book([.. Enumerable.Range(1, 28).Select(n => $"Net {n}")]);
 
         // Act
-        void Act() => book.Allot("Neptun");
+        void Act()
+        {
+            book.Allot("Neptun");
+        }
 
         // Assert
         Assert.False(book.HasFreeColumns);
@@ -88,11 +91,15 @@ public sealed class KenngruppenbuchTests
     {
         // Arrange
         var columns = Enumerable.Range(0, Kenngruppenbuch.ColumnCount)
-            .Select(c => (IReadOnlyList<Kenngruppe>)[.. Enumerable.Range(0, 26).Select(r => Kenngruppe.FromIndex(c == 1 && r == 0 ? 0 : (c * 26) + r))])
+            .Select(c => (IReadOnlyList<Kenngruppe>)
+                [.. Enumerable.Range(0, 26).Select(r => Kenngruppe.FromIndex(c == 1 && r == 0 ? 0 : c * 26 + r))])
             .ToList();
 
         // Act
-        void Act() => _ = new Kenngruppenbuch("book", Procedures.Created, columns, []);
+        void Act()
+        {
+            _ = new Kenngruppenbuch("book", Procedures.Created, columns, []);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -138,11 +145,16 @@ public sealed class KenngruppenbuchTests
         var copy = Procedures.Book("Triton", "Hydra", "Medusa");
 
         // Act
-        void Act() => here.Merge(copy);
+        void Act()
+        {
+            here.Merge(copy);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
-        Assert.Equal("Network Hydra has columns 121–140 in the imported Kenngruppenbuch, but here Shark has columns 121–140.", exception.Message);
+        Assert.Equal(
+            "Network Hydra has columns 121–140 in the imported Kenngruppenbuch, but here Shark has columns 121–140.",
+            exception.Message);
         Assert.Equal(["Triton", "Shark"], here.Allotments.Select(a => a.Network));
     }
 
@@ -154,7 +166,10 @@ public sealed class KenngruppenbuchTests
         var other = Kenngruppenbuch.Generate("book", Procedures.Created, ["Triton"], new Random(3));
 
         // Act
-        void Act() => here.Merge(other);
+        void Act()
+        {
+            here.Merge(other);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);

@@ -6,8 +6,8 @@ namespace Enigma.Infrastructure.Bombe;
 /// <summary>Keeps one Bombe job, its latest run, its stops and the printout in memory.</summary>
 public sealed class InMemoryBombeSessionStore : IBombeSessionStore
 {
-    private readonly Lock _lock = new();
     private readonly BombeJob _job = new();
+    private readonly Lock _lock = new();
 
     public BombeRun? Run { get; set; }
 

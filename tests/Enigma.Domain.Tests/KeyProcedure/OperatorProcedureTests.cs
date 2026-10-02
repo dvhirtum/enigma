@@ -11,8 +11,11 @@ public sealed class OperatorProcedureTests
     private static readonly Kenngruppe Schluessel = Procedures.FirstSchluesselkenngruppe(Book, "Triton");
     private static readonly Kenngruppe Verfahren = Procedures.FirstVerfahrenkenngruppe(Book);
 
-    private static OperatorProcedure StartSending() =>
-        OperatorProcedure.StartSending(Context, new TimeOnly(18, 40), Letter.FromChar('Q'), Letter.FromChar('X'));
+    private static OperatorProcedure StartSending()
+    {
+        return OperatorProcedure.StartSending(Context, new TimeOnly(18, 40), Letter.FromChar('Q'),
+            Letter.FromChar('X'));
+    }
 
     /// <summary>Takes a procedure from its Grundstellung step to typing the message.</summary>
     private static void SetUpMessageKey(OperatorProcedure procedure, EnigmaMachine machine)
@@ -46,7 +49,9 @@ public sealed class OperatorProcedureTests
 
         // Assert
         Assert.Equal(OperatorStep.SetGrundstellung, procedure.Step);
-        Assert.Equal(new Indicator(Schluessel, Verfahren, Letter.FromChar('K'), Letter.FromChar('M')).Encrypt(Context.Table), procedure.IndicatorGroups);
+        Assert.Equal(
+            new Indicator(Schluessel, Verfahren, Letter.FromChar('K'), Letter.FromChar('M')).Encrypt(Context.Table),
+            procedure.IndicatorGroups);
     }
 
     [Fact]
@@ -57,7 +62,10 @@ public sealed class OperatorProcedureTests
         var hydra = Procedures.FirstSchluesselkenngruppe(Book, "Hydra");
 
         // Act
-        void Act() => procedure.ChooseGroups(hydra, Verfahren, Letter.FromChar('Q'), Letter.FromChar('X'));
+        void Act()
+        {
+            procedure.ChooseGroups(hydra, Verfahren, Letter.FromChar('Q'), Letter.FromChar('X'));
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -81,7 +89,8 @@ public sealed class OperatorProcedureTests
         // Assert
         Assert.Equal(OperatorStep.SetSpruchschluessel, procedure.Step);
         Assert.Equal(lamps, procedure.MessageKey!.Spruchschluessel.ToString());
-        Assert.Equal(MessageKey.Derive(Key, Key.Grundstellung!, Verfahren).Spruchschluessel, procedure.MessageKey.Spruchschluessel);
+        Assert.Equal(MessageKey.Derive(Key, Key.Grundstellung!, Verfahren).Spruchschluessel,
+            procedure.MessageKey.Spruchschluessel);
     }
 
     [Fact]
@@ -100,7 +109,8 @@ public sealed class OperatorProcedureTests
         var wrongLetter = Record.Exception(() => procedure.CheckKey(wrong));
 
         // Assert
-        Assert.Equal("Set the rotors to the Grundstellung QRS first.", Assert.IsType<DomainException>(beforeGrundstellung).Message);
+        Assert.Equal("Set the rotors to the Grundstellung QRS first.",
+            Assert.IsType<DomainException>(beforeGrundstellung).Message);
         Assert.Equal($"Type {Verfahren.Letters[0]} next.", Assert.IsType<DomainException>(wrongLetter).Message);
     }
 
@@ -135,7 +145,10 @@ public sealed class OperatorProcedureTests
         Procedures.Type(procedure, machine, "WETTER");
 
         // Act
-        void Act() => procedure.Finish();
+        void Act()
+        {
+            procedure.Finish();
+        }
 
         // Assert
         Assert.Equal(2, procedure.FillersNeeded);
@@ -158,7 +171,9 @@ public sealed class OperatorProcedureTests
         // Assert
         Assert.Equal(OperatorStep.Done, procedure.Step);
         var groups = procedure.IndicatorGroups!;
-        Assert.Equal($"1840 = 24 = {groups.First} {groups.Second} {cipher[..4]} {cipher[4..]} {groups.First} {groups.Second}", procedure.Message!.ToString());
+        Assert.Equal(
+            $"1840 = 24 = {groups.First} {groups.Second} {cipher[..4]} {cipher[4..]} {groups.First} {groups.Second}",
+            procedure.Message!.ToString());
     }
 
     [Fact]
@@ -175,7 +190,8 @@ public sealed class OperatorProcedureTests
 
         // Assert
         Assert.Empty(procedure.Warnings);
-        Assert.Equal(new Indicator(Schluessel, Verfahren, Letter.FromChar('Q'), Letter.FromChar('X')), procedure.Indicator);
+        Assert.Equal(new Indicator(Schluessel, Verfahren, Letter.FromChar('Q'), Letter.FromChar('X')),
+            procedure.Indicator);
         Assert.Equal("VORBERICHTXX", plaintext);
         Assert.Equal(OperatorStep.Done, procedure.Step);
     }
@@ -201,7 +217,8 @@ public sealed class OperatorProcedureTests
     {
         // Arrange
         var hydra = Procedures.FirstSchluesselkenngruppe(Book, "Hydra");
-        var groups = new Indicator(hydra, Schluessel, Letter.FromChar('Q'), Letter.FromChar('X')).Encrypt(Context.Table);
+        var groups =
+            new Indicator(hydra, Schluessel, Letter.FromChar('Q'), Letter.FromChar('X')).Encrypt(Context.Table);
         var text = $"1840 = 30 = {groups.First} {groups.Second} ABCD {groups.First} {groups.Second}";
 
         // Act
@@ -212,7 +229,7 @@ public sealed class OperatorProcedureTests
             [
                 "The preamble gives 30 letters, but the message has 20.",
                 $"Schlüsselkenngruppe {hydra} is not allotted to Triton.",
-                $"{Schluessel} is not a Verfahrenkenngruppe.",
+                $"{Schluessel} is not a Verfahrenkenngruppe."
             ],
             procedure.Warnings);
     }

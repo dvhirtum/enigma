@@ -40,7 +40,7 @@ public sealed class Printout
         }
     }
 
-    /// <summary>The stops from the <paramref name="from"/>th on, at most <paramref name="count"/> (null: all).</summary>
+    /// <summary>The stops from the <paramref name="from" />th on, at most <paramref name="count" /> (null: all).</summary>
     public IReadOnlyList<PrintedStop> Stops(int from, int? count = null)
     {
         lock (_lock)

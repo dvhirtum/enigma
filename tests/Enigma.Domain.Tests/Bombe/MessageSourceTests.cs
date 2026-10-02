@@ -41,7 +41,10 @@ public sealed class MessageSourceTests
     {
         // Arrange
         // Act
-        static void Act() => MessageSource.Pasted("1840 = 24 = QWER TZUI ABCD EFGH");
+        static void Act()
+        {
+            MessageSource.Pasted("1840 = 24 = QWER TZUI ABCD EFGH");
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -53,7 +56,10 @@ public sealed class MessageSourceTests
     {
         // Arrange
         // Act
-        static void Act() => MessageSource.Pasted("SNMK-GGST");
+        static void Act()
+        {
+            MessageSource.Pasted("SNMK-GGST");
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

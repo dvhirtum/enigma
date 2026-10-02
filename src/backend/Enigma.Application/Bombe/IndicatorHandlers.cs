@@ -15,24 +15,23 @@ public sealed class TakePinchHandler(IBombeSessionStore store, KeySheetLinker li
         var source = store.Use(GetSourceCribHandler.Loaded);
         var (sheetId, day) = source switch
         {
-            { Kind: SourceKind.Intercept } => throw new DomainException("The key sheet day of an intercept is not known, so its indicator cannot be read."),
+            { Kind: SourceKind.Intercept } => throw new DomainException(
+                "The key sheet day of an intercept is not known, so its indicator cannot be read."),
             { Message: null } => throw new DomainException("Bare cipher text has no indicator to read."),
             { Kind: SourceKind.Exercise, Solution.Exercise: { } exercise } => (exercise.SheetId, exercise.Day),
             _ when command is { SheetId: { Length: > 0 } id, Day: { } chosen } => (id, chosen),
-            _ => throw new DomainException("Choose the key sheet day the message was sent on."),
+            _ => throw new DomainException("Choose the key sheet day the message was sent on.")
         };
 
         var sheet = linker.List().FirstOrDefault(sheet => sheet.Id == sheetId)
-            ?? throw new NotFoundException($"No key sheet has id '{sheetId}'.");
+                    ?? throw new NotFoundException($"No key sheet has id '{sheetId}'.");
         var tables = linker.Tables(sheet.TauschtafelSetId!);
         var others = ExerciseGenerator.DayTraffic(sheet, day, linker.Book(sheet.KenngruppenbuchId!), tables, random);
-        var pinch = new Pinch(sheet.Id, sheet.Network, sheet.Month, day, sheet.KeyFor(day).Grundstellung!, tables.TableFor(sheet.Month, day));
+        var pinch = new Pinch(sheet.Id, sheet.Network, sheet.Month, day, sheet.KeyFor(day).Grundstellung!,
+            tables.TableFor(sheet.Month, day));
         return store.Use(job =>
         {
-            if (job.Source != source)
-            {
-                throw new DomainException("The message changed meanwhile. Take the pinch again.");
-            }
+            if (job.Source != source) throw new DomainException("The message changed meanwhile. Take the pinch again.");
 
             job.TakePinch(pinch, others);
             store.Stops.ClearReadings();
@@ -58,13 +57,15 @@ public sealed class WriteIndicatorHandler(IBombeSessionStore store)
         });
     }
 
-    private static Kenngruppe? Group(string? written, Kenngruppe? kept) =>
-        written switch
+    private static Kenngruppe? Group(string? written, Kenngruppe? kept)
+    {
+        return written switch
         {
             null => kept,
             "" => null,
-            _ => Input.Kenngruppe(written),
+            _ => Input.Kenngruppe(written)
         };
+    }
 }
 
 public sealed class FillInIndicatorHandler(IBombeSessionStore store)
@@ -97,8 +98,11 @@ public sealed class GetRingTableHandler(IBombeSessionStore store)
                 verfahrenkenngruppe.ToString(),
                 check.RightRing.Number,
                 check.Stop.Indicator.ToString(),
-                [.. check.RingTable(grundstellung, verfahrenkenngruppe).Select(row =>
-                    new RingRowState(row.Left.Number, row.Middle.Number, row.Spruchschluessel.ToString(), check.WheelOrder.DrumLetters(row.Cores).Indicator.ToString()))]);
+                [
+                    .. check.RingTable(grundstellung, verfahrenkenngruppe).Select(row =>
+                        new RingRowState(row.Left.Number, row.Middle.Number, row.Spruchschluessel.ToString(),
+                            check.WheelOrder.DrumLetters(row.Cores).Indicator.ToString()))
+                ]);
         });
     }
 }
@@ -116,8 +120,9 @@ public sealed class ReadRingsHandler(IBombeSessionStore store)
             {
                 { Left: null, Middle: null } => null,
                 { Left: { } left, Middle: { } middle } => new IndicatorReading(
-                    traffic.Pinch.Grundstellung, traffic.WrittenVerfahrenkenngruppe(0), RingSetting.FromNumber(left), RingSetting.FromNumber(middle)),
-                _ => throw new DomainException("Give both the left and the middle ring."),
+                    traffic.Pinch.Grundstellung, traffic.WrittenVerfahrenkenngruppe(0), RingSetting.FromNumber(left),
+                    RingSetting.FromNumber(middle)),
+                _ => throw new DomainException("Give both the left and the middle ring.")
             };
             return CheckState.From(check, command.Stop, store.Stops.SolutionOf(command.Stop));
         });
@@ -126,6 +131,9 @@ public sealed class ReadRingsHandler(IBombeSessionStore store)
 
 internal static class TrafficStoreExtensions
 {
-    public static T UseTraffic<T>(this IBombeSessionStore store, Func<BombeJob, DayTraffic, T> action) =>
-        store.Use(job => action(job, job.Traffic ?? throw new DomainException("Take a pinch of the key sheet day first.")));
+    public static T UseTraffic<T>(this IBombeSessionStore store, Func<BombeJob, DayTraffic, T> action)
+    {
+        return store.Use(job =>
+            action(job, job.Traffic ?? throw new DomainException("Take a pinch of the key sheet day first.")));
+    }
 }

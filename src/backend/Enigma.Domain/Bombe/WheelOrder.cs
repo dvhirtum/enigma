@@ -6,19 +6,17 @@ namespace Enigma.Domain.Bombe;
 public sealed record WheelOrder
 {
     private static readonly RotorType[] Rotors =
-        [RotorType.I, RotorType.II, RotorType.III, RotorType.IV, RotorType.V, RotorType.VI, RotorType.VII, RotorType.VIII];
+    [
+        RotorType.I, RotorType.II, RotorType.III, RotorType.IV, RotorType.V, RotorType.VI, RotorType.VII, RotorType.VIII
+    ];
 
     public WheelOrder(RotorType left, RotorType middle, RotorType right)
     {
         if (left.IsGreek || middle.IsGreek || right.IsGreek)
-        {
             throw new DomainException("The Bombe takes rotors I–VIII only.");
-        }
 
         if (left == middle || middle == right || left == right)
-        {
             throw new DomainException("A wheel order uses each rotor at most once.");
-        }
 
         Left = left;
         Middle = middle;
@@ -27,14 +25,22 @@ public sealed record WheelOrder
 
     /// <summary>All 336 wheel orders of rotors I–VIII.</summary>
     public static IReadOnlyList<WheelOrder> All { get; } =
-        [.. from left in Rotors
-            from middle in Rotors
-            from right in Rotors
-            where left != middle && middle != right && left != right
-            select new WheelOrder(left, middle, right)];
+    [
+        .. from left in Rotors
+        from middle in Rotors
+        from right in Rotors
+        where left != middle && middle != right && left != right
+        select new WheelOrder(left, middle, right)
+    ];
+
+    public RotorType Left { get; }
+
+    public RotorType Middle { get; }
+
+    public RotorType Right { get; }
 
     /// <summary>
-    /// Three wheel orders in random order: <paramref name="key"/> and two others that <paramref name="fits"/> allows.
+    ///     Three wheel orders in random order: <paramref name="key" /> and two others that <paramref name="fits" /> allows.
     /// </summary>
     public static IReadOnlyList<WheelOrder> Hint(WheelOrder key, Func<WheelOrder, bool> fits, Random random)
     {
@@ -49,25 +55,24 @@ public sealed record WheelOrder
         return hint;
     }
 
-    public RotorType Left { get; }
-
-    public RotorType Middle { get; }
-
-    public RotorType Right { get; }
-
     /// <summary>
-    /// The letters the drums show at these core positions. The Bombe drums are ahead of the Enigma rotors: drums I, II,
-    /// III, VI, VII and VIII by one letter, IV by two and V by three.
+    ///     The letters the drums show at these core positions. The Bombe drums are ahead of the Enigma rotors: drums I, II,
+    ///     III, VI, VII and VIII by one letter, IV by two and V by three.
     /// </summary>
-    public DrumPosition DrumLetters(DrumPosition core) =>
-        new(core.Left.Shift(LetterOffset(Left)), core.Middle.Shift(LetterOffset(Middle)), core.Right.Shift(LetterOffset(Right)));
+    public DrumPosition DrumLetters(DrumPosition core)
+    {
+        return new DrumPosition(core.Left.Shift(LetterOffset(Left)), core.Middle.Shift(LetterOffset(Middle)),
+            core.Right.Shift(LetterOffset(Right)));
+    }
 
-    /// <summary>The core positions at which the drums show <paramref name="drumLetters"/>.</summary>
-    public DrumPosition CorePositions(DrumPosition drumLetters) =>
-        new(
+    /// <summary>The core positions at which the drums show <paramref name="drumLetters" />.</summary>
+    public DrumPosition CorePositions(DrumPosition drumLetters)
+    {
+        return new DrumPosition(
             drumLetters.Left.Shift(-LetterOffset(Left)),
             drumLetters.Middle.Shift(-LetterOffset(Middle)),
             drumLetters.Right.Shift(-LetterOffset(Right)));
+    }
 
     /// <summary>The window letters after one key press, as on the Enigma, with the middle rotor's double step.</summary>
     public (Letter Left, Letter Middle, Letter Right) Step((Letter Left, Letter Middle, Letter Right) windows)
@@ -91,7 +96,13 @@ public sealed record WheelOrder
             : throw new DomainException($"'{rotors}' is not a wheel order of three rotors.");
     }
 
-    public override string ToString() => $"{Left} {Middle} {Right}";
+    public override string ToString()
+    {
+        return $"{Left} {Middle} {Right}";
+    }
 
-    private static int LetterOffset(RotorType rotor) => rotor == RotorType.IV ? 2 : rotor == RotorType.V ? 3 : 1;
+    private static int LetterOffset(RotorType rotor)
+    {
+        return rotor == RotorType.IV ? 2 : rotor == RotorType.V ? 3 : 1;
+    }
 }

@@ -1,8 +1,8 @@
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// A kind of stereotyped Navy message: its name, the hint given with an exercise, its likely crib and where in the
-/// message the crib is likely to stand.
+///     A kind of stereotyped Navy message: its name, the hint given with an exercise, its likely crib and where in the
+///     message the crib is likely to stand.
 /// </summary>
 public sealed record MessageType(string Id, string Name, string Hint, Crib Crib, string Place)
 {
@@ -38,6 +38,9 @@ public sealed record MessageType(string Id, string Name, string Hint, Crib Crib,
 
     public static IReadOnlyList<MessageType> All { get; } = [Weather, NothingToReport, OwnPosition, Convoy];
 
-    /// <summary>The message type with <paramref name="id"/>, or null.</summary>
-    public static MessageType? Find(string id) => All.FirstOrDefault(type => type.Id == id);
+    /// <summary>The message type with <paramref name="id" />, or null.</summary>
+    public static MessageType? Find(string id)
+    {
+        return All.FirstOrDefault(type => type.Id == id);
+    }
 }

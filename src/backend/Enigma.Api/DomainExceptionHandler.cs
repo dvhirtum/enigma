@@ -17,12 +17,9 @@ internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetai
             DomainException => (StatusCodes.Status400BadRequest, "The operation was rejected."),
             KeySheetNotFoundException => (StatusCodes.Status404NotFound, "The key sheet was not found."),
             NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
-            _ => (0, string.Empty),
+            _ => (0, string.Empty)
         };
-        if (status == 0)
-        {
-            return false;
-        }
+        if (status == 0) return false;
 
         httpContext.Response.StatusCode = status;
         return await problemDetails.TryWriteAsync(new ProblemDetailsContext
@@ -33,8 +30,8 @@ internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetai
             {
                 Status = status,
                 Title = title,
-                Detail = exception.Message,
-            },
+                Detail = exception.Message
+            }
         }).ConfigureAwait(false);
     }
 }

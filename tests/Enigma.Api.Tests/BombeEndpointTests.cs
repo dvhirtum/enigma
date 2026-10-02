@@ -12,11 +12,15 @@ public sealed class BombeEndpointTests : IDisposable
     private static readonly string[] CarterLinks =
         ["SW1", "NE2", "GE5", "GR6", "SV7", "ZR9", "HZ10", "EU11", "GR12", "AS13", "RA14", "LG15", "EV16"];
 
-
-    private readonly ApiFactory _factory = new();
     private readonly HttpClient _client;
 
-    public BombeEndpointTests() => _client = _factory.CreateClient();
+
+    private readonly ApiFactory _factory = new();
+
+    public BombeEndpointTests()
+    {
+        _client = _factory.CreateClient();
+    }
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -56,7 +60,8 @@ public sealed class BombeEndpointTests : IDisposable
         var machine = await FitCarterDrumsAsync();
 
         // Act
-        var started = await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null, notebook = true });
+        var started = await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run",
+            new { speed = (double?)null, notebook = true });
         var run = await WaitForRunAsync();
         var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=0"), Token);
 
@@ -127,8 +132,11 @@ public sealed class BombeEndpointTests : IDisposable
         await WaitForRunAsync();
 
         // Act
-        var printed = await _client.GetFromJsonAsync<IReadOnlyList<PrintedStopState>>(Url("/api/bombe/printout?from=1&count=1"), Token);
-        var logged = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=1&count=5"), Token);
+        var printed =
+            await _client.GetFromJsonAsync<IReadOnlyList<PrintedStopState>>(Url("/api/bombe/printout?from=1&count=1"),
+                Token);
+        var logged =
+            await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=1&count=5"), Token);
         var noPrintout = await SendAsync<BombeState>(HttpMethod.Delete, "/api/bombe/printout", new { });
         var noStops = await SendAsync<BombeState>(HttpMethod.Delete, "/api/bombe/stops", new { });
 
@@ -164,14 +172,19 @@ public sealed class BombeEndpointTests : IDisposable
     public async Task Should_set_up_the_machine_by_hand_When_each_machine_endpoint_is_called()
     {
         // Arrange
-        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/rows/0", new { rotor = "I", upTo = 1 });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/rows/0",
+            new { rotor = "I", upTo = 1 });
 
         // Act
-        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/jacks/0", new { letter = "a" });
-        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/jacks/1", new { letter = "B" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/jacks/0",
+            new { letter = "a" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/jacks/1",
+            new { letter = "B" });
         await SendAsync<BombeState>(HttpMethod.Delete, "/api/bombe/machine/chains/1/scramblers/1/drums/0", new { });
-        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/start", new { start = "qrs" });
-        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/test-register", new { letter = "C", input = "D" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/scramblers/0/start",
+            new { start = "qrs" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/chains/1/test-register",
+            new { letter = "C", input = "D" });
         var state = await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/machine/joins/1", new { joined = true });
 
         // Assert
@@ -192,7 +205,8 @@ public sealed class BombeEndpointTests : IDisposable
         // Arrange
         // Act
         var state = await SendAsync<BombeState>(
-            HttpMethod.Put, "/api/bombe/checking", new { reflector = "C", dummy = true, drums = new[] { "III", null, "I" }, rings = "abc", windows = "XYZ" });
+            HttpMethod.Put, "/api/bombe/checking",
+            new { reflector = "C", dummy = true, drums = new[] { "III", null, "I" }, rings = "abc", windows = "XYZ" });
 
         // Assert
         Assert.Equal("C", state.Checker.Reflector);
@@ -239,8 +253,10 @@ public sealed class BombeEndpointTests : IDisposable
         var checker = await SendAsync<BombeState>(HttpMethod.Post, $"/api/bombe/stops/{stop}/checking", new { });
         var lamp = await SendAsync<LampState>(HttpMethod.Post, "/api/bombe/checking/press", new { key = "Q" });
         var check = await SendAsync<CheckState>(
-            HttpMethod.Put, $"/api/bombe/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ XO IK RR SS WW", rightRing = (int?)null });
-        var confirmation = await SendAsync<ConfirmationState>(HttpMethod.Post, $"/api/bombe/stops/{stop}/check/verdict", new { verdict = "True" });
+            HttpMethod.Put, $"/api/bombe/stops/{stop}/check",
+            new { steckers = "AD ET HM LJ NV UF ZP GQ XO IK RR SS WW", rightRing = (int?)null });
+        var confirmation = await SendAsync<ConfirmationState>(HttpMethod.Post, $"/api/bombe/stops/{stop}/check/verdict",
+            new { verdict = "True" });
 
         // Assert
         Assert.Equal("ZZZ", checker.Checker.Windows);
@@ -270,7 +286,12 @@ public sealed class BombeEndpointTests : IDisposable
         var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=0"), Token);
         var stop = stops!.Single(s => s.Position == "VMB").Index;
         await SendAsync<CheckState>(
-            HttpMethod.Put, $"/api/bombe/stops/{stop}/check", new { steckers = "AD ET HM LJ NV UF ZP GQ RR SS WW", machineWindows = (string?)null, machineRings = (string?)null, rightRing = (int?)null });
+            HttpMethod.Put, $"/api/bombe/stops/{stop}/check",
+            new
+            {
+                steckers = "AD ET HM LJ NV UF ZP GQ RR SS WW", machineWindows = (string?)null,
+                machineRings = (string?)null, rightRing = (int?)null
+            });
 
         // Act
         using var suggestResponse = await _client.PostAsync(Url($"/api/bombe/stops/{stop}/check/suggest"), null, Token);
@@ -305,10 +326,12 @@ public sealed class BombeEndpointTests : IDisposable
     public async Task Should_load_the_intercept_and_reveal_its_crib_and_key_When_asked_through_the_api()
     {
         // Arrange
-        var intercepts = await _client.GetFromJsonAsync<IReadOnlyList<InterceptState>>(Url("/api/bombe/intercepts"), Token);
+        var intercepts =
+            await _client.GetFromJsonAsync<IReadOnlyList<InterceptState>>(Url("/api/bombe/intercepts"), Token);
 
         // Act
-        var state = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/intercept", new { id = "barbarossa-1941-1" });
+        var state = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/intercept",
+            new { id = "barbarossa-1941-1" });
         var crib = await _client.GetFromJsonAsync<CribState>(Url("/api/bombe/source/crib"), Token);
         var solution = await _client.GetFromJsonAsync<SolutionState>(Url("/api/bombe/source/solution"), Token);
 
@@ -327,7 +350,8 @@ public sealed class BombeEndpointTests : IDisposable
     public async Task Should_show_three_wheel_orders_When_asked_for_an_intercept_through_the_api()
     {
         // Arrange
-        var loaded = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/intercept", new { id = "carter-weather" });
+        var loaded = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/intercept",
+            new { id = "carter-weather" });
 
         // Act
         var shown = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/wheel-orders", new { });
@@ -358,7 +382,8 @@ public sealed class BombeEndpointTests : IDisposable
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/cipher-text", new { text = "QWERT ZUIOP" });
 
         // Act
-        var types = await _client.GetFromJsonAsync<IReadOnlyList<MessageTypeState>>(Url("/api/bombe/message-types"), Token);
+        var types = await _client.GetFromJsonAsync<IReadOnlyList<MessageTypeState>>(Url("/api/bombe/message-types"),
+            Token);
         var crib = await _client.GetFromJsonAsync<CribState>(Url("/api/bombe/source/crib?type=weather"), Token);
 
         // Assert
@@ -372,7 +397,8 @@ public sealed class BombeEndpointTests : IDisposable
     {
         // Arrange
         // Act
-        using var response = await _client.PostAsJsonAsync(Url("/api/bombe/source/intercept"), new { id = "u-110" }, Token);
+        using var response =
+            await _client.PostAsJsonAsync(Url("/api/bombe/source/intercept"), new { id = "u-110" }, Token);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -383,10 +409,11 @@ public sealed class BombeEndpointTests : IDisposable
     {
         // Arrange
         using var paths = new TemporaryKeySheetPaths();
-        using var factory = paths.Configure(_factory);
+        await using var factory = paths.Configure(_factory);
         using var client = factory.CreateClient();
         using var none = await client.PostAsync(Url("/api/bombe/source/exercise"), null, Token);
-        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M3", year = 1944 });
+        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate",
+            new { model = "M3", year = 1944 });
 
         // Act
         var state = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/exercise", new { });
@@ -405,15 +432,17 @@ public sealed class BombeEndpointTests : IDisposable
     {
         // Arrange
         using var paths = new TemporaryKeySheetPaths();
-        using var factory = paths.Configure(_factory);
+        await using var factory = paths.Configure(_factory);
         using var client = factory.CreateClient();
-        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M3", year = 1944 });
+        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate",
+            new { model = "M3", year = 1944 });
         var loaded = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/exercise", new { });
         var solution = await client.GetFromJsonAsync<SolutionState>(Url("/api/bombe/source/solution"), Token);
 
         // Act
         var shown = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/crib-positions", new { });
-        var intercept = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/intercept", new { id = "carter-weather" });
+        var intercept = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/intercept",
+            new { id = "carter-weather" });
         using var none = await client.PostAsJsonAsync(Url("/api/bombe/source/crib-positions"), new { }, Token);
 
         // Assert
@@ -432,16 +461,19 @@ public sealed class BombeEndpointTests : IDisposable
     {
         // Arrange
         using var paths = new TemporaryKeySheetPaths();
-        using var factory = paths.Configure(_factory);
+        await using var factory = paths.Configure(_factory);
         using var client = factory.CreateClient();
-        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate", new { model = "M3", year = 1944 });
+        await SendAsync<JsonElement>(client, HttpMethod.Post, "/api/keysheets/generate",
+            new { model = "M3", year = 1944 });
         await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/source/exercise", new { });
         var solution = await client.GetFromJsonAsync<SolutionState>(Url("/api/bombe/source/solution"), Token);
 
         // Act
         var pinched = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/pinch", new { });
-        var written = await SendAsync<BombeState>(client, HttpMethod.Put, "/api/bombe/day/messages/1/indicator", new { verfahrenkenngruppe = "abc" });
-        var filled = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/day/messages/0/indicator/fill-in", new { });
+        var written = await SendAsync<BombeState>(client, HttpMethod.Put, "/api/bombe/day/messages/1/indicator",
+            new { verfahrenkenngruppe = "abc" });
+        var filled = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/day/messages/0/indicator/fill-in",
+            new { });
         using var noStop = await client.GetAsync(Url("/api/bombe/stops/0/check/ring-table"), Token);
         using var rings = new HttpRequestMessage(HttpMethod.Put, Url("/api/bombe/stops/0/check/rings"));
         rings.Content = JsonContent.Create(new { left = 1 });
@@ -455,7 +487,10 @@ public sealed class BombeEndpointTests : IDisposable
         Assert.Equal(HttpStatusCode.NotFound, halfRings.StatusCode);
     }
 
-    private static Uri Url(string path) => new(path, UriKind.Relative);
+    private static Uri Url(string path)
+    {
+        return new Uri(path, UriKind.Relative);
+    }
 
     // Places Carter's crib and menu and fits the drums.
     private async Task SetUpCarterAsync()
@@ -471,9 +506,8 @@ public sealed class BombeEndpointTests : IDisposable
     private async Task<BombeState> FitCarterDrumsAsync()
     {
         foreach (var (row, rotor) in "II V III".Split(' ').Index())
-        {
-            await SendAsync<BombeState>(HttpMethod.Put, $"/api/bombe/machine/chains/0/rows/{row}", new { rotor, upTo = 11 });
-        }
+            await SendAsync<BombeState>(HttpMethod.Put, $"/api/bombe/machine/chains/0/rows/{row}",
+                new { rotor, upTo = 11 });
 
         return await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/machine/plug-up", new { });
     }
@@ -485,17 +519,17 @@ public sealed class BombeEndpointTests : IDisposable
         while (true)
         {
             var run = await _client.GetFromJsonAsync<RunState>(Url("/api/bombe/run"), timeout.Token)
-                ?? throw new InvalidOperationException("Empty response.");
-            if (run.Status != "Running")
-            {
-                return run;
-            }
+                      ?? throw new InvalidOperationException("Empty response.");
+            if (run.Status != "Running") return run;
 
             await Task.Delay(50, timeout.Token);
         }
     }
 
-    private Task<T> SendAsync<T>(HttpMethod method, string url, object body) => SendAsync<T>(_client, method, url, body);
+    private Task<T> SendAsync<T>(HttpMethod method, string url, object body)
+    {
+        return SendAsync<T>(_client, method, url, body);
+    }
 
     private static async Task<T> SendAsync<T>(HttpClient client, HttpMethod method, string url, object body)
     {
@@ -504,19 +538,24 @@ public sealed class BombeEndpointTests : IDisposable
         using var response = await client.SendAsync(request, Token);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(Token)
-            ?? throw new InvalidOperationException("Empty response.");
+               ?? throw new InvalidOperationException("Empty response.");
     }
 }
 
-/// <summary>Empty key sheet folders for one test, deleted afterwards.</summary>
+/// <summary>Empty key sheet folders for one test, deleted afterward.</summary>
 internal sealed class TemporaryKeySheetPaths : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("enigma-bombe-").FullName;
 
-    public WebApplicationFactory<Program> Configure(WebApplicationFactory<Program> factory) =>
-        factory.WithWebHostBuilder(builder => builder
+    public void Dispose()
+    {
+        Directory.Delete(_root, true);
+    }
+
+    public WebApplicationFactory<Program> Configure(WebApplicationFactory<Program> factory)
+    {
+        return factory.WithWebHostBuilder(builder => builder
             .UseSetting("KeySheets:HistoricalPath", Path.Combine(_root, "historical"))
             .UseSetting("KeySheets:UserPath", Path.Combine(_root, "user")));
-
-    public void Dispose() => Directory.Delete(_root, recursive: true);
+    }
 }

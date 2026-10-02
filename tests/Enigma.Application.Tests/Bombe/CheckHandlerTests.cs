@@ -20,7 +20,7 @@ public sealed class CheckHandlerTests
     public async Task Should_start_the_check_at_the_stop_When_a_stop_is_first_checked()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
 
         // Act
         var check = new GetCheckHandler(_store).Handle(new GetCheck(stop));
@@ -39,7 +39,7 @@ public sealed class CheckHandlerTests
     public async Task Should_decrypt_the_crib_and_give_the_key_When_Carters_steckers_are_set()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
 
         // Act
         var check = new SetCheckHandler(_store).Handle(new SetCheck(stop, CarterSteckers, null));
@@ -56,7 +56,7 @@ public sealed class CheckHandlerTests
     public async Task Should_light_R_When_Q_is_pressed_at_link_GR6_on_ZZF_after_setting_up_for_the_stop()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
         var state = new SetUpCheckingMachineHandler(_store).Handle(new SetUpCheckingMachine(stop));
         new SetCheckingMachineHandler(_store).Handle(new SetCheckingMachine(null, null, null, "zzf"));
 
@@ -75,12 +75,12 @@ public sealed class CheckHandlerTests
     public async Task Should_forget_the_stop_on_the_checking_machine_When_the_stops_are_cleared()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
         new SetUpCheckingMachineHandler(_store).Handle(new SetUpCheckingMachine(stop));
         new ClearStopsHandler(_store).Handle(new ClearStops());
 
         // Act
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(TimeSpan.FromSeconds(60), Token);
         var lamp = new PressCheckingKeyHandler(_store).Handle(new PressCheckingKey("q"));
 
@@ -94,11 +94,11 @@ public sealed class CheckHandlerTests
     public async Task Should_take_out_the_cartridge_and_dummy_drum_When_they_are_set_empty()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
         new SetUpCheckingMachineHandler(_store).Handle(new SetUpCheckingMachine(stop));
 
         // Act
-        var state = new SetCheckingMachineHandler(_store).Handle(new SetCheckingMachine("", null, null, null, Dummy: false));
+        var state = new SetCheckingMachineHandler(_store).Handle(new SetCheckingMachine("", null, null, null, false));
 
         // Assert
         Assert.Null(state.Checker.Reflector);
@@ -110,7 +110,7 @@ public sealed class CheckHandlerTests
     public async Task Should_fit_a_thin_cartridge_When_it_is_set()
     {
         // Arrange
-        await RunCarterAsync(intercept: false);
+        await RunCarterAsync(false);
 
         // Act
         var state = new SetCheckingMachineHandler(_store).Handle(new SetCheckingMachine("C-thin", null, null, null));
@@ -124,7 +124,7 @@ public sealed class CheckHandlerTests
     public async Task Should_keep_the_verdict_on_the_stop_When_it_is_confirmed()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: true);
+        var stop = await RunCarterAsync(true);
         new SetCheckHandler(_store).Handle(new SetCheck(stop, CarterSteckers, null));
 
         // Act
@@ -145,7 +145,7 @@ public sealed class CheckHandlerTests
     public async Task Should_not_compare_with_a_solution_When_the_text_was_pasted()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
 
         // Act
         var confirmation = new ConfirmCheckHandler(_store).Handle(new ConfirmCheck(stop, "False"));
@@ -161,10 +161,13 @@ public sealed class CheckHandlerTests
     public async Task Should_refuse_the_change_When_it_is_not_valid(string? steckers, int? ring)
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
 
         // Act
-        void Act() => new SetCheckHandler(_store).Handle(new SetCheck(stop, steckers, ring));
+        void Act()
+        {
+            new SetCheckHandler(_store).Handle(new SetCheck(stop, steckers, ring));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -177,10 +180,13 @@ public sealed class CheckHandlerTests
     public async Task Should_refuse_the_verdict_When_it_is_not_true_false_or_unchecked(string? verdict)
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
 
         // Act
-        void Act() => new ConfirmCheckHandler(_store).Handle(new ConfirmCheck(stop, verdict));
+        void Act()
+        {
+            new ConfirmCheckHandler(_store).Handle(new ConfirmCheck(stop, verdict));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -190,10 +196,13 @@ public sealed class CheckHandlerTests
     public async Task Should_say_not_found_When_the_stop_does_not_exist()
     {
         // Arrange
-        await RunCarterAsync(intercept: false);
+        await RunCarterAsync(false);
 
         // Act
-        void Act() => new GetCheckHandler(_store).Handle(new GetCheck(99));
+        void Act()
+        {
+            new GetCheckHandler(_store).Handle(new GetCheck(99));
+        }
 
         // Assert
         Assert.Throws<NotFoundException>(Act);
@@ -203,11 +212,11 @@ public sealed class CheckHandlerTests
     public async Task Should_keep_the_checks_When_the_Bombe_runs_again()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
         new ConfirmCheckHandler(_store).Handle(new ConfirmCheck(stop, "True"));
 
         // Act
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(TimeSpan.FromSeconds(60), Token);
 
         // Assert
@@ -219,7 +228,7 @@ public sealed class CheckHandlerTests
     public async Task Should_propose_the_missing_pairs_without_setting_them_When_steckers_are_suggested()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
         new SetCheckHandler(_store).Handle(new SetCheck(stop, "AD ET HM LJ NV UF ZP GQ RR SS WW", null));
 
         // Act
@@ -230,14 +239,15 @@ public sealed class CheckHandlerTests
         Assert.All(suggestion.Pairs, pair => Assert.True(pair.Gain > 0));
         Assert.Equal("WETTERVORHERSAGE", suggestion.Decrypt);
         Assert.Equal("AD ET FU GQ HM IK JL NV OX PZ RR SS WW", suggestion.Steckers);
-        Assert.Equal("AD ET FU GQ HM JL NV PZ RR SS WW", new GetCheckHandler(_store).Handle(new GetCheck(stop)).Steckers);
+        Assert.Equal("AD ET FU GQ HM JL NV PZ RR SS WW",
+            new GetCheckHandler(_store).Handle(new GetCheck(stop)).Steckers);
     }
 
     [Fact]
     public async Task Should_score_every_ring_and_set_the_lowest_best_When_the_right_ring_is_found()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
         new SetCheckHandler(_store).Handle(new SetCheck(stop, CarterSteckers, null));
 
         // Act
@@ -256,8 +266,8 @@ public sealed class CheckHandlerTests
         // Arrange
         // Carter's sixteen letters see no left rotor turnover, so the middle rings tie but the one that puts the middle
         // rotor at its notch, which double-steps it.
-        var stop = await RunCarterAsync(intercept: false);
-        new SetCheckHandler(_store).Handle(new SetCheck(stop, CarterSteckers, null, MiddleRing: 5));
+        var stop = await RunCarterAsync(false);
+        new SetCheckHandler(_store).Handle(new SetCheck(stop, CarterSteckers, null, 5));
 
         // Act
         var found = new FindMiddleRingHandler(_store).Handle(new FindMiddleRing(stop));
@@ -274,9 +284,9 @@ public sealed class CheckHandlerTests
     public async Task Should_keep_the_middle_ring_When_only_the_right_ring_is_changed()
     {
         // Arrange
-        var stop = await RunCarterAsync(intercept: false);
+        var stop = await RunCarterAsync(false);
         var handler = new SetCheckHandler(_store);
-        handler.Handle(new SetCheck(stop, null, null, MiddleRing: 7));
+        handler.Handle(new SetCheck(stop, null, null, 7));
 
         // Act
         var check = handler.Handle(new SetCheck(stop, null, 3));
@@ -287,30 +297,27 @@ public sealed class CheckHandlerTests
         Assert.Equal([26, 7, 3], check.Key.Rings);
     }
 
-    private IReadOnlyList<StopState> Stops() => new GetStopsHandler(_store).Handle(new GetStops(0));
+    private IReadOnlyList<StopState> Stops()
+    {
+        return new GetStopsHandler(_store).Handle(new GetStops(0));
+    }
 
     // Runs Carter's menu on II V III and returns the index of the true stop (core positions VMB).
     private async Task<int> RunCarterAsync(bool intercept)
     {
         if (intercept)
-        {
             new LoadInterceptHandler(_store).Handle(new LoadIntercept("carter-weather"));
-        }
         else
-        {
             new SetCipherTextHandler(_store).Handle(new SetCipherText("SNMKGGSTZZUGARLV"));
-        }
 
         new SetCribHandler(_store).Handle(new SetCrib("WETTERVORHERSAGE"));
         new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
         new SetMenuHandler(_store).Handle(new SetMenu(CarterLinks, "G"));
         foreach (var (row, rotor) in "II V III".Split(' ').Index())
-        {
             new FitRowHandler(_store).Handle(new FitRow(0, row, 11, rotor));
-        }
 
         new PlugUpMenuHandler(_store).Handle(new PlugUpMenu());
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(TimeSpan.FromSeconds(60), Token);
         return Stops().Single(s => s.Position == "VMB").Index;
     }

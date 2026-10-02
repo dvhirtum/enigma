@@ -34,7 +34,10 @@ public sealed class HandlerTests
         var handler = new CreateMachineHandler(store);
 
         // Act
-        void Act() => handler.Handle(new CreateMachine("M5"));
+        void Act()
+        {
+            handler.Handle(new CreateMachine("M5"));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -101,7 +104,10 @@ public sealed class HandlerTests
         var handler = new InsertRotorHandler(new FakeMachineSessionStore());
 
         // Act
-        void Act() => handler.Handle(new InsertRotor(slot, rotor));
+        void Act()
+        {
+            handler.Handle(new InsertRotor(slot, rotor));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -118,7 +124,10 @@ public sealed class HandlerTests
         var handler = new SetRingSettingHandler(new FakeMachineSessionStore());
 
         // Act
-        void Act() => handler.Handle(new SetRingSetting(rotor, ring));
+        void Act()
+        {
+            handler.Handle(new SetRingSetting(rotor, ring));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -182,7 +191,8 @@ public sealed class HandlerTests
     [InlineData("right", "Q", "AAQ")]
     [InlineData("Middle", "D", "ADA")]
     [InlineData("LEFT", "z", "ZAA")]
-    public void Should_show_the_letter_in_the_window_When_a_rotor_is_turned(string slot, string position, string expected)
+    public void Should_show_the_letter_in_the_window_When_a_rotor_is_turned(string slot, string position,
+        string expected)
     {
         // Arrange
         var handler = new TurnRotorHandler(new FakeMachineSessionStore());
@@ -206,7 +216,10 @@ public sealed class HandlerTests
         var handler = new TurnRotorHandler(new FakeMachineSessionStore());
 
         // Act
-        void Act() => handler.Handle(new TurnRotor(slot, position));
+        void Act()
+        {
+            handler.Handle(new TurnRotor(slot, position));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -292,9 +305,7 @@ public sealed class HandlerTests
         new InsertRotorHandler(store).Handle(new InsertRotor("Middle", "VI"));
         new InsertRotorHandler(store).Handle(new InsertRotor("Right", "VIII"));
         foreach (var pair in "AN EZ HK IJ LR MQ OT PV SW UX".Split(' '))
-        {
             new ConnectPlugHandler(store).Handle(new ConnectPlug(pair));
-        }
 
         new TurnRotorHandler(store).Handle(new TurnRotor("Left", "U"));
         new TurnRotorHandler(store).Handle(new TurnRotor("Middle", "Z"));
@@ -345,14 +356,18 @@ public sealed class HandlerTests
     [InlineData("B", new[] { "I", "II", "III" }, new[] { 1, 1 }, "AAA")]
     [InlineData("B", new[] { "I", "II", "III" }, new[] { 1, 1, 1 }, "AA")]
     [InlineData("B", new[] { "I", "I", "III" }, new[] { 1, 1, 1 }, "AAA")]
-    public void Should_keep_the_machine_When_the_key_is_not_complete(string reflector, string[] rotors, int[] rings, string positions)
+    public void Should_keep_the_machine_When_the_key_is_not_complete(string reflector, string[] rotors, int[] rings,
+        string positions)
     {
         // Arrange
         var store = new FakeMachineSessionStore();
         var original = store.Machine;
 
         // Act
-        void Act() => new SetUpMachineHandler(store).Handle(new SetUpMachine(reflector, rotors, rings, [], positions));
+        void Act()
+        {
+            new SetUpMachineHandler(store).Handle(new SetUpMachine(reflector, rotors, rings, [], positions));
+        }
 
         // Assert
         Assert.ThrowsAny<DomainException>(Act);

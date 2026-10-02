@@ -56,7 +56,8 @@ public sealed class MenuTests(ITestOutputHelper output)
         var menu = BombeKeys.CarterMenu;
 
         // Act
-        var (linksAt, loopsThrough) = (menu.LinksAt(Letter.FromChar(letter)), menu.LoopsThrough(Letter.FromChar(letter)));
+        var (linksAt, loopsThrough) =
+            (menu.LinksAt(Letter.FromChar(letter)), menu.LoopsThrough(Letter.FromChar(letter)));
 
         // Assert
         Assert.Equal((links, loops), (linksAt, loopsThrough));
@@ -78,7 +79,8 @@ public sealed class MenuTests(ITestOutputHelper output)
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Should_estimate_the_false_stops_within_an_order_of_magnitude_When_rating_Carters_menu(bool diagonalBoard)
+    public void Should_estimate_the_false_stops_within_an_order_of_magnitude_When_rating_Carters_menu(
+        bool diagonalBoard)
     {
         // Arrange
         var menu = BombeKeys.CarterMenu;
@@ -134,7 +136,10 @@ public sealed class MenuTests(ITestOutputHelper output)
             [.. "QWERTZUIO".Select(Letter.FromChar)], Crib.Parse("ARXX"), 2);
 
         // Act
-        object Act() => Menu.Build(placement);
+        object Act()
+        {
+            return Menu.Build(placement);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -147,7 +152,10 @@ public sealed class MenuTests(ITestOutputHelper output)
         var links = BombeKeys.CarterMenu.Links;
 
         // Act
-        object Act() => new Menu(links, Q);
+        object Act()
+        {
+            return new Menu(links, Q);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -160,7 +168,10 @@ public sealed class MenuTests(ITestOutputHelper output)
         MenuLink[] links = [MenuLink.Parse("GE5"), MenuLink.Parse("GR5")];
 
         // Act
-        object Act() => new Menu(links, G);
+        object Act()
+        {
+            return new Menu(links, G);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -173,7 +184,10 @@ public sealed class MenuTests(ITestOutputHelper output)
         MenuLink[] links = [.. Enumerable.Range(1, Menu.MaxLinks + 1).Select(offset => new MenuLink(E, R, offset))];
 
         // Act
-        object Act() => new Menu(links, E);
+        object Act()
+        {
+            return new Menu(links, E);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -184,7 +198,10 @@ public sealed class MenuTests(ITestOutputHelper output)
     {
         // Arrange
         // Act
-        static object Act() => new Menu([], W);
+        static object Act()
+        {
+            return new Menu([], W);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

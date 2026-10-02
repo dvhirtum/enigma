@@ -24,7 +24,8 @@ public sealed class WheelOrderTests
     [InlineData("VI VII VIII", "ZZZ", "AAA")]
     [InlineData("IV V I", "ZZZ", "BCA")]
     [InlineData("II V III", "VMB", "WPC")]
-    public void Should_show_letters_ahead_of_the_Enigma_rotors_When_read_on_the_drums(string rotors, string corePositions, string letters)
+    public void Should_show_letters_ahead_of_the_Enigma_rotors_When_read_on_the_drums(string rotors,
+        string corePositions, string letters)
     {
         // Arrange
         var order = WheelOrder.Parse(rotors);
@@ -59,7 +60,10 @@ public sealed class WheelOrderTests
     {
         // Arrange
         // Act
-        void Act() => WheelOrder.Parse(rotors);
+        void Act()
+        {
+            WheelOrder.Parse(rotors);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -73,7 +77,11 @@ public sealed class WheelOrderTests
     {
         // Arrange
         var key = WheelOrder.Parse("II V III");
-        static bool Fits(WheelOrder order) => order.Right.Notches.Count == 1;
+
+        static bool Fits(WheelOrder order)
+        {
+            return order.Right.Notches.Count == 1;
+        }
 
         // Act
         var hint = WheelOrder.Hint(key, Fits, new Random(seed));

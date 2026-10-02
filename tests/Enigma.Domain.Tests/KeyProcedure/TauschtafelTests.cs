@@ -30,7 +30,10 @@ public sealed class TauschtafelTests
         var swaps = Procedures.MirrorTable().Swaps.Skip(1);
 
         // Act
-        void Act() => _ = new Doppelbuchstabentauschtafel(3, swaps);
+        void Act()
+        {
+            _ = new Doppelbuchstabentauschtafel(3, swaps);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -77,7 +80,10 @@ public sealed class TauschtafelTests
         var set = TauschtafelSet.Generate("set", 1944, new Random(8));
 
         // Act
-        void Act() => set.TableFor(new KeyMonth(1945, 1), 1);
+        void Act()
+        {
+            set.TableFor(new KeyMonth(1945, 1), 1);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);

@@ -66,7 +66,10 @@ public sealed class DrumPositionTests
     {
         // Arrange
         // Act
-        void Act() => DrumPosition.Parse(letters);
+        void Act()
+        {
+            DrumPosition.Parse(letters);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

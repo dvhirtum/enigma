@@ -15,10 +15,7 @@ public readonly record struct PlugPair
 
     public static PlugPair Create(Letter a, Letter b)
     {
-        if (a == b)
-        {
-            throw new DomainException($"A plug pair needs two different letters, got {a}{b}.");
-        }
+        if (a == b) throw new DomainException($"A plug pair needs two different letters, got {a}{b}.");
 
         return a.Index < b.Index ? new PlugPair(a, b) : new PlugPair(b, a);
     }
@@ -33,12 +30,20 @@ public readonly record struct PlugPair
             : throw new DomainException($"'{pair}' is not a plug pair.");
     }
 
-    public bool Contains(Letter letter) => letter == First || letter == Second;
+    public bool Contains(Letter letter)
+    {
+        return letter == First || letter == Second;
+    }
 
-    public Letter Other(Letter letter) =>
-        letter == First ? Second
-        : letter == Second ? First
-        : throw new DomainException($"{letter} is not part of plug pair {this}.");
+    public Letter Other(Letter letter)
+    {
+        return letter == First ? Second
+            : letter == Second ? First
+            : throw new DomainException($"{letter} is not part of plug pair {this}.");
+    }
 
-    public override string ToString() => $"{First}{Second}";
+    public override string ToString()
+    {
+        return $"{First}{Second}";
+    }
 }

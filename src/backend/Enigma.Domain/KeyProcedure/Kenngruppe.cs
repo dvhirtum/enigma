@@ -9,7 +9,12 @@ public readonly record struct Kenngruppe
 
     private readonly string _letters;
 
-    private Kenngruppe(string letters) => _letters = letters;
+    private Kenngruppe(string letters)
+    {
+        _letters = letters;
+    }
+
+    public IReadOnlyList<Letter> Letters => [.. (_letters ?? "AAA").Select(Letter.FromChar)];
 
     public static Kenngruppe Parse(string value)
     {
@@ -20,19 +25,24 @@ public readonly record struct Kenngruppe
             : throw new DomainException($"'{value}' is not a Kenngruppe of three letters.");
     }
 
-    public static Kenngruppe FromLetters(Letter first, Letter second, Letter third) =>
-        new($"{first}{second}{third}");
+    public static Kenngruppe FromLetters(Letter first, Letter second, Letter third)
+    {
+        return new Kenngruppe($"{first}{second}{third}");
+    }
 
     /// <summary>The trigram with index 0 (AAA) to 17,575 (ZZZ).</summary>
-    public static Kenngruppe FromIndex(int index) =>
-        index is >= 0 and < Count
+    public static Kenngruppe FromIndex(int index)
+    {
+        return index is >= 0 and < Count
             ? FromLetters(
                 Letter.FromIndex(index / (Letter.Count * Letter.Count)),
                 Letter.FromIndex(index / Letter.Count % Letter.Count),
                 Letter.FromIndex(index % Letter.Count))
             : throw new DomainException($"Kenngruppe index {index} is outside 0–{Count - 1}.");
+    }
 
-    public IReadOnlyList<Letter> Letters => [.. (_letters ?? "AAA").Select(Letter.FromChar)];
-
-    public override string ToString() => _letters ?? string.Empty;
+    public override string ToString()
+    {
+        return _letters ?? string.Empty;
+    }
 }

@@ -40,7 +40,7 @@ public sealed class BombeHandlerTests
     public void Should_show_the_menu_When_the_crib_is_placed()
     {
         // Arrange
-        SetUpCarter(menu: false);
+        SetUpCarter(false);
 
         // Act
         var state = new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
@@ -55,7 +55,7 @@ public sealed class BombeHandlerTests
     public void Should_measure_fewer_stops_with_the_diagonal_board_When_the_menu_stops_are_asked_for()
     {
         // Arrange
-        SetUpCarter(menu: false);
+        SetUpCarter(false);
         new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
         var handler = new GetMenuStopsHandler(_store);
 
@@ -76,7 +76,10 @@ public sealed class BombeHandlerTests
         var handler = new GetMenuStopsHandler(_store);
 
         // Act
-        object Act() => handler.Handle(new GetMenuStops());
+        object Act()
+        {
+            return handler.Handle(new GetMenuStops());
+        }
 
         // Assert
         Assert.Throws<NotFoundException>(Act);
@@ -86,7 +89,7 @@ public sealed class BombeHandlerTests
     public void Should_list_every_crib_link_and_leave_unconnected_links_out_When_the_menu_is_set_by_hand()
     {
         // Arrange
-        SetUpCarter(menu: false);
+        SetUpCarter(false);
         new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
 
         // Act
@@ -107,7 +110,7 @@ public sealed class BombeHandlerTests
         SetUpCarter();
 
         // Act
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
@@ -126,7 +129,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
         var all = new GetStopsHandler(_store).Handle(new GetStops(0));
 
@@ -142,7 +145,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
         var all = new GetStopsHandler(_store).Handle(new GetStops(0));
 
@@ -159,7 +162,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1000, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1000, true));
 
         // Act
         var run = await WaitForPositionAsync();
@@ -177,7 +180,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(BombeRun.HistoricalSpeed, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(BombeRun.HistoricalSpeed, true));
         await Task.Delay(200, Token);
 
         // Act
@@ -197,7 +200,7 @@ public sealed class BombeHandlerTests
     public async Task Should_test_each_chain_with_its_own_wheel_order_When_the_menu_fits_three_times()
     {
         // Arrange
-        SetUpCarter(menu: false);
+        SetUpCarter(false);
         new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
         new SetMenuHandler(_store).Handle(new SetMenu(CarterLinks[..12], "G"));
         new PlugUpMenuHandler(_store).Handle(new PlugUpMenu());
@@ -206,7 +209,7 @@ public sealed class BombeHandlerTests
         FitDrums(2, "V III II");
 
         // Act
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
@@ -226,7 +229,7 @@ public sealed class BombeHandlerTests
 
         // Act
         var state = new RemoveDrumHandler(_store).Handle(new RemoveDrum(0, 3, 1));
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
@@ -262,7 +265,7 @@ public sealed class BombeHandlerTests
         new TurnScramblerHandler(_store).Handle(new TurnScrambler(0, 2, "zzf"));
 
         // Act
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
@@ -278,7 +281,7 @@ public sealed class BombeHandlerTests
         new SetMenuHandler(_store).Handle(new SetMenu(CarterLinks[..12], "G"));
 
         // Act
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
@@ -308,7 +311,7 @@ public sealed class BombeHandlerTests
         SetUpCarter();
 
         // Act
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: false));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, false));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
@@ -328,7 +331,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: false));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, false));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Act
@@ -361,7 +364,7 @@ public sealed class BombeHandlerTests
         new SetTestRegisterHandler(_store).Handle(new SetTestRegister(1, "K", null));
 
         // Act
-        var state = new JoinChainsHandler(_store).Handle(new JoinChains(0, Joined: true));
+        var state = new JoinChainsHandler(_store).Handle(new JoinChains(0, true));
 
         // Assert
         Assert.Null(state.Machine.Chains[1].TestRegister);
@@ -373,12 +376,12 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
         new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, "C"));
 
         // Act
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
@@ -392,7 +395,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Act
@@ -408,7 +411,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Act
@@ -424,7 +427,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000, true));
 
         // Act
         var first = await WaitForAsync("Paused");
@@ -438,7 +441,10 @@ public sealed class BombeHandlerTests
         Assert.Equal(2, second.Stops);
         Assert.Equal(
             new GetPrintoutHandler(_store).Handle(new GetPrintout(0)).Select(s => (s.Index, s.DrumLetters, s.Stecker)),
-            [(first.Pause!.Index, first.Pause.DrumLetters, first.Pause.Stecker), (second.Pause!.Index, second.Pause.DrumLetters, second.Pause.Stecker)]);
+            [
+                (first.Pause!.Index, first.Pause.DrumLetters, first.Pause.Stecker),
+                (second.Pause!.Index, second.Pause.DrumLetters, second.Pause.Stecker)
+            ]);
         Assert.Contains(Stops(), s => s is { Position: "VMB", Stecker: "Q" });
         var run = new GetRunHandler(_store).Handle(new GetRun());
         Assert.Equal("Finished", run.Status);
@@ -451,7 +457,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000, true));
         await WaitForAsync("Paused");
 
         // Act
@@ -474,11 +480,14 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1_000_000, true));
         await WaitForAsync("Paused");
 
         // Act
-        void Act() => new SetCribHandler(_store).Handle(new SetCrib("WETTER"));
+        void Act()
+        {
+            new SetCribHandler(_store).Handle(new SetCrib("WETTER"));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -491,10 +500,13 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1, true));
 
         // Act
-        void Act() => new ContinueRunHandler(_store).Handle(new ContinueRun());
+        void Act()
+        {
+            new ContinueRunHandler(_store).Handle(new ContinueRun());
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -506,7 +518,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1, true));
 
         // Act
         var run = new CancelRunHandler(_store).Handle(new CancelRun());
@@ -522,10 +534,13 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1, true));
 
         // Act
-        void Act() => new SetCribHandler(_store).Handle(new SetCrib("WETTER"));
+        void Act()
+        {
+            new SetCribHandler(_store).Handle(new SetCrib("WETTER"));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -538,10 +553,13 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(1, true));
 
         // Act
-        void Act() => new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        void Act()
+        {
+            new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -553,7 +571,7 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         SetUpCarter();
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Act
@@ -600,7 +618,7 @@ public sealed class BombeHandlerTests
         SetUpCarter();
 
         // Act
-        new StartRunHandler(_store, new FailingClock()).Handle(new StartRun(BombeRun.HistoricalSpeed, Notebook: true));
+        new StartRunHandler(_store, new FailingClock()).Handle(new StartRun(BombeRun.HistoricalSpeed, true));
         await _store.Run!.Completion.WaitAsync(Timeout, Token);
 
         // Assert
@@ -620,7 +638,10 @@ public sealed class BombeHandlerTests
         SetUpCarter();
 
         // Act
-        void Act() => new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(speed, Notebook: true));
+        void Act()
+        {
+            new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(speed, true));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -632,7 +653,10 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         // Act
-        void Act() => new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        void Act()
+        {
+            new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -643,20 +667,24 @@ public sealed class BombeHandlerTests
     {
         // Arrange
         // Act
-        void Act() => new GetRunHandler(_store).Handle(new GetRun());
+        void Act()
+        {
+            new GetRunHandler(_store).Handle(new GetRun());
+        }
 
         // Assert
         Assert.Throws<NotFoundException>(Act);
     }
 
-    private IReadOnlyList<StopState> Stops() => new GetStopsHandler(_store).Handle(new GetStops(0));
+    private IReadOnlyList<StopState> Stops()
+    {
+        return new GetStopsHandler(_store).Handle(new GetStops(0));
+    }
 
     private void FitDrums(int chain, string wheelOrder)
     {
         foreach (var (row, rotor) in wheelOrder.Split(' ').Index())
-        {
             new FitRowHandler(_store).Handle(new FitRow(chain, row, 11, rotor));
-        }
     }
 
     private async Task<RunState> WaitForAsync(string status)
@@ -666,10 +694,7 @@ public sealed class BombeHandlerTests
         while (true)
         {
             var run = new GetRunHandler(_store).Handle(new GetRun());
-            if (run.Status == status)
-            {
-                return run;
-            }
+            if (run.Status == status) return run;
 
             await Task.Delay(10, timeout.Token);
         }
@@ -682,10 +707,7 @@ public sealed class BombeHandlerTests
         while (true)
         {
             var run = new GetRunHandler(_store).Handle(new GetRun());
-            if (run is { Position: not null, PositionsTested: > 0 })
-            {
-                return run;
-            }
+            if (run is { Position: not null, PositionsTested: > 0 }) return run;
 
             await Task.Delay(10, timeout.Token);
         }
@@ -695,10 +717,7 @@ public sealed class BombeHandlerTests
     {
         new SetCipherTextHandler(_store).Handle(new SetCipherText(CarterCipher));
         new SetCribHandler(_store).Handle(new SetCrib(CarterCrib));
-        if (!menu)
-        {
-            return;
-        }
+        if (!menu) return;
 
         new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
         new SetMenuHandler(_store).Handle(new SetMenu(CarterLinks, "G"));

@@ -42,10 +42,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     var address = app.Services.GetRequiredService<IServer>()
         .Features.Get<IServerAddressesFeature>()?.Addresses.FirstOrDefault();
 
-    if (address is not null)
-    {
-        Console.WriteLine($"ENIGMA_API_PORT={new Uri(address).Port}");
-    }
+    if (address is not null) Console.WriteLine($"ENIGMA_API_PORT={new Uri(address).Port}");
 });
 
 await app.RunAsync();

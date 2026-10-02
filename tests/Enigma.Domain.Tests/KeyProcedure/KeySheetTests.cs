@@ -49,7 +49,10 @@ public sealed class KeySheetTests
         DailyKey[] keys = [Keys.M3(1), Keys.M4(2)];
 
         // Act
-        void Act() => _ = new KeySheet("id", "Hydra", June1944, Provenance.UserDefined, keys);
+        void Act()
+        {
+            _ = new KeySheet("id", "Hydra", June1944, Provenance.UserDefined, keys);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -63,7 +66,10 @@ public sealed class KeySheetTests
         DailyKey[] keys = [Keys.M3(31)];
 
         // Act
-        void Act() => _ = new KeySheet("id", "Hydra", June1944, Provenance.UserDefined, keys);
+        void Act()
+        {
+            _ = new KeySheet("id", "Hydra", June1944, Provenance.UserDefined, keys);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -77,7 +83,10 @@ public sealed class KeySheetTests
         DailyKey[] keys = [Keys.M3(5), Keys.M3(5)];
 
         // Act
-        void Act() => _ = new KeySheet("id", "Hydra", June1944, Provenance.UserDefined, keys);
+        void Act()
+        {
+            _ = new KeySheet("id", "Hydra", June1944, Provenance.UserDefined, keys);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -92,7 +101,10 @@ public sealed class KeySheetTests
         DailyKey[] keys = [Keys.M3(1)];
 
         // Act
-        void Act() => _ = new KeySheet("id", network, June1944, Provenance.UserDefined, keys);
+        void Act()
+        {
+            _ = new KeySheet("id", network, June1944, Provenance.UserDefined, keys);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -103,7 +115,10 @@ public sealed class KeySheetTests
     {
         // Arrange
         // Act
-        void Act() => _ = new KeySheet("id", "Hydra", June1944, Provenance.UserDefined, []);
+        void Act()
+        {
+            _ = new KeySheet("id", "Hydra", June1944, Provenance.UserDefined, []);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -147,7 +162,10 @@ public sealed class KeySheetTests
     {
         // Arrange
         // Act
-        void Act() => KeyMonth.Parse(value);
+        void Act()
+        {
+            KeyMonth.Parse(value);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

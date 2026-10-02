@@ -27,11 +27,19 @@ public sealed class MachineModel
 
     public bool HasGreekSlot => _slots.Contains(RotorSlot.Greek);
 
-    /// <summary>Position of <paramref name="slot"/> from the left, or -1 if the model lacks it.</summary>
-    public int IndexOf(RotorSlot slot) => Array.IndexOf(_slots, slot);
+    /// <summary>Position of <paramref name="slot" /> from the left, or -1 if the model lacks it.</summary>
+    public int IndexOf(RotorSlot slot)
+    {
+        return Array.IndexOf(_slots, slot);
+    }
 
-    public static MachineModel FromName(string name) =>
-        All.FirstOrDefault(m => m.Name == name) ?? throw new DomainException($"Unknown machine model '{name}'.");
+    public static MachineModel FromName(string name)
+    {
+        return All.FirstOrDefault(m => m.Name == name) ?? throw new DomainException($"Unknown machine model '{name}'.");
+    }
 
-    public override string ToString() => Name;
+    public override string ToString()
+    {
+        return Name;
+    }
 }

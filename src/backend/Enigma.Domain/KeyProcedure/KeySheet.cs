@@ -35,6 +35,11 @@ public sealed class KeySheet
 
     public bool IsLinked => KenngruppenbuchId is not null && TauschtafelSetId is not null;
 
+    /// <summary>The daily keys, ordered by day.</summary>
+    public IReadOnlyList<DailyKey> DailyKeys { get; private set; }
+
+    public bool HasMissingGrundstellungen => DailyKeys.Any(k => k.Grundstellung is null);
+
     /// <summary>Links the Kenngruppenbuch and Tauschtafel set used with this sheet. Allowed on historical sheets.</summary>
     public void Link(string kenngruppenbuchId, string tauschtafelSetId)
     {
@@ -45,38 +50,33 @@ public sealed class KeySheet
         TauschtafelSetId = tauschtafelSetId;
     }
 
-    /// <summary>The daily keys, ordered by day.</summary>
-    public IReadOnlyList<DailyKey> DailyKeys { get; private set; }
-
-    public DailyKey KeyFor(int day) =>
-        DailyKeys.FirstOrDefault(k => k.Day == day)
-        ?? throw new DomainException($"Key sheet {Network} {Month} has no key for day {day}.");
-
-    public bool HasMissingGrundstellungen => DailyKeys.Any(k => k.Grundstellung is null);
+    public DailyKey KeyFor(int day)
+    {
+        return DailyKeys.FirstOrDefault(k => k.Day == day)
+               ?? throw new DomainException($"Key sheet {Network} {Month} has no key for day {day}.");
+    }
 
     /// <summary>
-    /// Gives every day without a Grundstellung a random one. Allowed on historical sheets, which gave none.
-    /// Returns true when a day changed.
+    ///     Gives every day without a Grundstellung a random one. Allowed on historical sheets, which gave none.
+    ///     Returns true when a day changed.
     /// </summary>
     public bool FillMissingGrundstellungen(Random random)
     {
         ArgumentNullException.ThrowIfNull(random);
 
-        if (!HasMissingGrundstellungen)
-        {
-            return false;
-        }
+        if (!HasMissingGrundstellungen) return false;
 
         DailyKeys =
         [
             .. DailyKeys.Select(key => key.Grundstellung is null
-                ? key.WithGrundstellung(new RotorPositions(key.Rotors.Select(_ => new RotorPosition(Letter.FromIndex(random.Next(Letter.Count))))))
-                : key),
+                ? key.WithGrundstellung(new RotorPositions(key.Rotors.Select(_ =>
+                    new RotorPosition(Letter.FromIndex(random.Next(Letter.Count))))))
+                : key)
         ];
         return true;
     }
 
-    /// <summary>Gives <paramref name="day"/> a Grundstellung. Allowed on historical sheets.</summary>
+    /// <summary>Gives <paramref name="day" /> a Grundstellung. Allowed on historical sheets.</summary>
     public void SetGrundstellung(int day, RotorPositions grundstellung)
     {
         var key = KeyFor(day);
@@ -88,34 +88,21 @@ public sealed class KeySheet
     {
         ArgumentNullException.ThrowIfNull(dailyKeys);
 
-        if (string.IsNullOrWhiteSpace(network))
-        {
-            throw new DomainException("A key sheet needs a network name.");
-        }
+        if (string.IsNullOrWhiteSpace(network)) throw new DomainException("A key sheet needs a network name.");
 
-        if (dailyKeys.Count == 0)
-        {
-            throw new DomainException("A key sheet needs at least one daily key.");
-        }
+        if (dailyKeys.Count == 0) throw new DomainException("A key sheet needs at least one daily key.");
 
         var model = dailyKeys[0].Model;
         var other = dailyKeys.FirstOrDefault(k => k.Model != model);
         if (other is not null)
-        {
-            throw new DomainException($"Day {other.Day} is for the {other.Model}, but day {dailyKeys[0].Day} is for the {model}.");
-        }
+            throw new DomainException(
+                $"Day {other.Day} is for the {other.Model}, but day {dailyKeys[0].Day} is for the {model}.");
 
         var outside = dailyKeys.FirstOrDefault(k => k.Day > month.Days);
-        if (outside is not null)
-        {
-            throw new DomainException($"Day {outside.Day} is outside {month}.");
-        }
+        if (outside is not null) throw new DomainException($"Day {outside.Day} is outside {month}.");
 
         var twice = dailyKeys.GroupBy(k => k.Day).FirstOrDefault(g => g.Count() > 1);
-        if (twice is not null)
-        {
-            throw new DomainException($"Day {twice.Key} appears more than once.");
-        }
+        if (twice is not null) throw new DomainException($"Day {twice.Key} appears more than once.");
 
         return (network.Trim(), month, model, [.. dailyKeys.OrderBy(k => k.Day)]);
     }

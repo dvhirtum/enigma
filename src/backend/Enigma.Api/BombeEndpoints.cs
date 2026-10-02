@@ -30,51 +30,54 @@ internal sealed record RingsRequest(int? Left, int? Middle);
 
 internal static class BombeEndpoints
 {
-    public static IServiceCollection AddBombeHandlers(this IServiceCollection services) => services
-        .AddSingleton<GetBombeStateHandler>()
-        .AddSingleton<SetCipherTextHandler>()
-        .AddSingleton<LoadInterceptHandler>()
-        .AddSingleton<GenerateExerciseHandler>()
-        .AddSingleton<GetSourceCribHandler>()
-        .AddSingleton<GetSolutionHandler>()
-        .AddSingleton<ShowWheelOrdersHandler>()
-        .AddSingleton<ShowCribPositionsHandler>()
-        .AddSingleton<SetCribHandler>()
-        .AddSingleton<PlaceCribHandler>()
-        .AddSingleton<SetMenuHandler>()
-        .AddSingleton<BuildMenuHandler>()
-        .AddSingleton<GetMenuStopsHandler>()
-        .AddSingleton<PlugUpMenuHandler>()
-        .AddSingleton<ConfigureBombeHandler>()
-        .AddSingleton<PlugJackHandler>()
-        .AddSingleton<FitRowHandler>()
-        .AddSingleton<RemoveDrumHandler>()
-        .AddSingleton<TurnScramblerHandler>()
-        .AddSingleton<SetTestRegisterHandler>()
-        .AddSingleton<JoinChainsHandler>()
-        .AddSingleton<ClearStopsHandler>()
-        .AddSingleton<ClearPrintoutHandler>()
-        .AddSingleton<StartRunHandler>()
-        .AddSingleton<SetRunSpeedHandler>()
-        .AddSingleton<ContinueRunHandler>()
-        .AddSingleton<CancelRunHandler>()
-        .AddSingleton<GetRunHandler>()
-        .AddSingleton<GetStopsHandler>()
-        .AddSingleton<GetPrintoutHandler>()
-        .AddSingleton<SetCheckingMachineHandler>()
-        .AddSingleton<PressCheckingKeyHandler>()
-        .AddSingleton<SetUpCheckingMachineHandler>()
-        .AddSingleton<GetCheckHandler>()
-        .AddSingleton<SetCheckHandler>()
-        .AddSingleton<ConfirmCheckHandler>()
-        .AddSingleton<SuggestSteckersHandler>()
-        .AddSingleton<FindRightRingHandler>()
-        .AddSingleton<FindMiddleRingHandler>()
-        .AddSingleton<TakePinchHandler>()
-        .AddSingleton<WriteIndicatorHandler>()
-        .AddSingleton<FillInIndicatorHandler>()
-        .AddSingleton<GetRingTableHandler>()
-        .AddSingleton<ReadRingsHandler>();
+    public static IServiceCollection AddBombeHandlers(this IServiceCollection services)
+    {
+        return services
+            .AddSingleton<GetBombeStateHandler>()
+            .AddSingleton<SetCipherTextHandler>()
+            .AddSingleton<LoadInterceptHandler>()
+            .AddSingleton<GenerateExerciseHandler>()
+            .AddSingleton<GetSourceCribHandler>()
+            .AddSingleton<GetSolutionHandler>()
+            .AddSingleton<ShowWheelOrdersHandler>()
+            .AddSingleton<ShowCribPositionsHandler>()
+            .AddSingleton<SetCribHandler>()
+            .AddSingleton<PlaceCribHandler>()
+            .AddSingleton<SetMenuHandler>()
+            .AddSingleton<BuildMenuHandler>()
+            .AddSingleton<GetMenuStopsHandler>()
+            .AddSingleton<PlugUpMenuHandler>()
+            .AddSingleton<ConfigureBombeHandler>()
+            .AddSingleton<PlugJackHandler>()
+            .AddSingleton<FitRowHandler>()
+            .AddSingleton<RemoveDrumHandler>()
+            .AddSingleton<TurnScramblerHandler>()
+            .AddSingleton<SetTestRegisterHandler>()
+            .AddSingleton<JoinChainsHandler>()
+            .AddSingleton<ClearStopsHandler>()
+            .AddSingleton<ClearPrintoutHandler>()
+            .AddSingleton<StartRunHandler>()
+            .AddSingleton<SetRunSpeedHandler>()
+            .AddSingleton<ContinueRunHandler>()
+            .AddSingleton<CancelRunHandler>()
+            .AddSingleton<GetRunHandler>()
+            .AddSingleton<GetStopsHandler>()
+            .AddSingleton<GetPrintoutHandler>()
+            .AddSingleton<SetCheckingMachineHandler>()
+            .AddSingleton<PressCheckingKeyHandler>()
+            .AddSingleton<SetUpCheckingMachineHandler>()
+            .AddSingleton<GetCheckHandler>()
+            .AddSingleton<SetCheckHandler>()
+            .AddSingleton<ConfirmCheckHandler>()
+            .AddSingleton<SuggestSteckersHandler>()
+            .AddSingleton<FindRightRingHandler>()
+            .AddSingleton<FindMiddleRingHandler>()
+            .AddSingleton<TakePinchHandler>()
+            .AddSingleton<WriteIndicatorHandler>()
+            .AddSingleton<FillInIndicatorHandler>()
+            .AddSingleton<GetRingTableHandler>()
+            .AddSingleton<ReadRingsHandler>();
+    }
 
     public static void MapBombeEndpoints(this IEndpointRouteBuilder app)
     {
@@ -133,20 +136,25 @@ internal static class BombeEndpoints
         machine.MapPost("/plug-up", (PlugUpMenuHandler handler) =>
             handler.Handle(new PlugUpMenu()));
 
-        machine.MapPut("/chains/{chain:int}/scramblers/{scrambler:int}/jacks/{jack:int}", (int chain, int scrambler, int jack, JackRequest request, PlugJackHandler handler) =>
-            handler.Handle(new PlugJack(chain, scrambler, jack, request.Letter)));
+        machine.MapPut("/chains/{chain:int}/scramblers/{scrambler:int}/jacks/{jack:int}",
+            (int chain, int scrambler, int jack, JackRequest request, PlugJackHandler handler) =>
+                handler.Handle(new PlugJack(chain, scrambler, jack, request.Letter)));
 
-        machine.MapPut("/chains/{chain:int}/rows/{row:int}", (int chain, int row, RowRequest request, FitRowHandler handler) =>
-            handler.Handle(new FitRow(chain, row, request.UpTo, request.Rotor)));
+        machine.MapPut("/chains/{chain:int}/rows/{row:int}",
+            (int chain, int row, RowRequest request, FitRowHandler handler) =>
+                handler.Handle(new FitRow(chain, row, request.UpTo, request.Rotor)));
 
-        machine.MapDelete("/chains/{chain:int}/scramblers/{scrambler:int}/drums/{row:int}", (int chain, int scrambler, int row, RemoveDrumHandler handler) =>
-            handler.Handle(new RemoveDrum(chain, scrambler, row)));
+        machine.MapDelete("/chains/{chain:int}/scramblers/{scrambler:int}/drums/{row:int}",
+            (int chain, int scrambler, int row, RemoveDrumHandler handler) =>
+                handler.Handle(new RemoveDrum(chain, scrambler, row)));
 
-        machine.MapPut("/chains/{chain:int}/scramblers/{scrambler:int}/start", (int chain, int scrambler, StartRequest request, TurnScramblerHandler handler) =>
-            handler.Handle(new TurnScrambler(chain, scrambler, request.Start)));
+        machine.MapPut("/chains/{chain:int}/scramblers/{scrambler:int}/start",
+            (int chain, int scrambler, StartRequest request, TurnScramblerHandler handler) =>
+                handler.Handle(new TurnScrambler(chain, scrambler, request.Start)));
 
-        machine.MapPut("/chains/{chain:int}/test-register", (int chain, TestRegisterRequest request, SetTestRegisterHandler handler) =>
-            handler.Handle(new SetTestRegister(chain, request.Letter, request.Input)));
+        machine.MapPut("/chains/{chain:int}/test-register",
+            (int chain, TestRegisterRequest request, SetTestRegisterHandler handler) =>
+                handler.Handle(new SetTestRegister(chain, request.Letter, request.Input)));
 
         machine.MapPut("/joins/{join:int}", (int join, JoinRequest request, JoinChainsHandler handler) =>
             handler.Handle(new JoinChains(join, request.Joined)));
@@ -193,8 +201,9 @@ internal static class BombeEndpoints
         bombe.MapPut("/stops/{stop:int}/check", (int stop, CheckRequest request, SetCheckHandler handler) =>
             handler.Handle(new SetCheck(stop, request.Steckers, request.RightRing, request.MiddleRing)));
 
-        bombe.MapPost("/stops/{stop:int}/check/verdict", (int stop, VerdictRequest request, ConfirmCheckHandler handler) =>
-            handler.Handle(new ConfirmCheck(stop, request.Verdict)));
+        bombe.MapPost("/stops/{stop:int}/check/verdict",
+            (int stop, VerdictRequest request, ConfirmCheckHandler handler) =>
+                handler.Handle(new ConfirmCheck(stop, request.Verdict)));
 
         bombe.MapPost("/stops/{stop:int}/check/suggest", (int stop, SuggestSteckersHandler handler) =>
             handler.Handle(new SuggestSteckers(stop)));
@@ -214,8 +223,9 @@ internal static class BombeEndpoints
         bombe.MapPost("/pinch", (PinchRequest request, TakePinchHandler handler) =>
             handler.Handle(new TakePinch(request.SheetId, request.Day)));
 
-        bombe.MapPut("/day/messages/{message:int}/indicator", (int message, IndicatorRequest request, WriteIndicatorHandler handler) =>
-            handler.Handle(new WriteIndicator(message, request.Schluesselkenngruppe, request.Verfahrenkenngruppe)));
+        bombe.MapPut("/day/messages/{message:int}/indicator",
+            (int message, IndicatorRequest request, WriteIndicatorHandler handler) =>
+                handler.Handle(new WriteIndicator(message, request.Schluesselkenngruppe, request.Verfahrenkenngruppe)));
 
         bombe.MapPost("/day/messages/{message:int}/indicator/fill-in", (int message, FillInIndicatorHandler handler) =>
             handler.Handle(new FillInIndicator(message)));

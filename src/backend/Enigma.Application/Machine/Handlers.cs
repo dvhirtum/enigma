@@ -108,8 +108,8 @@ public sealed class TurnRotorHandler(IMachineSessionStore store)
 }
 
 /// <summary>
-/// Steps the rotors and lights a lamp. The returned state holds the lit lamp and the new positions. A running operator
-/// procedure rejects keys it does not expect and records the lamp.
+///     Steps the rotors and lights a lamp. The returned state holds the lit lamp and the new positions. A running operator
+///     procedure rejects keys it does not expect and records the lamp.
 /// </summary>
 public sealed class PressKeyHandler(IMachineSessionStore store)
 {
@@ -133,39 +133,48 @@ public sealed class PressKeyHandler(IMachineSessionStore store)
 
 public sealed class ReleaseKeyHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(ReleaseKey command) => store.Update(m => m.ReleaseKey());
+    public MachineState Handle(ReleaseKey command)
+    {
+        return store.Update(m => m.ReleaseKey());
+    }
 }
 
 public sealed class ClearLampsHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(ClearLamps command) =>
-        store.Use(machine =>
+    public MachineState Handle(ClearLamps command)
+    {
+        return store.Use(machine =>
         {
             store.Lamps = string.Empty;
             return MachineState.From(machine, store.AppliedKey, store.Procedure, store.Lamps);
         });
+    }
 }
 
 public sealed class GetMachineStateHandler(IMachineSessionStore store)
 {
-    public MachineState Handle(GetMachineState query) =>
-        store.Use(machine => MachineState.From(machine, store.AppliedKey, store.Procedure, store.Lamps));
+    public MachineState Handle(GetMachineState query)
+    {
+        return store.Use(machine => MachineState.From(machine, store.AppliedKey, store.Procedure, store.Lamps));
+    }
 }
 
 internal static class MachineSessionStoreExtensions
 {
     /// <summary>
-    /// Applies <paramref name="action"/> to the current machine, lets the operator procedure follow the change, and
-    /// returns the new state.
+    ///     Applies <paramref name="action" /> to the current machine, lets the operator procedure follow the change, and
+    ///     returns the new state.
     /// </summary>
-    public static MachineState Update(this IMachineSessionStore store, Action<EnigmaMachine> action) =>
-        store.Use(machine =>
+    public static MachineState Update(this IMachineSessionStore store, Action<EnigmaMachine> action)
+    {
+        return store.Use(machine =>
         {
             action(machine);
             machine.ClearDomainEvents();
             store.Procedure?.Observe(machine);
             return MachineState.From(machine, store.AppliedKey, store.Procedure, store.Lamps);
         });
+    }
 }
 
 public sealed class SetUpMachineHandler(IMachineSessionStore store)
@@ -181,19 +190,15 @@ public sealed class SetUpMachineHandler(IMachineSessionStore store)
         {
             3 => MachineModel.M3,
             4 => MachineModel.M4,
-            _ => throw new DomainException($"A machine has 3 rotors (M3) or 4 (M4), got {command.Rotors.Count}."),
+            _ => throw new DomainException($"A machine has 3 rotors (M3) or 4 (M4), got {command.Rotors.Count}.")
         };
         if (command.Rings.Count != command.Rotors.Count || command.Positions?.Length != command.Rotors.Count)
-        {
-            throw new DomainException($"{command.Rotors.Count} rotors need {command.Rotors.Count} rings and window letters.");
-        }
+            throw new DomainException(
+                $"{command.Rotors.Count} rotors need {command.Rotors.Count} rings and window letters.");
 
         var machine = EnigmaMachine.Create(model);
         machine.SetReflector(Input.Reflector(command.Reflector));
-        foreach (var slot in model.Slots)
-        {
-            machine.RemoveRotor(slot);
-        }
+        foreach (var slot in model.Slots) machine.RemoveRotor(slot);
 
         foreach (var (slot, index) in model.Slots.Select((slot, index) => (slot, index)))
         {
@@ -203,10 +208,7 @@ public sealed class SetUpMachineHandler(IMachineSessionStore store)
             machine.TurnRotor(slot, RotorPosition.FromChar(char.ToUpperInvariant(command.Positions[index])));
         }
 
-        foreach (var pair in command.Plugs)
-        {
-            machine.ConnectPlug(Input.PlugPair(pair));
-        }
+        foreach (var pair in command.Plugs) machine.ConnectPlug(Input.PlugPair(pair));
 
         var state = MachineState.From(machine, null, null, store.Lamps);
         store.Replace(machine);

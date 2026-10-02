@@ -27,9 +27,7 @@ public sealed class PlugboardTests
 
         // Act
         foreach (var pair in "AB CD EF GH IJ KL MN OP QR ST UV WX YZ".Split(' '))
-        {
             plugboard.Connect(PlugPair.Parse(pair));
-        }
 
         // Assert
         Assert.Equal(Plugboard.MaxPairs, plugboard.Pairs.Count);
@@ -43,7 +41,10 @@ public sealed class PlugboardTests
         plugboard.Connect(PlugPair.Parse("AB"));
 
         // Act
-        void Act() => plugboard.Connect(PlugPair.Parse("BC"));
+        void Act()
+        {
+            plugboard.Connect(PlugPair.Parse("BC"));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -56,7 +57,10 @@ public sealed class PlugboardTests
         var plugboard = new Plugboard();
 
         // Act
-        void Act() => plugboard.Connect(default);
+        void Act()
+        {
+            plugboard.Connect(default);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -84,7 +88,10 @@ public sealed class PlugboardTests
         var plugboard = new Plugboard();
 
         // Act
-        void Act() => plugboard.Disconnect(Letter.A);
+        void Act()
+        {
+            plugboard.Disconnect(Letter.A);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -112,7 +119,10 @@ public sealed class PlugboardTests
         var plugboard = new Plugboard();
 
         // Act
-        void Act() => plugboard.Move(Letter.A, Letter.FromChar('C'));
+        void Act()
+        {
+            plugboard.Move(Letter.A, Letter.FromChar('C'));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -131,7 +141,10 @@ public sealed class PlugboardTests
         plugboard.Connect(PlugPair.Parse("BL"));
 
         // Act
-        void Act() => plugboard.Move(Letter.A, Letter.FromChar(target));
+        void Act()
+        {
+            plugboard.Move(Letter.A, Letter.FromChar(target));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -158,7 +171,10 @@ public sealed class PlugboardTests
         var a = Letter.A;
 
         // Act
-        void Act() => PlugPair.Create(a, a);
+        void Act()
+        {
+            PlugPair.Create(a, a);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

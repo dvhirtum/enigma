@@ -11,7 +11,10 @@ public sealed class IndicatorReadingTests
     private const int Day = 19;
 
     private static readonly KeyMonth Month = new(1944, 6);
-    private static readonly KeySheet Sheet = KeySheetGenerator.Generate("sheet", MachineModel.M3, Network, Month, new Random(1));
+
+    private static readonly KeySheet Sheet =
+        KeySheetGenerator.Generate("sheet", MachineModel.M3, Network, Month, new Random(1));
+
     private static readonly Kenngruppenbuch Book = Procedures.Book(Network);
     private static readonly TauschtafelSet Tables = TauschtafelSet.Generate("tables", 1944, new Random(3));
 
@@ -19,7 +22,9 @@ public sealed class IndicatorReadingTests
 
     [Theory]
     [MemberData(nameof(Seeds))]
-    public void Should_give_the_stops_cores_in_the_row_of_the_solutions_rings_When_the_ring_table_is_worked_with_the_pinch(int seed)
+    public void
+        Should_give_the_stops_cores_in_the_row_of_the_solutions_rings_When_the_ring_table_is_worked_with_the_pinch(
+            int seed)
     {
         // Arrange
         var (check, source) = TrueCheck(seed);
@@ -30,7 +35,8 @@ public sealed class IndicatorReadingTests
 
         // Assert
         Assert.Equal(Letter.Count * Letter.Count, rows.Count);
-        var row = Assert.Single(rows, row => row.Left == source.Solution.Rings[0] && row.Middle == source.Solution.Rings[1]);
+        var row = Assert.Single(rows,
+            row => row.Left == source.Solution.Rings[0] && row.Middle == source.Solution.Rings[1]);
         Assert.Equal(source.Solution.MessageKey, row.Spruchschluessel);
         Assert.Equal(check.Stop.Position, row.Cores);
     }
@@ -45,7 +51,8 @@ public sealed class IndicatorReadingTests
         var exercise = solution.Exercise!;
 
         // Act
-        check.Reading = new IndicatorReading(exercise.Grundstellung, exercise.Indicator.Verfahrenkenngruppe, solution.Rings[0], solution.Rings[1]);
+        check.Reading = new IndicatorReading(exercise.Grundstellung, exercise.Indicator.Verfahrenkenngruppe,
+            solution.Rings[0], solution.Rings[1]);
 
         // Assert
         var key = Assert.IsType<CheckedKey>(check.ReadKey);
@@ -76,7 +83,8 @@ public sealed class IndicatorReadingTests
         var solution = source.Solution!;
         var position = solution.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal);
         var order = solution.WheelOrder;
-        var machine = new DailyKey(1, solution.Reflector, [order.Left, order.Middle, order.Right], solution.Rings, solution.Plugs).SetUp();
+        var machine = new DailyKey(1, solution.Reflector, [order.Left, order.Middle, order.Right], solution.Rings,
+            solution.Plugs).SetUp();
         Procedures.Turn(machine, solution.MessageKey);
         foreach (var letter in source.CipherText.Take(position))
         {
@@ -93,7 +101,7 @@ public sealed class IndicatorReadingTests
         var check = new StopCheck(new BombeStop(order, core, Letter.A, []), solution.Reflector, placement)
         {
             Steckers = Steckers.Parse(string.Join(' ', solution.Plugs.Select(plug => plug.ToString()))),
-            RightRing = solution.Rings[2],
+            RightRing = solution.Rings[2]
         };
         return (check, source);
     }
