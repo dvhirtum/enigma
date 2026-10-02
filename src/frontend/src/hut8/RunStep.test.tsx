@@ -41,6 +41,28 @@ describe('RunStep', () => {
     await waitFor(() => expect(api.bombe.plugUpMenu).toHaveBeenCalled());
   });
 
+  it('asks for the wheel orders the other Wrens have not ruled out', async () => {
+    const api = renderBombe(<RunStep onDone={vi.fn()} />, carterMenu);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Wheel orders already ruled out' }));
+
+    await waitFor(() => expect(api.bombe.showWheelOrders).toHaveBeenCalledOnce());
+  });
+
+  it('writes down the three wheel orders once shown', async () => {
+    renderBombe(<RunStep onDone={vi.fn()} />, { ...carterMenu, source: { ...carterMenu.source!, wheelOrders: ['II V III', 'VI III VIII', 'IV I VII'] } });
+
+    expect(await screen.findByLabelText('Wheel orders left')).toHaveTextContent("One of these is the key's: II V III, VI III VIII or IV I VII.");
+    expect(screen.queryByRole('button', { name: 'Wheel orders already ruled out' })).not.toBeInTheDocument();
+  });
+
+  it('offers no wheel orders for pasted text', async () => {
+    renderBombe(<RunStep onDone={vi.fn()} />, { ...carterMenu, source: { ...carterMenu.source!, kind: 'Pasted', hasWheelOrders: false } });
+
+    expect(await screen.findByText(/is plugged up with the menu/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Wheel orders already ruled out' })).not.toBeInTheDocument();
+  });
+
   it('says when a run found no stops', async () => {
     renderBombe(<RunStep onDone={vi.fn()} />, { ...carterMenu, run: { ...finished, stops: 0, allStops: 0 }, stops: 0 });
 

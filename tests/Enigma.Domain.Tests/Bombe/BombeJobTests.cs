@@ -172,6 +172,37 @@ public sealed class BombeJobTests
         Assert.Throws<DomainException>(Act);
     }
 
+    [Fact]
+    public void Should_hide_the_wheel_orders_again_When_another_message_is_loaded()
+    {
+        // Arrange
+        var job = new BombeJob();
+        job.Load(Intercepts.Find("carter-weather")!.Source);
+        job.ShowWheelOrders();
+        var shown = job.WheelOrdersShown;
+
+        // Act
+        job.Load(Intercepts.Find("scharnhorst-1943")!.Source);
+
+        // Assert
+        Assert.True(shown);
+        Assert.False(job.WheelOrdersShown);
+    }
+
+    [Fact]
+    public void Should_refuse_to_show_wheel_orders_When_the_message_is_pasted()
+    {
+        // Arrange
+        var job = CarterJob();
+
+        // Act
+        void Act() => job.ShowWheelOrders();
+
+        // Assert
+        Assert.Throws<DomainException>(Act);
+        Assert.False(job.WheelOrdersShown);
+    }
+
     private static BombeJob CarterJob()
     {
         var job = new BombeJob();

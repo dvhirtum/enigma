@@ -29,7 +29,7 @@ public sealed record BombeState(
         ArgumentNullException.ThrowIfNull(store);
 
         return new BombeState(
-            job.Source is null ? null : SourceState.From(job.Source),
+            job.Source is null ? null : SourceState.From(job.Source, job.WheelOrdersShown),
             string.Concat(job.CipherText),
             job.Crib?.ToString(),
             [.. job.Placements.Select(p => new PlacementState(p.Position, p.Crashes))],
@@ -247,7 +247,8 @@ public sealed record StopState(
 
 /// <summary>
 /// The loaded message: its kind (Intercept, Exercise or Pasted), title, hint, transcript as received, the Navy radio
-/// message when it is one, and whether a crib and a solution can be asked for.
+/// message when it is one, whether a crib, a solution and wheel orders can be asked for, and the three wheel orders
+/// once shown (null before).
 /// </summary>
 public sealed record SourceState(
     string Kind,
@@ -256,9 +257,11 @@ public sealed record SourceState(
     string Transcript,
     string? Message,
     bool HasCrib,
-    bool HasSolution)
+    bool HasSolution,
+    bool HasWheelOrders,
+    IReadOnlyList<string>? WheelOrders)
 {
-    public static SourceState From(MessageSource source)
+    public static SourceState From(MessageSource source, bool wheelOrdersShown)
     {
         ArgumentNullException.ThrowIfNull(source);
 
@@ -269,7 +272,9 @@ public sealed record SourceState(
             source.Transcript,
             source.Message?.ToString(),
             source.Crib is not null,
-            source.Solution is not null);
+            source.Solution is not null,
+            source.WheelOrders is not null,
+            wheelOrdersShown && source.WheelOrders is { } orders ? [.. orders.Select(order => order.ToString())] : null);
     }
 }
 

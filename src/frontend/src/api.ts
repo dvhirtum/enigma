@@ -133,6 +133,9 @@ export interface BombeSource {
   message: string | null;
   hasCrib: boolean;
   hasSolution: boolean;
+  hasWheelOrders: boolean;
+  /** Three wheel orders, one of them the key's, once shown (null before). */
+  wheelOrders: string[] | null;
 }
 
 /** A suggested crib and where in the message it is likely to stand (empty when unknown). */
@@ -551,6 +554,8 @@ export interface BombeApi {
   suggestCrib: Call<[type?: string], CribSuggestion>;
   /** The key and plain text of the loaded intercept or exercise. */
   getSolution: Call<[], SourceSolution>;
+  /** Shows three wheel orders of the loaded intercept or exercise, one of them the key's. */
+  showWheelOrders: Call<[], BombeState>;
   loadIntercept: Call<[id: string], BombeState>;
   generateExercise: Call<[], BombeState>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */

@@ -116,7 +116,8 @@ public static class ExerciseGenerator
             MessageSource.Letters(message.CipherText),
             type.Crib,
             solution,
-            type.Place);
+            type.Place,
+            WheelOrder.Hint(solution.WheelOrder, order => order.Right.Notches.Count == 1, random));
     }
 
     /// <summary>

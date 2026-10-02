@@ -309,6 +309,34 @@ public sealed class BombeEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_show_three_wheel_orders_When_asked_for_an_intercept_through_the_api()
+    {
+        // Arrange
+        var loaded = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/intercept", new { id = "carter-weather" });
+
+        // Act
+        var shown = await SendAsync<BombeState>(HttpMethod.Post, "/api/bombe/source/wheel-orders", new { });
+
+        // Assert
+        Assert.True(loaded.Source?.HasWheelOrders);
+        Assert.Null(loaded.Source?.WheelOrders);
+        Assert.Equal(["II V III", "VI III VIII", "IV I VII"], shown.Source?.WheelOrders);
+    }
+
+    [Fact]
+    public async Task Should_answer_not_found_When_wheel_orders_are_asked_for_pasted_text()
+    {
+        // Arrange
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/cipher-text", new { text = "QWERT ZUIOP" });
+
+        // Act
+        using var response = await _client.PostAsJsonAsync(Url("/api/bombe/source/wheel-orders"), new { }, Token);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Should_suggest_a_crib_for_the_chosen_message_type_When_text_is_pasted()
     {
         // Arrange

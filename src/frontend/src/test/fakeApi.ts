@@ -175,6 +175,8 @@ export const carterBombe: BombeState = {
     message: null,
     hasCrib: true,
     hasSolution: true,
+    hasWheelOrders: true,
+    wheelOrders: null,
   },
   cipherText: 'SNMKGGSTZZUGARLV',
 };
@@ -370,6 +372,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       }),
       loadIntercept: bombe(carterBombe),
       generateExercise: bombe(),
+      showWheelOrders: bombe(),
       pasteCipherText: bombe(),
       setCrib: bombe(),
       placeCrib: bombe(),

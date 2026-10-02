@@ -91,6 +91,10 @@ Press **Start**. The drums turn through every position once, and each chain (or 
 
 At a set speed the drums on the Front turn with the run, and the Bombe halts at each stop, as the real one did. The stop lamp lights, the indicator drums on the Front give the reading, and the test register shows its letter and its 26 wires with the live ones lit, with the chains, wheel order and stecker partner under them. Press **Continue** to run on. At full speed the Bombe does not halt.
 
+### Wheel orders already ruled out
+
+A Navy key used one of 336 wheel orders of rotors I–VIII, with reflector B or C: 672 runs (120 for the Army's five rotors). Bletchley Park and its out-stations ran many Bombes on the same menu side by side, each with its own wheel orders. For an intercept or exercise, click **Wheel orders already ruled out** in the run step of the notebook: the Wrens on the other Bombes have run every other wheel order without a true stop, and only three are left to you. One of them is the key's. Run each with reflector B and with C: six runs. With a menu of up to 12 links, fit one on each chain to run all three at once. The notebook keeps them written down until you load another message. Pasted text has none.
+
 ## The back of the Bombe
 
 The **Back** tab shows a group of socket strips for each chain: the commons on the left (one per letter), the two jacks of each of its twelve scramblers on the right, and the test register and input wire at the foot. Cable them as on the plugboard:

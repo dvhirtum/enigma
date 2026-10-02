@@ -198,4 +198,20 @@ public sealed class ExerciseGeneratorTests
             machine.ReleaseKey();
         }
     }
+
+    [Theory]
+    [MemberData(nameof(Seeds))]
+    public void Should_give_three_wheel_orders_with_rotor_I_to_V_on_the_right_When_an_exercise_is_generated(int seed)
+    {
+        // Arrange
+        var source = ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed));
+
+        // Act
+        var hint = source.WheelOrders!;
+
+        // Assert
+        Assert.Equal(3, hint.Distinct().Count());
+        Assert.Contains(source.Solution!.WheelOrder, hint);
+        Assert.All(hint, order => Assert.Single(order.Right.Notches));
+    }
 }

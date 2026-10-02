@@ -35,6 +35,9 @@ public static class Intercepts
 
     private const string BarbarossaPlugs = "AV BS CG DL FU HZ IN KM OW RX";
 
+    // The Army had rotors I–V only.
+    private static readonly IReadOnlyList<WheelOrder> BarbarossaWheelOrders = WheelOrders("IV III I", "V I II", "II IV V");
+
     public static IReadOnlyList<Intercept> All { get; } =
     [
         new(
@@ -58,7 +61,8 @@ public static class Intercepts
                     "STEUEREJTANAFJORDJANSTANDORTQUAAACCCVIERNEUNNEUNZWOFAHRTZWONULSMXXSCHARNHORSTHCO",
                     "Red Form from HMS Duke of York, published by Frode Weierud (CryptoCellar). Key recovered by the M4 "
                     + "Project in 2008. The preamble gives 21 groups, but 24 were received."),
-                CribPlace: "At the very start: the signal opens with where she is steering.")),
+                CribPlace: "At the very start: the signal opens with where she is steering.",
+                WheelOrders: WheelOrders("VII II V", "III VI VIII", "I VIII IV"))),
         new(
             "barbarossa-1941-1",
             new DateOnly(1941, 7, 7),
@@ -96,7 +100,8 @@ public static class Intercepts
                     "AUFKLXABTEILUNGXVONXKURTINOWAXKURTINOWAXNORDWESTLXSEBEZXSEBEZXUAFFLIEGERSTRASZERIQTUNGXDUBROWKIX"
                     + "DUBROWKIXOPOTSCHKAXOPOTSCHKAXUMXEINSAQTDREINULLXUHRANGETRETENXANGRIFFXINFXRGTX",
                     "Message key BLA, sent as KCH at WXC. " + BarbarossaSource),
-                CribPlace: "At the very start: the report opens with the unit it comes from.")),
+                CribPlace: "At the very start: the report opens with the unit it comes from.",
+                WheelOrders: BarbarossaWheelOrders)),
         new(
             "barbarossa-1941-2",
             new DateOnly(1941, 7, 7),
@@ -130,7 +135,8 @@ public static class Intercepts
                     "DREIGEHTLANGSAMABERSIQERVORWAERTSXEINSSIEBENNULLSEQSXUHRXROEMXEINSXINFRGTXDREIXAUFFLIEGERSTRASZE"
                     + "MITANFANGXEINSSEQSXKMXKMXOSTWXKAMENECXK",
                     "Message key LSD, sent as YPJ at CRS. " + BarbarossaSource),
-                CribPlace: "About 80 letters in: the road named in part 1 comes up again.")),
+                CribPlace: "About 80 letters in: the road named in part 1 comes up again.",
+                WheelOrders: BarbarossaWheelOrders)),
         new(
             "carter-weather",
             null,
@@ -152,7 +158,8 @@ public static class Intercepts
                     "WETTERVORHERSAGE",
                     "Frank Carter, Rutherford Journal 3. The Bombe stops at core positions VMB; the indicator drums "
                     + "read DKX, as Carter reports."),
-                CribPlace: "The whole message: the heading fills all sixteen letters.")),
+                CribPlace: "The whole message: the heading fills all sixteen letters.",
+                WheelOrders: WheelOrders("II V III", "VI III VIII", "IV I VII"))),
     ];
 
     /// <summary>The intercept with <paramref name="id"/>, or null.</summary>
@@ -162,4 +169,6 @@ public static class Intercepts
         [.. numbers.Split(' ').Select(n => RingSetting.FromNumber(int.Parse(n, System.Globalization.CultureInfo.InvariantCulture)))];
 
     private static IReadOnlyList<PlugPair> Plugs(string pairs) => [.. pairs.Split(' ').Select(PlugPair.Parse)];
+
+    private static IReadOnlyList<WheelOrder> WheelOrders(params string[] orders) => [.. orders.Select(WheelOrder.Parse)];
 }

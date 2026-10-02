@@ -93,6 +93,20 @@ public sealed class GetSolutionHandler(IBombeSessionStore store)
             ?? throw new NotFoundException("This message has no known solution."));
 }
 
+public sealed class ShowWheelOrdersHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(ShowWheelOrders command) =>
+        store.Update(job =>
+        {
+            if (GetSourceCribHandler.Loaded(job).WheelOrders is null)
+            {
+                throw new NotFoundException("This message has no known wheel order.");
+            }
+
+            job.ShowWheelOrders();
+        });
+}
+
 public sealed class SetCribHandler(IBombeSessionStore store)
 {
     public BombeState Handle(SetCrib command)

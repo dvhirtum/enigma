@@ -90,6 +90,9 @@ public sealed record ListMessageTypes;
 /// <summary>The key and plain text of the loaded intercept or exercise.</summary>
 public sealed record GetSolution;
 
+/// <summary>Shows the three wheel orders of the loaded intercept or exercise, one of them the key's.</summary>
+public sealed record ShowWheelOrders;
+
 /// <summary>
 /// Sets up the checking machine; each field left out (null) stays as it is. The reflector is a cartridge such as "B" or
 /// "C-thin" (empty: none); the dummy says whether the dummy drum is fitted. The drums are rotors left to right, such
