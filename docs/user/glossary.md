@@ -25,7 +25,7 @@
 
 ## Terms in the messages
 
-The words and abbreviations in the [Bombe](bombe.md)'s historical intercepts and exercises. Navy messages were written without spaces and with these conventions:
+The words and abbreviations in the [Bombe](bombe/README.md)'s historical intercepts and exercises. Navy messages were written without spaces and with these conventions:
 
 - CH is written Q (SQ for SCH), Ä, Ö and Ü as AE, OE and UE, and ß as SZ.
 - X stands for a full stop or a gap between words.

@@ -1635,6 +1635,79 @@ button {
   padding: 1.5rem 2rem;
 }
 
+.guide-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.guide-contents {
+  position: sticky;
+  top: 1.5rem;
+  flex: 0 0 15rem;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  font-size: 0.9rem;
+}
+
+.guide-contents ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-contents ul ul {
+  padding-left: 1.25rem;
+}
+
+.guide-contents li {
+  margin: 0.25rem 0;
+}
+
+.guide-contents a {
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.guide-contents a:hover {
+  text-decoration: underline;
+}
+
+.guide-contents a[aria-current='page'] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.guide-start {
+  margin: 0.75rem 0 0.5rem;
+}
+
+.guide-toggle {
+  display: inline-block;
+  width: 1.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.guide-hide,
+.guide-show {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.guide-show {
+  position: sticky;
+  top: 1.5rem;
+  flex: none;
+}
+
 .guide table {
   border-collapse: collapse;
 }

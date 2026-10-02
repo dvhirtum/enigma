@@ -1,8 +1,8 @@
 # How the Bombe broke Enigma
 
-[Back to the contents](README.md)
+[Back to The Bombe](README.md)
 
-This page explains the ideas behind the [Bombe](bombe.md): where cribs came from, why loops and the diagonal board matter, what goes wrong when the middle rotor turns over, and how Banburismus saved Bombe time. [Breaking a message](breaking-a-message.md) puts them to work.
+This page explains the ideas behind the [Bombe](using-the-bombe.md): where cribs came from, why loops and the diagonal board matter, what goes wrong when the middle rotor turns over, and how Banburismus saved Bombe time. [Breaking a message](breaking-a-message.md) puts them to work.
 
 ## From the bomba to the Bombe
 
@@ -20,7 +20,7 @@ A crib only works if it is right, letter for letter, and in the right place. Hut
 - **Re-encodements ("kisses").** A message sent in Enigma and also in a cipher Bletchley Park could already read, such as a weather or dockyard cipher, gave a crib of the whole message.
 - **Gardening.** The RAF laid mines in chosen places, so that the German mine warnings named grid squares Hut 8 knew in advance.
 
-The Enigma never encrypts a letter to itself, so a crib cannot stand where one of its letters sits under the same cipher letter: a crash. Sliding the crib along the cipher text rules out the positions with crashes. The messages in the simulator use the Navy's spelling and abbreviations; see the [glossary](glossary.md#terms-in-the-messages).
+The Enigma never encrypts a letter to itself, so a crib cannot stand where one of its letters sits under the same cipher letter: a crash. Sliding the crib along the cipher text rules out the positions with crashes. The messages in the simulator use the Navy's spelling and abbreviations; see the [glossary](../glossary.md#terms-in-the-messages).
 
 ## Menus and loops
 
@@ -50,4 +50,4 @@ All messages of a day started from the Grundstellung: each Verfahrenkenngruppe w
 
 To find the shift, the cipher texts were punched on long sheets printed in Banbury (Banbury sheets) and laid over each other at every shift. Two German texts in depth have the same letter in the same place far more often (about 1 in 17) than random text (1 in 26), and Turing scored the evidence in his own unit, the ban (and the deciban). The shifts between many such messages, together with where the middle rotor turned over, told which rotor was on the right, and often the middle rotor too. The Bombes then had only a few wheel orders left to run. **Wheel orders already ruled out** in the notebook stands for this work.
 
-Banburismus needed the bigram tables, to read the Verfahrenkenngruppen from the indicators. It was used until 1943, when there were enough Bombes. The Grundstellung alphabets and paired days, which gave the rings, are explained under [The left and middle rings](bombe.md#the-left-and-middle-rings).
+Banburismus needed the bigram tables, to read the Verfahrenkenngruppen from the indicators. It was used until 1943, when there were enough Bombes. The Grundstellung alphabets and paired days, which gave the rings, are explained under [The left and middle rings](using-the-bombe.md#the-left-and-middle-rings).

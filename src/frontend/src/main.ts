@@ -52,7 +52,7 @@ const openPage = (page: string) => {
     existing.focus();
     return;
   }
-  const window = createWindow({ width: 760, height: 900, minWidth: 560, minHeight: 480 });
+  const window = createWindow({ width: page === 'instructions' ? 1040 : 760, height: 900, minWidth: 560, minHeight: 480 });
   pageWindows.set(page, window);
   window.on('closed', () => pageWindows.delete(page));
   load(window, page);

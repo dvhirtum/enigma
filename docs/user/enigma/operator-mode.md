@@ -1,6 +1,6 @@
 # Operator's notebook
 
-[Back to the contents](README.md)
+[Back to The Enigma](README.md)
 
 The operator's notebook walks through the Navy indicator procedure while you work the machine. Open it with the message pad button at the top right. It opens in its own window, so you can place it next to the machine.
 

@@ -1,8 +1,8 @@
 # Breaking a message
 
-[Back to the contents](README.md)
+[Back to The Bombe](README.md)
 
-This page breaks Frank Carter's weather crib step by step in the Hut 8 notebook, then outlines how an exercise goes on to read the day's traffic. [The Bombe](bombe.md) explains each control, and [How the Bombe broke Enigma](bombe-history.md) the ideas behind them.
+This page breaks Frank Carter's weather crib step by step in the Hut 8 notebook, then outlines how an exercise goes on to read the day's traffic. [Using the Bombe](using-the-bombe.md) explains each control, and [How the Bombe broke Enigma](history.md) the ideas behind them.
 
 ## Carter's weather crib
 
