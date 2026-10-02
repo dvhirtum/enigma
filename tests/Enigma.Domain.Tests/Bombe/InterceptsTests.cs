@@ -95,4 +95,34 @@ public sealed class InterceptsTests
     }
 
     private static IReadOnlyList<Letter> Letters(string text) => [.. text.Select(Letter.FromChar)];
+
+    [Theory]
+    [MemberData(nameof(Ids))]
+    public void Should_give_three_wheel_orders_with_the_key_When_an_intercept_is_bundled(string id)
+    {
+        // Arrange
+        var source = Intercepts.Find(id)!.Source;
+
+        // Act
+        var hint = source.WheelOrders!;
+
+        // Assert
+        Assert.Equal(3, hint.Distinct().Count());
+        Assert.Contains(source.Solution!.WheelOrder, hint);
+    }
+
+    [Theory]
+    [InlineData("barbarossa-1941-1")]
+    [InlineData("barbarossa-1941-2")]
+    public void Should_give_wheel_orders_of_rotors_I_to_V_When_the_intercept_is_Army_traffic(string id)
+    {
+        // Arrange
+        RotorType[] army = [RotorType.I, RotorType.II, RotorType.III, RotorType.IV, RotorType.V];
+
+        // Act
+        var hint = Intercepts.Find(id)!.Source.WheelOrders!;
+
+        // Assert
+        Assert.All(hint, order => Assert.Subset(army.ToHashSet(), new HashSet<RotorType> { order.Left, order.Middle, order.Right }));
+    }
 }

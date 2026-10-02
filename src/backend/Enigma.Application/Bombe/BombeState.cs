@@ -29,7 +29,7 @@ public sealed record BombeState(
         ArgumentNullException.ThrowIfNull(store);
 
         return new BombeState(
-            job.Source is null ? null : SourceState.From(job.Source),
+            job.Source is null ? null : SourceState.From(job.Source, job.WheelOrdersShown, job.CribPositionsShown),
             string.Concat(job.CipherText),
             job.Crib?.ToString(),
             [.. job.Placements.Select(p => new PlacementState(p.Position, p.Crashes))],
@@ -40,9 +40,7 @@ public sealed record BombeState(
                     [.. placement.Links.Select(link => link.ToString())],
                     menu.TestRegister.ToString(),
                     [.. menu.ConnectedLinks.Select(link => link.ToString())],
-                    menu.Loops,
-                    menu.EstimatedStops(diagonalBoard: true),
-                    menu.EstimatedStops(diagonalBoard: false))
+                    menu.Loops)
                 : null,
             BombeMachineState.From(job),
             CheckingMachineState.From(job.Checker, store.Stops),
@@ -57,17 +55,18 @@ public sealed record BombeState(
 public sealed record PlacementState(int Position, IReadOnlyList<int> Crashes);
 
 /// <summary>
-/// The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it,
-/// their loops and the estimated false stops per wheel order with and without the diagonal board.
+/// The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it
+/// and their loops.
 /// </summary>
 public sealed record MenuState(
     IReadOnlyList<string> Links,
     IReadOnlyList<string> CribLinks,
     string TestRegister,
     IReadOnlyList<string> ConnectedLinks,
-    int Loops,
-    double StopsWithBoard,
-    double StopsWithoutBoard);
+    int Loops);
+
+/// <summary>The stops per wheel order the menu gives with and without the diagonal board, measured.</summary>
+public sealed record MenuStopsState(double WithBoard, double WithoutBoard);
 
 /// <summary>
 /// The Bombe as set up: its three chains, whether each chain is joined to the next, whether it is plugged up with the
@@ -247,7 +246,8 @@ public sealed record StopState(
 
 /// <summary>
 /// The loaded message: its kind (Intercept, Exercise or Pasted), title, hint, transcript as received, the Navy radio
-/// message when it is one, and whether a crib and a solution can be asked for.
+/// message when it is one, whether a crib, a solution, wheel orders and crib positions can be asked for, the three wheel
+/// orders once shown, and the crib with its two positions (from 0) once shown (null before).
 /// </summary>
 public sealed record SourceState(
     string Kind,
@@ -256,9 +256,13 @@ public sealed record SourceState(
     string Transcript,
     string? Message,
     bool HasCrib,
-    bool HasSolution)
+    bool HasSolution,
+    bool HasWheelOrders,
+    IReadOnlyList<string>? WheelOrders,
+    bool HasCribPositions,
+    CribPositionsState? CribPositions)
 {
-    public static SourceState From(MessageSource source)
+    public static SourceState From(MessageSource source, bool wheelOrdersShown, bool cribPositionsShown)
     {
         ArgumentNullException.ThrowIfNull(source);
 
@@ -269,9 +273,16 @@ public sealed record SourceState(
             source.Transcript,
             source.Message?.ToString(),
             source.Crib is not null,
-            source.Solution is not null);
+            source.Solution is not null,
+            source.WheelOrders is not null,
+            wheelOrdersShown && source.WheelOrders is { } orders ? [.. orders.Select(order => order.ToString())] : null,
+            source.CribPositions is not null,
+            cribPositionsShown && source is { CribPositions: { } positions, Crib: { } crib } ? new CribPositionsState(crib.ToString(), positions) : null);
     }
 }
+
+/// <summary>The message's crib and the two positions (from 0) the operator's earlier messages put it at.</summary>
+public sealed record CribPositionsState(string Crib, IReadOnlyList<int> Positions);
 
 /// <summary>A bundled intercept. The date is yyyy-MM-dd, or null when unknown.</summary>
 public sealed record InterceptState(string Id, string Title, string? Date, string? Hint)

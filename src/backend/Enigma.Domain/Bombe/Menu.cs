@@ -112,9 +112,10 @@ public sealed class Menu
     public int LoopsThrough(Letter letter) => LoopsThrough(Links, letter);
 
     /// <summary>
-    /// An estimate of the false stops per wheel order, from the letters and loops connected to the test register. Each
-    /// loop passes a wrong position with a chance of 1 in 26. The diagonal board also rejects the positions at which the
-    /// stecker partners implied for the menu letters contradict each other.
+    /// A quick rating of the false stops per wheel order, from the letters and loops connected to the test register, used
+    /// to compare menus. Each loop passes a wrong position with a chance of 1 in 26. The diagonal board also rejects the
+    /// positions at which the stecker partners implied for the menu letters contradict each other, taken pair by pair as
+    /// if independent, so with many letters it rates far too low; <see cref="MeasuredStops"/> measures a menu.
     /// </summary>
     public double EstimatedStops(bool diagonalBoard) => Estimate(ConnectedLinks, diagonalBoard);
 

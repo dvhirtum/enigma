@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState, type PointerEvent } from 'react';
-import type { BombeMenu } from '../api';
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import type { BombeMenu, MenuStops } from '../api';
 import { drumLetters } from '../bombe/drums';
 import { clamp, layoutMenu, lettersOf, parseLink, type Link, type Point } from '../bombe/menuLayout';
 import { Hand } from '../notebook/paper';
@@ -163,8 +163,20 @@ function MenuSketch({
   );
 }
 
-/** The size of the menu, its test register and the stops to expect. */
+/** The size of the menu, its test register and the stops it gives, measured on a sample of wheel orders. */
 export function MenuSummary({ menu, diagonalBoard }: { menu: BombeMenu; diagonalBoard: boolean }) {
+  const loadMenuStops = useMachine((store) => store.loadMenuStops);
+  const key = `${menu.links.join(' ')}/${menu.testRegister}`;
+  const [measured, setMeasured] = useState<{ key: string; stops: MenuStops | null } | null>(null);
+  useEffect(() => {
+    let current = true;
+    void loadMenuStops().then((stops) => current && setMeasured({ key, stops }));
+    return () => {
+      current = false;
+    };
+  }, [key, loadMenuStops]);
+
+  const stops = measured?.key === key ? measured.stops : undefined;
   const letters = lettersOf(menu.connectedLinks.map(parseLink)).length;
   const loose = menu.links.filter((link) => !menu.connectedLinks.includes(link));
   return (
@@ -173,9 +185,15 @@ export function MenuSummary({ menu, diagonalBoard }: { menu: BombeMenu; diagonal
         {plural(menu.connectedLinks.length, 'link')}, {plural(letters, 'letter')}, {plural(menu.loops, 'loop')} · test register on{' '}
         <Hand>{menu.testRegister}</Hand>
       </p>
-      <p aria-label="Estimated false stops">
-        Expect <Hand>{formatStops(menu.stopsWithBoard)}</Hand> false stops per wheel order with the diagonal board,{' '}
-        <Hand>{formatStops(menu.stopsWithoutBoard)}</Hand> without{diagonalBoard ? ' (the board is on)' : ' (the board is off)'}.
+      <p aria-label="Expected false stops">
+        {stops === undefined && 'Running the menu on six wheel orders to count its false stops…'}
+        {stops === null && 'The false stops could not be counted.'}
+        {stops && (
+          <>
+            Run on six wheel orders, the menu gives about <Hand>{formatStops(stops.withBoard)}</Hand> false stops per wheel order with the diagonal board,{' '}
+            <Hand>{formatStops(stops.withoutBoard)}</Hand> without{diagonalBoard ? ' (the board is on)' : ' (the board is off)'}.
+          </>
+        )}
       </p>
       {loose.length > 0 && (
         <p className="notebook-warning" role="status">

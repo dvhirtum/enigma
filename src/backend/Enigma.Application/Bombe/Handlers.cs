@@ -93,6 +93,20 @@ public sealed class GetSolutionHandler(IBombeSessionStore store)
             ?? throw new NotFoundException("This message has no known solution."));
 }
 
+public sealed class ShowWheelOrdersHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(ShowWheelOrders command) =>
+        store.Update(job =>
+        {
+            if (GetSourceCribHandler.Loaded(job).WheelOrders is null)
+            {
+                throw new NotFoundException("This message has no known wheel order.");
+            }
+
+            job.ShowWheelOrders();
+        });
+}
+
 public sealed class SetCribHandler(IBombeSessionStore store)
 {
     public BombeState Handle(SetCrib command)
@@ -361,4 +375,39 @@ internal static class BombeSessionStoreExtensions
             throw new DomainException(message);
         }
     }
+}
+
+/// <summary>Measures the stops of the job's menu, once per menu: the last measurement is kept until the menu changes.</summary>
+public sealed class GetMenuStopsHandler(IBombeSessionStore store)
+{
+    private readonly Lock _lock = new();
+    private (Menu Menu, MeasuredStops Stops)? _last;
+
+    public MenuStopsState Handle(GetMenuStops query)
+    {
+        var menu = store.Use(job => job.Menu) ?? throw new NotFoundException("Draw a menu first.");
+        lock (_lock)
+        {
+            if (_last is not { } last || !ReferenceEquals(last.Menu, menu))
+            {
+                _last = last = (menu, MeasuredStops.Of(menu));
+            }
+
+            return new MenuStopsState(last.Stops.WithBoard, last.Stops.WithoutBoard);
+        }
+    }
+}
+
+public sealed class ShowCribPositionsHandler(IBombeSessionStore store)
+{
+    public BombeState Handle(ShowCribPositions command) =>
+        store.Update(job =>
+        {
+            if (GetSourceCribHandler.Loaded(job).CribPositions is null)
+            {
+                throw new NotFoundException("This message has no known crib position.");
+            }
+
+            job.ShowCribPositions();
+        });
 }

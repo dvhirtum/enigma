@@ -61,7 +61,7 @@ function doneSteps(bombe: BombeState, check: BombeCheck | null, menuSent: boolea
     stop: check !== null && check.verdict !== 'False',
     check: check?.verdict === 'True',
     key: check?.verdict === 'True' && (leftKey || bombe.day !== null),
-    indicators: check?.reading?.fitsStop === true && check.reading.middleRingFits,
+    indicators: check?.reading?.fitsStop === true,
     traffic: false,
   };
 }

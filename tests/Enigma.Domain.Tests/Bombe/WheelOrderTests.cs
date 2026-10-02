@@ -64,4 +64,23 @@ public sealed class WheelOrderTests
         // Assert
         Assert.Throws<DomainException>(Act);
     }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Should_give_the_key_and_two_other_allowed_wheel_orders_When_a_hint_is_drawn(int seed)
+    {
+        // Arrange
+        var key = WheelOrder.Parse("II V III");
+        static bool Fits(WheelOrder order) => order.Right.Notches.Count == 1;
+
+        // Act
+        var hint = WheelOrder.Hint(key, Fits, new Random(seed));
+
+        // Assert
+        Assert.Equal(3, hint.Distinct().Count());
+        Assert.Contains(key, hint);
+        Assert.All(hint, order => Assert.True(Fits(order)));
+    }
 }

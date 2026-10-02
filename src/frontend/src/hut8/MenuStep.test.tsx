@@ -12,9 +12,16 @@ describe('MenuStep', () => {
     renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu);
 
     expect(await screen.findByLabelText('Menu size')).toHaveTextContent('13 links, 12 letters, 2 loops · test register on G');
-    expect(screen.getByLabelText('Estimated false stops')).toHaveTextContent(
-      'Expect 0.4 false stops per wheel order with the diagonal board, 721 without (the board is on).',
+    expect(await screen.findByText(/Run on six wheel orders/)).toHaveTextContent(
+      'Run on six wheel orders, the menu gives about 0.4 false stops per wheel order with the diagonal board, 721 without (the board is on).',
     );
+  });
+
+  it('counts the false stops by running the menu', async () => {
+    const api = renderBombe(<MenuStep onDone={vi.fn()} />, carterMenu, (fake) => fake.bombe.menuStops.mockReturnValue(new Promise(() => {})));
+
+    expect(await screen.findByLabelText('Expected false stops')).toHaveTextContent('Running the menu on six wheel orders to count its false stops…');
+    expect(api.bombe.menuStops).toHaveBeenCalled();
   });
 
   it('lists every crib link, the plugged ones ticked', async () => {

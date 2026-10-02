@@ -14,6 +14,7 @@ import type {
   IndicatorChange,
   PrintedStop,
   RingTable,
+  MenuStops,
   SourceSolution,
   TestRegisterChange,
   Confirmation,
@@ -83,6 +84,10 @@ export interface BombeSlice {
   /** The likely crib of the loaded message: its own, or else that of the message type `type`; null when there is none. */
   suggestCrib: (type?: string) => Promise<CribSuggestion | null>;
   generateExercise: () => Promise<boolean>;
+  /** Shows three wheel orders of the loaded intercept or exercise, one of them the key's. */
+  showWheelOrders: () => Promise<boolean>;
+  /** Shows two crib positions of the loaded exercise, one of them the crib's. */
+  showCribPositions: () => Promise<boolean>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */
   pasteCipherText: (text: string) => Promise<boolean>;
   /** Replaces the crib, or removes it when empty. */
@@ -177,6 +182,8 @@ export interface BombeSlice {
   setUpEnigma: () => Promise<boolean>;
   /** The key and plain text of the loaded intercept or exercise, or null when it has none. */
   loadSolution: () => Promise<SourceSolution | null>;
+  /** The stops per wheel order the menu gives, measured; null when there is no menu or the call fails. */
+  loadMenuStops: () => Promise<MenuStops | null>;
   /** Takes a pinch of the message's key sheet day: an exercise's own, or for a pasted radio message the sheet and day given. */
   takePinch: (sheetId?: string, day?: number) => Promise<boolean>;
   /** Writes down groups of the indicator of a message of the day (0 = the broken message). */
@@ -422,6 +429,8 @@ export function createMachineStore({
         return result.ok ? result.value : null;
       },
       generateExercise: () => job(bombe.generateExercise()),
+      showWheelOrders: () => job(bombe.showWheelOrders()),
+      showCribPositions: () => job(bombe.showCribPositions()),
       pasteCipherText: (text) => job(bombe.pasteCipherText(text)),
       setCrib: (crib) => job(bombe.setCrib(crib)),
       placeCrib: (position) => job(bombe.placeCrib(position)),
@@ -687,6 +696,10 @@ export function createMachineStore({
       },
       loadSolution: async () => {
         const result = await check(bombe.getSolution());
+        return result.ok ? result.value : null;
+      },
+      loadMenuStops: async () => {
+        const result = await check(bombe.menuStops());
         return result.ok ? result.value : null;
       },
       takePinch: async (sheetId, day) => {

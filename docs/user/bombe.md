@@ -21,7 +21,7 @@ The notebook walks through the steps one by one: choose the message, place the c
 The first step loads the message to break:
 
 - **Intercept**: a historical message, such as Scharnhorst's last signal. Choose it and click **Load intercept**.
-- **New exercise**: a Navy message sent on a random day of one of your M3 key sheets, a day with rotor I–V on the right. The middle rotor never turns over during its crib. Generate or import M3 key sheets first.
+- **New exercise**: a Navy message sent on a random day of one of your M3 key sheets, a day with rotor I–V on the right. The middle rotor never turns over during its crib, and the menu built with the crib in its right place has at least two loops, so a crib position whose menu has fewer is never the right one. This is not historical: Hut 8 had to work with the menus the day's traffic gave, and a poor crib could leave a key unbroken. The exercises are made to show how the Enigma was broken, so each one can be broken. Generate or import M3 key sheets first.
 - **Radio message or cipher text**: paste a Navy radio message, as the operator's notebook writes it, or bare cipher text, and click **Load pasted text**.
 
 The notebook writes down the message, a hint for intercepts and exercises, and the cipher text in groups of four. Loading a message removes the crib.
@@ -40,6 +40,8 @@ The notebook writes the cipher text in squares, with the crib on a slip under it
 
 Under the strip you see the position and the number of crashes. **Place crib** places the crib at a position without crashes and builds the menu from it.
 
+For an exercise, **Earlier messages from this operator** under the strip narrows the search: operators started their messages the same way day after day, so the notebook writes down the crib and two positions to expect it at, counted from 1. One is the right one. The other is a decoy without crashes whose menu is just as good, so you have to try both. The positions stay written down until you load another message.
+
 ## The menu
 
 The notebook sketches the menu built from the placed crib. Each crib letter and the cipher letter above it form a link, numbered by its place in the crib. On the Bombe one scrambler joins the two letters, set that many steps from the first (1 = ZZA). The sketch shows every link of the crib:
@@ -48,7 +50,7 @@ The notebook sketches the menu built from the placed crib. Each crib letter and 
 - dashed red links are plugged up but not connected to the test register letter, so they test nothing,
 - faint dotted links are not on the menu.
 
-Loops (closures) make a menu good. At a wrong position, each loop lets the current through with a chance of about 1 in 26, so more loops mean fewer false stops. The summary counts the links, letters and loops connected to the test register letter, and estimates the false stops per wheel order with and without the diagonal board.
+Loops (closures) make a menu good. At a wrong position, each loop lets the current through with a chance of about 1 in 26, so more loops mean fewer false stops. The summary counts the links, letters and loops connected to the test register letter. It also runs the menu on six wheel orders and reflectors, which takes a moment, and gives the average false stops per wheel order with and without the diagonal board. This is a sample, so a run can give somewhat more or fewer.
 
 To change the menu:
 
@@ -90,6 +92,10 @@ The **Side** tab shows the right-hand end of the machine: the test register, and
 Press **Start**. The drums turn through every position once, and each chain (or group of joined chains) with a test register is tested. The bar and the line under it show the chains and their wheel orders, how far the run has got, the stops found and the time taken. You can turn the speed knob while it runs, and **Stop** ends the run. The run goes on in the background when you switch tabs or modes.
 
 At a set speed the drums on the Front turn with the run, and the Bombe halts at each stop, as the real one did. The stop lamp lights, the indicator drums on the Front give the reading, and the test register shows its letter and its 26 wires with the live ones lit, with the chains, wheel order and stecker partner under them. Press **Continue** to run on. At full speed the Bombe does not halt.
+
+### Wheel orders already ruled out
+
+A Navy key used one of 336 wheel orders of rotors I–VIII, with reflector B or C: 672 runs (120 for the Army's five rotors). Bletchley Park and its out-stations ran many Bombes on the same menu side by side, each with its own wheel orders. For an intercept or exercise, click **Wheel orders already ruled out** in the run step of the notebook: the Wrens on the other Bombes have run every other wheel order without a true stop, and only three are left to you. One of them is the key's. Run each with reflector B and with C: six runs. With a menu of up to 12 links, fit one on each chain to run all three at once. The notebook keeps them written down until you load another message. Pasted text has none.
 
 ## The back of the Bombe
 
@@ -150,7 +156,7 @@ The Bombe finds the rotor cores, not the ring settings. For the right rotor, 26 
 
 ### The middle ring
 
-The same holds for the middle rotor: its ring sets where the left rotor turns over. Once the middle rotor has stepped far enough to reach its notch, it steps again with the left rotor (the double step). In a long message, a wrong middle ring garbles the message from that letter on. The **Middle ring** works like the right ring: turn it with ◀ and ▶, or click **Find** to score the 26 middle rings with the right ring kept. Find the middle ring after the right ring and the steckers. When the message is too short for the left rotor to turn over, most middle rings tie and any of them reads it. The left ring stays at Z until the indicators are read: the left rotor turns nothing, so it does not change the message.
+The same holds for the middle rotor: its ring sets where the left rotor turns over. Once the middle rotor has stepped far enough to reach its notch, it steps again with the left rotor (the double step). In a long message, a wrong middle ring garbles the message from that letter on. The **Middle ring** works like the right ring: turn it with ◀ and ▶, or click **Find** to score the 26 middle rings with the right ring kept. Find the middle ring after the right ring and the steckers. When the message is too short for the left rotor to turn over, most middle rings tie and any of them reads it. Find only scores how German the decrypt looks, so where the rings differ in a letter or two, such as the X padding at the end, it can pick the wrong one: read the decrypt yourself. The left ring stays at Z until the indicators are read: the left rotor turns nothing, so it does not change the message.
 
 ### The left and middle rings
 
@@ -175,9 +181,9 @@ This step finds the left and middle rings with a pinch of the day the message wa
 
 - **The pinch.** For an exercise, click **Take the pinch**. For a pasted radio message, choose the month, the key sheet and the day it was sent on, as in the Enigma's key sheet panel, then click **Take the pinch**. If you choose the wrong day, the indicator reads as nonsense and no ring pair fits. The notebook writes down the day's Grundstellung and its Tauschtafel; open the Tauschtafel to see it. It scrolls when it does not fit, with its row and column letters always in view, and the letters of the square under the mouse are highlighted. Taking the pinch also brings in the day's other messages for the next step.
 - **The indicator.** The two indicator groups are written one above the other. Look up each vertical pair in the Tauschtafel: find the row of its upper letter and the column of its lower letter, and write down the pair you find there. The upper row then reads a filler and the Schlüsselkenngruppe, the lower row the Verfahrenkenngruppe and a filler. Write both trigrams in their boxes. Each box is marked ✓ or ✗ once it has three letters. **Fill in** writes them for you.
-- **The ring table.** Once the Verfahrenkenngruppe is right, the notebook works out the ring table, as Hut 8 did by hand. Each square is a pair of rings, with the left ring by row and the middle ring by column. For each pair, the notebook sets up an Enigma with the key found so far and those rings, turns it to the Grundstellung and types the Verfahrenkenngruppe; the lamps give the Spruchschlüssel. From there the rotors step to the start of the crib, and the square shows the indicator reading the Bombe would give there. Find the square that shows the stop's indicator reading, written above the table, and click it. The notebook does not mark the square for you, and the step stays open until you click a square with the stop's indicator reading whose middle ring does not garble the message. Now and then a second square fits by chance, and its decrypt then reads as nonsense.
+- **The ring table.** Once the Verfahrenkenngruppe is right, the notebook works out the ring table, as Hut 8 did by hand. Each square is a pair of rings, with the left ring by row and the middle ring by column. For each pair, the notebook sets up an Enigma with the key found so far and those rings, turns it to the Grundstellung and types the Verfahrenkenngruppe; the lamps give the Spruchschlüssel. From there the rotors step to the start of the crib, and the square shows the indicator reading the Bombe would give there. Find the square that shows the stop's indicator reading, written above the table, and click it. The notebook does not mark the square for you, and the step stays open until you click a square with the stop's indicator reading. Now and then a second square fits by chance, and its decrypt then reads as nonsense.
 
-The **Key** then gives the whole key: wheel order, all three rings, the plugs and the Spruchschlüssel. If the square's indicator reading differs from the stop's, or its middle ring reads the message worse than the best middle ring, the notebook warns you. For an exercise it also says whether these are the rings of the key sheet. The decrypt shows the message read with this key. Click another square to read other rings, or **Rub out the rings**.
+The **Key** then gives the whole key: wheel order, all three rings, the plugs and the Spruchschlüssel. If the square's indicator reading differs from the stop's, the notebook warns you. If its middle ring makes the left rotor turn over at another letter than the middle ring in Read the message, the notebook says how many letters read differently: read both decrypts and judge which one makes sense. For an exercise it also says whether these are the rings of the key sheet. The decrypt shows the message read with this key. Click another square to read other rings, or **Rub out the rings**.
 
 ## The day's traffic
 

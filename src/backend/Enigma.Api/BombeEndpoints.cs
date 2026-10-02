@@ -37,10 +37,13 @@ internal static class BombeEndpoints
         .AddSingleton<GenerateExerciseHandler>()
         .AddSingleton<GetSourceCribHandler>()
         .AddSingleton<GetSolutionHandler>()
+        .AddSingleton<ShowWheelOrdersHandler>()
+        .AddSingleton<ShowCribPositionsHandler>()
         .AddSingleton<SetCribHandler>()
         .AddSingleton<PlaceCribHandler>()
         .AddSingleton<SetMenuHandler>()
         .AddSingleton<BuildMenuHandler>()
+        .AddSingleton<GetMenuStopsHandler>()
         .AddSingleton<PlugUpMenuHandler>()
         .AddSingleton<ConfigureBombeHandler>()
         .AddSingleton<PlugJackHandler>()
@@ -101,6 +104,12 @@ internal static class BombeEndpoints
         bombe.MapGet("/source/solution", (GetSolutionHandler handler) =>
             handler.Handle(new GetSolution()));
 
+        bombe.MapPost("/source/wheel-orders", (ShowWheelOrdersHandler handler) =>
+            handler.Handle(new ShowWheelOrders()));
+
+        bombe.MapPost("/source/crib-positions", (ShowCribPositionsHandler handler) =>
+            handler.Handle(new ShowCribPositions()));
+
         bombe.MapPut("/crib", (SetCrib command, SetCribHandler handler) =>
             handler.Handle(command));
 
@@ -112,6 +121,9 @@ internal static class BombeEndpoints
 
         bombe.MapPost("/menu/build", (BuildMenuHandler handler) =>
             handler.Handle(new BuildMenu()));
+
+        bombe.MapGet("/menu/stops", (GetMenuStopsHandler handler) =>
+            handler.Handle(new GetMenuStops()));
 
         bombe.MapPut("/settings", (ConfigureBombe command, ConfigureBombeHandler handler) =>
             handler.Handle(command));

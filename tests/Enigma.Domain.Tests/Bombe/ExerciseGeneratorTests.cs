@@ -198,4 +198,63 @@ public sealed class ExerciseGeneratorTests
             machine.ReleaseKey();
         }
     }
+
+    [Theory]
+    [MemberData(nameof(Seeds))]
+    public void Should_give_three_wheel_orders_with_rotor_I_to_V_on_the_right_When_an_exercise_is_generated(int seed)
+    {
+        // Arrange
+        var source = ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed));
+
+        // Act
+        var hint = source.WheelOrders!;
+
+        // Assert
+        Assert.Equal(3, hint.Distinct().Count());
+        Assert.Contains(source.Solution!.WheelOrder, hint);
+        Assert.All(hint, order => Assert.Single(order.Right.Notches));
+    }
+
+    [Fact]
+    public void Should_build_a_menu_with_at_least_two_loops_When_the_crib_is_in_its_right_place()
+    {
+        // Arrange
+        var sources = Enumerable.Range(0, 100).Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
+
+        // Act
+        var menus = sources.Select(source =>
+        {
+            var position = source.Solution!.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal);
+            return (Crib: source.Crib.ToString(), Menu: Menu.Build(new CribPlacement(source.CipherText, source.Crib, position)));
+        }).ToList();
+
+        // Assert
+        Assert.Equal(4, menus.Select(menu => menu.Crib).Distinct().Count());
+        Assert.All(menus, menu => Assert.True(menu.Menu.Loops >= ExerciseGenerator.MinLoops, $"{menu.Crib}: {menu.Menu.Loops} loops"));
+    }
+
+    [Fact]
+    public void Should_give_the_crib_position_and_a_plausible_decoy_When_an_exercise_is_generated()
+    {
+        // Arrange
+        var sources = Enumerable.Range(0, 100).Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
+
+        // Act
+        var hints = sources.Select(source => (
+            Position: source.Solution!.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal),
+            Positions: source.CribPositions!,
+            Placements: source.CribPositions!.Select(position => new CribPlacement(source.CipherText, source.Crib, position)).ToList())).ToList();
+
+        // Assert
+        Assert.All(hints, hint =>
+        {
+            Assert.Equal(2, hint.Positions.Distinct().Count());
+            Assert.Contains(hint.Position, hint.Positions);
+            Assert.All(hint.Positions, position => Assert.InRange(position, 0, ExerciseGenerator.MaxCribStart));
+            Assert.All(hint.Placements, placement => Assert.False(placement.Crashed));
+            Assert.All(hint.Placements, placement => Assert.True(Menu.Build(placement).Loops >= ExerciseGenerator.MinLoops));
+        });
+        Assert.Contains(hints, hint => hint.Positions[0] == hint.Position);
+        Assert.Contains(hints, hint => hint.Positions[1] == hint.Position);
+    }
 }

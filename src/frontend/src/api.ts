@@ -133,6 +133,12 @@ export interface BombeSource {
   message: string | null;
   hasCrib: boolean;
   hasSolution: boolean;
+  hasWheelOrders: boolean;
+  /** Three wheel orders, one of them the key's, once shown (null before). */
+  wheelOrders: string[] | null;
+  hasCribPositions: boolean;
+  /** The crib and two positions (from 0), one of them the crib's, once shown (null before). */
+  cribPositions: { crib: string; positions: number[] } | null;
 }
 
 /** A suggested crib and where in the message it is likely to stand (empty when unknown). */
@@ -154,8 +160,8 @@ export interface Placement {
 }
 
 /**
- * The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it,
- * their loops and the estimated false stops per wheel order with and without the diagonal board.
+ * The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it
+ * and their loops.
  */
 export interface BombeMenu {
   links: string[];
@@ -163,8 +169,12 @@ export interface BombeMenu {
   testRegister: string;
   connectedLinks: string[];
   loops: number;
-  stopsWithBoard: number;
-  stopsWithoutBoard: number;
+}
+
+/** The stops per wheel order the menu gives with and without the diagonal board, measured on a sample of wheel orders. */
+export interface MenuStops {
+  withBoard: number;
+  withoutBoard: number;
 }
 
 export interface BombeSettings {
@@ -368,8 +378,8 @@ export interface Reading {
   decrypt: string;
   /** Whether the rings lead to the stop's cores at the crib. */
   fitsStop: boolean;
-  /** Whether the middle ring reads the message as well as the best middle ring does. */
-  middleRingFits: boolean;
+  /** How many letters the decrypt reads differently from the check's decrypt, with its middle ring. */
+  differences: number;
   ringsRight: boolean | null;
 }
 
@@ -551,6 +561,12 @@ export interface BombeApi {
   suggestCrib: Call<[type?: string], CribSuggestion>;
   /** The key and plain text of the loaded intercept or exercise. */
   getSolution: Call<[], SourceSolution>;
+  /** Shows three wheel orders of the loaded intercept or exercise, one of them the key's. */
+  showWheelOrders: Call<[], BombeState>;
+  /** Shows two crib positions of the loaded exercise, one of them the crib's. */
+  showCribPositions: Call<[], BombeState>;
+  /** The stops per wheel order the menu gives, measured on a sample of wheel orders and reflectors. */
+  menuStops: Call<[], MenuStops>;
   loadIntercept: Call<[id: string], BombeState>;
   generateExercise: Call<[], BombeState>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */

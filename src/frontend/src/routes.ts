@@ -63,6 +63,8 @@ export const bombeRoutes: Routes<BombeApi> = {
   messageTypes: () => ({ method: 'GET', path: `${bombe}/message-types` }),
   suggestCrib: (type) => ({ method: 'GET', path: `${bombe}/source/crib${type ? `?type=${encodeURIComponent(type)}` : ''}` }),
   getSolution: () => ({ method: 'GET', path: `${bombe}/source/solution` }),
+  showWheelOrders: () => ({ method: 'POST', path: `${bombe}/source/wheel-orders` }),
+  showCribPositions: () => ({ method: 'POST', path: `${bombe}/source/crib-positions` }),
   loadIntercept: (id) => ({ method: 'POST', path: `${bombe}/source/intercept`, body: { id } }),
   generateExercise: () => ({ method: 'POST', path: `${bombe}/source/exercise` }),
   pasteCipherText: (text) => ({ method: 'PUT', path: `${bombe}/cipher-text`, body: { text } }),
@@ -70,6 +72,7 @@ export const bombeRoutes: Routes<BombeApi> = {
   placeCrib: (position) => ({ method: 'PUT', path: `${bombe}/placement`, body: { position } }),
   setMenu: (links, testRegister) => ({ method: 'PUT', path: `${bombe}/menu`, body: { links, testRegister } }),
   buildMenu: () => ({ method: 'POST', path: `${bombe}/menu/build` }),
+  menuStops: () => ({ method: 'GET', path: `${bombe}/menu/stops` }),
   configure: (settings) => ({ method: 'PUT', path: `${bombe}/settings`, body: settings }),
   plugUpMenu: () => ({ method: 'POST', path: `${bombe}/machine/plug-up` }),
   plugJack: (chain, scrambler, jack, letter) => ({

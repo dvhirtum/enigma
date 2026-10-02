@@ -5,7 +5,7 @@ import { CopyButton, Field, Hand, Squares } from '../notebook/paper';
 import { KeySheetSelects, shownMonth } from '../panels/KeySheetSelects';
 import { useMachine } from '../store';
 import { SetUpEnigma } from './CheckStep';
-import { cribLetters, groups } from './letters';
+import { cribLetters, groups, plural } from './letters';
 
 const ringLetter = (ring: number) => alphabet[ring - 1];
 
@@ -327,10 +327,11 @@ function ReadingResult({ check, table }: { check: BombeCheck; table: RingTable |
           These rings lead to indicator <Hand>{row.indicator}</Hand>, not the stop&apos;s <Hand>{table.indicator}</Hand>.
         </p>
       )}
-      {!reading.middleRingFits && (
+      {reading.differences > 0 && (
         <p className="notebook-warning">
-          The middle ring <Hand>{ringLetter(reading.middle)}</Hand> reads the message worse than the best middle ring: the left rotor turns over at the wrong
-          letter.
+          With middle ring <Hand>{ringLetter(reading.middle)}</Hand> the left rotor turns over at another letter than with middle ring{' '}
+          <Hand>{ringLetter(check.middleRing)}</Hand> in Read the message: {plural(reading.differences, 'letter reads', 'letters read')} differently. Read both
+          and judge which makes sense.
         </p>
       )}
       {reading.ringsRight !== null && (

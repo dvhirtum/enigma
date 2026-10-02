@@ -17,6 +17,33 @@ export function RunReport({ run }: { run: BombeRun }) {
   );
 }
 
+/** Three wheel orders of an intercept or exercise, one of them the key's, written down once asked for. */
+function WheelOrderHint() {
+  const source = useMachine((store) => store.bombe?.source ?? null);
+  const showWheelOrders = useMachine((store) => store.showWheelOrders);
+  if (!source?.hasWheelOrders) {
+    return null;
+  }
+
+  const orders = source.wheelOrders;
+  if (!orders) {
+    return (
+      <p className="notebook-actions">
+        <button type="button" onClick={() => void showWheelOrders()}>
+          Wheel orders already ruled out
+        </button>
+      </p>
+    );
+  }
+
+  return (
+    <p aria-label="Wheel orders left">
+      The other Wrens have run every other wheel order without a true stop. One of these is the key's: <Hand>{orders[0]}</Hand>, <Hand>{orders[1]}</Hand> or{' '}
+      <Hand>{orders[2]}</Hand>. Try each with reflector B and with C.
+    </p>
+  );
+}
+
 /** Follows the run of the Bombe plugged up with the menu, and plugs it up again when it was changed by hand. */
 export function RunStep({ onDone }: { onDone: () => void }) {
   const bombe = useMachine((store) => store.bombe);
@@ -34,6 +61,7 @@ export function RunStep({ onDone }: { onDone: () => void }) {
         <strong>Back</strong> tab, then set the diagonal board and Start on the <strong>Side</strong> tab. While this notebook is open, each stop is written
         down here.
       </p>
+      <WheelOrderHint />
       {!bombe.machine.pluggedForMenu && !isActive(run) && (
         <p className="notebook-warning">
           The Bombe is no longer plugged up for this menu, so its stops are not written down here.{' '}

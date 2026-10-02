@@ -218,6 +218,16 @@ public sealed class StopCheck
             ? new Solution(key.Reflector, key.WheelOrder, key.Rings, key.Plugs, key.MessageKey, string.Empty, string.Empty).Decrypt(Placement.CipherText)
             : null;
 
+    /// <summary>
+    /// How many letters the read key's decrypt reads differently from <see cref="Decrypt()"/> with the middle ring of the
+    /// check, or null before rings are read. Only where the left rotor turns over can the two differ; rings that do not
+    /// lead to the stop give another message key altogether, so they count 0.
+    /// </summary>
+    public int? ReadDifferences() =>
+        ReadDecrypt() is not { } read ? null
+        : ReadingFitsStop != true ? 0
+        : Decrypt().Zip(read).Count(pair => pair.First.ToChar() != pair.Second);
+
     private RingRow Row(RotorPositions grundstellung, Kenngruppe verfahrenkenngruppe, RingSetting left, RingSetting middle)
     {
         var key = new DailyKey(1, Reflector, [WheelOrder.Left, WheelOrder.Middle, WheelOrder.Right], [left, middle, RightRing], Steckers.Plugs);

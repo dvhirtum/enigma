@@ -33,6 +33,22 @@ public sealed record WheelOrder
             where left != middle && middle != right && left != right
             select new WheelOrder(left, middle, right)];
 
+    /// <summary>
+    /// Three wheel orders in random order: <paramref name="key"/> and two others that <paramref name="fits"/> allows.
+    /// </summary>
+    public static IReadOnlyList<WheelOrder> Hint(WheelOrder key, Func<WheelOrder, bool> fits, Random random)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(fits);
+        ArgumentNullException.ThrowIfNull(random);
+
+        var others = All.Where(order => order != key && fits(order)).ToArray();
+        random.Shuffle(others);
+        WheelOrder[] hint = [key, .. others.Take(2)];
+        random.Shuffle(hint);
+        return hint;
+    }
+
     public RotorType Left { get; }
 
     public RotorType Middle { get; }
