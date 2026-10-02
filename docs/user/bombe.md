@@ -21,7 +21,7 @@ The notebook walks through the steps one by one: choose the message, place the c
 The first step loads the message to break:
 
 - **Intercept**: a historical message, such as Scharnhorst's last signal. Choose it and click **Load intercept**.
-- **New exercise**: a Navy message sent on a random day of one of your M3 key sheets, a day with rotor I–V on the right. The middle rotor never turns over during its crib. Generate or import M3 key sheets first.
+- **New exercise**: a Navy message sent on a random day of one of your M3 key sheets, a day with rotor I–V on the right. The middle rotor never turns over during its crib, and the menu built with the crib in its right place has at least two loops, so a crib position whose menu has fewer is never the right one. This is not historical: Hut 8 had to work with the menus the day's traffic gave, and a poor crib could leave a key unbroken. The exercises are made to show how the Enigma was broken, so each one can be broken. Generate or import M3 key sheets first.
 - **Radio message or cipher text**: paste a Navy radio message, as the operator's notebook writes it, or bare cipher text, and click **Load pasted text**.
 
 The notebook writes down the message, a hint for intercepts and exercises, and the cipher text in groups of four. Loading a message removes the crib.

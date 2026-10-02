@@ -18,8 +18,11 @@ public static class ExerciseGenerator
     /// <summary>The most other messages of the day.</summary>
     public const int MaxDayMessages = 5;
 
-    /// <summary>The most message keys tried for a crib without a middle rotor turnover.</summary>
+    /// <summary>The most message keys tried for a crib without a middle rotor turnover and with a usable menu.</summary>
     public const int MaxAttempts = 1000;
+
+    /// <summary>The fewest loops of the menu built at the crib's true position.</summary>
+    public const int MinLoops = 2;
 
     private static readonly string[] Digits = ["NUL", "EINS", "ZWO", "DREI", "VIER", "FUENF", "SEQS", "SIEBEN", "AQT", "NEUN"];
 
@@ -83,7 +86,8 @@ public static class ExerciseGenerator
 
     /// <summary>
     /// Generates an exercise sent on <paramref name="day"/> of an M3 <paramref name="sheet"/>, with a message key at
-    /// which the middle rotor does not turn over while the crib is enciphered.
+    /// which the middle rotor does not turn over while the crib is enciphered, and the menu built at the crib's position
+    /// has at least <see cref="MinLoops"/> loops.
     /// </summary>
     public static MessageSource Generate(KeySheet sheet, int day, Kenngruppenbuch book, TauschtafelSet tables, Random random)
     {
@@ -97,10 +101,10 @@ public static class ExerciseGenerator
         var crib = template.Type!.Crib.Length;
         var (message, solution) = Enumerable.Range(0, MaxAttempts)
             .Select(_ => Send(sheet, day, book, tables, random, allotment, plaintext))
-            .FirstOrDefault(sent => !MiddleTurnsOver(sent.Solution, prefix.Length, crib));
+            .FirstOrDefault(sent => !MiddleTurnsOver(sent.Solution, prefix.Length, crib) && HasLoops(sent.Message, template.Type, prefix.Length));
         if (solution is null)
         {
-            throw new DomainException("No message key keeps the middle rotor still during the crib.");
+            throw new DomainException("No message key keeps the middle rotor still during the crib and gives a menu with loops.");
         }
 
         solution = solution with { Notes = $"{solution.Notes} The crib starts at position {prefix.Length}." };
@@ -196,6 +200,10 @@ public static class ExerciseGenerator
         var groups = indicator.Encrypt(tables.TableFor(sheet.Month, day));
         return (RadioMessage.Create(time, groups, solution.Decrypt(MessageSource.Letters(plaintext))), solution);
     }
+
+    // Whether the menu built with the crib at its position has at least MinLoops loops.
+    private static bool HasLoops(RadioMessage message, MessageType type, int position) =>
+        Menu.Build(new CribPlacement(MessageSource.Letters(message.CipherText), type.Crib, position)).Loops >= MinLoops;
 
     // Whether the middle rotor turns over while the letters from start on are enciphered, from the message key.
     private static bool MiddleTurnsOver(Solution solution, int start, int length)
