@@ -214,4 +214,22 @@ public sealed class ExerciseGeneratorTests
         Assert.Contains(source.Solution!.WheelOrder, hint);
         Assert.All(hint, order => Assert.Single(order.Right.Notches));
     }
+
+    [Fact]
+    public void Should_build_a_menu_with_at_least_two_loops_When_the_crib_is_in_its_right_place()
+    {
+        // Arrange
+        var sources = Enumerable.Range(0, 100).Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
+
+        // Act
+        var menus = sources.Select(source =>
+        {
+            var position = source.Solution!.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal);
+            return (Crib: source.Crib.ToString(), Menu: Menu.Build(new CribPlacement(source.CipherText, source.Crib, position)));
+        }).ToList();
+
+        // Assert
+        Assert.Equal(4, menus.Select(menu => menu.Crib).Distinct().Count());
+        Assert.All(menus, menu => Assert.True(menu.Menu.Loops >= ExerciseGenerator.MinLoops, $"{menu.Crib}: {menu.Menu.Loops} loops"));
+    }
 }
