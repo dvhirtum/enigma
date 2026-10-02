@@ -111,6 +111,7 @@ public sealed class IndicatorHandlerTests
         // Assert
         Assert.False(wrong.Reading?.RingsRight);
         Assert.False(wrong.Reading?.FitsStop);
+        Assert.Equal(0, wrong.Reading?.Differences);
         Assert.Null(forgotten.Reading);
     }
 
