@@ -1,4 +1,3 @@
-using Enigma.Application.Procedure;
 using Enigma.Domain.Bombe;
 using Enigma.Domain.Machine;
 
@@ -10,15 +9,15 @@ public enum RunStatus
     Paused,
     Finished,
     Cancelled,
-    Failed,
+    Failed
 }
 
 /// <summary>
-/// A Bombe run in the background: the drums turn once through all 17,576 positions, and at each one every group of
-/// chains with a test register is tested with its scramblers as set up. At full speed (null) the groups are tested in
-/// parallel; at a set speed (positions per second) the run is paced by the clock and pauses at each stop until it is
-/// continued. The speed can change while the run goes. The stops are printed, and, for the Hut 8 notebook, logged with
-/// the placed crib.
+///     A Bombe run in the background: the drums turn once through all 17,576 positions, and at each one every group of
+///     chains with a test register is tested with its scramblers as set up. At full speed (null) the groups are tested in
+///     parallel; at a set speed (positions per second) the run is paced by the clock and pauses at each stop until it is
+///     continued. The speed can change while the run goes. The stops are printed, and, for the Hut 8 notebook, logged with
+///     the placed crib.
 /// </summary>
 public sealed class BombeRun
 {
@@ -31,21 +30,21 @@ public sealed class BombeRun
     private static readonly TimeSpan Tick = TimeSpan.FromMilliseconds(20);
 
     private readonly Lock _lock = new();
-    private readonly GroupMachine[] _machines;
-    private readonly Printout _printout;
     private readonly StopLog? _log;
+    private readonly GroupMachine[] _machines;
     private readonly CribPlacement? _placement;
+    private readonly Printout _printout;
     private readonly Solution? _solution;
-    private readonly TimeProvider _time;
     private readonly long _started;
+    private readonly TimeProvider _time;
     private volatile bool _cancelled;
+    private long? _ended;
+    private string? _error;
+    private (PrintedStop Stop, int Index)? _pause;
     private double? _speed;
+    private RunStatus _status = RunStatus.Running;
     private int _step;
     private int _stops;
-    private (PrintedStop Stop, int Index)? _pause;
-    private long? _ended;
-    private RunStatus _status = RunStatus.Running;
-    private string? _error;
 
     private BombeRun(BombeJob job, double? speed, TimeProvider time, Printout printout, StopLog? log)
     {
@@ -54,7 +53,9 @@ public sealed class BombeRun
         Reflector = job.Reflector;
         _printout = printout;
         _placement = job.Placement;
-        _log = _placement is not null && job.Machine.PluggedMenu is { } plugged && ReferenceEquals(plugged, job.Menu) ? log : null;
+        _log = _placement is not null && job.Machine.PluggedMenu is { } plugged && ReferenceEquals(plugged, job.Menu)
+            ? log
+            : null;
         _solution = job.Source?.Solution;
         _speed = CheckSpeed(speed);
         _time = time;
@@ -67,7 +68,10 @@ public sealed class BombeRun
 
     public ReflectorType Reflector { get; }
 
-    /// <summary>Whether the stops go to the Hut 8 notebook's stop log too: when a crib is placed and the Bombe is plugged up with the job's menu.</summary>
+    /// <summary>
+    ///     Whether the stops go to the Hut 8 notebook's stop log too: when a crib is placed and the Bombe is plugged up
+    ///     with the job's menu.
+    /// </summary>
     public bool Logged => _log is not null;
 
     /// <summary>Completes when the run has finished, was cancelled or failed.</summary>
@@ -121,8 +125,8 @@ public sealed class BombeRun
     }
 
     /// <summary>
-    /// Starts running the Bombe as set up. With a stop log (the Hut 8 notebook is open) and a placed crib, the stops
-    /// are logged for checking too.
+    ///     Starts running the Bombe as set up. With a stop log (the Hut 8 notebook is open) and a placed crib, the stops
+    ///     are logged for checking too.
     /// </summary>
     public static BombeRun Start(BombeJob job, double? speed, TimeProvider time, Printout printout, StopLog? log)
     {
@@ -133,7 +137,10 @@ public sealed class BombeRun
         return new BombeRun(job, speed, time, printout, log);
     }
 
-    public void Cancel() => _cancelled = true;
+    public void Cancel()
+    {
+        _cancelled = true;
+    }
 
     /// <summary>Continues a run paused at a stop.</summary>
     public void Continue()
@@ -163,10 +170,12 @@ public sealed class BombeRun
         }
     }
 
-    private static double? CheckSpeed(double? speed) =>
-        speed is null or (> 0 and <= double.MaxValue)
+    private static double? CheckSpeed(double? speed)
+    {
+        return speed is null or (> 0 and <= double.MaxValue)
             ? speed
             : throw new DomainException("The speed must be a positive number of positions per second.");
+    }
 
     private async Task RunAsync()
     {
@@ -178,7 +187,7 @@ public sealed class BombeRun
             {
                 if (Speed is not { } speed)
                 {
-                    Test(_step, Math.Min(_step + FullSpeedChunk, DrumPosition.Count), pause: false);
+                    Test(_step, Math.Min(_step + FullSpeedChunk, DrumPosition.Count), false);
                     (budget, last) = (0, _time.GetTimestamp());
                     continue;
                 }
@@ -188,7 +197,7 @@ public sealed class BombeRun
                 last = now;
                 var count = (int)Math.Min(budget, DrumPosition.Count - _step);
                 budget -= count;
-                Test(_step, _step + count, pause: true);
+                Test(_step, _step + count, true);
                 if (IsPaused)
                 {
                     await WaitWhilePausedAsync().ConfigureAwait(false);
@@ -220,10 +229,7 @@ public sealed class BombeRun
 
     private async Task WaitWhilePausedAsync()
     {
-        while (IsPaused && !_cancelled)
-        {
-            await Task.Delay(Tick, _time).ConfigureAwait(false);
-        }
+        while (IsPaused && !_cancelled) await Task.Delay(Tick, _time).ConfigureAwait(false);
     }
 
     // Tests the steps [from, to) on every group and prints the stops, by step and then group. With pause, it stops after
@@ -240,11 +246,9 @@ public sealed class BombeRun
                 var letters = BombeMachine.PositionAt(step);
                 if (machine.LiveWiresAt(letters) is { } live)
                 {
-                    stops.Add((step, index, new PrintedStop(group.Chains, group.WheelOrder, letters, machine.TestRegister, live)));
-                    if (pause)
-                    {
-                        break;
-                    }
+                    stops.Add((step, index,
+                        new PrintedStop(group.Chains, group.WheelOrder, letters, machine.TestRegister, live)));
+                    if (pause) break;
                 }
             }
 
@@ -262,7 +266,8 @@ public sealed class BombeRun
         var index = _printout.Add(stops.Select(stop => stop.Stop));
         _log?.Add(
             stops.Select(stop => stop.Stop).Where(stop => stop.WheelOrder is not null).Select(stop =>
-                new BombeStop(stop.WheelOrder!, stop.WheelOrder!.CorePositions(stop.DrumLetters), stop.TestRegister, stop.LiveWires)),
+                new BombeStop(stop.WheelOrder!, stop.WheelOrder!.CorePositions(stop.DrumLetters), stop.TestRegister,
+                    stop.LiveWires)),
             Reflector,
             _placement!,
             _solution);
@@ -270,17 +275,14 @@ public sealed class BombeRun
         {
             _step = to;
             _stops += stops.Count;
-            if (pause && stops.Count > 0)
-            {
-                _pause = (stops[0].Stop, index);
-            }
+            if (pause && stops.Count > 0) _pause = (stops[0].Stop, index);
         }
     }
 }
 
 /// <summary>
-/// How far a run has got: the positions tested, the upper drums' letters while it runs, the stop a paused run waits at
-/// with its index on the printout, and the stops it found.
+///     How far a run has got: the positions tested, the upper drums' letters while it runs, the stop a paused run waits at
+///     with its index on the printout, and the stops it found.
 /// </summary>
 public sealed record RunProgress(
     RunStatus Status,

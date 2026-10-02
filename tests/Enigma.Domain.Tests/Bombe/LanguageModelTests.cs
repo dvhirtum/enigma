@@ -52,7 +52,7 @@ public sealed class LanguageModelTests
         var ein = LanguageModel.LogProbability(Letter.FromChar('E'), Letter.FromChar('I'), Letter.FromChar('N'));
         var der = LanguageModel.LogProbability(Letter.FromChar('D'), Letter.FromChar('E'), Letter.FromChar('R'));
         Assert.NotNull(score);
-        Assert.Equal(ein + der - (2 * LanguageModel.RandomLogProbability), score.Value, 1e-12);
+        Assert.Equal(ein + der - 2 * LanguageModel.RandomLogProbability, score.Value, 1e-12);
     }
 
     [Fact]
@@ -81,6 +81,8 @@ public sealed class LanguageModelTests
         Assert.Contains("Project Gutenberg", source, StringComparison.Ordinal);
     }
 
-    private static Letter?[] Text(string text) =>
-        [.. text.Select(c => c == '?' ? (Letter?)null : Letter.FromChar(c))];
+    private static Letter?[] Text(string text)
+    {
+        return [.. text.Select(c => c == '?' ? (Letter?)null : Letter.FromChar(c))];
+    }
 }

@@ -53,7 +53,10 @@ public sealed class ScramblerTests
     {
         // Arrange
         // Act
-        static object Act() => new Scrambler(WheelOrder.Parse("I II III"), ReflectorType.BThin);
+        static object Act()
+        {
+            return new Scrambler(WheelOrder.Parse("I II III"), ReflectorType.BThin);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

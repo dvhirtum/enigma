@@ -3,20 +3,21 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.KeyProcedure;
 
 /// <summary>
-/// The Doppelbuchstabentauschtafeln for one year, and a calendar that gives each half month (days 1–15, 16–end) one
-/// of them.
+///     The Doppelbuchstabentauschtafeln for one year, and a calendar that gives each half month (days 1–15, 16–end) one
+///     of them.
 /// </summary>
 public sealed class TauschtafelSet
 {
     public const int TableCount = 9;
 
     public const int HalfMonths = 24;
-
-    private readonly Doppelbuchstabentauschtafel[] _tables;
     private readonly int[] _calendar;
 
+    private readonly Doppelbuchstabentauschtafel[] _tables;
+
     /// <param name="calendar">The table number for each half month of the year, from early January to late December.</param>
-    public TauschtafelSet(string id, int year, IEnumerable<Doppelbuchstabentauschtafel> tables, IEnumerable<int> calendar)
+    public TauschtafelSet(string id, int year, IEnumerable<Doppelbuchstabentauschtafel> tables,
+        IEnumerable<int> calendar)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentNullException.ThrowIfNull(tables);
@@ -24,15 +25,12 @@ public sealed class TauschtafelSet
 
         _tables = [.. tables.OrderBy(t => t.Number)];
         if (!_tables.Select(t => t.Number).SequenceEqual(Enumerable.Range(1, TableCount)))
-        {
             throw new DomainException($"A Tauschtafel set has tables 1–{TableCount}.");
-        }
 
         _calendar = [.. calendar];
         if (_calendar.Length != HalfMonths || _calendar.Any(n => n is < 1 or > TableCount))
-        {
-            throw new DomainException($"A Tauschtafel calendar gives each of the {HalfMonths} half months a table 1–{TableCount}.");
-        }
+            throw new DomainException(
+                $"A Tauschtafel calendar gives each of the {HalfMonths} half months a table 1–{TableCount}.");
 
         Id = id;
         Year = new KeyMonth(year, 1).Year;
@@ -52,36 +50,31 @@ public sealed class TauschtafelSet
     {
         ArgumentNullException.ThrowIfNull(random);
 
-        var tables = Enumerable.Range(1, TableCount).Select(n => Doppelbuchstabentauschtafel.Generate(n, random)).ToList();
+        var tables = Enumerable.Range(1, TableCount).Select(n => Doppelbuchstabentauschtafel.Generate(n, random))
+            .ToList();
         var order = Enumerable.Range(1, TableCount).ToArray();
         random.Shuffle(order);
         return new TauschtafelSet(id, year, tables, Enumerable.Range(0, HalfMonths).Select(i => order[i % TableCount]));
     }
 
-    /// <summary>True when <paramref name="other"/> has the same id, year, tables and calendar.</summary>
+    /// <summary>True when <paramref name="other" /> has the same id, year, tables and calendar.</summary>
     public bool IsSameAs(TauschtafelSet other)
     {
         ArgumentNullException.ThrowIfNull(other);
 
         return other.Id == Id
-            && other.Year == Year
-            && other.Calendar.SequenceEqual(Calendar)
-            && other.Tables.Zip(Tables).All(pair => pair.First.Swaps.SequenceEqual(pair.Second.Swaps));
+               && other.Year == Year
+               && other.Calendar.SequenceEqual(Calendar)
+               && other.Tables.Zip(Tables).All(pair => pair.First.Swaps.SequenceEqual(pair.Second.Swaps));
     }
 
-    /// <summary>The table in force on <paramref name="day"/> of <paramref name="month"/>.</summary>
+    /// <summary>The table in force on <paramref name="day" /> of <paramref name="month" />.</summary>
     public Doppelbuchstabentauschtafel TableFor(KeyMonth month, int day)
     {
-        if (month.Year != Year)
-        {
-            throw new DomainException($"The Tauschtafel set for {Year} does not cover {month}.");
-        }
+        if (month.Year != Year) throw new DomainException($"The Tauschtafel set for {Year} does not cover {month}.");
 
-        if (day < 1 || day > month.Days)
-        {
-            throw new DomainException($"Day {day} is outside {month}.");
-        }
+        if (day < 1 || day > month.Days) throw new DomainException($"Day {day} is outside {month}.");
 
-        return _tables[_calendar[((month.Month - 1) * 2) + (day <= 15 ? 0 : 1)] - 1];
+        return _tables[_calendar[(month.Month - 1) * 2 + (day <= 15 ? 0 : 1)] - 1];
     }
 }

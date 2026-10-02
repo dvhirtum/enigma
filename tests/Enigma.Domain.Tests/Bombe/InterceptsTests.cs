@@ -94,7 +94,10 @@ public sealed class InterceptsTests
         Assert.Null(intercept);
     }
 
-    private static IReadOnlyList<Letter> Letters(string text) => [.. text.Select(Letter.FromChar)];
+    private static IReadOnlyList<Letter> Letters(string text)
+    {
+        return [.. text.Select(Letter.FromChar)];
+    }
 
     [Theory]
     [MemberData(nameof(Ids))]
@@ -123,6 +126,7 @@ public sealed class InterceptsTests
         var hint = Intercepts.Find(id)!.Source.WheelOrders!;
 
         // Assert
-        Assert.All(hint, order => Assert.Subset(army.ToHashSet(), new HashSet<RotorType> { order.Left, order.Middle, order.Right }));
+        Assert.All(hint,
+            order => Assert.Subset(army.ToHashSet(), new HashSet<RotorType> { order.Left, order.Middle, order.Right }));
     }
 }

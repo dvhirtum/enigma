@@ -44,7 +44,8 @@ public sealed class CheckingMachineTests
     [Theory]
     [InlineData("ZZE", 'D', 'P')]
     [InlineData("ZZK", 'P', 'W')]
-    public void Should_light_the_Virtual_Colossus_lamps_When_the_SNY_stop_is_followed_by_hand(string windows, char key, char lamp)
+    public void Should_light_the_Virtual_Colossus_lamps_When_the_SNY_stop_is_followed_by_hand(string windows, char key,
+        char lamp)
     {
         // Arrange
         // bombe.virtualcolossus.co.uk/simulation.html: the stop SNY with G/D, rings SNY, links G–E at ZZE and E–U at ZZK.
@@ -98,7 +99,10 @@ public sealed class CheckingMachineTests
         checker.Fit([RotorType.II, null, RotorType.III]);
 
         // Act
-        void Act() => checker.Press(Q);
+        void Act()
+        {
+            checker.Press(Q);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -111,7 +115,10 @@ public sealed class CheckingMachineTests
         var checker = new CheckingMachine();
 
         // Act
-        void Act() => checker.Fit([RotorType.II, RotorType.II, RotorType.III]);
+        void Act()
+        {
+            checker.Fit([RotorType.II, RotorType.II, RotorType.III]);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -138,7 +145,11 @@ public sealed class CheckingMachineTests
 
         // Act
         checker.FitDummy(false);
-        void Act() => checker.Press(Q);
+
+        void Act()
+        {
+            checker.Press(Q);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -154,7 +165,11 @@ public sealed class CheckingMachineTests
 
         // Act
         checker.SetReflector(null);
-        void Act() => checker.Press(Q);
+
+        void Act()
+        {
+            checker.Press(Q);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -194,5 +209,8 @@ public sealed class CheckingMachineTests
         Assert.Equal(ReflectorType.C, checker.Reflector);
     }
 
-    private static BombeStop CarterStop() => new(WheelOrder.Parse("II V III"), DrumPosition.Parse("VMB"), G, [Q]);
+    private static BombeStop CarterStop()
+    {
+        return new BombeStop(WheelOrder.Parse("II V III"), DrumPosition.Parse("VMB"), G, [Q]);
+    }
 }

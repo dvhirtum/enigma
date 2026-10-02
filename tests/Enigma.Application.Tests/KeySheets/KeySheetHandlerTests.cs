@@ -1,8 +1,8 @@
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
 using Enigma.Application.Procedure;
-using Enigma.Application.Tests.Procedure;
 using Enigma.Application.Tests.Machine;
+using Enigma.Application.Tests.Procedure;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
@@ -13,8 +13,10 @@ public sealed class KeySheetHandlerTests
     private const string M3Row = "1 B I II III 01 01 01 AT\n";
     private const string M4Row = "1 B-thin Beta II IV I 01 01 01 22 AT BL DF GJ HM NW OP QY RZ VX QRSA\n";
 
-    private static KeySheet Sheet(string id, string network, string month, Provenance provenance, string text = M3Row) =>
-        new(id, network, KeyMonth.Parse(month), provenance, KeySheetText.Parse(text));
+    private static KeySheet Sheet(string id, string network, string month, Provenance provenance, string text = M3Row)
+    {
+        return new KeySheet(id, network, KeyMonth.Parse(month), provenance, KeySheetText.Parse(text));
+    }
 
     [Fact]
     public void Should_reject_the_change_When_a_historical_sheet_is_deleted()
@@ -24,7 +26,10 @@ public sealed class KeySheetHandlerTests
         var handler = new DeleteKeySheetHandler(repository);
 
         // Act
-        void Act() => handler.Handle(new DeleteKeySheet("h"));
+        void Act()
+        {
+            handler.Handle(new DeleteKeySheet("h"));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -52,7 +57,10 @@ public sealed class KeySheetHandlerTests
         var handler = new GetKeySheetHandler(Linking.For(new FakeKeySheetRepository()));
 
         // Act
-        void Act() => handler.Handle(new GetKeySheet("missing"));
+        void Act()
+        {
+            handler.Handle(new GetKeySheet("missing"));
+        }
 
         // Assert
         Assert.Throws<KeySheetNotFoundException>(Act);
@@ -91,7 +99,8 @@ public sealed class KeySheetHandlerTests
         Assert.Equal(120, sheets.Count);
         Assert.All(sheets, s => Assert.Equal(("M4", "Generated"), (s.Model, s.Provenance)));
         Assert.Equal(Kenngruppenbuch.HistoricalNetworks, sheets.Select(s => s.Network).Distinct());
-        Assert.Equal(Enumerable.Range(1, 12).Select(m => $"1944-{m:00}"), sheets.Where(s => s.Network == "Aegir").Select(s => s.Month));
+        Assert.Equal(Enumerable.Range(1, 12).Select(m => $"1944-{m:00}"),
+            sheets.Where(s => s.Network == "Aegir").Select(s => s.Month));
         Assert.Equal(29, repository.Sheets[sheets[1].Id].DailyKeys.Count);
         Assert.Single(repository.Sheets.Values.Select(s => s.KenngruppenbuchId).Distinct());
     }
@@ -104,7 +113,10 @@ public sealed class KeySheetHandlerTests
         var handler = new GenerateKeySheetsHandler(repository, Linking.For(repository), new Random(1));
 
         // Act
-        void Act() => handler.Handle(new GenerateKeySheets("M3", 1944));
+        void Act()
+        {
+            handler.Handle(new GenerateKeySheets("M3", 1944));
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -137,10 +149,12 @@ public sealed class KeySheetHandlerTests
     [InlineData("M4", 1944, "Generated")]
     [InlineData("M3", 1945, "Generated")]
     [InlineData("M3", 1944, "UserDefined")]
-    public void Should_generate_When_the_existing_sheet_has_another_model_year_or_provenance(string model, int year, string provenance)
+    public void Should_generate_When_the_existing_sheet_has_another_model_year_or_provenance(string model, int year,
+        string provenance)
     {
         // Arrange
-        var existing = Sheet("x", "Triton", "1944-06", provenance == "Generated" ? Provenance.Generated : Provenance.UserDefined);
+        var existing = Sheet("x", "Triton", "1944-06",
+            provenance == "Generated" ? Provenance.Generated : Provenance.UserDefined);
         var repository = new FakeKeySheetRepository(existing);
         var handler = new GenerateKeySheetsHandler(repository, Linking.For(repository), new Random(1));
 
@@ -175,13 +189,17 @@ public sealed class KeySheetHandlerTests
     public void Should_name_the_day_When_an_imported_day_is_invalid()
     {
         // Arrange
-        var handler = new ImportKeySheetHandler(new FakeKeySheetRepository(), Linking.For(new FakeKeySheetRepository()));
+        var handler =
+            new ImportKeySheetHandler(new FakeKeySheetRepository(), Linking.For(new FakeKeySheetRepository()));
         var document = new KeySheetDocument(
             null, "Hydra", "1943-12", null, null,
             [new DailyKeyDocument(26, "B", ["III", "VI", "IX"], [1, 8, 13], [], null)]);
 
         // Act
-        void Act() => handler.Handle(new ImportKeySheet(document));
+        void Act()
+        {
+            handler.Handle(new ImportKeySheet(document));
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -192,7 +210,8 @@ public sealed class KeySheetHandlerTests
     public void Should_replace_the_machine_with_the_daily_key_When_a_key_of_another_model_is_applied()
     {
         // Arrange
-        var repository = new FakeKeySheetRepository(Sheet("t", "Triton", "1942-11", Provenance.UserDefined, "19" + M4Row[1..]));
+        var repository =
+            new FakeKeySheetRepository(Sheet("t", "Triton", "1942-11", Provenance.UserDefined, "19" + M4Row[1..]));
         var store = new FakeMachineSessionStore();
         var handler = new ApplyDailyKeyHandler(Linking.For(repository), store);
 
@@ -212,7 +231,8 @@ public sealed class KeySheetHandlerTests
     public void Should_report_the_applied_key_as_unmodified_When_a_key_is_applied()
     {
         // Arrange
-        var repository = new FakeKeySheetRepository(Sheet("t", "Triton", "1942-11", Provenance.UserDefined, "19" + M4Row[1..]));
+        var repository =
+            new FakeKeySheetRepository(Sheet("t", "Triton", "1942-11", Provenance.UserDefined, "19" + M4Row[1..]));
         var handler = new ApplyDailyKeyHandler(Linking.For(repository), new FakeMachineSessionStore());
 
         // Act
@@ -266,7 +286,10 @@ public sealed class KeySheetHandlerTests
         var handler = new ApplyDailyKeyHandler(Linking.For(repository), store);
 
         // Act
-        void Act() => handler.Handle(new ApplyDailyKey("t", 2));
+        void Act()
+        {
+            handler.Handle(new ApplyDailyKey("t", 2));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -309,8 +332,10 @@ public sealed class KeySheetHandlerTests
         // Assert
         Assert.Equal(exported.KenngruppenbuchId, details.KenngruppenbuchId);
         Assert.Equal(exported.TauschtafelSetId, details.TauschtafelSetId);
-        Assert.Equal(exported.Kenngruppenbuch!.Columns, ProcedureMapper.ToDocument(books.Books[details.KenngruppenbuchId!]).Columns);
-        Assert.True(tables.Sets[details.TauschtafelSetId!].IsSameAs(ProcedureMapper.FromDocument(exported.Tauschtafeln!)));
+        Assert.Equal(exported.Kenngruppenbuch!.Columns,
+            ProcedureMapper.ToDocument(books.Books[details.KenngruppenbuchId!]).Columns);
+        Assert.True(tables.Sets[details.TauschtafelSetId!]
+            .IsSameAs(ProcedureMapper.FromDocument(exported.Tauschtafeln!)));
     }
 
     [Fact]
@@ -346,10 +371,14 @@ public sealed class KeySheetHandlerTests
         var clash = TauschtafelSet.Generate(exported.TauschtafelSetId!, 1944, new Random(99));
         var receiver = new FakeKeySheetRepository();
         var books = new FakeKenngruppenbuchRepository();
-        var handler = new ImportKeySheetHandler(receiver, Linking.For(receiver, books, new FakeTauschtafelSetRepository(clash)));
+        var handler = new ImportKeySheetHandler(receiver,
+            Linking.For(receiver, books, new FakeTauschtafelSetRepository(clash)));
 
         // Act
-        void Act() => handler.Handle(new ImportKeySheet(exported));
+        void Act()
+        {
+            handler.Handle(new ImportKeySheet(exported));
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);

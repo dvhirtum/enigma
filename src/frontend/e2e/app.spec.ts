@@ -59,7 +59,9 @@ test('shows the user guide in its own window and follows its links', async () =>
   const guide = instructions.getByRole('article', { name: 'Instructions' });
   await expect(guide.getByRole('heading', { level: 1 })).toHaveText('Enigma user guide');
 
-  await guide.getByRole('link', { name: 'Key sheets' }).click();
+  const contents = instructions.getByRole('navigation', { name: 'Contents' });
+  await contents.getByRole('button', { name: 'The Enigma' }).click();
+  await contents.getByRole('link', { name: 'Key sheets' }).click();
 
   await expect(guide.getByRole('heading', { level: 1 })).toHaveText('Key sheets');
   await page.getByRole('button', { name: 'Instructions' }).click();

@@ -12,9 +12,10 @@ public sealed class IndicatorHandlerTests
     // An exercise whose middle rotor does not turn over under the crib, so the Bombe stops at its key.
     private const int ExerciseSeed = 8;
 
-    private readonly FakeBombeSessionStore _store = new();
     private readonly KeySheetLinker _linker = Linking.For(new FakeKeySheetRepository(
         KeySheetGenerator.Generate("t", MachineModel.M3, "Triton", KeyMonth.Parse("1944-06"), new Random(1))));
+
+    private readonly FakeBombeSessionStore _store = new();
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -105,7 +106,7 @@ public sealed class IndicatorHandlerTests
         var handler = new ReadRingsHandler(_store);
 
         // Act
-        var wrong = handler.Handle(new ReadRings(stop, (solution.Rings[0] % 26) + 1, solution.Rings[1]));
+        var wrong = handler.Handle(new ReadRings(stop, solution.Rings[0] % 26 + 1, solution.Rings[1]));
         var forgotten = handler.Handle(new ReadRings(stop, null, null));
 
         // Assert
@@ -142,7 +143,10 @@ public sealed class IndicatorHandlerTests
         TakePinch();
 
         // Act
-        void Act() => new GetRingTableHandler(_store).Handle(new GetRingTable(stop));
+        void Act()
+        {
+            new GetRingTableHandler(_store).Handle(new GetRingTable(stop));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -155,7 +159,10 @@ public sealed class IndicatorHandlerTests
         new LoadInterceptHandler(_store).Handle(new LoadIntercept("scharnhorst-1943"));
 
         // Act
-        void Act() => TakePinch();
+        void Act()
+        {
+            TakePinch();
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -171,7 +178,11 @@ public sealed class IndicatorHandlerTests
         var handler = new TakePinchHandler(_store, _linker, new Random(5));
 
         // Act
-        void Unchosen() => handler.Handle(new TakePinch(null, null));
+        void Unchosen()
+        {
+            handler.Handle(new TakePinch(null, null));
+        }
+
         var state = handler.Handle(new TakePinch("t", solution.Exercise!.Day));
 
         // Assert
@@ -200,7 +211,10 @@ public sealed class IndicatorHandlerTests
         return new GetSolutionHandler(_store).Handle(new GetSolution());
     }
 
-    private BombeState TakePinch() => new TakePinchHandler(_store, _linker, new Random(5)).Handle(new TakePinch(null, null));
+    private BombeState TakePinch()
+    {
+        return new TakePinchHandler(_store, _linker, new Random(5)).Handle(new TakePinch(null, null));
+    }
 
     // Places the exercise's crib, runs its wheel order and returns the index of the stop the solution confirms, with
     // every plug pair and the right ring of the solution entered.
@@ -211,12 +225,10 @@ public sealed class IndicatorHandlerTests
         new PlaceCribHandler(_store).Handle(new PlaceCrib(solution.Plaintext.IndexOf(crib, StringComparison.Ordinal)));
         new ConfigureBombeHandler(_store).Handle(new ConfigureBombe(null, solution.Reflector));
         foreach (var (row, rotor) in solution.WheelOrder.Split(' ').Index())
-        {
             new FitRowHandler(_store).Handle(new FitRow(0, row, 11, rotor));
-        }
 
         new PlugUpMenuHandler(_store).Handle(new PlugUpMenu());
-        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, Notebook: true));
+        new StartRunHandler(_store, TimeProvider.System).Handle(new StartRun(null, true));
         await _store.Run!.Completion.WaitAsync(TimeSpan.FromSeconds(60), Token);
         var stop = Enumerable.Range(0, _store.Stops.Count).Single(index =>
             new ConfirmCheckHandler(_store).Handle(new ConfirmCheck(index, "True")).Solution!.IsTrueStop);

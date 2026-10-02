@@ -4,9 +4,10 @@ using Enigma.Domain.Bombe;
 namespace Enigma.Application.Bombe;
 
 /// <summary>
-/// The Bombe job, with the loaded message, the menu, the Bombe and the checking machine as set up, the run settings, a
-/// summary of its latest run, the number of stops logged for the notebook and the number printed, and the day's traffic
-/// once a pinch is taken (null before). Positions count from 0; crashes are crib indexes.
+///     The Bombe job, with the loaded message, the menu, the Bombe and the checking machine as set up, the run settings, a
+///     summary of its latest run, the number of stops logged for the notebook and the number printed, and the day's
+///     traffic
+///     once a pinch is taken (null before). Positions count from 0; crashes are crib indexes.
 /// </summary>
 public sealed record BombeState(
     SourceState? Source,
@@ -55,8 +56,8 @@ public sealed record BombeState(
 public sealed record PlacementState(int Position, IReadOnlyList<int> Crashes);
 
 /// <summary>
-/// The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it
-/// and their loops.
+///     The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it
+///     and their loops.
 /// </summary>
 public sealed record MenuState(
     IReadOnlyList<string> Links,
@@ -69,8 +70,8 @@ public sealed record MenuState(
 public sealed record MenuStopsState(double WithBoard, double WithoutBoard);
 
 /// <summary>
-/// The Bombe as set up: its three chains, whether each chain is joined to the next, whether it is plugged up with the
-/// job's menu, whether it was plugged by hand (cables that no menu plugged), and what a run will not use.
+///     The Bombe as set up: its three chains, whether each chain is joined to the next, whether it is plugged up with the
+///     job's menu, whether it was plugged by hand (cables that no menu plugged), and what a run will not use.
 /// </summary>
 public sealed record BombeMachineState(
     IReadOnlyList<ChainState> Chains,
@@ -85,13 +86,17 @@ public sealed record BombeMachineState(
 
         var machine = job.Machine;
         return new BombeMachineState(
-            [.. machine.ChainSetups.Select(chain => new ChainState(
-                chain.TestRegister?.ToString(),
-                chain.Input.ToString(),
-                [.. chain.Scramblers.Select(scrambler => new ScramblerState(
-                    [.. scrambler.Cables.Select(letter => letter?.ToString())],
-                    [.. scrambler.Rotors.Select(rotor => rotor?.Name)],
-                    scrambler.Start.ToString()))]))],
+            [
+                .. machine.ChainSetups.Select(chain => new ChainState(
+                    chain.TestRegister?.ToString(),
+                    chain.Input.ToString(),
+                    [
+                        .. chain.Scramblers.Select(scrambler => new ScramblerState(
+                            [.. scrambler.Cables.Select(letter => letter?.ToString())],
+                            [.. scrambler.Rotors.Select(rotor => rotor?.Name)],
+                            scrambler.Start.ToString()))
+                    ]))
+            ],
             [.. machine.Joins],
             job.Menu is not null && ReferenceEquals(machine.PluggedMenu, job.Menu),
             machine.PluggedMenu is null && machine.ChainSetups.Any(chain =>
@@ -103,14 +108,24 @@ public sealed record BombeMachineState(
 /// <summary>A chain: the letter its test register is plugged onto (null: none), its input wire, and its 12 scramblers.</summary>
 public sealed record ChainState(string? TestRegister, string Input, IReadOnlyList<ScramblerState> Scramblers);
 
-/// <summary>A scrambler: the letters its two jacks are cabled to, its drums' rotors (upper, middle, lower) and start letters.</summary>
+/// <summary>
+///     A scrambler: the letters its two jacks are cabled to, its drums' rotors (upper, middle, lower) and start
+///     letters.
+/// </summary>
 public sealed record ScramblerState(IReadOnlyList<string?> Jacks, IReadOnlyList<string?> Drums, string Start);
 
 /// <summary>
-/// The checking machine: reflector cartridge (null: none), whether the dummy drum is fitted, rotor of each drum left to
-/// right (null: none), ring and window letters, and the logged stop it was set up for (null when set by hand).
+///     The checking machine: reflector cartridge (null: none), whether the dummy drum is fitted, rotor of each drum left
+///     to
+///     right (null: none), ring and window letters, and the logged stop it was set up for (null when set by hand).
 /// </summary>
-public sealed record CheckingMachineState(string? Reflector, bool Dummy, IReadOnlyList<string?> Drums, string Rings, string Windows, StopState? Stop)
+public sealed record CheckingMachineState(
+    string? Reflector,
+    bool Dummy,
+    IReadOnlyList<string?> Drums,
+    string Rings,
+    string Windows,
+    StopState? Stop)
 {
     public static CheckingMachineState From(CheckingMachine checker, StopLog stops)
     {
@@ -133,10 +148,10 @@ public sealed record CheckingMachineState(string? Reflector, bool Dummy, IReadOn
 public sealed record BombeSettings(bool DiagonalBoard, string Reflector);
 
 /// <summary>
-/// A run's progress: the groups of chains tested, whether the stops are logged for the notebook, the positions tested
-/// of the 17,576, the letters the upper drums show while it runs, the stop a paused run waits at, the stops it found,
-/// all stops logged and all printed so far. Speed is in positions per second, null for full speed. Error is set when
-/// the run failed.
+///     A run's progress: the groups of chains tested, whether the stops are logged for the notebook, the positions tested
+///     of the 17,576, the letters the upper drums show while it runs, the stop a paused run waits at, the stops it found,
+///     all stops logged and all printed so far. Speed is in positions per second, null for full speed. Error is set when
+///     the run failed.
 /// </summary>
 public sealed record RunState(
     string Status,
@@ -164,8 +179,11 @@ public sealed record RunState(
             progress.Status.ToString(),
             progress.Speed,
             run.Reflector.Name,
-            [.. run.Groups.Select(group => new RunGroupState(
-                [.. group.Chains], group.WheelOrder?.ToString(), group.TestRegister?.ToString() ?? string.Empty, group.Input.ToString()))],
+            [
+                .. run.Groups.Select(group => new RunGroupState(
+                    [.. group.Chains], group.WheelOrder?.ToString(), group.TestRegister?.ToString() ?? string.Empty,
+                    group.Input.ToString()))
+            ],
             run.Logged,
             progress.PositionsTested,
             DrumPosition.Count,
@@ -179,13 +197,16 @@ public sealed record RunState(
     }
 }
 
-/// <summary>A group of chains a run tests (0 = chain 1), its wheel order (null when a row is empty), test register and input.</summary>
+/// <summary>
+///     A group of chains a run tests (0 = chain 1), its wheel order (null when a row is empty), test register and
+///     input.
+/// </summary>
 public sealed record RunGroupState(IReadOnlyList<int> Chains, string? WheelOrder, string TestRegister, string Input);
 
 /// <summary>
-/// A printed stop: its index on the printout, the chains (0 = chain 1), their wheel order (null when a row is empty),
-/// the upper drums' letters, the indicator drum reading, the test register letter, its live wires and the stecker
-/// partner they give (null when neither 1 nor 25 wires are live).
+///     A printed stop: its index on the printout, the chains (0 = chain 1), their wheel order (null when a row is empty),
+///     the upper drums' letters, the indicator drum reading, the test register letter, its live wires and the stecker
+///     partner they give (null when neither 1 nor 25 wires are live).
 /// </summary>
 public sealed record PrintedStopState(
     int Index,
@@ -214,9 +235,9 @@ public sealed record PrintedStopState(
 }
 
 /// <summary>
-/// A logged stop: its index among the stops logged, the wheel order, the drum core positions, the indicator drum
-/// reading, the test register letter, its live wires, the stecker partner they give (null when neither 1 nor 25 wires
-/// are live) and the verdict of its check (Unchecked, True or False).
+///     A logged stop: its index among the stops logged, the wheel order, the drum core positions, the indicator drum
+///     reading, the test register letter, its live wires, the stecker partner they give (null when neither 1 nor 25 wires
+///     are live) and the verdict of its check (Unchecked, True or False).
 /// </summary>
 public sealed record StopState(
     int Index,
@@ -245,9 +266,10 @@ public sealed record StopState(
 }
 
 /// <summary>
-/// The loaded message: its kind (Intercept, Exercise or Pasted), title, hint, transcript as received, the Navy radio
-/// message when it is one, whether a crib, a solution, wheel orders and crib positions can be asked for, the three wheel
-/// orders once shown, and the crib with its two positions (from 0) once shown (null before).
+///     The loaded message: its kind (Intercept, Exercise or Pasted), title, hint, transcript as received, the Navy radio
+///     message when it is one, whether a crib, a solution, wheel orders and crib positions can be asked for, the three
+///     wheel
+///     orders once shown, and the crib with its two positions (from 0) once shown (null before).
 /// </summary>
 public sealed record SourceState(
     string Kind,
@@ -277,7 +299,9 @@ public sealed record SourceState(
             source.WheelOrders is not null,
             wheelOrdersShown && source.WheelOrders is { } orders ? [.. orders.Select(order => order.ToString())] : null,
             source.CribPositions is not null,
-            cribPositionsShown && source is { CribPositions: { } positions, Crib: { } crib } ? new CribPositionsState(crib.ToString(), positions) : null);
+            cribPositionsShown && source is { CribPositions: { } positions, Crib: { } crib }
+                ? new CribPositionsState(crib.ToString(), positions)
+                : null);
     }
 }
 
@@ -306,8 +330,8 @@ public sealed record CribState(string Crib, string Place);
 public sealed record MessageTypeState(string Id, string Name);
 
 /// <summary>
-/// How the loaded message was encrypted: reflector, wheel order, ring settings (1–26), plug pairs, the rotor positions
-/// the cipher text starts from, the plain text and notes. Exercises also give their key sheet day and indicator.
+///     How the loaded message was encrypted: reflector, wheel order, ring settings (1–26), plug pairs, the rotor positions
+///     the cipher text starts from, the plain text and notes. Exercises also give their key sheet day and indicator.
 /// </summary>
 public sealed record SolutionState(
     string Reflector,
@@ -354,8 +378,8 @@ public sealed record ExerciseState(
     string Verfahrenkenngruppe);
 
 /// <summary>
-/// The day's traffic read with a pinch: the key sheet, network, month and day, the Grundstellung, the bigram table in
-/// force (its number and swaps such as "ABCD": AB and CD swap), and the messages of the day, the broken one first.
+///     The day's traffic read with a pinch: the key sheet, network, month and day, the Grundstellung, the bigram table in
+///     force (its number and swaps such as "ABCD": AB and CD swap), and the messages of the day, the broken one first.
 /// </summary>
 public sealed record DayState(
     string SheetId,
@@ -380,23 +404,29 @@ public sealed record DayState(
             pinch.Grundstellung.ToString(),
             pinch.Table.Number,
             [.. pinch.Table.Swaps.Select(swap => $"{swap.A}{swap.B}")],
-            [.. traffic.Messages.Select((message, index) =>
-            {
-                var indicator = traffic.IndicatorOf(index);
-                return new DayMessageState(
-                    message.Message.ToString(),
-                    message.Message.Indicator.ToString(),
-                    message.Schluesselkenngruppe?.ToString(),
-                    message.Schluesselkenngruppe is { } schluessel ? schluessel == indicator.Schluesselkenngruppe : null,
-                    message.Verfahrenkenngruppe?.ToString(),
-                    message.Verfahrenkenngruppe is { } verfahren ? verfahren == indicator.Verfahrenkenngruppe : null);
-            })]);
+            [
+                .. traffic.Messages.Select((message, index) =>
+                {
+                    var indicator = traffic.IndicatorOf(index);
+                    return new DayMessageState(
+                        message.Message.ToString(),
+                        message.Message.Indicator.ToString(),
+                        message.Schluesselkenngruppe?.ToString(),
+                        message.Schluesselkenngruppe is { } schluessel
+                            ? schluessel == indicator.Schluesselkenngruppe
+                            : null,
+                        message.Verfahrenkenngruppe?.ToString(),
+                        message.Verfahrenkenngruppe is { } verfahren
+                            ? verfahren == indicator.Verfahrenkenngruppe
+                            : null);
+                })
+            ]);
     }
 }
 
 /// <summary>
-/// A message of the day: the radio message, its indicator groups, and the Schlüsselkenngruppe and Verfahrenkenngruppe
-/// written down (null: not yet), each with whether it is what the bigram table gives (null: not written).
+///     A message of the day: the radio message, its indicator groups, and the Schlüsselkenngruppe and Verfahrenkenngruppe
+///     written down (null: not yet), each with whether it is what the bigram table gives (null: not written).
 /// </summary>
 public sealed record DayMessageState(
     string Message,
@@ -407,10 +437,18 @@ public sealed record DayMessageState(
     bool? VerfahrenkenngruppeRight);
 
 /// <summary>
-/// The ring table of a stop's check: the Grundstellung and Verfahrenkenngruppe it is worked with, the right ring, the
-/// stop's indicator reading, and a row for each of the 676 left and middle rings.
+///     The ring table of a stop's check: the Grundstellung and Verfahrenkenngruppe it is worked with, the right ring, the
+///     stop's indicator reading, and a row for each of the 676 left and middle rings.
 /// </summary>
-public sealed record RingTableState(string Grundstellung, string Verfahrenkenngruppe, int RightRing, string Indicator, IReadOnlyList<RingRowState> Rows);
+public sealed record RingTableState(
+    string Grundstellung,
+    string Verfahrenkenngruppe,
+    int RightRing,
+    string Indicator,
+    IReadOnlyList<RingRowState> Rows);
 
-/// <summary>A row of the ring table: left and middle rings (1–26), the Spruchschlüssel they give and the indicator reading of the cores it leads to at the crib.</summary>
+/// <summary>
+///     A row of the ring table: left and middle rings (1–26), the Spruchschlüssel they give and the indicator reading
+///     of the cores it leads to at the crib.
+/// </summary>
 public sealed record RingRowState(int Left, int Middle, string Spruchschluessel, string Indicator);

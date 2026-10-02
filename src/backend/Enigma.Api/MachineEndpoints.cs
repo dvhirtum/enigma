@@ -12,21 +12,24 @@ internal sealed record PlugMoveRequest(string To);
 
 internal static class MachineEndpoints
 {
-    public static IServiceCollection AddMachineHandlers(this IServiceCollection services) => services
-        .AddSingleton<CreateMachineHandler>()
-        .AddSingleton<InsertRotorHandler>()
-        .AddSingleton<RemoveRotorHandler>()
-        .AddSingleton<SetRingSettingHandler>()
-        .AddSingleton<SetReflectorHandler>()
-        .AddSingleton<ConnectPlugHandler>()
-        .AddSingleton<DisconnectPlugHandler>()
-        .AddSingleton<MovePlugHandler>()
-        .AddSingleton<TurnRotorHandler>()
-        .AddSingleton<PressKeyHandler>()
-        .AddSingleton<ReleaseKeyHandler>()
-        .AddSingleton<ClearLampsHandler>()
-        .AddSingleton<GetMachineStateHandler>()
-        .AddSingleton<SetUpMachineHandler>();
+    public static IServiceCollection AddMachineHandlers(this IServiceCollection services)
+    {
+        return services
+            .AddSingleton<CreateMachineHandler>()
+            .AddSingleton<InsertRotorHandler>()
+            .AddSingleton<RemoveRotorHandler>()
+            .AddSingleton<SetRingSettingHandler>()
+            .AddSingleton<SetReflectorHandler>()
+            .AddSingleton<ConnectPlugHandler>()
+            .AddSingleton<DisconnectPlugHandler>()
+            .AddSingleton<MovePlugHandler>()
+            .AddSingleton<TurnRotorHandler>()
+            .AddSingleton<PressKeyHandler>()
+            .AddSingleton<ReleaseKeyHandler>()
+            .AddSingleton<ClearLampsHandler>()
+            .AddSingleton<GetMachineStateHandler>()
+            .AddSingleton<SetUpMachineHandler>();
+    }
 
     public static void MapMachineEndpoints(this IEndpointRouteBuilder app)
     {
@@ -50,8 +53,9 @@ internal static class MachineEndpoints
         machine.MapPut("/rotors/{slot}/position", (string slot, PositionRequest request, TurnRotorHandler handler) =>
             handler.Handle(new TurnRotor(slot, request.Position)));
 
-        machine.MapPut("/rotor-box/{rotor}/ring", (string rotor, RingSettingRequest request, SetRingSettingHandler handler) =>
-            handler.Handle(new SetRingSetting(rotor, request.RingSetting)));
+        machine.MapPut("/rotor-box/{rotor}/ring",
+            (string rotor, RingSettingRequest request, SetRingSettingHandler handler) =>
+                handler.Handle(new SetRingSetting(rotor, request.RingSetting)));
 
         machine.MapPut("/reflector", (SetReflector command, SetReflectorHandler handler) =>
             handler.Handle(command));

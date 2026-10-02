@@ -43,8 +43,13 @@ public sealed class RotorType
     /// <summary>True for Beta and Gamma, which fit only the Greek slot of the M4.</summary>
     public bool IsGreek { get; }
 
-    public static RotorType FromName(string name) =>
-        All.FirstOrDefault(r => r.Name == name) ?? throw new DomainException($"Unknown rotor '{name}'.");
+    public static RotorType FromName(string name)
+    {
+        return All.FirstOrDefault(r => r.Name == name) ?? throw new DomainException($"Unknown rotor '{name}'.");
+    }
 
-    public override string ToString() => Name;
+    public override string ToString()
+    {
+        return Name;
+    }
 }

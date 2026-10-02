@@ -12,10 +12,12 @@ public sealed class BombeSourceHandlerTests
     private readonly FakeBombeSessionStore _store = new();
 
     private static KeySheet M3Sheet => new(
-        "t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n2 C IV VI VIII 05 12 20 BZ\n"));
+        "t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined,
+        KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n2 C IV VI VIII 05 12 20 BZ\n"));
 
     private static KeySheet M4Sheet => new(
-        "m4", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 B-thin Beta I II III 01 01 01 01 AT QRST\n"));
+        "m4", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined,
+        KeySheetText.Parse("1 B-thin Beta I II III 01 01 01 01 AT QRST\n"));
 
     [Fact]
     public void Should_list_the_bundled_intercepts_When_asked()
@@ -25,7 +27,8 @@ public sealed class BombeSourceHandlerTests
         var intercepts = ListInterceptsHandler.Handle(new ListIntercepts());
 
         // Assert
-        Assert.Equal(["scharnhorst-1943", "barbarossa-1941-1", "barbarossa-1941-2", "carter-weather"], intercepts.Select(i => i.Id));
+        Assert.Equal(["scharnhorst-1943", "barbarossa-1941-1", "barbarossa-1941-2", "carter-weather"],
+            intercepts.Select(i => i.Id));
         Assert.Equal("1943-12-26", intercepts[0].Date);
         Assert.Null(intercepts[3].Date);
     }
@@ -54,7 +57,10 @@ public sealed class BombeSourceHandlerTests
     {
         // Arrange
         // Act
-        void Act() => new LoadInterceptHandler(_store).Handle(new LoadIntercept("u-110"));
+        void Act()
+        {
+            new LoadInterceptHandler(_store).Handle(new LoadIntercept("u-110"));
+        }
 
         // Assert
         Assert.Throws<NotFoundException>(Act);
@@ -87,7 +93,8 @@ public sealed class BombeSourceHandlerTests
     {
         // Arrange
         // Act
-        var state = new SetCipherTextHandler(_store).Handle(new SetCipherText("1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI"));
+        var state = new SetCipherTextHandler(_store).Handle(
+            new SetCipherText("1840 = 24 = QWER TZUI ABCD EFGH QWER TZUI"));
 
         // Assert
         Assert.Equal("Pasted", state.Source?.Kind);
@@ -139,7 +146,9 @@ public sealed class BombeSourceHandlerTests
     {
         // Arrange
         var sheet = new KeySheet(
-            "t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 B I II VI 01 01 01 AT QRS\n2 B I II III 01 01 01 AT QRS\n3 B I II VIII 01 01 01 AT QRS\n"));
+            "t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined,
+            KeySheetText.Parse(
+                "1 B I II VI 01 01 01 AT QRS\n2 B I II III 01 01 01 AT QRS\n3 B I II VIII 01 01 01 AT QRS\n"));
         var linker = Linking.For(new FakeKeySheetRepository(sheet));
 
         // Act
@@ -158,11 +167,16 @@ public sealed class BombeSourceHandlerTests
     {
         // Arrange
         var sheet = new KeySheet(
-            "t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 B I II VI 01 01 01 AT QRS\n2 B I II VII 01 01 01 AT QRS\n"));
-        var handler = new GenerateExerciseHandler(_store, Linking.For(new FakeKeySheetRepository(sheet)), new Random(4));
+            "t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined,
+            KeySheetText.Parse("1 B I II VI 01 01 01 AT QRS\n2 B I II VII 01 01 01 AT QRS\n"));
+        var handler =
+            new GenerateExerciseHandler(_store, Linking.For(new FakeKeySheetRepository(sheet)), new Random(4));
 
         // Act
-        void Act() => handler.Handle(new GenerateExercise());
+        void Act()
+        {
+            handler.Handle(new GenerateExercise());
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -173,10 +187,14 @@ public sealed class BombeSourceHandlerTests
     public void Should_refuse_an_exercise_When_there_are_no_M3_key_sheets()
     {
         // Arrange
-        var handler = new GenerateExerciseHandler(_store, Linking.For(new FakeKeySheetRepository(M4Sheet)), new Random(4));
+        var handler =
+            new GenerateExerciseHandler(_store, Linking.For(new FakeKeySheetRepository(M4Sheet)), new Random(4));
 
         // Act
-        void Act() => handler.Handle(new GenerateExercise());
+        void Act()
+        {
+            handler.Handle(new GenerateExercise());
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -218,7 +236,10 @@ public sealed class BombeSourceHandlerTests
         new SetCipherTextHandler(_store).Handle(new SetCipherText("QWERT ZUIOP"));
 
         // Act
-        void Act() => new GetSourceCribHandler(_store).Handle(new GetSourceCrib("letter"));
+        void Act()
+        {
+            new GetSourceCribHandler(_store).Handle(new GetSourceCrib("letter"));
+        }
 
         // Assert
         Assert.Throws<NotFoundException>(Act);

@@ -11,7 +11,10 @@ public sealed class ExerciseGeneratorTests
     private const int Day = 19;
 
     private static readonly KeyMonth Month = new(1944, 6);
-    private static readonly KeySheet Sheet = KeySheetGenerator.Generate("sheet", MachineModel.M3, Network, Month, new Random(1));
+
+    private static readonly KeySheet Sheet =
+        KeySheetGenerator.Generate("sheet", MachineModel.M3, Network, Month, new Random(1));
+
     private static readonly Kenngruppenbuch Book = Procedures.Book(Network);
     private static readonly TauschtafelSet Tables = TauschtafelSet.Generate("tables", 1944, new Random(3));
 
@@ -67,7 +70,8 @@ public sealed class ExerciseGeneratorTests
             .ToHashSet();
 
         // Assert
-        Assert.Equal(["EIGENERSTANDORTQU", "FEINDLICHERGELEITZUG", "KEINEBESONDERENEREIGNISSE", "WETTERVORHERSAGE"], cribs.Order());
+        Assert.Equal(["EIGENERSTANDORTQU", "FEINDLICHERGELEITZUG", "KEINEBESONDERENEREIGNISSE", "WETTERVORHERSAGE"],
+            cribs.Order());
     }
 
     [Fact]
@@ -100,7 +104,8 @@ public sealed class ExerciseGeneratorTests
 
         // Assert
         Assert.InRange(messages.Count, ExerciseGenerator.MinDayMessages, ExerciseGenerator.MaxDayMessages);
-        Assert.Equal(messages.Select(message => message.Message.TimeOfOrigin).Order(), messages.Select(message => message.Message.TimeOfOrigin));
+        Assert.Equal(messages.Select(message => message.Message.TimeOfOrigin).Order(),
+            messages.Select(message => message.Message.TimeOfOrigin));
         Assert.All(messages, message =>
         {
             var procedure = OperatorProcedure.StartReceiving(context, message.Message);
@@ -108,7 +113,8 @@ public sealed class ExerciseGeneratorTests
             Assert.Equal(
                 message.Solution!.MessageKey,
                 MessageKey.Derive(key, key.Grundstellung!, procedure.Indicator!.Verfahrenkenngruppe).Spruchschluessel);
-            Assert.Equal(message.Solution.Plaintext, message.Solution.Decrypt([.. message.Message.CipherText.Select(Letter.FromChar)]));
+            Assert.Equal(message.Solution.Plaintext,
+                message.Solution.Decrypt([.. message.Message.CipherText.Select(Letter.FromChar)]));
             Assert.Null(message.Verfahrenkenngruppe);
         });
     }
@@ -136,7 +142,8 @@ public sealed class ExerciseGeneratorTests
     public void Should_keep_the_middle_rotor_still_during_the_crib_When_many_exercises_are_generated()
     {
         // Arrange
-        var sources = Enumerable.Range(0, 100).Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
+        var sources = Enumerable.Range(0, 100)
+            .Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
 
         // Act
         var turnovers = sources.Count(MiddleTurnsOverDuringCrib);
@@ -152,7 +159,10 @@ public sealed class ExerciseGeneratorTests
         var day = Sheet.DailyKeys.First(key => key.Rotors[^1].Notches.Count == 2).Day;
 
         // Act
-        void Act() => ExerciseGenerator.Generate(Sheet, day, Book, Tables, new Random(1));
+        void Act()
+        {
+            ExerciseGenerator.Generate(Sheet, day, Book, Tables, new Random(1));
+        }
 
         // Assert
         Assert.False(ExerciseGenerator.Suits(Sheet.KeyFor(day)));
@@ -166,7 +176,10 @@ public sealed class ExerciseGeneratorTests
         var sheet = KeySheetGenerator.Generate("m4", MachineModel.M4, Network, Month, new Random(1));
 
         // Act
-        void Act() => ExerciseGenerator.Generate(sheet, Day, Book, Tables, new Random(1));
+        void Act()
+        {
+            ExerciseGenerator.Generate(sheet, Day, Book, Tables, new Random(1));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -177,11 +190,11 @@ public sealed class ExerciseGeneratorTests
     {
         var solution = source.Solution!;
         var start = solution.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal);
-        var machine = new DailyKey(1, solution.Reflector, [solution.WheelOrder.Left, solution.WheelOrder.Middle, solution.WheelOrder.Right], solution.Rings, solution.Plugs).SetUp();
+        var machine = new DailyKey(1, solution.Reflector,
+            [solution.WheelOrder.Left, solution.WheelOrder.Middle, solution.WheelOrder.Right], solution.Rings,
+            solution.Plugs).SetUp();
         foreach (var (slot, position) in machine.Model.Slots.Zip(solution.MessageKey.Positions))
-        {
             machine.TurnRotor(slot, position);
-        }
 
         Type(machine, solution.Plaintext[..start]);
         var middle = machine.Model.Slots[1];
@@ -219,31 +232,37 @@ public sealed class ExerciseGeneratorTests
     public void Should_build_a_menu_with_at_least_two_loops_When_the_crib_is_in_its_right_place()
     {
         // Arrange
-        var sources = Enumerable.Range(0, 100).Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
+        var sources = Enumerable.Range(0, 100)
+            .Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
 
         // Act
         var menus = sources.Select(source =>
         {
             var position = source.Solution!.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal);
-            return (Crib: source.Crib.ToString(), Menu: Menu.Build(new CribPlacement(source.CipherText, source.Crib, position)));
+            return (Crib: source.Crib.ToString(),
+                Menu: Menu.Build(new CribPlacement(source.CipherText, source.Crib, position)));
         }).ToList();
 
         // Assert
         Assert.Equal(4, menus.Select(menu => menu.Crib).Distinct().Count());
-        Assert.All(menus, menu => Assert.True(menu.Menu.Loops >= ExerciseGenerator.MinLoops, $"{menu.Crib}: {menu.Menu.Loops} loops"));
+        Assert.All(menus,
+            menu => Assert.True(menu.Menu.Loops >= ExerciseGenerator.MinLoops,
+                $"{menu.Crib}: {menu.Menu.Loops} loops"));
     }
 
     [Fact]
     public void Should_give_the_crib_position_and_a_plausible_decoy_When_an_exercise_is_generated()
     {
         // Arrange
-        var sources = Enumerable.Range(0, 100).Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
+        var sources = Enumerable.Range(0, 100)
+            .Select(seed => ExerciseGenerator.Generate(Sheet, Day, Book, Tables, new Random(seed))).ToList();
 
         // Act
         var hints = sources.Select(source => (
             Position: source.Solution!.Plaintext.IndexOf(source.Crib!.ToString(), StringComparison.Ordinal),
             Positions: source.CribPositions!,
-            Placements: source.CribPositions!.Select(position => new CribPlacement(source.CipherText, source.Crib, position)).ToList())).ToList();
+            Placements: source.CribPositions!
+                .Select(position => new CribPlacement(source.CipherText, source.Crib, position)).ToList())).ToList();
 
         // Assert
         Assert.All(hints, hint =>
@@ -252,7 +271,8 @@ public sealed class ExerciseGeneratorTests
             Assert.Contains(hint.Position, hint.Positions);
             Assert.All(hint.Positions, position => Assert.InRange(position, 0, ExerciseGenerator.MaxCribStart));
             Assert.All(hint.Placements, placement => Assert.False(placement.Crashed));
-            Assert.All(hint.Placements, placement => Assert.True(Menu.Build(placement).Loops >= ExerciseGenerator.MinLoops));
+            Assert.All(hint.Placements,
+                placement => Assert.True(Menu.Build(placement).Loops >= ExerciseGenerator.MinLoops));
         });
         Assert.Contains(hints, hint => hint.Positions[0] == hint.Position);
         Assert.Contains(hints, hint => hint.Positions[1] == hint.Position);

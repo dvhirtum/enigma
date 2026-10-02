@@ -24,13 +24,15 @@ public sealed class MeasuredStopsTests
     {
         // Arrange
         // An exercise menu of 11 letters and 2 loops: run on 40 wheel orders it averaged 3.4 stops, rated 0.96.
-        var menu = new Menu([.. "CI2 RN5 DE6 UR7 ET9 UA10 IN11 UD12 BR14 CT15 NQ16 DU17".Split(' ').Select(MenuLink.Parse)], Letter.FromChar('U'));
+        var menu = new Menu(
+            [.. "CI2 RN5 DE6 UR7 ET9 UA10 IN11 UD12 BR14 CT15 NQ16 DU17".Split(' ').Select(MenuLink.Parse)],
+            Letter.FromChar('U'));
 
         // Act
         var stops = MeasuredStops.Of(menu);
 
         // Assert
-        Assert.InRange(menu.EstimatedStops(diagonalBoard: true), 0.5, 1.5);
+        Assert.InRange(menu.EstimatedStops(true), 0.5, 1.5);
         Assert.InRange(stops.WithBoard, 1.5, 7);
     }
 }

@@ -1,6 +1,6 @@
 # Sending by hand
 
-[Back to the contents](README.md)
+[Back to The Enigma](README.md)
 
 This page walks through the Navy procedure the way an operator worked it: with the machine and the printed documents only, not the [operator's notebook](operator-mode.md). You need:
 

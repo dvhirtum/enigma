@@ -12,5 +12,8 @@ public sealed class Reflector
 
     public ReflectorType Type { get; }
 
-    public Letter Reflect(Letter input) => Type.Wiring.Forward(input);
+    public Letter Reflect(Letter input)
+    {
+        return Type.Wiring.Forward(input);
+    }
 }

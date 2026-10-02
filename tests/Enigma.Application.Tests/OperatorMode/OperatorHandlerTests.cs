@@ -13,13 +13,14 @@ namespace Enigma.Application.Tests.OperatorMode;
 public sealed class OperatorHandlerTests
 {
     private static readonly string[] Slots = ["Left", "Middle", "Right"];
+    private readonly OperatorContexts _contexts;
+    private readonly KeySheetLinker _linker;
 
     private readonly FakeKeySheetRepository _sheets = new(
-        new KeySheet("t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n2 B I II III 01 01 01 AT\n")));
+        new KeySheet("t", "Triton", KeyMonth.Parse("1944-06"), Provenance.UserDefined,
+            KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n2 B I II III 01 01 01 AT\n")));
 
     private readonly FakeMachineSessionStore _store = new();
-    private readonly KeySheetLinker _linker;
-    private readonly OperatorContexts _contexts;
 
     public OperatorHandlerTests()
     {
@@ -27,10 +28,16 @@ public sealed class OperatorHandlerTests
         _contexts = new OperatorContexts(_store, _linker);
     }
 
-    private MachineState Apply(int day) => new ApplyDailyKeyHandler(_linker, _store).Handle(new ApplyDailyKey("t", day));
+    private MachineState Apply(int day)
+    {
+        return new ApplyDailyKeyHandler(_linker, _store).Handle(new ApplyDailyKey("t", day));
+    }
 
-    private MachineState StartSending() =>
-        new StartSendingHandler(_store, _contexts, new Random(1), new FixedTimeProvider()).Handle(new StartSending());
+    private MachineState StartSending()
+    {
+        return new StartSendingHandler(_store, _contexts, new Random(1), new FixedTimeProvider()).Handle(
+            new StartSending());
+    }
 
     private (string Schluessel, string Verfahren) Groups()
     {
@@ -42,9 +49,7 @@ public sealed class OperatorHandlerTests
     {
         MachineState state = null!;
         foreach (var (slot, position) in Slots.Zip(positions))
-        {
             state = new TurnRotorHandler(_store).Handle(new TurnRotor(slot, position.ToString()));
-        }
 
         return state;
     }
@@ -115,7 +120,8 @@ public sealed class OperatorHandlerTests
         Assert.Equal("Done", done.Operator!.Step);
         Assert.Equal("WETTERXX", done.Operator.Typed);
         Assert.Equal(cipher, done.Operator.Pad);
-        Assert.Equal($"1840 = 24 = {chosen.Operator.Indicator} {cipher[..4]} {cipher[4..]} {chosen.Operator.Indicator}", done.Operator.Message);
+        Assert.Equal($"1840 = 24 = {chosen.Operator.Indicator} {cipher[..4]} {cipher[4..]} {chosen.Operator.Indicator}",
+            done.Operator.Message);
     }
 
     [Fact]
@@ -130,7 +136,10 @@ public sealed class OperatorHandlerTests
         var wrong = verfahren[0] == 'A' ? "B" : "A";
 
         // Act
-        void Act() => new PressKeyHandler(_store).Handle(new PressKey(wrong));
+        void Act()
+        {
+            new PressKeyHandler(_store).Handle(new PressKey(wrong));
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -196,7 +205,10 @@ public sealed class OperatorHandlerTests
         var handler = new StartReceivingHandler(_store, new ApplyDailyKeyHandler(_linker, _store), _contexts);
 
         // Act
-        void Act() => handler.Handle(new StartReceiving("QWER TZUI ABCD QWER TZUI"));
+        void Act()
+        {
+            handler.Handle(new StartReceiving("QWER TZUI ABCD QWER TZUI"));
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -238,7 +250,10 @@ public sealed class OperatorHandlerTests
     {
         // Arrange
         // Act
-        void Act() => StartSending();
+        void Act()
+        {
+            StartSending();
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -278,8 +293,10 @@ public sealed class OperatorHandlerTests
     public void Should_find_the_sheet_of_the_Schluesselkenngruppe_When_keys_for_a_received_message_are_looked_up()
     {
         // Arrange
-        _sheets.Save(new KeySheet("h", "Hydra", KeyMonth.Parse("1944-06"), Provenance.UserDefined, KeySheetText.Parse("1 C II III IV 01 01 01 BX KLM\n")));
-        _sheets.Save(new KeySheet("j", "Triton", KeyMonth.Parse("1944-07"), Provenance.UserDefined, KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n")));
+        _sheets.Save(new KeySheet("h", "Hydra", KeyMonth.Parse("1944-06"), Provenance.UserDefined,
+            KeySheetText.Parse("1 C II III IV 01 01 01 BX KLM\n")));
+        _sheets.Save(new KeySheet("j", "Triton", KeyMonth.Parse("1944-07"), Provenance.UserDefined,
+            KeySheetText.Parse("1 B I II III 01 01 01 AT QRS\n")));
         Apply(1);
         StartSending();
         var (schluessel, verfahren) = Groups();
@@ -303,7 +320,10 @@ public sealed class OperatorHandlerTests
         var handler = new FindReceivingKeysHandler(_linker);
 
         // Act
-        void Act() => handler.Handle(new FindReceivingKeys("QWER TZUI ABCD QWER TZUI", "June"));
+        void Act()
+        {
+            handler.Handle(new FindReceivingKeys("QWER TZUI ABCD QWER TZUI", "June"));
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);

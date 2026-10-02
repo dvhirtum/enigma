@@ -13,5 +13,8 @@ internal sealed class FakeBombeSessionStore : IBombeSessionStore
 
     public Printout Printout { get; } = new();
 
-    public T Use<T>(Func<BombeJob, T> action) => action(Job);
+    public T Use<T>(Func<BombeJob, T> action)
+    {
+        return action(Job);
+    }
 }

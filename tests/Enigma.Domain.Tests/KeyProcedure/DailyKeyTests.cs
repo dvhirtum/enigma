@@ -11,15 +11,15 @@ public sealed class DailyKeyTests
         // Arrange
         // U-264, 19 November 1942. Message key VJNA.
         var key = Keys.Day(19, "B-thin", "Beta II IV I", "01 01 01 22", "AT BL DF GJ HM NW OP QY RZ VX");
-        const string ciphertext = "NCZW VUSX PNYM INHZ XMQX SFWX WLKJ AHSH NMCO CCAK UQPM KCSM HKSE INJU SBLK IOSX CKUB HMLL";
-        const string plaintext = "VONV ONJL OOKS JHFF TTTE INSE INSD REIZ WOYY QNNS NEUN INHA LTXX BEIA NGRI FFUN TERW ASSE";
+        const string ciphertext =
+            "NCZW VUSX PNYM INHZ XMQX SFWX WLKJ AHSH NMCO CCAK UQPM KCSM HKSE INJU SBLK IOSX CKUB HMLL";
+        const string plaintext =
+            "VONV ONJL OOKS JHFF TTTE INSE INSD REIZ WOYY QNNS NEUN INHA LTXX BEIA NGRI FFUN TERW ASSE";
 
         // Act
         var machine = key.SetUp();
         foreach (var (slot, position) in machine.Model.Slots.Zip("VJNA"))
-        {
             machine.TurnRotor(slot, RotorPosition.FromChar(position));
-        }
 
         var decrypted = machine.Type(ciphertext);
 
@@ -115,11 +115,15 @@ public sealed class DailyKeyTests
     [InlineData("B", "I I III", "01 01 01", "rotor I appears more than once")]
     [InlineData("B-thin", "I II III", "01 01 01", "The M3 takes reflector B or C")]
     [InlineData("B-thin", "I Beta II III", "01 01 01 01", "The Greek slot takes Beta or Gamma")]
-    public void Should_reject_the_key_When_it_does_not_fit_a_machine(string reflector, string rotors, string rings, string message)
+    public void Should_reject_the_key_When_it_does_not_fit_a_machine(string reflector, string rotors, string rings,
+        string message)
     {
         // Arrange
         // Act
-        void Act() => Keys.Day(4, reflector, rotors, rings);
+        void Act()
+        {
+            Keys.Day(4, reflector, rotors, rings);
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -132,7 +136,10 @@ public sealed class DailyKeyTests
     {
         // Arrange
         // Act
-        void Act() => Keys.Day(2, "B", "I II III", "01 01 01", "AB BC");
+        void Act()
+        {
+            Keys.Day(2, "B", "I II III", "01 01 01", "AB BC");
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -144,7 +151,10 @@ public sealed class DailyKeyTests
     {
         // Arrange
         // Act
-        void Act() => Keys.Day(2, "B", "I II III", "01 01 01", "", "QRSA");
+        void Act()
+        {
+            Keys.Day(2, "B", "I II III", "01 01 01", "", "QRSA");
+        }
 
         // Assert
         var exception = Assert.Throws<DomainException>(Act);
@@ -158,7 +168,10 @@ public sealed class DailyKeyTests
     {
         // Arrange
         // Act
-        void Act() => Keys.Day(day, "B", "I II III", "01 01 01");
+        void Act()
+        {
+            Keys.Day(day, "B", "I II III", "01 01 01");
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

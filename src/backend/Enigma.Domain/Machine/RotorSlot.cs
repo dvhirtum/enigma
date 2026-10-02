@@ -6,5 +6,5 @@ public enum RotorSlot
     Greek,
     Left,
     Middle,
-    Right,
+    Right
 }

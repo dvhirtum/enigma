@@ -13,14 +13,17 @@ public sealed class RotorPositions : IEquatable<RotorPositions>
 
         _positions = [.. positions];
         if (_positions.Length is not (3 or 4))
-        {
             throw new DomainException($"A rotor setting has 3 letters (M3) or 4 (M4), got {_positions.Length}.");
-        }
     }
 
     public IReadOnlyList<RotorPosition> Positions => _positions;
 
     public int Count => _positions.Length;
+
+    public bool Equals(RotorPositions? other)
+    {
+        return other is not null && _positions.SequenceEqual(other._positions);
+    }
 
     /// <summary>Parses letters such as "QRS".</summary>
     public static RotorPositions Parse(string value)
@@ -32,16 +35,17 @@ public sealed class RotorPositions : IEquatable<RotorPositions>
             : throw new DomainException($"'{value}' is not a rotor setting such as QRS.");
     }
 
-    /// <summary>True when the rotor windows of <paramref name="machine"/> show these letters.</summary>
+    /// <summary>True when the rotor windows of <paramref name="machine" /> show these letters.</summary>
     public bool IsShownOn(EnigmaMachine machine)
     {
         ArgumentNullException.ThrowIfNull(machine);
 
         return machine.Model.Slots.Count == Count
-            && machine.Model.Slots.Select(machine.RotorIn).Select(r => r?.Position).SequenceEqual(_positions.Cast<RotorPosition?>());
+               && machine.Model.Slots.Select(machine.RotorIn).Select(r => r?.Position)
+                   .SequenceEqual(_positions.Cast<RotorPosition?>());
     }
 
-    /// <summary>The letters in the windows of <paramref name="machine"/>, or null when a slot is empty.</summary>
+    /// <summary>The letters in the windows of <paramref name="machine" />, or null when a slot is empty.</summary>
     public static RotorPositions? ShownOn(EnigmaMachine machine)
     {
         ArgumentNullException.ThrowIfNull(machine);
@@ -50,11 +54,18 @@ public sealed class RotorPositions : IEquatable<RotorPositions>
         return rotors.All(r => r is not null) ? new RotorPositions(rotors.Select(r => r!.Position)) : null;
     }
 
-    public bool Equals(RotorPositions? other) => other is not null && _positions.SequenceEqual(other._positions);
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as RotorPositions);
+    }
 
-    public override bool Equals(object? obj) => Equals(obj as RotorPositions);
+    public override int GetHashCode()
+    {
+        return ToString().GetHashCode(StringComparison.Ordinal);
+    }
 
-    public override int GetHashCode() => ToString().GetHashCode(StringComparison.Ordinal);
-
-    public override string ToString() => string.Concat(_positions.Select(p => p.ToString()));
+    public override string ToString()
+    {
+        return string.Concat(_positions.Select(p => p.ToString()));
+    }
 }

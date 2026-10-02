@@ -32,7 +32,10 @@ public sealed class BombeJobTests
         job.SetCrib(Crib.Parse("XC"));
 
         // Act
-        void Act() => job.Place(1);
+        void Act()
+        {
+            job.Place(1);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -96,7 +99,10 @@ public sealed class BombeJobTests
         var menu = job.Menu;
 
         // Act
-        void Act() => job.SetMenu([MenuLink.Parse("SW2")], null);
+        void Act()
+        {
+            job.SetMenu([MenuLink.Parse("SW2")], null);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -125,7 +131,8 @@ public sealed class BombeJobTests
         var job = new BombeJob();
 
         // Assert
-        Assert.All(job.Machine.ChainSetups, chain => Assert.DoesNotContain(chain.Scramblers, scrambler => scrambler.HasCable));
+        Assert.All(job.Machine.ChainSetups,
+            chain => Assert.DoesNotContain(chain.Scramblers, scrambler => scrambler.HasCable));
         Assert.Equal(ReflectorType.B, job.Reflector);
         Assert.True(job.DiagonalBoard);
     }
@@ -137,7 +144,10 @@ public sealed class BombeJobTests
         var job = new BombeJob();
 
         // Act
-        void Act() => job.Configure(true, ReflectorType.BThin);
+        void Act()
+        {
+            job.Configure(true, ReflectorType.BThin);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -166,7 +176,10 @@ public sealed class BombeJobTests
         var job = CarterJob();
 
         // Act
-        void Act() => job.PlugUpMenu();
+        void Act()
+        {
+            job.PlugUpMenu();
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -196,7 +209,10 @@ public sealed class BombeJobTests
         var job = CarterJob();
 
         // Act
-        void Act() => job.ShowWheelOrders();
+        void Act()
+        {
+            job.ShowWheelOrders();
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -211,7 +227,10 @@ public sealed class BombeJobTests
         job.Load(Intercepts.Find("carter-weather")!.Source);
 
         // Act
-        void Act() => job.ShowCribPositions();
+        void Act()
+        {
+            job.ShowCribPositions();
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -226,9 +245,16 @@ public sealed class BombeJobTests
         return job;
     }
 
-    private static IReadOnlyList<Letter> Letters(string text) => [.. text.Select(Letter.FromChar)];
+    private static IReadOnlyList<Letter> Letters(string text)
+    {
+        return [.. text.Select(Letter.FromChar)];
+    }
 
     // Carter writes some links crib letter first; the job keeps the placement's cipher letter first.
-    private static IEnumerable<(int, int, int)> Unordered(IEnumerable<MenuLink> links) => links.Select(link =>
-        (link.Offset, Math.Min(link.First.Index, link.Second.Index), Math.Max(link.First.Index, link.Second.Index)));
+    private static IEnumerable<(int, int, int)> Unordered(IEnumerable<MenuLink> links)
+    {
+        return links.Select(link =>
+            (link.Offset, Math.Min(link.First.Index, link.Second.Index),
+                Math.Max(link.First.Index, link.Second.Index)));
+    }
 }

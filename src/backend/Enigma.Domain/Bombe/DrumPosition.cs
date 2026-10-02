@@ -3,8 +3,9 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// The positions of the left, middle and right drums: the core positions of the Enigma rotors (window letter minus
-/// ring setting), or the letters the drums show (see <see cref="WheelOrder.DrumLetters"/>). Offsets are written as the drum letters they give from ZZZ, as on Bombe menus: 1 = ZZA, 26 = ZAZ.
+///     The positions of the left, middle and right drums: the core positions of the Enigma rotors (window letter minus
+///     ring setting), or the letters the drums show (see <see cref="WheelOrder.DrumLetters" />). Offsets are written as
+///     the drum letters they give from ZZZ, as on Bombe menus: 1 = ZZA, 26 = ZAZ.
 /// </summary>
 public readonly record struct DrumPosition(Letter Left, Letter Middle, Letter Right)
 {
@@ -13,8 +14,8 @@ public readonly record struct DrumPosition(Letter Left, Letter Middle, Letter Ri
 
     public static DrumPosition ZZZ { get; } = FromOffset(0);
 
-    /// <summary>The number of places after ZZZ, 0 to <see cref="Count"/> − 1.</summary>
-    public int Offset => (Digit(Left) * Letter.Count * Letter.Count) + (Digit(Middle) * Letter.Count) + Digit(Right);
+    /// <summary>The number of places after ZZZ, 0 to <see cref="Count" /> − 1.</summary>
+    public int Offset => Digit(Left) * Letter.Count * Letter.Count + Digit(Middle) * Letter.Count + Digit(Right);
 
     /// <summary>The indicator drum reading of these drum letters: the indicator drums have their letters in reverse order.</summary>
     public DrumPosition Indicator => new(Reverse(Left), Reverse(Middle), Reverse(Right));
@@ -28,23 +29,26 @@ public readonly record struct DrumPosition(Letter Left, Letter Middle, Letter Ri
             : throw new DomainException($"'{letters}' is not a drum position of three letters.");
     }
 
-    /// <summary>The position <paramref name="offset"/> places after ZZZ, wrapping around.</summary>
+    /// <summary>The position <paramref name="offset" /> places after ZZZ, wrapping around.</summary>
     public static DrumPosition FromOffset(int offset)
     {
-        var value = ((offset % Count) + Count) % Count;
+        var value = (offset % Count + Count) % Count;
         return new DrumPosition(
             FromDigit(value / (Letter.Count * Letter.Count)), FromDigit(value / Letter.Count), FromDigit(value));
     }
 
     /// <summary>
-    /// Turns each drum on by its letter of the offset <paramref name="offset"/> places after ZZZ, without carrying from
-    /// one drum to the next: the drums of all scramblers turn together, so each scrambler keeps its offset.
+    ///     Turns each drum on by its letter of the offset <paramref name="offset" /> places after ZZZ, without carrying from
+    ///     one drum to the next: the drums of all scramblers turn together, so each scrambler keeps its offset.
     /// </summary>
-    public DrumPosition Advance(int offset) => Advance(FromOffset(offset));
+    public DrumPosition Advance(int offset)
+    {
+        return Advance(FromOffset(offset));
+    }
 
     /// <summary>
-    /// Turns each drum on by its letter of <paramref name="steps"/> (Z = 0, A = 1), without carrying: where a scrambler
-    /// set to <paramref name="steps"/> at the start of a run is when the run is at this position.
+    ///     Turns each drum on by its letter of <paramref name="steps" /> (Z = 0, A = 1), without carrying: where a scrambler
+    ///     set to <paramref name="steps" /> at the start of a run is when the run is at this position.
     /// </summary>
     public DrumPosition Advance(DrumPosition steps)
     {
@@ -52,12 +56,24 @@ public readonly record struct DrumPosition(Letter Left, Letter Middle, Letter Ri
             Left.Shift(Digit(steps.Left)), Middle.Shift(Digit(steps.Middle)), Right.Shift(Digit(steps.Right)));
     }
 
-    public override string ToString() => $"{Left}{Middle}{Right}";
+    public override string ToString()
+    {
+        return $"{Left}{Middle}{Right}";
+    }
 
     // Z counts as 0 on the drums, A as 1.
-    private static int Digit(Letter letter) => (letter.Index + 1) % Letter.Count;
+    private static int Digit(Letter letter)
+    {
+        return (letter.Index + 1) % Letter.Count;
+    }
 
-    private static Letter FromDigit(int digit) => Letter.A.Shift((digit % Letter.Count) - 1);
+    private static Letter FromDigit(int digit)
+    {
+        return Letter.A.Shift(digit % Letter.Count - 1);
+    }
 
-    private static Letter Reverse(Letter letter) => Letter.FromIndex(Letter.Count - 1 - letter.Index);
+    private static Letter Reverse(Letter letter)
+    {
+        return Letter.FromIndex(Letter.Count - 1 - letter.Index);
+    }
 }

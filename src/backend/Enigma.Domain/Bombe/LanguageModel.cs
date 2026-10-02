@@ -3,9 +3,10 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// Letter, bigram and trigram frequencies of Navy plain text, for scoring decrypts: half from the Navy corpus (the
-/// bundled intercepts and the exercise templates), half from general German (<see cref="GermanSource"/>), both written
-/// in Navy style. A letter's probability after two others is 0.6 × trigram + 0.3 × bigram + 0.1 × letter frequency.
+///     Letter, bigram and trigram frequencies of Navy plain text, for scoring decrypts: half from the Navy corpus (the
+///     bundled intercepts and the exercise templates), half from general German (<see cref="GermanSource" />), both
+///     written
+///     in Navy style. A letter's probability after two others is 0.6 × trigram + 0.3 × bigram + 0.1 × letter frequency.
 /// </summary>
 public static class LanguageModel
 {
@@ -20,13 +21,15 @@ public static class LanguageModel
     /// <summary>The log probability of a random letter, for comparing a decrypt with noise.</summary>
     public static double RandomLogProbability { get; } = -Math.Log(Letter.Count);
 
-    /// <summary>The natural log of the probability of <paramref name="c"/> after <paramref name="a"/><paramref name="b"/>.</summary>
-    public static double LogProbability(Letter a, Letter b, Letter c) =>
-        LogProbabilities[(a.Index * Pairs) + (b.Index * Letter.Count) + c.Index];
+    /// <summary>The natural log of the probability of <paramref name="c" /> after <paramref name="a" /><paramref name="b" />.</summary>
+    public static double LogProbability(Letter a, Letter b, Letter c)
+    {
+        return LogProbabilities[a.Index * Pairs + b.Index * Letter.Count + c.Index];
+    }
 
     /// <summary>
-    /// The log likelihood against random letters, summed over every three known letters in a row, or null when there
-    /// are none.
+    ///     The log likelihood against random letters, summed over every three known letters in a row, or null when there
+    ///     are none.
     /// </summary>
     public static double? Gain(IReadOnlyList<Letter?> text)
     {
@@ -34,17 +37,16 @@ public static class LanguageModel
 
         var (sum, count) = (0.0, 0);
         for (var index = 2; index < text.Count; index++)
-        {
             if (Window(text, index) is { } logProbability)
-            {
                 (sum, count) = (sum + logProbability - RandomLogProbability, count + 1);
-            }
-        }
 
         return count == 0 ? null : sum;
     }
 
-    /// <summary>The log probability of the letter at <paramref name="index"/> after the two before it, or null when one is unknown.</summary>
+    /// <summary>
+    ///     The log probability of the letter at <paramref name="index" /> after the two before it, or null when one is
+    ///     unknown.
+    /// </summary>
     public static double? Window(IReadOnlyList<Letter?> text, int index)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -70,7 +72,7 @@ public static class LanguageModel
                 var letter = letters[c];
                 var bigram = bigrams[b]?[c] ?? letter;
                 var trigram = trigrams[ab]?[c] ?? bigram;
-                logProbabilities[(ab * Letter.Count) + c] = Math.Log((0.6 * trigram) + (0.3 * bigram) + (0.1 * letter));
+                logProbabilities[ab * Letter.Count + c] = Math.Log(0.6 * trigram + 0.3 * bigram + 0.1 * letter);
             }
         }
 
@@ -81,16 +83,10 @@ public static class LanguageModel
     private static double[] Letters(ReadOnlySpan<int> counts)
     {
         var total = 0.0;
-        foreach (var count in counts)
-        {
-            total += count + 1;
-        }
+        foreach (var count in counts) total += count + 1;
 
         var frequencies = new double[Letter.Count];
-        for (var c = 0; c < Letter.Count; c++)
-        {
-            frequencies[c] = (counts[c] + 1) / total;
-        }
+        for (var c = 0; c < Letter.Count; c++) frequencies[c] = (counts[c] + 1) / total;
 
         return frequencies;
     }
@@ -103,18 +99,12 @@ public static class LanguageModel
         {
             var row = counts.Slice(context * Letter.Count, Letter.Count);
             var total = 0.0;
-            foreach (var count in row)
-            {
-                total += count;
-            }
+            foreach (var count in row) total += count;
 
             if (total > 0)
             {
                 var frequencies = new double[Letter.Count];
-                for (var c = 0; c < Letter.Count; c++)
-                {
-                    frequencies[c] = row[c] / total;
-                }
+                for (var c = 0; c < Letter.Count; c++) frequencies[c] = row[c] / total;
 
                 contexts[context] = frequencies;
             }
@@ -124,7 +114,13 @@ public static class LanguageModel
     }
 
     // Weighs the Navy and German frequencies of each context; a context one source lacks takes the other's.
-    private static double[]?[] Mix(double[]?[] navy, double[]?[] german) =>
-        [.. navy.Zip(german, (n, g) => n is null ? g : g is null ? n
-            : n.Zip(g, (x, y) => (NavyWeight * x) + ((1 - NavyWeight) * y)).ToArray())];
+    private static double[]?[] Mix(double[]?[] navy, double[]?[] german)
+    {
+        return
+        [
+            .. navy.Zip(german, (n, g) => n is null ? g
+                : g is null ? n
+                : n.Zip(g, (x, y) => NavyWeight * x + (1 - NavyWeight) * y).ToArray())
+        ];
+    }
 }

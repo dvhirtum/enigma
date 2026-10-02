@@ -1,6 +1,6 @@
 # Receiving by hand
 
-[Back to the contents](README.md)
+[Back to The Enigma](README.md)
 
 The receiver undoes the sender's steps in reverse. As on the [sending page](sending-by-hand.md), you need the machine and the [printed](key-sheets.md#printing-a-sheet) key sheet, Kenngruppenbuch and Tauschtafeln, with no message in progress in the operator's notebook. The example receives the message from the sending page:
 

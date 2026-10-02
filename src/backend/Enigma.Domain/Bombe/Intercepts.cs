@@ -1,3 +1,4 @@
+using System.Globalization;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
@@ -10,33 +11,34 @@ public sealed record Intercept(string Id, DateOnly? Date, MessageSource Source);
 public static class Intercepts
 {
     private const string ScharnhorstGroups = """
-        UTKZ RBSB YKAE NZAP
-        MSCH ZBFO CUVM RMDP
-        YCOF HADZ IZME FXTH
-        FLOL PZLF GGBO TGOX
-        GRET DWTJ IQHL MXVJ
-        WKZU ASTR UTKZ RBSB
-        """;
+                                             UTKZ RBSB YKAE NZAP
+                                             MSCH ZBFO CUVM RMDP
+                                             YCOF HADZ IZME FXTH
+                                             FLOL PZLF GGBO TGOX
+                                             GRET DWTJ IQHL MXVJ
+                                             WKZU ASTR UTKZ RBSB
+                                             """;
 
     private const string BarbarossaHeader = """
-        Befördert am: 07.07.1941 1925 Uhr
-        Funkspruch Nr.: 20   Von/An: f8v/bz2
-        Absendende Stelle: SS-T Div Kdr   An: LVI A.K.
+                                            Befördert am: 07.07.1941 1925 Uhr
+                                            Funkspruch Nr.: 20   Von/An: f8v/bz2
+                                            Absendende Stelle: SS-T Div Kdr   An: LVI A.K.
 
-        """;
+                                            """;
 
     // The preamble as on the Red Form: time of origin and count, without separators.
     private const string ScharnhorstTranscript = "1925 21\n" + ScharnhorstGroups;
-
-    private static readonly RadioMessage Scharnhorst = RadioMessage.Parse(ScharnhorstTranscript);
 
     private const string BarbarossaSource =
         "Key recovered by Geoff Sullivan and Frode Weierud; message as given in Dirk Rijmenants' Enigma Sim manual.";
 
     private const string BarbarossaPlugs = "AV BS CG DL FU HZ IN KM OW RX";
 
+    private static readonly RadioMessage Scharnhorst = RadioMessage.Parse(ScharnhorstTranscript);
+
     // The Army had rotors I–V only.
-    private static readonly IReadOnlyList<WheelOrder> BarbarossaWheelOrders = WheelOrders("IV III I", "V I II", "II IV V");
+    private static readonly IReadOnlyList<WheelOrder> BarbarossaWheelOrders =
+        WheelOrders("IV III I", "V I II", "II IV V");
 
     public static IReadOnlyList<Intercept> All { get; } =
     [
@@ -61,8 +63,8 @@ public static class Intercepts
                     "STEUEREJTANAFJORDJANSTANDORTQUAAACCCVIERNEUNNEUNZWOFAHRTZWONULSMXXSCHARNHORSTHCO",
                     "Red Form from HMS Duke of York, published by Frode Weierud (CryptoCellar). Key recovered by the M4 "
                     + "Project in 2008. The preamble gives 21 groups, but 24 were received."),
-                CribPlace: "At the very start: the signal opens with where she is steering.",
-                WheelOrders: WheelOrders("VII II V", "III VI VIII", "I VIII IV"))),
+                "At the very start: the signal opens with where she is steering.",
+                WheelOrders("VII II V", "III VI VIII", "I VIII IV"))),
         new(
             "barbarossa-1941-1",
             new DateOnly(1941, 7, 7),
@@ -73,18 +75,18 @@ public static class Intercepts
                 + "the first group (RFUGZ) is the Kenngruppe, sent in the clear, and the message key is sent encrypted at "
                 + "the setting WXC.",
                 BarbarossaHeader + """
-                    fuer m7g 1840 - 2tl 1t 179 - WXC KCH -
+                                   fuer m7g 1840 - 2tl 1t 179 - WXC KCH -
 
-                    RFUGZ EDPUD NRGYS ZRCXN
-                    UYTPO MRMBO FKTBZ REZKM
-                    LXLVE FGUEY SIOZV EQMIK
-                    UBPMM YLKLT TDEIS MDICA
-                    GYKUA CTCDO MOHWX MUUIA
-                    UBSTS LRNBZ SZWNR FXWFY
-                    SSXJZ VIJHI DISHP RKLKA
-                    YUPAD TXQSP INQMA TLPIF
-                    SVKDA SCTAC DPBOP VHJK
-                    """,
+                                   RFUGZ EDPUD NRGYS ZRCXN
+                                   UYTPO MRMBO FKTBZ REZKM
+                                   LXLVE FGUEY SIOZV EQMIK
+                                   UBPMM YLKLT TDEIS MDICA
+                                   GYKUA CTCDO MOHWX MUUIA
+                                   UBSTS LRNBZ SZWNR FXWFY
+                                   SSXJZ VIJHI DISHP RKLKA
+                                   YUPAD TXQSP INQMA TLPIF
+                                   SVKDA SCTAC DPBOP VHJK
+                                   """,
                 null,
                 MessageSource.Letters(
                     "EDPUD NRGYS ZRCXN UYTPO MRMBO FKTBZ REZKM LXLVE FGUEY SIOZV EQMIK UBPMM YLKLT TDEIS MDICA GYKUA "
@@ -100,8 +102,8 @@ public static class Intercepts
                     "AUFKLXABTEILUNGXVONXKURTINOWAXKURTINOWAXNORDWESTLXSEBEZXSEBEZXUAFFLIEGERSTRASZERIQTUNGXDUBROWKIX"
                     + "DUBROWKIXOPOTSCHKAXOPOTSCHKAXUMXEINSAQTDREINULLXUHRANGETRETENXANGRIFFXINFXRGTX",
                     "Message key BLA, sent as KCH at WXC. " + BarbarossaSource),
-                CribPlace: "At the very start: the report opens with the unit it comes from.",
-                WheelOrders: BarbarossaWheelOrders)),
+                "At the very start: the report opens with the unit it comes from.",
+                BarbarossaWheelOrders)),
         new(
             "barbarossa-1941-2",
             new DateOnly(1941, 7, 7),
@@ -111,16 +113,16 @@ public static class Intercepts
                 "The second part of the SS-Totenkopf situation report, sent with the same daily key as part 1 and its own "
                 + "message key (at the setting CRS). The first group (FNJAU) is the Kenngruppe, sent in the clear.",
                 BarbarossaHeader + """
-                    2tl 155 - CRS YPJ -
+                                   2tl 155 - CRS YPJ -
 
-                    FNJAU SFBWD NJUSE GQOBH
-                    KRTAR EEZMW KPPRB XOHDR
-                    OEQGB BGTQV PGVKB VVGBI
-                    MHUSZ YDAJQ IROAX SSSNR
-                    EHYGG RPISE ZBOVM QIEMM
-                    ZCYSG QDGRE RVBIL EKXYQ
-                    IRGIR QNRDN VRXCY YTNJR
-                    """,
+                                   FNJAU SFBWD NJUSE GQOBH
+                                   KRTAR EEZMW KPPRB XOHDR
+                                   OEQGB BGTQV PGVKB VVGBI
+                                   MHUSZ YDAJQ IROAX SSSNR
+                                   EHYGG RPISE ZBOVM QIEMM
+                                   ZCYSG QDGRE RVBIL EKXYQ
+                                   IRGIR QNRDN VRXCY YTNJR
+                                   """,
                 null,
                 MessageSource.Letters(
                     "SFBWD NJUSE GQOBH KRTAR EEZMW KPPRB XOHDR OEQGB BGTQV PGVKB VVGBI MHUSZ YDAJQ IROAX SSSNR EHYGG "
@@ -135,8 +137,8 @@ public static class Intercepts
                     "DREIGEHTLANGSAMABERSIQERVORWAERTSXEINSSIEBENNULLSEQSXUHRXROEMXEINSXINFRGTXDREIXAUFFLIEGERSTRASZE"
                     + "MITANFANGXEINSSEQSXKMXKMXOSTWXKAMENECXK",
                     "Message key LSD, sent as YPJ at CRS. " + BarbarossaSource),
-                CribPlace: "About 80 letters in: the road named in part 1 comes up again.",
-                WheelOrders: BarbarossaWheelOrders)),
+                "About 80 letters in: the road named in part 1 comes up again.",
+                BarbarossaWheelOrders)),
         new(
             "carter-weather",
             null,
@@ -158,17 +160,32 @@ public static class Intercepts
                     "WETTERVORHERSAGE",
                     "Frank Carter, Rutherford Journal 3. The Bombe stops at core positions VMB; the indicator drums "
                     + "read DKX, as Carter reports."),
-                CribPlace: "The whole message: the heading fills all sixteen letters.",
-                WheelOrders: WheelOrders("II V III", "VI III VIII", "IV I VII"))),
+                "The whole message: the heading fills all sixteen letters.",
+                WheelOrders("II V III", "VI III VIII", "IV I VII")))
     ];
 
-    /// <summary>The intercept with <paramref name="id"/>, or null.</summary>
-    public static Intercept? Find(string id) => All.FirstOrDefault(intercept => intercept.Id == id);
+    /// <summary>The intercept with <paramref name="id" />, or null.</summary>
+    public static Intercept? Find(string id)
+    {
+        return All.FirstOrDefault(intercept => intercept.Id == id);
+    }
 
-    private static IReadOnlyList<RingSetting> Rings(string numbers) =>
-        [.. numbers.Split(' ').Select(n => RingSetting.FromNumber(int.Parse(n, System.Globalization.CultureInfo.InvariantCulture)))];
+    private static IReadOnlyList<RingSetting> Rings(string numbers)
+    {
+        return
+        [
+            .. numbers.Split(' ').Select(n =>
+                RingSetting.FromNumber(int.Parse(n, CultureInfo.InvariantCulture)))
+        ];
+    }
 
-    private static IReadOnlyList<PlugPair> Plugs(string pairs) => [.. pairs.Split(' ').Select(PlugPair.Parse)];
+    private static IReadOnlyList<PlugPair> Plugs(string pairs)
+    {
+        return [.. pairs.Split(' ').Select(PlugPair.Parse)];
+    }
 
-    private static IReadOnlyList<WheelOrder> WheelOrders(params string[] orders) => [.. orders.Select(WheelOrder.Parse)];
+    private static IReadOnlyList<WheelOrder> WheelOrders(params string[] orders)
+    {
+        return [.. orders.Select(WheelOrder.Parse)];
+    }
 }

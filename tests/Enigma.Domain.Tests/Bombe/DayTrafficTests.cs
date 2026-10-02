@@ -11,7 +11,10 @@ public sealed class DayTrafficTests
     private const int Day = 19;
 
     private static readonly KeyMonth Month = new(1944, 6);
-    private static readonly KeySheet Sheet = KeySheetGenerator.Generate("sheet", MachineModel.M3, Network, Month, new Random(1));
+
+    private static readonly KeySheet Sheet =
+        KeySheetGenerator.Generate("sheet", MachineModel.M3, Network, Month, new Random(1));
+
     private static readonly Kenngruppenbuch Book = Procedures.Book(Network);
     private static readonly TauschtafelSet Tables = TauschtafelSet.Generate("tables", 1944, new Random(3));
 
@@ -86,14 +89,19 @@ public sealed class DayTrafficTests
         job.Load(MessageSource.Pasted("ABCDEFGH"));
 
         // Act
-        void Act() => job.TakePinch(Pinch(), []);
+        void Act()
+        {
+            job.TakePinch(Pinch(), []);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
     }
 
-    private static Pinch Pinch() =>
-        new(Sheet.Id, Network, Month, Day, Sheet.KeyFor(Day).Grundstellung!, Tables.TableFor(Month, Day));
+    private static Pinch Pinch()
+    {
+        return new Pinch(Sheet.Id, Network, Month, Day, Sheet.KeyFor(Day).Grundstellung!, Tables.TableFor(Month, Day));
+    }
 
     private static (DayTraffic Traffic, MessageSource Source) Traffic()
     {

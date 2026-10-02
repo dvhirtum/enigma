@@ -12,7 +12,8 @@ public sealed class HealthEndpointTests(ApiFactory factory)
         using var client = factory.CreateClient();
 
         // Act
-        using var response = await client.GetAsync(new Uri("/api/health", UriKind.Relative), TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync(new Uri("/api/health", UriKind.Relative),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

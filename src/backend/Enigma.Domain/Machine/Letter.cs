@@ -5,17 +5,22 @@ public readonly record struct Letter
 {
     public const int Count = 26;
 
-    private Letter(int index) => Index = index;
+    private Letter(int index)
+    {
+        Index = index;
+    }
 
     /// <summary>Zero-based index: A = 0, Z = 25.</summary>
     public int Index { get; }
 
     public static Letter A { get; } = new(0);
 
-    public static Letter FromIndex(int index) =>
-        index is >= 0 and < Count
+    public static Letter FromIndex(int index)
+    {
+        return index is >= 0 and < Count
             ? new Letter(index)
             : throw new DomainException($"Letter index {index} is outside 0–25.");
+    }
 
     public static Letter FromChar(char value)
     {
@@ -25,10 +30,19 @@ public readonly record struct Letter
             : throw new DomainException($"'{value}' is not a letter A–Z.");
     }
 
-    /// <summary>Returns the letter <paramref name="offset"/> places further, wrapping around.</summary>
-    public Letter Shift(int offset) => new((((Index + offset) % Count) + Count) % Count);
+    /// <summary>Returns the letter <paramref name="offset" /> places further, wrapping around.</summary>
+    public Letter Shift(int offset)
+    {
+        return new Letter((((Index + offset) % Count) + Count) % Count);
+    }
 
-    public char ToChar() => (char)('A' + Index);
+    public char ToChar()
+    {
+        return (char)('A' + Index);
+    }
 
-    public override string ToString() => ToChar().ToString();
+    public override string ToString()
+    {
+        return ToChar().ToString();
+    }
 }

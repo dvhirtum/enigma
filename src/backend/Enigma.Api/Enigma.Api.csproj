@@ -3,6 +3,6 @@
     <PublishAot>true</PublishAot>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Enigma.Infrastructure\Enigma.Infrastructure.csproj" />
+    <ProjectReference Include="..\Enigma.Infrastructure\Enigma.Infrastructure.csproj"/>
   </ItemGroup>
 </Project>

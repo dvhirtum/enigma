@@ -10,13 +10,15 @@ public sealed class KeySheetGeneratorTests
     [Theory]
     [InlineData("M3", 1944, 6, 30)]
     [InlineData("M4", 1944, 7, 31)]
-    public void Should_cover_every_day_of_the_month_When_a_sheet_is_generated(string model, int year, int month, int days)
+    public void Should_cover_every_day_of_the_month_When_a_sheet_is_generated(string model, int year, int month,
+        int days)
     {
         // Arrange
         var random = new Random(7);
 
         // Act
-        var sheet = KeySheetGenerator.Generate("id", MachineModel.FromName(model), "Triton", new KeyMonth(year, month), random);
+        var sheet = KeySheetGenerator.Generate("id", MachineModel.FromName(model), "Triton", new KeyMonth(year, month),
+            random);
 
         // Assert
         Assert.Equal(Enumerable.Range(1, days), sheet.DailyKeys.Select(k => k.Day));

@@ -47,7 +47,10 @@ public sealed class EnigmaMachineTests
         var machine = EnigmaMachine.Create(MachineModel.FromName(model));
 
         // Act
-        void Act() => machine.InsertRotor(Enum.Parse<RotorSlot>(slot), RotorType.FromName(rotor));
+        void Act()
+        {
+            machine.InsertRotor(Enum.Parse<RotorSlot>(slot), RotorType.FromName(rotor));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -137,7 +140,10 @@ public sealed class EnigmaMachineTests
         machine.RemoveRotor(RotorSlot.Right);
 
         // Act
-        void Act() => machine.RemoveRotor(RotorSlot.Right);
+        void Act()
+        {
+            machine.RemoveRotor(RotorSlot.Right);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -151,7 +157,10 @@ public sealed class EnigmaMachineTests
         machine.RemoveRotor(RotorSlot.Right);
 
         // Act
-        void Act() => machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q'));
+        void Act()
+        {
+            machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q'));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -165,7 +174,10 @@ public sealed class EnigmaMachineTests
         machine.RemoveRotor(RotorSlot.Middle);
 
         // Act
-        void Act() => machine.PressKey(Letter.A);
+        void Act()
+        {
+            machine.PressKey(Letter.A);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -179,7 +191,10 @@ public sealed class EnigmaMachineTests
         var machine = EnigmaMachine.Create(MachineModel.M3);
 
         // Act
-        void Act() => machine.SetRingSetting(RotorType.II, RingSetting.FromNumber(5));
+        void Act()
+        {
+            machine.SetRingSetting(RotorType.II, RingSetting.FromNumber(5));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -192,7 +207,10 @@ public sealed class EnigmaMachineTests
         var machine = EnigmaMachine.Create(MachineModel.M3);
 
         // Act
-        void Act() => machine.SetRingSetting(RotorType.Gamma, RingSetting.FromNumber(5));
+        void Act()
+        {
+            machine.SetRingSetting(RotorType.Gamma, RingSetting.FromNumber(5));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -209,7 +227,10 @@ public sealed class EnigmaMachineTests
         var machine = EnigmaMachine.Create(MachineModel.FromName(model));
 
         // Act
-        void Act() => machine.SetReflector(ReflectorType.FromName(reflector));
+        void Act()
+        {
+            machine.SetReflector(ReflectorType.FromName(reflector));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -222,7 +243,10 @@ public sealed class EnigmaMachineTests
         var machine = EnigmaMachine.Create(MachineModel.M3);
 
         // Act
-        void Act() => machine.TurnRotor(RotorSlot.Greek, RotorPosition.A);
+        void Act()
+        {
+            machine.TurnRotor(RotorSlot.Greek, RotorPosition.A);
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -277,7 +301,10 @@ public sealed class EnigmaMachineTests
         machine.PressKey(Letter.A);
 
         // Act
-        void Act() => machine.PressKey(Letter.FromChar('B'));
+        void Act()
+        {
+            machine.PressKey(Letter.FromChar('B'));
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);
@@ -308,7 +335,7 @@ public sealed class EnigmaMachineTests
             "TurnRotor" => () => machine.TurnRotor(RotorSlot.Right, RotorPosition.FromChar('Q')),
             "ConnectPlug" => () => machine.ConnectPlug(PlugPair.Parse("AT")),
             "DisconnectPlug" => () => machine.DisconnectPlug(Letter.FromChar('Q')),
-            _ => () => machine.MovePlug(Letter.FromChar('Q'), Letter.FromChar('T')),
+            _ => () => machine.MovePlug(Letter.FromChar('Q'), Letter.FromChar('T'))
         };
 
         // Act
@@ -361,7 +388,10 @@ public sealed class EnigmaMachineTests
         var machine = EnigmaMachine.Create(MachineModel.M3);
 
         // Act
-        void Act() => machine.ReleaseKey();
+        void Act()
+        {
+            machine.ReleaseKey();
+        }
 
         // Assert
         Assert.Throws<DomainException>(Act);

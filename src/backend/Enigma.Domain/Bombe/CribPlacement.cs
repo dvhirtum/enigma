@@ -3,8 +3,8 @@ using Enigma.Domain.Machine;
 namespace Enigma.Domain.Bombe;
 
 /// <summary>
-/// A crib laid under the cipher text from <see cref="Position"/> (0 = the first letter). The Enigma never enciphers a
-/// letter to itself, so a placement where a crib letter stands under the same cipher letter crashes and is impossible.
+///     A crib laid under the cipher text from <see cref="Position" /> (0 = the first letter). The Enigma never enciphers a
+///     letter to itself, so a placement where a crib letter stands under the same cipher letter crashes and is impossible.
 /// </summary>
 public sealed class CribPlacement
 {
@@ -14,10 +14,8 @@ public sealed class CribPlacement
         ArgumentNullException.ThrowIfNull(crib);
 
         if (position < 0 || position + crib.Length > cipherText.Count)
-        {
             throw new DomainException(
                 $"A crib of {crib.Length} letters does not fit at position {position} of a {cipherText.Count}-letter text.");
-        }
 
         CipherText = [.. cipherText];
         Crib = crib;
@@ -37,8 +35,8 @@ public sealed class CribPlacement
     public bool Crashed => Crashes.Count > 0;
 
     /// <summary>
-    /// One link per crib letter, from the cipher letter to the crib letter. Offsets count from the crib start: the first
-    /// crib letter is offset 1 (ZZA).
+    ///     One link per crib letter, from the cipher letter to the crib letter. Offsets count from the crib start: the first
+    ///     crib letter is offset 1 (ZZA).
     /// </summary>
     public IReadOnlyList<MenuLink> Links => Crashed
         ? throw new DomainException($"The crib crashes at position {Position}.")
@@ -50,7 +48,10 @@ public sealed class CribPlacement
         ArgumentNullException.ThrowIfNull(cipherText);
         ArgumentNullException.ThrowIfNull(crib);
 
-        return [.. Enumerable.Range(0, Math.Max(0, cipherText.Count - crib.Length + 1))
-            .Select(position => new CribPlacement(cipherText, crib, position))];
+        return
+        [
+            .. Enumerable.Range(0, Math.Max(0, cipherText.Count - crib.Length + 1))
+                .Select(position => new CribPlacement(cipherText, crib, position))
+        ];
     }
 }

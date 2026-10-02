@@ -1,3 +1,4 @@
+using System.Globalization;
 using Enigma.Domain.Bombe;
 using Enigma.Domain.Machine;
 using Enigma.Domain.Tests.Machine;
@@ -8,6 +9,22 @@ public sealed class StopCheckTests
 {
     // Carter's steckers: the ten pairs, with R, S and W unsteckered.
     private const string CarterSteckers = "AD ET HM LJ NV UF ZP GQ XO IK RR SS WW";
+
+    private const string TurnoverPlain = "VONXBDUXWETTERVORHERSAGEXBISKAYA";
+
+    private const string RoundTripPlain =
+        "VONXUXEINSNEUNXWETTERVORHERSAGEXBISKAYAXWINDSUEDWESTXVIERXSEEGANGXDREIXLUFTDRUCKXEINSNULLEINSZWOXSIQTXAQTSM";
+
+    private const string RoundTripSteckers = "AB CD EF GH IJ KL MN OP QR ST";
+
+    private const string RoundTripAllSteckers = RoundTripSteckers + " UU VV WW XX YY ZZ";
+
+    private const int RoundTripRightRing = 5;
+
+    private const string LeftTurnoverPlain =
+        "WETTERVORHERSAGEXBISKAYAXWINDSUEDWESTXVIERXSEEGANGXDREIXLUFTDRUCKXEINSNULLEINSZWOXSIQTXAQTSMXKEINEBESONDERENEREIGNISSE";
+
+    private const int LeftTurnoverMiddleRing = 10;
 
     private static readonly Letter G = Letter.FromChar('G');
     private static readonly Letter Q = Letter.FromChar('Q');
@@ -81,7 +98,7 @@ public sealed class StopCheckTests
         // Arrange
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse(CarterSteckers),
+            Steckers = Steckers.Parse(CarterSteckers)
         };
 
         // Act
@@ -100,7 +117,7 @@ public sealed class StopCheckTests
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement());
         var unsteckered = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse("GQ AA BB CC DD EE FF HH II JJ KK LL MM NN OO PP RR SS TT UU VV WW XX YY ZZ"),
+            Steckers = Steckers.Parse("GQ AA BB CC DD EE FF HH II JJ KK LL MM NN OO PP RR SS TT UU VV WW XX YY ZZ")
         };
 
         // Act
@@ -118,7 +135,7 @@ public sealed class StopCheckTests
         // Arrange
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse("GQ RR"),
+            Steckers = Steckers.Parse("GQ RR")
         };
 
         // Act
@@ -135,7 +152,7 @@ public sealed class StopCheckTests
         // Arrange
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse("GQ RR"),
+            Steckers = Steckers.Parse("GQ RR")
         };
         check.Confirm(StopVerdict.True, null);
 
@@ -152,7 +169,7 @@ public sealed class StopCheckTests
         // Arrange
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse("GQ RA"),
+            Steckers = Steckers.Parse("GQ RA")
         };
 
         // Act
@@ -170,7 +187,7 @@ public sealed class StopCheckTests
         // Arrange
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse(CarterSteckers),
+            Steckers = Steckers.Parse(CarterSteckers)
         };
 
         // Act
@@ -192,7 +209,7 @@ public sealed class StopCheckTests
         // Arrange
         var check = new StopCheck(CarterStop("VMA"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse("GQ AB"),
+            Steckers = Steckers.Parse("GQ AB")
         };
 
         // Act
@@ -220,7 +237,8 @@ public sealed class StopCheckTests
         // Assert
         Assert.Equal(TurnoverPlain, decrypt);
         Assert.Equal("ABT", check.MessageKey.ToString());
-        Assert.Equal(["26", "26", "05"], check.Key.Rings.Select(ring => ring.Number.ToString("00", System.Globalization.CultureInfo.InvariantCulture)));
+        Assert.Equal(["26", "26", "05"],
+            check.Key.Rings.Select(ring => ring.Number.ToString("00", CultureInfo.InvariantCulture)));
     }
 
     [Fact]
@@ -244,7 +262,7 @@ public sealed class StopCheckTests
         // Checking the menu gives every pair but I/K and O/X, whose letters are on the three unused links.
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse("AD ET HM LJ NV UF ZP GQ RR SS WW"),
+            Steckers = Steckers.Parse("AD ET HM LJ NV UF ZP GQ RR SS WW")
         };
 
         // Act
@@ -271,7 +289,8 @@ public sealed class StopCheckTests
     }
 
     [Fact]
-    public void Should_recover_the_right_ring_and_every_stecker_When_Find_Suggest_and_Find_run_on_a_turnover_before_the_crib()
+    public void
+        Should_recover_the_right_ring_and_every_stecker_When_Find_Suggest_and_Find_run_on_a_turnover_before_the_crib()
     {
         // Arrange
         var check = RoundTripCheck(out var menuSteckers);
@@ -358,7 +377,7 @@ public sealed class StopCheckTests
         // Carter's sixteen letters see no turnover with most right rings, so those rings decrypt alike.
         var check = new StopCheck(CarterStop("VMB"), ReflectorType.B, CarterPlacement())
         {
-            Steckers = Steckers.Parse(CarterSteckers),
+            Steckers = Steckers.Parse(CarterSteckers)
         };
 
         // Act
@@ -416,22 +435,6 @@ public sealed class StopCheckTests
         Assert.DoesNotContain(check.Crib(), letter => letter.Match == CribMatch.Mismatch);
     }
 
-    private const string TurnoverPlain = "VONXBDUXWETTERVORHERSAGEXBISKAYA";
-
-    private const string RoundTripPlain =
-        "VONXUXEINSNEUNXWETTERVORHERSAGEXBISKAYAXWINDSUEDWESTXVIERXSEEGANGXDREIXLUFTDRUCKXEINSNULLEINSZWOXSIQTXAQTSM";
-
-    private const string RoundTripSteckers = "AB CD EF GH IJ KL MN OP QR ST";
-
-    private const string RoundTripAllSteckers = RoundTripSteckers + " UU VV WW XX YY ZZ";
-
-    private const int RoundTripRightRing = 5;
-
-    private const string LeftTurnoverPlain =
-        "WETTERVORHERSAGEXBISKAYAXWINDSUEDWESTXVIERXSEEGANGXDREIXLUFTDRUCKXEINSNULLEINSZWOXSIQTXAQTSMXKEINEBESONDERENEREIGNISSE";
-
-    private const int LeftTurnoverMiddleRing = 10;
-
     // A weather message on IV I III, rings 26 26 05, from ABK, with the crib at position 15. The middle rotor turns
     // over at the twelfth letter, before the crib, and not again within it. The check starts with every stecker and
     // the right ring at Z; menuSteckers are those of the letters on the crib's links, as checking the menu finds them.
@@ -440,11 +443,13 @@ public sealed class StopCheckTests
         const string rotors = "IV I III";
         const string rings = "26 26 05";
         const int position = 15;
-        var cipher = MachineBuilder.Build(MachineModel.M3, "B", rotors, rings, RoundTripSteckers, "ABK").Type(RoundTripPlain);
+        var cipher = MachineBuilder.Build(MachineModel.M3, "B", rotors, rings, RoundTripSteckers, "ABK")
+            .Type(RoundTripPlain);
         var atCrib = MachineBuilder.Build(MachineModel.M3, "B", rotors, rings, RoundTripSteckers, "ABK");
         atCrib.Type(RoundTripPlain[..position]);
         var core = BombeKeys.CorePosition(rings, atCrib.Positions());
-        var placement = new CribPlacement([.. cipher.Select(Letter.FromChar)], Crib.Parse("WETTERVORHERSAGE"), position);
+        var placement =
+            new CribPlacement([.. cipher.Select(Letter.FromChar)], Crib.Parse("WETTERVORHERSAGE"), position);
         var stop = new BombeStop(WheelOrder.Parse(rotors), core, Letter.FromChar('E'), [Letter.FromChar('F')]);
 
         var all = Steckers.Parse(RoundTripAllSteckers);
@@ -466,7 +471,8 @@ public sealed class StopCheckTests
         var core = BombeKeys.CorePosition("26 26 05", atCrib.Positions());
         var stop = new BombeStop(WheelOrder.Parse(rotors), core, Letter.FromChar('E'), [Letter.FromChar('F')]);
         var placement = new CribPlacement([.. cipher.Select(Letter.FromChar)], Crib.Parse("WETTERVORHERSAGE"), 10);
-        return new StopCheck(stop, ReflectorType.B, placement) { Steckers = Steckers.Parse(plugs + " UU VV WW XX YY ZZ") };
+        return new StopCheck(stop, ReflectorType.B, placement)
+            { Steckers = Steckers.Parse(plugs + " UU VV WW XX YY ZZ") };
     }
 
     // A message on IV I III, rings 26 10 05, from AOW, with the crib at the start. The middle rotor reaches its notch
@@ -476,20 +482,26 @@ public sealed class StopCheckTests
     {
         const string rotors = "IV I III";
         const string rings = "26 10 05";
-        var cipher = MachineBuilder.Build(MachineModel.M3, "B", rotors, rings, RoundTripSteckers, "AOW").Type(LeftTurnoverPlain);
+        var cipher = MachineBuilder.Build(MachineModel.M3, "B", rotors, rings, RoundTripSteckers, "AOW")
+            .Type(LeftTurnoverPlain);
         var core = BombeKeys.CorePosition(rings, "AOW");
         var stop = new BombeStop(WheelOrder.Parse(rotors), core, Letter.FromChar('E'), [Letter.FromChar('F')]);
         var placement = new CribPlacement([.. cipher.Select(Letter.FromChar)], Crib.Parse("WETTERVORHERSAGE"), 0);
         return new StopCheck(stop, ReflectorType.B, placement)
         {
             Steckers = Steckers.Parse(RoundTripAllSteckers),
-            RightRing = RingSetting.FromNumber(RoundTripRightRing),
+            RightRing = RingSetting.FromNumber(RoundTripRightRing)
         };
     }
 
-    private static BombeStop CarterStop(string core) =>
-        new(WheelOrder.Parse("II V III"), DrumPosition.Parse(core), G, [Q]);
+    private static BombeStop CarterStop(string core)
+    {
+        return new BombeStop(WheelOrder.Parse("II V III"), DrumPosition.Parse(core), G, [Q]);
+    }
 
-    private static CribPlacement CarterPlacement() =>
-        new([.. BombeKeys.CarterCipher.Select(Letter.FromChar)], Crib.Parse(BombeKeys.CarterCrib), 0);
+    private static CribPlacement CarterPlacement()
+    {
+        return new CribPlacement([.. BombeKeys.CarterCipher.Select(Letter.FromChar)], Crib.Parse(BombeKeys.CarterCrib),
+            0);
+    }
 }
