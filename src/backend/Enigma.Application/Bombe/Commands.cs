@@ -93,6 +93,9 @@ public sealed record GetSolution;
 /// <summary>Shows the three wheel orders of the loaded intercept or exercise, one of them the key's.</summary>
 public sealed record ShowWheelOrders;
 
+/// <summary>The stops per wheel order the menu gives, measured on a sample of wheel orders and reflectors.</summary>
+public sealed record GetMenuStops;
+
 /// <summary>
 /// Sets up the checking machine; each field left out (null) stays as it is. The reflector is a cartridge such as "B" or
 /// "C-thin" (empty: none); the dummy says whether the dummy drum is fitted. The drums are rotors left to right, such

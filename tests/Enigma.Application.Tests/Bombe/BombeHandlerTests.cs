@@ -49,7 +49,37 @@ public sealed class BombeHandlerTests
         Assert.Equal(0, state.Position);
         Assert.NotNull(state.Menu);
         Assert.True(state.Menu.Loops > 0);
-        Assert.InRange(state.Menu.StopsWithBoard, double.Epsilon, state.Menu.StopsWithoutBoard);
+    }
+
+    [Fact]
+    public void Should_measure_fewer_stops_with_the_diagonal_board_When_the_menu_stops_are_asked_for()
+    {
+        // Arrange
+        SetUpCarter(menu: false);
+        new PlaceCribHandler(_store).Handle(new PlaceCrib(0));
+        var handler = new GetMenuStopsHandler(_store);
+
+        // Act
+        var stops = handler.Handle(new GetMenuStops());
+        var again = handler.Handle(new GetMenuStops());
+
+        // Assert
+        Assert.InRange(stops.WithBoard, 0, stops.WithoutBoard);
+        Assert.True(stops.WithoutBoard > 0);
+        Assert.Equal(stops, again);
+    }
+
+    [Fact]
+    public void Should_answer_not_found_When_the_menu_stops_are_asked_for_without_a_menu()
+    {
+        // Arrange
+        var handler = new GetMenuStopsHandler(_store);
+
+        // Act
+        object Act() => handler.Handle(new GetMenuStops());
+
+        // Assert
+        Assert.Throws<NotFoundException>(Act);
     }
 
     [Fact]

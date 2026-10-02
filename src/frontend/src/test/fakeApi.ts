@@ -217,8 +217,6 @@ export const carterMenu: BombeState = {
     testRegister: 'G',
     connectedLinks: ['SW1', 'NE2', 'GE5', 'GR6', 'SV7', 'ZR9', 'ZH10', 'UE11', 'GR12', 'AS13', 'RA14', 'LG15', 'VE16'],
     loops: 2,
-    stopsWithBoard: 0.4,
-    stopsWithoutBoard: 721.3,
   },
   machine: carterMachine(),
 };
@@ -378,6 +376,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
       placeCrib: bombe(),
       setMenu: bombe(),
       buildMenu: bombe(),
+      menuStops: vi.fn().mockResolvedValue({ ok: true, value: { withBoard: 0.4, withoutBoard: 721.3 } }),
       configure: bombe(),
       plugUpMenu: bombe(carterMenu),
       plugJack: bombe(),

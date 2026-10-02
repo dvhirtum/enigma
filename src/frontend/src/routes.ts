@@ -71,6 +71,7 @@ export const bombeRoutes: Routes<BombeApi> = {
   placeCrib: (position) => ({ method: 'PUT', path: `${bombe}/placement`, body: { position } }),
   setMenu: (links, testRegister) => ({ method: 'PUT', path: `${bombe}/menu`, body: { links, testRegister } }),
   buildMenu: () => ({ method: 'POST', path: `${bombe}/menu/build` }),
+  menuStops: () => ({ method: 'GET', path: `${bombe}/menu/stops` }),
   configure: (settings) => ({ method: 'PUT', path: `${bombe}/settings`, body: settings }),
   plugUpMenu: () => ({ method: 'POST', path: `${bombe}/machine/plug-up` }),
   plugJack: (chain, scrambler, jack, letter) => ({

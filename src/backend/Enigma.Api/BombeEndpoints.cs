@@ -42,6 +42,7 @@ internal static class BombeEndpoints
         .AddSingleton<PlaceCribHandler>()
         .AddSingleton<SetMenuHandler>()
         .AddSingleton<BuildMenuHandler>()
+        .AddSingleton<GetMenuStopsHandler>()
         .AddSingleton<PlugUpMenuHandler>()
         .AddSingleton<ConfigureBombeHandler>()
         .AddSingleton<PlugJackHandler>()
@@ -116,6 +117,9 @@ internal static class BombeEndpoints
 
         bombe.MapPost("/menu/build", (BuildMenuHandler handler) =>
             handler.Handle(new BuildMenu()));
+
+        bombe.MapGet("/menu/stops", (GetMenuStopsHandler handler) =>
+            handler.Handle(new GetMenuStops()));
 
         bombe.MapPut("/settings", (ConfigureBombe command, ConfigureBombeHandler handler) =>
             handler.Handle(command));

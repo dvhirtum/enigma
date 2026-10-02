@@ -55,6 +55,7 @@ const api: EnigmaApi = {
     placeCrib: (position) => invoke('bombe:placeCrib', position),
     setMenu: (links, testRegister) => invoke('bombe:setMenu', links, testRegister),
     buildMenu: () => invoke('bombe:buildMenu'),
+    menuStops: () => invoke('bombe:menuStops'),
     configure: (settings) => invoke('bombe:configure', settings),
     plugUpMenu: () => invoke('bombe:plugUpMenu'),
     plugJack: (chain, scrambler, jack, letter) => invoke('bombe:plugJack', chain, scrambler, jack, letter),

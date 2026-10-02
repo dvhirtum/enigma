@@ -376,3 +376,24 @@ internal static class BombeSessionStoreExtensions
         }
     }
 }
+
+/// <summary>Measures the stops of the job's menu, once per menu: the last measurement is kept until the menu changes.</summary>
+public sealed class GetMenuStopsHandler(IBombeSessionStore store)
+{
+    private readonly Lock _lock = new();
+    private (Menu Menu, MeasuredStops Stops)? _last;
+
+    public MenuStopsState Handle(GetMenuStops query)
+    {
+        var menu = store.Use(job => job.Menu) ?? throw new NotFoundException("Draw a menu first.");
+        lock (_lock)
+        {
+            if (_last is not { } last || !ReferenceEquals(last.Menu, menu))
+            {
+                _last = last = (menu, MeasuredStops.Of(menu));
+            }
+
+            return new MenuStopsState(last.Stops.WithBoard, last.Stops.WithoutBoard);
+        }
+    }
+}

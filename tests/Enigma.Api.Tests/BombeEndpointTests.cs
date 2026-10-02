@@ -28,6 +28,22 @@ public sealed class BombeEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task Should_measure_the_menus_stops_When_asked_through_the_api()
+    {
+        // Arrange
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/cipher-text", new { text = "SNMKG GSTZZ UGARL V" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/crib", new { crib = "WETTERVORHERSAGE" });
+        await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/placement", new { position = 0 });
+
+        // Act
+        var stops = await _client.GetFromJsonAsync<MenuStopsState>(Url("/api/bombe/menu/stops"), Token);
+
+        // Assert
+        Assert.NotNull(stops);
+        Assert.InRange(stops.WithBoard, 0, stops.WithoutBoard);
+    }
+
+    [Fact]
     public async Task Should_stop_at_Carters_key_When_his_menu_is_run_through_the_api()
     {
         // Arrange

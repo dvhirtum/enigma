@@ -40,9 +40,7 @@ public sealed record BombeState(
                     [.. placement.Links.Select(link => link.ToString())],
                     menu.TestRegister.ToString(),
                     [.. menu.ConnectedLinks.Select(link => link.ToString())],
-                    menu.Loops,
-                    menu.EstimatedStops(diagonalBoard: true),
-                    menu.EstimatedStops(diagonalBoard: false))
+                    menu.Loops)
                 : null,
             BombeMachineState.From(job),
             CheckingMachineState.From(job.Checker, store.Stops),
@@ -57,17 +55,18 @@ public sealed record BombeState(
 public sealed record PlacementState(int Position, IReadOnlyList<int> Crashes);
 
 /// <summary>
-/// The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it,
-/// their loops and the estimated false stops per wheel order with and without the diagonal board.
+/// The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it
+/// and their loops.
 /// </summary>
 public sealed record MenuState(
     IReadOnlyList<string> Links,
     IReadOnlyList<string> CribLinks,
     string TestRegister,
     IReadOnlyList<string> ConnectedLinks,
-    int Loops,
-    double StopsWithBoard,
-    double StopsWithoutBoard);
+    int Loops);
+
+/// <summary>The stops per wheel order the menu gives with and without the diagonal board, measured.</summary>
+public sealed record MenuStopsState(double WithBoard, double WithoutBoard);
 
 /// <summary>
 /// The Bombe as set up: its three chains, whether each chain is joined to the next, whether it is plugged up with the

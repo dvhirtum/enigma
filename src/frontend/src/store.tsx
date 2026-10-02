@@ -14,6 +14,7 @@ import type {
   IndicatorChange,
   PrintedStop,
   RingTable,
+  MenuStops,
   SourceSolution,
   TestRegisterChange,
   Confirmation,
@@ -179,6 +180,8 @@ export interface BombeSlice {
   setUpEnigma: () => Promise<boolean>;
   /** The key and plain text of the loaded intercept or exercise, or null when it has none. */
   loadSolution: () => Promise<SourceSolution | null>;
+  /** The stops per wheel order the menu gives, measured; null when there is no menu or the call fails. */
+  loadMenuStops: () => Promise<MenuStops | null>;
   /** Takes a pinch of the message's key sheet day: an exercise's own, or for a pasted radio message the sheet and day given. */
   takePinch: (sheetId?: string, day?: number) => Promise<boolean>;
   /** Writes down groups of the indicator of a message of the day (0 = the broken message). */
@@ -690,6 +693,10 @@ export function createMachineStore({
       },
       loadSolution: async () => {
         const result = await check(bombe.getSolution());
+        return result.ok ? result.value : null;
+      },
+      loadMenuStops: async () => {
+        const result = await check(bombe.menuStops());
         return result.ok ? result.value : null;
       },
       takePinch: async (sheetId, day) => {

@@ -157,8 +157,8 @@ export interface Placement {
 }
 
 /**
- * The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it,
- * their loops and the estimated false stops per wheel order with and without the diagonal board.
+ * The menu links (letters, then offset), every link of the placed crib, the test register, the links connected to it
+ * and their loops.
  */
 export interface BombeMenu {
   links: string[];
@@ -166,8 +166,12 @@ export interface BombeMenu {
   testRegister: string;
   connectedLinks: string[];
   loops: number;
-  stopsWithBoard: number;
-  stopsWithoutBoard: number;
+}
+
+/** The stops per wheel order the menu gives with and without the diagonal board, measured on a sample of wheel orders. */
+export interface MenuStops {
+  withBoard: number;
+  withoutBoard: number;
 }
 
 export interface BombeSettings {
@@ -556,6 +560,8 @@ export interface BombeApi {
   getSolution: Call<[], SourceSolution>;
   /** Shows three wheel orders of the loaded intercept or exercise, one of them the key's. */
   showWheelOrders: Call<[], BombeState>;
+  /** The stops per wheel order the menu gives, measured on a sample of wheel orders and reflectors. */
+  menuStops: Call<[], MenuStops>;
   loadIntercept: Call<[id: string], BombeState>;
   generateExercise: Call<[], BombeState>;
   /** Loads a pasted radio message or bare cipher text; empty text clears the message. */

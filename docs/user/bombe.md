@@ -48,7 +48,7 @@ The notebook sketches the menu built from the placed crib. Each crib letter and 
 - dashed red links are plugged up but not connected to the test register letter, so they test nothing,
 - faint dotted links are not on the menu.
 
-Loops (closures) make a menu good. At a wrong position, each loop lets the current through with a chance of about 1 in 26, so more loops mean fewer false stops. The summary counts the links, letters and loops connected to the test register letter, and estimates the false stops per wheel order with and without the diagonal board.
+Loops (closures) make a menu good. At a wrong position, each loop lets the current through with a chance of about 1 in 26, so more loops mean fewer false stops. The summary counts the links, letters and loops connected to the test register letter. It also runs the menu on six wheel orders and reflectors, which takes a moment, and gives the average false stops per wheel order with and without the diagonal board. This is a sample, so a run can give somewhat more or fewer.
 
 To change the menu:
 
