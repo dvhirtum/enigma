@@ -1,5 +1,4 @@
 using Enigma.Application.KeySheets;
-using Enigma.Application.Machine;
 using Enigma.Application.Procedure;
 using Enigma.Infrastructure.KeySheets;
 using Enigma.Infrastructure.Procedure;

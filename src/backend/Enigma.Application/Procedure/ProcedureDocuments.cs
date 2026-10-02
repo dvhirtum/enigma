@@ -41,7 +41,7 @@ public static class ProcedureMapper
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        if (document.Columns is null || document.Allotments is null)
+        if (document is not { Columns: not null, Allotments: not null })
         {
             throw new DomainException("A Kenngruppenbuch file needs columns and allotments.");
         }
@@ -68,7 +68,7 @@ public static class ProcedureMapper
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        if (document.Tables is null || document.Calendar is null)
+        if (document is not { Tables: not null, Calendar: not null })
         {
             throw new DomainException("A Tauschtafel file needs tables and a calendar.");
         }

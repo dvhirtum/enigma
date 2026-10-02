@@ -190,7 +190,7 @@ public sealed class BombeHandlerTests
         Assert.Null(run.Speed);
         Assert.Equal(DomainPositions, run.PositionsTested);
         Assert.Equal(2, run.Stops);
-        Assert.Single(Stops(), s => s.Position == "VMB" && s.Stecker == "Q");
+        Assert.Single(Stops(), s => s is { Position: "VMB", Stecker: "Q" });
     }
 
     [Fact]
@@ -214,7 +214,7 @@ public sealed class BombeHandlerTests
         var orders = run.Groups.Select(group => group.WheelOrder).ToList();
         Assert.Equal(["I II III", "II V III", "V III II"], orders);
         Assert.Equal(DomainPositions, run.PositionsTested);
-        Assert.Contains(Stops(), s => s.WheelOrder == "II V III" && s.Position == "VMB" && s.Stecker == "Q");
+        Assert.Contains(Stops(), s => s is { WheelOrder: "II V III", Position: "VMB", Stecker: "Q" });
         Assert.All(Stops(), s => Assert.Contains(s.WheelOrder, orders));
     }
 
@@ -439,7 +439,7 @@ public sealed class BombeHandlerTests
         Assert.Equal(
             new GetPrintoutHandler(_store).Handle(new GetPrintout(0)).Select(s => (s.Index, s.DrumLetters, s.Stecker)),
             [(first.Pause!.Index, first.Pause.DrumLetters, first.Pause.Stecker), (second.Pause!.Index, second.Pause.DrumLetters, second.Pause.Stecker)]);
-        Assert.Contains(Stops(), s => s.Position == "VMB" && s.Stecker == "Q");
+        Assert.Contains(Stops(), s => s is { Position: "VMB", Stecker: "Q" });
         var run = new GetRunHandler(_store).Handle(new GetRun());
         Assert.Equal("Finished", run.Status);
         Assert.Null(run.Pause);
@@ -682,7 +682,7 @@ public sealed class BombeHandlerTests
         while (true)
         {
             var run = new GetRunHandler(_store).Handle(new GetRun());
-            if (run.Position is not null && run.PositionsTested > 0)
+            if (run is { Position: not null, PositionsTested: > 0 })
             {
                 return run;
             }

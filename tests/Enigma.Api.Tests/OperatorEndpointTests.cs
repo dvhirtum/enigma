@@ -4,9 +4,7 @@ using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
 using Enigma.Application.OperatorMode;
 using Enigma.Application.Procedure;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Enigma.Api.Tests;
 
@@ -212,7 +210,8 @@ public sealed class OperatorEndpointTests : IDisposable
 
     private static async Task<MachineState> Send(HttpClient client, HttpMethod method, string url, object? body)
     {
-        using var request = new HttpRequestMessage(method, Url(url)) { Content = body is null ? null : JsonContent.Create(body) };
+        using var request = new HttpRequestMessage(method, Url(url));
+        request.Content = body is null ? null : JsonContent.Create(body);
         using var response = await client.SendAsync(request, Token);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<MachineState>(Token)

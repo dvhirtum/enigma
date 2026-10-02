@@ -134,7 +134,7 @@ public static class KeySheetMapper
 
     private static DailyKey FromDocument(DailyKeyDocument day)
     {
-        if (day?.Rotors is null || day.Rings is null || day.Plugs is null)
+        if (day is not { Rotors: not null, Rings: not null, Plugs: not null })
         {
             throw new DomainException("Each day of a key sheet needs rotors, rings and plugs.");
         }

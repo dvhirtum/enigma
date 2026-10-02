@@ -121,7 +121,7 @@ public sealed class KeySheetLinker(
             return newest;
         }
 
-        if (newest is not null && newest.HasFreeColumns)
+        if (newest is { HasFreeColumns: true })
         {
             var allotted = Copy(newest);
             allotted.Allot(sheet.Network);

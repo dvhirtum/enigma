@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Enigma.Application.Bombe;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -84,7 +83,7 @@ public sealed class BombeEndpointTests : IDisposable
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
         await SendAsync<BombeState>(
             HttpMethod.Put, "/api/bombe/settings", new { diagonalBoard = true, reflector = "B" });
-        var machine = await FitCarterDrumsAsync();
+        await FitCarterDrumsAsync();
         await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = 1_000_000.0, notebook = true });
         var paused = await WaitForRunAsync();
 
@@ -229,7 +228,7 @@ public sealed class BombeEndpointTests : IDisposable
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
         await SendAsync<BombeState>(
             HttpMethod.Put, "/api/bombe/settings", new { diagonalBoard = true, reflector = "B" });
-        var machine = await FitCarterDrumsAsync();
+        await FitCarterDrumsAsync();
         await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null, notebook = true });
         await WaitForRunAsync();
         var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=0"), Token);
@@ -265,7 +264,7 @@ public sealed class BombeEndpointTests : IDisposable
         await SendAsync<BombeState>(HttpMethod.Put, "/api/bombe/menu", new { links = CarterLinks, testRegister = "G" });
         await SendAsync<BombeState>(
             HttpMethod.Put, "/api/bombe/settings", new { diagonalBoard = true, reflector = "B" });
-        var machine = await FitCarterDrumsAsync();
+        await FitCarterDrumsAsync();
         await SendAsync<RunState>(HttpMethod.Post, "/api/bombe/run", new { speed = (double?)null, notebook = true });
         await WaitForRunAsync();
         var stops = await _client.GetFromJsonAsync<IReadOnlyList<StopState>>(Url("/api/bombe/stops?from=0"), Token);
@@ -314,7 +313,7 @@ public sealed class BombeEndpointTests : IDisposable
         var solution = await _client.GetFromJsonAsync<SolutionState>(Url("/api/bombe/source/solution"), Token);
 
         // Assert
-        Assert.Contains(intercepts!, intercept => intercept.Id == "barbarossa-1941-1" && intercept.Date == "1941-07-07");
+        Assert.Contains(intercepts!, intercept => intercept is { Id: "barbarossa-1941-1", Date: "1941-07-07" });
         Assert.Equal("Intercept", state.Source?.Kind);
         Assert.Contains("WXC KCH", state.Source?.Transcript, StringComparison.Ordinal);
         Assert.Null(state.Source?.Message);
@@ -363,7 +362,7 @@ public sealed class BombeEndpointTests : IDisposable
         var crib = await _client.GetFromJsonAsync<CribState>(Url("/api/bombe/source/crib?type=weather"), Token);
 
         // Assert
-        Assert.Contains(types!, type => type.Id == "weather" && type.Name == "Weather forecast");
+        Assert.Contains(types!, type => type is { Id: "weather", Name: "Weather forecast" });
         Assert.Equal("WETTERVORHERSAGE", crib?.Crib);
         Assert.StartsWith("At or near the start", crib?.Place, StringComparison.Ordinal);
     }
@@ -444,7 +443,8 @@ public sealed class BombeEndpointTests : IDisposable
         var written = await SendAsync<BombeState>(client, HttpMethod.Put, "/api/bombe/day/messages/1/indicator", new { verfahrenkenngruppe = "abc" });
         var filled = await SendAsync<BombeState>(client, HttpMethod.Post, "/api/bombe/day/messages/0/indicator/fill-in", new { });
         using var noStop = await client.GetAsync(Url("/api/bombe/stops/0/check/ring-table"), Token);
-        using var rings = new HttpRequestMessage(HttpMethod.Put, Url("/api/bombe/stops/0/check/rings")) { Content = JsonContent.Create(new { left = 1 }) };
+        using var rings = new HttpRequestMessage(HttpMethod.Put, Url("/api/bombe/stops/0/check/rings"));
+        rings.Content = JsonContent.Create(new { left = 1 });
         using var halfRings = await client.SendAsync(rings, Token);
 
         // Assert
@@ -499,7 +499,8 @@ public sealed class BombeEndpointTests : IDisposable
 
     private static async Task<T> SendAsync<T>(HttpClient client, HttpMethod method, string url, object body)
     {
-        using var request = new HttpRequestMessage(method, Url(url)) { Content = JsonContent.Create(body) };
+        using var request = new HttpRequestMessage(method, Url(url));
+        request.Content = JsonContent.Create(body);
         using var response = await client.SendAsync(request, Token);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(Token)

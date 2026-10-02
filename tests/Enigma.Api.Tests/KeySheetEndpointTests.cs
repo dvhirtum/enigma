@@ -3,9 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Enigma.Api.Tests;
 
@@ -261,7 +259,8 @@ public sealed class KeySheetEndpointTests : IDisposable
 
     private static async Task<T> SendAsync<T>(HttpClient client, HttpMethod method, string url, object body)
     {
-        using var request = new HttpRequestMessage(method, Url(url)) { Content = JsonContent.Create(body) };
+        using var request = new HttpRequestMessage(method, Url(url));
+        request.Content = JsonContent.Create(body);
         using var response = await client.SendAsync(request, Token);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(Token)

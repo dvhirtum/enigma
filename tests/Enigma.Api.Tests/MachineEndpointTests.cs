@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Enigma.Application.Machine;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Enigma.Api.Tests;
 

@@ -1,4 +1,3 @@
-using Enigma.Application.KeySheets;
 using Enigma.Application.Procedure;
 using Enigma.Application.Tests.KeySheets;
 using Enigma.Domain.KeyProcedure;

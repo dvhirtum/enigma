@@ -1,5 +1,4 @@
 using Enigma.Application.Machine;
-using Enigma.Application.Procedure;
 using Enigma.Domain.Bombe;
 using Enigma.Domain.Machine;
 
