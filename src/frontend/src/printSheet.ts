@@ -310,7 +310,7 @@ function officerPages(kind: 'Offizier' | 'Stab', file: KeySheetFile, model: stri
     `<section class="page">
   <div class="stamp">${kind}!</div>
   ${heading(1, `${kind}-Schlüssel ${model}`)}
-  <p class="lead">Schlüsselnetz <b>${escape(file.network.toUpperCase())}</b>, Monat ${escape(monthName(file.month))}. Nur für Offiziere.</p>
+  <p class="lead">Schlüsselnetz <b>${escape(file.network.toUpperCase())}</b>, Monat ${escape(monthName(file.month))}. ${kind === 'Stab' ? 'Nur für Befugte' : 'Nur für Offiziere'}.</p>
   <table class="keys">
     <thead><tr><th>Datum</th><th>Umkehr&shy;walze</th><th>Walzenlage</th><th>Ring&shy;stellung</th><th>Steckerverbindungen</th></tr></thead>
     <tbody>${days.map(officerKeyRow).join('')}</tbody>

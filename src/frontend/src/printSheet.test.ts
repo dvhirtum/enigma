@@ -132,6 +132,15 @@ describe('Offizier and Stab documents', () => {
     expect(rows(doc.querySelector('.keys')!)).toEqual([['01', 'C dünn', 'Gamma I II VII', '05 06 07 08', 'TZ']]);
   });
 
+  it('restricts the Offizier key to officers and the Stab key to authorised persons', () => {
+    const offizier = parse(offizierDocument(officerFile, 'M4')!);
+    const stab = parse(stabDocument(officerFile, 'M4')!);
+
+    expect(offizier.querySelector('.lead')?.textContent).toContain('Nur für Offiziere.');
+    expect(stab.querySelector('.lead')?.textContent).toContain('Nur für Befugte.');
+    expect(stab.querySelector('.lead')?.textContent).not.toContain('Offiziere');
+  });
+
   it('is null when the file has no officer keys', () => {
     expect(offizierDocument(file, 'M4')).toBeNull();
     expect(stabDocument(file, 'M4')).toBeNull();
