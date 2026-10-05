@@ -6,8 +6,8 @@ These instructions open in their own window with the book button at the top righ
 
 ## Contents
 
-1. [The Enigma](enigma/README.md): the machine, key sheets, and sending and receiving messages by hand or with the operator's notebook.
-2. [The Bombe](bombe/README.md): how the Bombe broke Enigma, and breaking a message in Bombe mode.
+1. [The Enigma](enigma/README.md): the machine, key sheets, sending and receiving messages by hand or with the operator's notebook, and the officer keys.
+2. [The Bombe](bombe/README.md): how the Bombe broke Enigma, and breaking a message in Bombe mode, and how the M4 was broken.
 3. [Glossary](glossary.md): the German terms used in the application, and the words and abbreviations in the Bombe's messages.
 
 ## Quick start

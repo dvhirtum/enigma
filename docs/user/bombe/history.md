@@ -10,7 +10,7 @@ The Polish Cipher Bureau broke the Army Enigma in the 1930s. Its bomba of 1938 r
 
 At Bletchley Park, Alan Turing designed a machine that needed no help from the indicator: the Bombe tests a crib, a guessed piece of plain text, at every rotor position. The British Tabulating Machine Company at Letchworth built it, with Harold "Doc" Keen as its engineer. The first Bombe, Victory, came into service in March 1940. Gordon Welchman's diagonal board was added from August 1940.
 
-About 210 Bombes were built in Britain. Women of the Royal Naval Service (the Wrens) ran them, at Bletchley Park and at out-stations such as Eastcote and Stanmore. From 1943 the US Navy built more than a hundred four-rotor Bombes of its own against the M4. A team led by John Harper rebuilt a Turing-Welchman Bombe at Bletchley Park; it is on show at The National Museum of Computing.
+About 210 Bombes were built in Britain. Women of the Royal Naval Service (the Wrens) ran them, at Bletchley Park and at out-stations such as Eastcote and Stanmore. From 1943 the US Navy built more than a hundred four-rotor Bombes of its own against the M4; see [Breaking the M4](breaking-the-m4.md). A team led by John Harper rebuilt a Turing-Welchman Bombe at Bletchley Park; it is on show at The National Museum of Computing.
 
 ## Cribs
 

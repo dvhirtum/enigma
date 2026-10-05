@@ -328,9 +328,3 @@ docs/{design.md, user/}
 7. Key sheets: historical, generated, apply daily key
 8. Navy indicator procedure and operator mode
 9. Bombe: mode switch; scrambler and diagonal board; crib and menu; runs; crib, menu and Bombe views; stops and checking; indicators; Hut 8 walkthrough
-
-## Future work
-
-- Officer keys (Offizier)
-- Stichwort (keyword) procedure
-- Four-rotor Bombe (M4)
