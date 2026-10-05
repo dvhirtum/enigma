@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { PrintDocument } from './api';
 import { createMachineStore } from './store';
-import { createFakeApi, defaultM3, fakeBook, fakeTables, generatedSheet, historicalSheet, summaryOf } from './test/fakeApi';
+import {
+  createFakeApi,
+  defaultM3,
+  fakeBook,
+  fakeOffizier,
+  fakeStab,
+  fakeStichwoerter,
+  fakeTables,
+  fakeWetterTafeln,
+  generatedSheet,
+  historicalSheet,
+  summaryOf,
+} from './test/fakeApi';
 
 describe('key sheet store', () => {
   it('loads the list of key sheets', async () => {
@@ -96,7 +108,7 @@ describe('key sheet store', () => {
     expect(store.getState().error).toMatchObject({ title: 'The file is not a key sheet.' });
   });
 
-  it('exports the open sheet with its book and tables, without its id and provenance', async () => {
+  it('exports the open sheet with its book, tables, officer keys, Stichwörter and weather tables, without its id and provenance', async () => {
     const { api } = createFakeApi();
     api.files.saveKeySheet.mockResolvedValue('C:\\sheets\\Triton-1944-06.json');
     const store = createMachineStore(api);
@@ -117,6 +129,12 @@ describe('key sheet store', () => {
       tauschtafelSetId: 'tables',
       kenngruppenbuch: fakeBook,
       tauschtafeln: fakeTables,
+      offizier: fakeOffizier,
+      stab: fakeStab,
+      stichwortSetId: 'stichwoerter',
+      wetterTafelSetId: 'wetter',
+      stichwoerter: fakeStichwoerter,
+      wetterTafeln: fakeWetterTafeln,
     });
   });
 
@@ -156,7 +174,7 @@ describe('key sheet store', () => {
     const store = createMachineStore(api);
     await store.getState().openKeySheet('g1');
 
-    const printed = await store.getState().printKeySheet(true);
+    const printed = await store.getState().printKeySheet({ procedure: true });
 
     expect(printed).toBe(true);
     expect(api.files.printKeySheet).not.toHaveBeenCalled();
@@ -168,6 +186,40 @@ describe('key sheet store', () => {
     expect(book.html).toContain('Kenngruppen Z..');
     expect(book.html).toContain('Gültig 1.–15. Mai');
     expect(book.html).not.toContain('Schlüsseltafel');
+  });
+
+  it('prints every chosen document to its own PDF in a folder', async () => {
+    const { api } = createFakeApi();
+    api.files.printToFolder.mockResolvedValue('C:\\sheets');
+    const store = createMachineStore(api);
+    await store.getState().openKeySheet('g1');
+
+    const printed = await store.getState().printKeySheet({ offizier: true, stab: true, stichwort: true, wetter: true });
+
+    expect(printed).toBe(true);
+    expect(api.procedure.getWetterkurzschluessel).toHaveBeenCalledTimes(1);
+    const [documents] = api.files.printToFolder.mock.calls[0] as [PrintDocument[]];
+    expect(documents.map((document) => document.name)).toEqual([
+      'Triton-1944-06.pdf',
+      'Offizier-Triton-1944-06.pdf',
+      'Stab-Triton-1944-06.pdf',
+      'Stichwort-1944.pdf',
+      'Wetterkurzschluessel-1944.pdf',
+    ]);
+    expect(documents[4]?.html).toContain('Gültig vom 1.1.1944 bis 31.12.1944');
+  });
+
+  it('prints nothing when the Wetterkurzschlüssel cannot be loaded', async () => {
+    const { api } = createFakeApi();
+    api.procedure.getWetterkurzschluessel.mockResolvedValue({ ok: false, problem: { status: 500, title: 'Broken' } });
+    const store = createMachineStore(api);
+    await store.getState().openKeySheet('g1');
+
+    const printed = await store.getState().printKeySheet({ wetter: true });
+
+    expect(printed).toBe(false);
+    expect(api.files.printToFolder).not.toHaveBeenCalled();
+    expect(api.files.printKeySheet).not.toHaveBeenCalled();
   });
 
   it('prints nothing when the export fails', async () => {

@@ -113,7 +113,38 @@ export interface KeySheet extends KeySheetSummary {
   tauschtafelSetId: string | null;
 }
 
-/** The contents of a key sheet file, as exported and imported. Exports also hold the linked Kenngruppenbuch and Tauschtafel set. */
+/** An Offizier or Stab key: the key for each day (without Grundstellung) and the settings for A to Z. */
+export interface OfficerKey {
+  days: DailyKey[];
+  settings: string[];
+}
+
+/** The year's sealed Stichwort envelopes. */
+export interface StichwortSet {
+  id: string;
+  year: number;
+  envelopes: { name: string; word: string }[];
+}
+
+/** The weather short-signal tables of a year. Each issue has four columns (one per six hours) of 26 three-letter settings. */
+export interface WetterTafelSet {
+  id: string;
+  year: number;
+  /** Dates are yyyy-MM-dd. */
+  issues: { kennwort: string; from: string; until: string; columns: string[][] }[];
+}
+
+/** The Wetterkurzschlüssel: its tables, and the table for each letter of a report. A row with one cell spans the table. */
+export interface Wetterkurzschluessel {
+  order: number[];
+  signatureLetters: number;
+  tables: { number: number; title: string; historical: boolean; columns: string[]; rows: { heading: string; cells: string[] }[] }[];
+}
+
+/**
+ * The contents of a key sheet file, as exported and imported. Exports also hold the Offizier and Stab keys, and the linked Kenngruppenbuch,
+ * Tauschtafel set, Stichwort set and weather tables.
+ */
 export interface KeySheetFile {
   network: string;
   month: string;
@@ -122,6 +153,12 @@ export interface KeySheetFile {
   tauschtafelSetId?: string | null;
   kenngruppenbuch?: Kenngruppenbuch;
   tauschtafeln?: TauschtafelSet;
+  offizier?: OfficerKey;
+  stab?: OfficerKey;
+  stichwortSetId?: string | null;
+  wetterTafelSetId?: string | null;
+  stichwoerter?: StichwortSet;
+  wetterTafeln?: WetterTafelSet;
 }
 
 /** The message the Bombe is to break. `message` is the Navy radio message, when it is one. */
@@ -549,6 +586,7 @@ export interface ReceivingKey {
 
 export interface ProcedureApi {
   getBook: Call<[id: string], Kenngruppenbuch>;
+  getWetterkurzschluessel: Call<[], Wetterkurzschluessel>;
   /** Thu Sep 24 21:20:27 WEDT 2026 is yyyy-MM-dd. */
   findReceivingKeys: Call<[message: string, date: string], ReceivingKey[]>;
 }

@@ -33,7 +33,22 @@ public sealed class KeySheet
     /// <summary>The linked Tauschtafel set, or null before linking.</summary>
     public string? TauschtafelSetId { get; private set; }
 
-    public bool IsLinked => KenngruppenbuchId is not null && TauschtafelSetId is not null;
+    /// <summary>The linked Stichwort set for the sheet's year, or null before linking.</summary>
+    public string? StichwortSetId { get; private set; }
+
+    /// <summary>The linked weather short-signal tables for the sheet's year, or null before linking.</summary>
+    public string? WetterTafelSetId { get; private set; }
+
+    /// <summary>The Offizier key, or null when the sheet has none yet.</summary>
+    public OfficerKey? Offizier { get; private set; }
+
+    /// <summary>The Stab key, or null when the sheet has none yet.</summary>
+    public OfficerKey? Stab { get; private set; }
+
+    public bool IsLinked => KenngruppenbuchId is not null && TauschtafelSetId is not null && StichwortSetId is not null
+                            && WetterTafelSetId is not null;
+
+    public bool HasMissingOfficerKeys => Offizier is null || Stab is null;
 
     /// <summary>The daily keys, ordered by day.</summary>
     public IReadOnlyList<DailyKey> DailyKeys { get; private set; }
@@ -48,6 +63,44 @@ public sealed class KeySheet
 
         KenngruppenbuchId = kenngruppenbuchId;
         TauschtafelSetId = tauschtafelSetId;
+    }
+
+    /// <summary>Links the Stichwort set and weather tables of the sheet's year. Allowed on historical sheets.</summary>
+    public void LinkYearly(string stichwortSetId, string wetterTafelSetId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(stichwortSetId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(wetterTafelSetId);
+
+        StichwortSetId = stichwortSetId;
+        WetterTafelSetId = wetterTafelSetId;
+    }
+
+    /// <summary>Sets the Offizier and Stab keys; null leaves a key as it is. Allowed on historical sheets.</summary>
+    public void SetOfficerKeys(OfficerKey? offizier, OfficerKey? stab)
+    {
+        foreach (var key in new[] { offizier, stab }.OfType<OfficerKey>())
+        {
+            if (key.Model != Model)
+                throw new DomainException($"An officer key for the {key.Model} does not fit a {Model} key sheet.");
+
+            var outside = key.Days.FirstOrDefault(k => k.Day > Month.Days);
+            if (outside is not null) throw new DomainException($"Officer key day {outside.Day} is outside {Month}.");
+        }
+
+        Offizier = offizier ?? Offizier;
+        Stab = stab ?? Stab;
+    }
+
+    /// <summary>Generates the Offizier and Stab keys the sheet lacks. Returns true when one was added.</summary>
+    public bool FillMissingOfficerKeys(Random random)
+    {
+        ArgumentNullException.ThrowIfNull(random);
+
+        if (!HasMissingOfficerKeys) return false;
+
+        SetOfficerKeys(Offizier is null ? OfficerKeyGenerator.Offizier(this, random) : null,
+            Stab is null ? OfficerKeyGenerator.Stab(this, random) : null);
+        return true;
     }
 
     public DailyKey KeyFor(int day)

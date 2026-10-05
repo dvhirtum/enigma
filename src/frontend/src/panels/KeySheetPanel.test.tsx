@@ -182,6 +182,27 @@ describe('KeySheetPanel', () => {
     expect(api.files.printToFolder).not.toHaveBeenCalled();
   });
 
+  it('prints the officer keys, Stichwort envelopes and Wetterkurzschlüssel when they are ticked', async () => {
+    const api = renderMachine(<KeySheetPanel />, undefined, showHistorical);
+    await openSheet('historical-hydra');
+
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Also print the Kenngruppenbuch and Tauschtafeln' }));
+    for (const name of ['Also print the Offizier key', 'Also print the Stab key', 'Also print the Stichwort envelopes', 'Also print the Wetterkurzschlüssel']) {
+      fireEvent.click(screen.getByRole('checkbox', { name }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Print to PDF' }));
+
+    await waitFor(() =>
+      expect(api.files.printToFolder).toHaveBeenCalledWith([
+        expect.objectContaining({ name: 'Hydra-1944-06.pdf' }),
+        expect.objectContaining({ name: 'Offizier-Hydra-1944-06.pdf' }),
+        expect.objectContaining({ name: 'Stab-Hydra-1944-06.pdf' }),
+        expect.objectContaining({ name: 'Stichwort-1944.pdf' }),
+        expect.objectContaining({ name: 'Wetterkurzschluessel-1944.pdf' }),
+      ]),
+    );
+  });
+
   it('generates a year of sheets for the chosen model', async () => {
     const api = renderMachine(<KeySheetPanel />);
 

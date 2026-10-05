@@ -19,7 +19,11 @@ import type {
   MachineState,
   MessageType,
   OperatorState,
+  OfficerKey,
+  StichwortSet,
   TauschtafelSet,
+  WetterTafelSet,
+  Wetterkurzschluessel,
 } from '../api';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -42,6 +46,51 @@ export const fakeTables: TauschtafelSet = {
   year: 1944,
   tables: Array.from({ length: 9 }, (_, index) => ({ number: index + 1, swaps: ['AAZZ', 'ABZY', `AC${alphabet[index]}Q`] })),
   calendar: Array.from({ length: 24 }, (_, index) => (index % 9) + 1),
+};
+
+const settings = (shift: number, width: number) =>
+  Array.from({ length: 26 }, (_, index) => Array.from({ length: width }, (_, place) => alphabet[(index + shift + place) % 26]).join(''));
+
+export const fakeOffizier: OfficerKey = {
+  days: [{ day: 1, reflector: 'B-thin', rotors: ['Beta', 'V', 'VI', 'VIII'], rings: [1, 2, 3, 4], plugs: ['QW', 'ER'], grundstellung: null }],
+  settings: settings(1, 4),
+};
+
+export const fakeStab: OfficerKey = {
+  days: [{ day: 1, reflector: 'C-thin', rotors: ['Gamma', 'I', 'II', 'VII'], rings: [5, 6, 7, 8], plugs: ['TZ'], grundstellung: null }],
+  settings: settings(2, 4),
+};
+
+export const fakeStichwoerter: StichwortSet = {
+  id: 'stichwoerter',
+  year: 1944,
+  envelopes: [
+    { name: 'PERSEUS', word: 'DANZIG' },
+    { name: 'ORION', word: 'BREMEN' },
+  ],
+};
+
+export const fakeWetterTafeln: WetterTafelSet = {
+  id: 'wetter',
+  year: 1944,
+  issues: [{ kennwort: 'Gotha', from: '1944-01-01', until: '1944-12-31', columns: [0, 1, 2, 3].map((shift) => settings(shift, 3)) }],
+};
+
+export const fakeWetterkurzschluessel: Wetterkurzschluessel = {
+  order: [1, 2, 3, 4, 5, 8, 6, 7, 9],
+  signatureLetters: 2,
+  tables: [
+    {
+      number: 9,
+      title: 'Richtung und Art der Dünung',
+      historical: true,
+      columns: ['schwach', 'mäßig', 'schwer'],
+      rows: [
+        { heading: 'N', cells: ['A', 'I', 'Q'] },
+        { heading: 'keine Dünung', cells: ['Y'] },
+      ],
+    },
+  ],
 };
 
 export const sending: OperatorState = {
@@ -130,6 +179,12 @@ export const exportedFile = {
   tauschtafelSetId: 'tables',
   kenngruppenbuch: fakeBook,
   tauschtafeln: fakeTables,
+  offizier: fakeOffizier,
+  stab: fakeStab,
+  stichwortSetId: 'stichwoerter',
+  wetterTafelSetId: 'wetter',
+  stichwoerter: fakeStichwoerter,
+  wetterTafeln: fakeWetterTafeln,
 };
 
 /** A Bombe with nothing plugged in and no drums. */
@@ -356,6 +411,7 @@ export function createFakeApi(status: BackendStatus = { state: 'running' }) {
     },
     procedure: {
       getBook: vi.fn().mockResolvedValue({ ok: true, value: fakeBook }),
+      getWetterkurzschluessel: vi.fn().mockResolvedValue({ ok: true, value: fakeWetterkurzschluessel }),
       findReceivingKeys: vi.fn().mockResolvedValue({ ok: true, value: [] }),
     },
     bombe: {

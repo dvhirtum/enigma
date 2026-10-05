@@ -1,3 +1,4 @@
+using System.Globalization;
 using Enigma.Domain.KeyProcedure;
 using Enigma.Domain.Machine;
 
@@ -86,5 +87,106 @@ public static class ProcedureMapper
                     ? (Bigram.Parse(s[..2]), Bigram.Parse(s[2..]))
                     : throw new DomainException($"'{s}' is not a swap of two bigrams.")))),
             document.Calendar);
+    }
+}
+
+public sealed record StichwortDocument(string Name, string Word);
+
+/// <summary>A year's Stichwort envelopes as stored and shown.</summary>
+public sealed record StichwortSetDocument(string Id, int Year, IReadOnlyList<StichwortDocument> Envelopes);
+
+/// <summary>
+///     A weather short-signal table: dates such as "1942-01-20", and four columns (one for each six hours) of 26
+///     settings each.
+/// </summary>
+public sealed record WetterTafelDocument(
+    string Kennwort,
+    string From,
+    string Until,
+    IReadOnlyList<IReadOnlyList<string>> Columns);
+
+/// <summary>The weather short-signal tables in force during a year, as stored and shown.</summary>
+public sealed record WetterTafelSetDocument(string Id, int Year, IReadOnlyList<WetterTafelDocument> Issues);
+
+public sealed record WetterZeileDocument(string Heading, IReadOnlyList<string> Cells);
+
+public sealed record WetterTabelleDocument(
+    int Number,
+    string Title,
+    bool Historical,
+    IReadOnlyList<string> Columns,
+    IReadOnlyList<WetterZeileDocument> Rows);
+
+/// <summary>The Wetterkurzschlüssel: its tables, and the table for each letter of a report.</summary>
+public sealed record WetterkurzschluesselDocument(
+    IReadOnlyList<int> Order,
+    int SignatureLetters,
+    IReadOnlyList<WetterTabelleDocument> Tables);
+
+public static class YearlyProcedureMapper
+{
+    private const string DateFormat = "yyyy-MM-dd";
+
+    public static StichwortSetDocument ToDocument(StichwortSet set)
+    {
+        ArgumentNullException.ThrowIfNull(set);
+
+        return new StichwortSetDocument(set.Id, set.Year,
+            [.. set.Envelopes.Select(e => new StichwortDocument(e.Name, e.Word))]);
+    }
+
+    public static StichwortSet FromDocument(StichwortSetDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        if (document.Envelopes is null) throw new DomainException("A Stichwort file needs envelopes.");
+
+        return new StichwortSet(document.Id, document.Year,
+            document.Envelopes.Select(e => new Stichwort(e.Name, e.Word)));
+    }
+
+    public static WetterTafelSetDocument ToDocument(WetterTafelSet set)
+    {
+        ArgumentNullException.ThrowIfNull(set);
+
+        return new WetterTafelSetDocument(set.Id, set.Year,
+        [
+            .. set.Issues.Select(i => new WetterTafelDocument(
+                i.Kennwort,
+                i.From.ToString(DateFormat, CultureInfo.InvariantCulture),
+                i.Until.ToString(DateFormat, CultureInfo.InvariantCulture),
+                [.. i.Columns.Select(c => (IReadOnlyList<string>)[.. c.Settings.Select(s => s.ToString())])]))
+        ]);
+    }
+
+    public static WetterTafelSet FromDocument(WetterTafelSetDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        if (document.Issues is null || document.Issues.Any(i => i.Columns is null))
+            throw new DomainException("A weather table file needs issues with columns.");
+
+        return new WetterTafelSet(document.Id, document.Year, document.Issues.Select(i => new WetterTafel(
+            i.Kennwort, Date(i.From), Date(i.Until), i.Columns.Select(SettingList.Parse))));
+    }
+
+    public static WetterkurzschluesselDocument Wetterkurzschluessel()
+    {
+        return new WetterkurzschluesselDocument(
+            Domain.KeyProcedure.Wetterkurzschluessel.Order,
+            Domain.KeyProcedure.Wetterkurzschluessel.SignatureLetters,
+            [
+                .. Domain.KeyProcedure.Wetterkurzschluessel.Tables.Select(t => new WetterTabelleDocument(
+                    t.Number, t.Title, t.Historical, t.Columns,
+                    [.. t.Rows.Select(r => new WetterZeileDocument(r.Heading, r.Cells))]))
+            ]);
+    }
+
+    private static DateOnly Date(string? value)
+    {
+        return DateOnly.TryParseExact(value, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None,
+            out var date)
+            ? date
+            : throw new DomainException($"'{value}' is not a date such as 1942-01-20.");
     }
 }

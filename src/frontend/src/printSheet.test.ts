@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { KeySheetFile } from './api';
-import { keySheetDocument, procedureDocument } from './printSheet';
-import { fakeBook, fakeTables, generatedSheet } from './test/fakeApi';
+import { keySheetDocument, offizierDocument, procedureDocument, stabDocument, stichwortDocument, wetterDocument } from './printSheet';
+import { fakeBook, fakeOffizier, fakeStab, fakeStichwoerter, fakeTables, fakeWetterTafeln, fakeWetterkurzschluessel, generatedSheet } from './test/fakeApi';
 
 const file: KeySheetFile = { network: 'Triton', month: '1944-06', days: generatedSheet.days, kenngruppenbuch: fakeBook, tauschtafeln: fakeTables };
 
@@ -108,5 +108,72 @@ describe('Kenngruppenbuch and Tauschtafeln document', () => {
     const html = procedureDocument({ network: 'Triton', month: '1944-06', days: generatedSheet.days });
 
     expect(html).toBeNull();
+  });
+});
+
+describe('Offizier and Stab documents', () => {
+  const officerFile: KeySheetFile = { ...file, offizier: fakeOffizier, stab: fakeStab };
+
+  it('lists the Offizier days without a Grundstellung and names every setting', () => {
+    const doc = parse(offizierDocument(officerFile, 'M4')!);
+
+    expect(doc.querySelector('h1')?.textContent).toBe('Offizier-Schlüssel M4');
+    expect(rows(doc.querySelector('.keys')!)).toEqual([['01', 'B dünn', 'Beta V VI VIII', '01 02 03 04', 'QW ER']]);
+    const settings = [...doc.querySelectorAll('.halves table')].flatMap(rows);
+    expect(settings).toHaveLength(26);
+    expect(settings[1]).toEqual(['B', 'Bruno', 'CDEF']);
+    expect(settings[25]).toEqual(['Z', 'Zeppelin', 'ABCD']);
+  });
+
+  it('prints the Stab key with its own inner setting', () => {
+    const doc = parse(stabDocument(officerFile, 'M4')!);
+
+    expect(doc.querySelector('h1')?.textContent).toBe('Stab-Schlüssel M4');
+    expect(rows(doc.querySelector('.keys')!)).toEqual([['01', 'C dünn', 'Gamma I II VII', '05 06 07 08', 'TZ']]);
+  });
+
+  it('is null when the file has no officer keys', () => {
+    expect(offizierDocument(file, 'M4')).toBeNull();
+    expect(stabDocument(file, 'M4')).toBeNull();
+  });
+});
+
+describe('Stichwort document', () => {
+  it('prints the rule and one envelope per Stichwort', () => {
+    const doc = parse(stichwortDocument({ ...file, stichwoerter: fakeStichwoerter })!);
+
+    expect(doc.querySelector('h1')?.textContent).toBe('Stichwortbefehle 1944');
+    const envelopes = [...doc.querySelectorAll('.envelope')];
+    expect(envelopes.map((e) => e.querySelector('.band-title')?.textContent)).toEqual(['Umschlag PERSEUS', 'Umschlag ORION']);
+    expect(envelopes[0]?.querySelector('.word')?.textContent).toBe('DANZIG');
+    expect(doc.body.textContent).toContain('Blindbuchstabe');
+  });
+
+  it('is null when the file has no Stichwort set', () => {
+    expect(stichwortDocument(file)).toBeNull();
+  });
+});
+
+describe('Wetterkurzschlüssel document', () => {
+  it('prints the letter order, the tables and every setting table of the year', () => {
+    const doc = parse(wetterDocument({ ...file, wetterTafeln: fakeWetterTafeln }, fakeWetterkurzschluessel)!);
+
+    const order = rows(doc.querySelector('.allot')!);
+    expect(order[5]).toEqual(['6.', 'Tafel 8', '']);
+    expect(order[8]).toEqual(['9.', 'Tafel 9', 'Richtung und Art der Dünung']);
+    expect(order[9]).toEqual(['10.–11.', '', 'Kennung des Bootes']);
+    const swell = band(doc, 'Tafel 9 · Richtung und Art der Dünung *')!;
+    expect(rows(swell.querySelector('table')!)).toEqual([
+      ['N', 'A', 'I', 'Q'],
+      ['keine Dünung', 'Y'],
+    ]);
+    expect(doc.body.textContent).toContain('Gültig vom 1.1.1944 bis 31.12.1944');
+    const settings = rows([...doc.querySelectorAll('table.weather')].at(-1)!);
+    expect(settings[0]).toEqual(['A', 'ABC', 'BCD', 'CDE', 'DEF']);
+    expect(settings).toHaveLength(26);
+  });
+
+  it('is null when the file has no weather tables', () => {
+    expect(wetterDocument(file, fakeWetterkurzschluessel)).toBeNull();
   });
 });

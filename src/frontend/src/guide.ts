@@ -18,7 +18,16 @@ const pages = (folder: string, names: string[]): GuideEntry[] => names.map((name
 export const guideContents: GuideEntry[] = [
   {
     page: 'enigma/README.md',
-    children: pages('enigma', ['history', 'machine', 'key-sheets', 'sending-by-hand', 'receiving-by-hand', 'operator-mode', 'officer-keys']),
+    children: pages('enigma', [
+      'history',
+      'machine',
+      'key-sheets',
+      'sending-by-hand',
+      'receiving-by-hand',
+      'operator-mode',
+      'officer-keys',
+      'weather-short-signals',
+    ]),
   },
   { page: 'bombe/README.md', children: pages('bombe', ['history', 'using-the-bombe', 'breaking-a-message', 'breaking-the-m4']) },
   { page: 'glossary.md' },

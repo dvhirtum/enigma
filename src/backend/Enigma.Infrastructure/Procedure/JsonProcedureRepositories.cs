@@ -134,7 +134,55 @@ public sealed class JsonTauschtafelSetRepository(string path) : ITauschtafelSetR
     }
 }
 
+/// <summary>Stores Stichwort sets as one JSON file each in <paramref name="path" />.</summary>
+public sealed class JsonStichwortSetRepository(string path) : IStichwortSetRepository
+{
+    private readonly JsonFileStore<StichwortSet, StichwortSetDocument> _store = new(
+        path, ProcedureJsonContext.Default.StichwortSetDocument, s => s.Id, YearlyProcedureMapper.ToDocument,
+        YearlyProcedureMapper.FromDocument);
+
+    public IReadOnlyList<StichwortSet> List()
+    {
+        return _store.List();
+    }
+
+    public StichwortSet? Find(string id)
+    {
+        return _store.Find(id);
+    }
+
+    public void Save(StichwortSet stichwortSet)
+    {
+        _store.Save(stichwortSet);
+    }
+}
+
+/// <summary>Stores weather short-signal tables as one JSON file each in <paramref name="path" />.</summary>
+public sealed class JsonWetterTafelSetRepository(string path) : IWetterTafelSetRepository
+{
+    private readonly JsonFileStore<WetterTafelSet, WetterTafelSetDocument> _store = new(
+        path, ProcedureJsonContext.Default.WetterTafelSetDocument, s => s.Id, YearlyProcedureMapper.ToDocument,
+        YearlyProcedureMapper.FromDocument);
+
+    public IReadOnlyList<WetterTafelSet> List()
+    {
+        return _store.List();
+    }
+
+    public WetterTafelSet? Find(string id)
+    {
+        return _store.Find(id);
+    }
+
+    public void Save(WetterTafelSet wetterTafelSet)
+    {
+        _store.Save(wetterTafelSet);
+    }
+}
+
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
 [JsonSerializable(typeof(KenngruppenbuchDocument))]
 [JsonSerializable(typeof(TauschtafelSetDocument))]
+[JsonSerializable(typeof(StichwortSetDocument))]
+[JsonSerializable(typeof(WetterTafelSetDocument))]
 internal sealed partial class ProcedureJsonContext : JsonSerializerContext;

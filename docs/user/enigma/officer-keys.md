@@ -2,7 +2,7 @@
 
 [Back to The Enigma](README.md)
 
-Besides the daily key, the Kriegsmarine used special keys for messages its radio operators were not to read, and the Stichwort to change a key that might be compromised. The application does not have these keys or the Stichwort, but you can follow the officer procedure by hand (see [Trying it by hand](#trying-it-by-hand)). The source is Patrick Mahon, *The History of Hut Eight* (1945).
+Besides the daily key, the Kriegsmarine used special keys for messages its radio operators were not to read, and the Stichwort to change a key that might be compromised. The application prints these keys and the Stichwort envelopes with each key sheet, so you can use them by hand (see [Trying it by hand](#trying-it-by-hand)). The source is Patrick Mahon, *The History of Hut Eight* (1945).
 
 ## Offizier
 
@@ -45,7 +45,7 @@ The Stichwort (keyword) was an emergency procedure, used when a key was thought 
 |---|---|---|
 | D (4) | adds 4 to each rotor number | I becomes V, VI becomes II |
 | A, N, Z | add A, N and Z to the left, middle and right rings | |
-| I (1) | adds 1 to the plug pairs | |
+| I | Mahon: adds 1 to the plug pairs. The application adds I (9) to each plug letter. | AB becomes JK |
 | G | none: a dummy letter | |
 
 The procedure itself was taught by word of mouth only, so a captured key sheet and envelope were not enough. Hut 8 had to break each Stichwort as a new key, but it rarely held them up for long.
@@ -60,16 +60,22 @@ When a station was about to be captured, the operators destroyed the key sheets 
 
 ## Trying it by hand
 
-You can send an Offizier message with the machine and the printed documents. Make up the officer key first:
+The application has no Offizier or Stab setting on the machine and no Stichwort button, but every generated key sheet comes with the documents to do them by hand. In the key sheet panel, tick what you need under **Print to PDF** (see [Printing a sheet](key-sheets.md#printing-a-sheet)):
 
-- the wheel order and reflector of the day,
-- your own ten plug pairs,
-- 26 settings, one for each letter, with each letter used once in each place of the settings (four letters each on the M4).
+- **Also print the Offizier key**: `Offizier-<network>-<month>.pdf`. The day's reflector, Walzenlage and rings, private plugs that change every two days, and the month's 26 settings, named Anton to Zeppelin. Each letter appears once in each place of the settings, as on most real lists.
+- **Also print the Stab key**: `Stab-<network>-<month>.pdf`. Its own reflector, Walzenlage and rings every three days, its own plugs every day, and 26 settings.
+- **Also print the Stichwort envelopes**: `Stichwort-<year>.pdf`. The rule above, and eight envelopes for the year, such as PERSEUS with the word inside.
 
-Mahon does not say which rings the officer key used; use the day's rings.
+Mahon does not say which rings the Offizier key used; the application gives it the day's rings. Historical and imported sheets get Offizier and Stab keys the first time they are opened. An exported sheet holds them, so whoever imports it has the same keys.
 
-1. Set up the machine with the officer key: the day's rotors and rings, and your plugs. See [Setting up the machine by hand](key-sheets.md#setting-up-the-machine-by-hand).
-2. Choose a setting, such as B, turn the rotors to it and type the message. Write down the lamps.
-3. Set up the day's key, and [send](sending-by-hand.md) OFFIZIER BRUNO and the cipher text of step 2 as an ordinary message.
+### Sending an Offizier message
 
-The receiver [receives it by hand](receiving-by-hand.md), reads OFFIZIER BRUNO, sets up the officer key at setting B and types the rest.
+1. Set up the machine with the Offizier key of the day: the day's rotors and rings, and the Offizier plugs. See [Setting up the machine by hand](key-sheets.md#setting-up-the-machine-by-hand).
+2. Choose a setting, such as B (Bruno), turn the rotors to it and type the message. Write down the lamps.
+3. Set up the daily key, and [send](sending-by-hand.md) OFFIZIER BRUNO and the cipher text of step 2 as an ordinary message.
+
+The receiver [receives it by hand](receiving-by-hand.md), reads OFFIZIER BRUNO, sets up the Offizier key at setting B and types the rest. A Stab message goes the same way, with the Stab key of the day.
+
+### Putting a Stichwort in force
+
+Choose an envelope, such as PERSEUS, and change the day's row of the key sheet with its word before you set up the machine. With DANZIG, Walzenlage VI I VIII becomes II V IV, Ringstellung 01 01 05 becomes 02 15 05 (A, N and Z added), and the plug pair AB becomes JK (I added). Both sides must put the same Stichwort in force.

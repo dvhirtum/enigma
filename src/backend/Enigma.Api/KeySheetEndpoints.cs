@@ -12,7 +12,7 @@ internal static class KeySheetEndpoints
     /// <summary>
     ///     Historical sheets come from <c>KeySheets:HistoricalPath</c> (default: <c>keysheets</c> next to the executable),
     ///     others are stored in <c>KeySheets:UserPath</c> (default: <c>Enigma/keysheets</c> in local app data), with the
-    ///     Kenngruppenbücher and Tauschtafel sets in its <c>procedure</c> folder.
+    ///     Kenngruppenbücher, Tauschtafel sets, Stichwort sets and weather tables in its <c>procedure</c> folder.
     /// </summary>
     public static IServiceCollection AddKeySheets(this IServiceCollection services, IConfiguration configuration)
     {
@@ -28,6 +28,10 @@ internal static class KeySheetEndpoints
                 new JsonKenngruppenbuchRepository(Path.Combine(userPath, "procedure", "books")))
             .AddSingleton<ITauschtafelSetRepository>(
                 new JsonTauschtafelSetRepository(Path.Combine(userPath, "procedure", "tables")))
+            .AddSingleton<IStichwortSetRepository>(
+                new JsonStichwortSetRepository(Path.Combine(userPath, "procedure", "stichwoerter")))
+            .AddSingleton<IWetterTafelSetRepository>(
+                new JsonWetterTafelSetRepository(Path.Combine(userPath, "procedure", "wettertafeln")))
             .AddSingleton(Random.Shared)
             .AddSingleton(TimeProvider.System)
             .AddSingleton<KeySheetLinker>()
@@ -72,6 +76,8 @@ internal static class KeySheetEndpoints
 
         app.MapGet("/api/tauschtafeln/{id}", (string id, GetTauschtafelSetHandler handler) =>
             handler.Handle(new GetTauschtafelSet(id)));
+
+        app.MapGet("/api/wetterkurzschluessel", YearlyProcedureMapper.Wetterkurzschluessel);
 
         app.MapPost("/api/machine/daily-key", (DailyKeyRequest request, ApplyDailyKeyHandler handler) =>
             handler.Handle(new ApplyDailyKey(request.SheetId, request.Day)));

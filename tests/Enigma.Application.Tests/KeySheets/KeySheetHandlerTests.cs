@@ -386,4 +386,93 @@ public sealed class KeySheetHandlerTests
         Assert.Empty(receiver.Sheets);
         Assert.Empty(books.Books);
     }
+
+    [Fact]
+    public void Should_include_the_officer_keys_and_the_year_s_Stichwoerter_and_weather_tables_When_a_sheet_is_exported()
+    {
+        // Arrange
+        var repository = new FakeKeySheetRepository(Sheet("t", "Triton", "1944-06", Provenance.Generated, M4Row));
+        var handler = new ExportKeySheetHandler(Linking.For(repository));
+
+        // Act
+        var document = handler.Handle(new ExportKeySheet("t"));
+
+        // Assert
+        Assert.Equal(26, document.Offizier!.Settings.Count);
+        Assert.Equal(4, document.Offizier.Settings[0].Length);
+        Assert.Equal(document.Days[0].Rotors, document.Offizier.Days[0].Rotors);
+        Assert.Equal([1], document.Stab!.Days.Select(d => d.Day));
+        Assert.Equal(document.StichwortSetId, document.Stichwoerter!.Id);
+        Assert.Equal(1944, document.Stichwoerter.Year);
+        Assert.Equal(document.WetterTafelSetId, document.WetterTafeln!.Id);
+        Assert.Equal(4, document.WetterTafeln.Issues.Count);
+    }
+
+    [Fact]
+    public void Should_keep_the_officer_keys_and_the_yearly_sets_When_an_exported_sheet_is_imported_elsewhere()
+    {
+        // Arrange
+        var sender = new FakeKeySheetRepository(Sheet("t", "Triton", "1944-06", Provenance.Generated, M4Row));
+        var exported = new ExportKeySheetHandler(Linking.For(sender)).Handle(new ExportKeySheet("t"));
+        var receiver = new FakeKeySheetRepository();
+        var stichwoerter = new FakeStichwortSetRepository();
+        var wetterTafeln = new FakeWetterTafelSetRepository();
+        var linker = Linking.For(receiver, stichwoerter: stichwoerter, wetterTafeln: wetterTafeln);
+        var handler = new ImportKeySheetHandler(receiver, linker);
+
+        // Act
+        var details = handler.Handle(new ImportKeySheet(exported));
+
+        // Assert
+        var again = new ExportKeySheetHandler(linker).Handle(new ExportKeySheet(details.Id));
+        Assert.Equal(exported.Offizier!.Settings, again.Offizier!.Settings);
+        Assert.Equal(exported.Stab!.Days[0].Plugs, again.Stab!.Days[0].Plugs);
+        Assert.True(stichwoerter.Sets[again.StichwortSetId!]
+            .IsSameAs(YearlyProcedureMapper.FromDocument(exported.Stichwoerter!)));
+        Assert.True(wetterTafeln.Sets[again.WetterTafelSetId!]
+            .IsSameAs(YearlyProcedureMapper.FromDocument(exported.WetterTafeln!)));
+    }
+
+    [Fact]
+    public void Should_store_nothing_When_the_imported_Stichwort_set_differs_from_the_one_here()
+    {
+        // Arrange
+        var sender = new FakeKeySheetRepository(Sheet("t", "Triton", "1944-06", Provenance.Generated, M4Row));
+        var exported = new ExportKeySheetHandler(Linking.For(sender)).Handle(new ExportKeySheet("t"));
+        var clash = StichwortSet.Generate(exported.StichwortSetId!, 1944, new Random(99));
+        var receiver = new FakeKeySheetRepository();
+        var books = new FakeKenngruppenbuchRepository();
+        var handler = new ImportKeySheetHandler(receiver,
+            Linking.For(receiver, books, stichwoerter: new FakeStichwortSetRepository(clash)));
+
+        // Act
+        void Act()
+        {
+            handler.Handle(new ImportKeySheet(exported));
+        }
+
+        // Assert
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Equal($"The Stichwort set {clash.Id} differs from the one with the same id here.", exception.Message);
+        Assert.Empty(receiver.Sheets);
+        Assert.Empty(books.Books);
+    }
+
+    [Fact]
+    public void Should_name_the_key_When_an_imported_Offizier_key_has_too_few_settings()
+    {
+        // Arrange
+        var document = new KeySheetDocument(null, "Triton", "1944-06", null, null,
+            [new DailyKeyDocument(1, "B", ["I", "II", "III"], [1, 1, 1], [], null)],
+            Offizier: new OfficerKeyDocument([new DailyKeyDocument(1, "B", ["I", "II", "III"], [1, 1, 1], [], null)],
+                ["ABC"]));
+        var handler =
+            new ImportKeySheetHandler(new FakeKeySheetRepository(), Linking.For(new FakeKeySheetRepository()));
+
+        // Act
+        var exception = Record.Exception(() => handler.Handle(new ImportKeySheet(document)));
+
+        // Assert
+        Assert.StartsWith("Offizier: ", Assert.IsType<DomainException>(exception).Message);
+    }
 }

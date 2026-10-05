@@ -42,3 +42,25 @@ public sealed class NotFoundException : Exception
     {
     }
 }
+
+/// <summary>Stores generated Stichwort sets.</summary>
+public interface IStichwortSetRepository
+{
+    IReadOnlyList<StichwortSet> List();
+
+    /// <summary>The set with <paramref name="id" />, or null.</summary>
+    StichwortSet? Find(string id);
+
+    void Save(StichwortSet stichwortSet);
+}
+
+/// <summary>Stores generated weather short-signal tables.</summary>
+public interface IWetterTafelSetRepository
+{
+    IReadOnlyList<WetterTafelSet> List();
+
+    /// <summary>The set with <paramref name="id" />, or null.</summary>
+    WetterTafelSet? Find(string id);
+
+    void Save(WetterTafelSet wetterTafelSet);
+}

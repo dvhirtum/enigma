@@ -41,4 +41,4 @@ The Bombe in the application has three drums per scrambler and reflectors B and 
 - Beta at A (ring 01) with B-thin works as reflector B,
 - Gamma at A (ring 01) with C-thin works as reflector C.
 
-Any other Greek position, which most M4 messages use, needs a four-rotor Bombe, which the application does not have. The [historical intercepts](using-the-bombe.md) and the exercises are three-rotor jobs.
+Any other Greek position, which most M4 messages use, needs a four-rotor Bombe, which the application does not have. The [historical intercepts](using-the-bombe.md) and the exercises are three-rotor jobs. To send and receive weather short signals by hand, see [Weather short signals](../enigma/weather-short-signals.md).

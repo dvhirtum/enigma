@@ -31,7 +31,7 @@ public static class KeySheetGenerator
         return new KeySheet(id, network, month, Provenance.Generated, keys);
     }
 
-    private static (ReflectorType, RotorType[], RingSetting[]) InnerSetting(MachineModel model, Random random)
+    internal static (ReflectorType, RotorType[], RingSetting[]) InnerSetting(MachineModel model, Random random)
     {
         var reflectors = ReflectorType.All.Where(r => r.IsThin == model.HasGreekSlot).ToArray();
         var reflector = reflectors[random.Next(reflectors.Length)];
@@ -48,7 +48,7 @@ public static class KeySheetGenerator
         return (reflector, rotors, rings);
     }
 
-    private static PlugPair[] Plugs(Random random)
+    internal static PlugPair[] Plugs(Random random)
     {
         var letters = Shuffle(Enumerable.Range(0, Letter.Count).Select(Letter.FromIndex), random);
         return [.. Enumerable.Range(0, PlugPairs).Select(i => PlugPair.Create(letters[2 * i], letters[2 * i + 1]))];

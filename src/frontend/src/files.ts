@@ -9,7 +9,7 @@ const pdfFilters = [{ name: 'PDF', extensions: ['pdf'] }];
 const MAX_BYTES = 1_000_000;
 const MAX_PRINT_BYTES = 20_000_000;
 
-const MAX_PRINT_DOCUMENTS = 2;
+const MAX_PRINT_DOCUMENTS = 6;
 
 const windowOf = (event: IpcMainInvokeEvent) => BrowserWindow.fromWebContents(event.sender) ?? undefined;
 const safeName = (name: string) => name.replace(/[^\w.-]+/g, '-');
@@ -33,6 +33,11 @@ function isPrintDocuments(value: unknown): value is PrintDocument[] {
     value.every(isPrintDocument) &&
     value.reduce((total: number, document: PrintDocument) => total + document.html.length, 0) <= MAX_PRINT_BYTES
   );
+}
+
+/** Names joined as "A", "A and B" or "A, B and C". */
+function listed(names: string[]): string {
+  return names.length < 2 ? names.join() : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 }
 
 /** Prints an HTML document to PDF in a hidden window without scripts. */
@@ -120,7 +125,7 @@ export function registerFiles(): void {
       const question = {
         type: 'warning' as const,
         title: 'Print key sheet to PDF files in folder',
-        message: `${existing.join(' and ')} already ${existing.length === 1 ? 'exists' : 'exist'}. Do you want to replace ${existing.length === 1 ? 'it' : 'them'}?`,
+        message: `${listed(existing)} already ${existing.length === 1 ? 'exists' : 'exist'}. Do you want to replace ${existing.length === 1 ? 'it' : 'them'}?`,
         buttons: ['Replace', 'Cancel'],
         defaultId: 1,
         cancelId: 1,

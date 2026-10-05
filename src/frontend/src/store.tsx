@@ -24,6 +24,7 @@ import type {
   CribSuggestion,
   Intercept,
   Kenngruppenbuch,
+  Wetterkurzschluessel,
   KeySheet,
   KeySheetFile,
   KeySheetSummary,
@@ -34,7 +35,17 @@ import type {
   ReceivingKey,
 } from './api';
 import { shiftLetter, shiftRing } from './machine';
-import { keySheetDocument, procedureDocument, procedureName } from './printSheet';
+import {
+  keySheetDocument,
+  offizierDocument,
+  procedureDocument,
+  procedureName,
+  stabDocument,
+  stichwortDocument,
+  stichwortName,
+  wetterDocument,
+  wetterName,
+} from './printSheet';
 import { historicalSpeed } from './bombe/drums';
 import { withPartner, withoutLetter } from './bombe/steckers';
 import { createQueue } from './queue';
@@ -57,10 +68,20 @@ export interface KeySheetSlice {
   /** Saves the open sheet to a file the user picks. */
   exportKeySheet: () => Promise<boolean>;
   /**
-   * Prints the open sheet to a PDF the user picks. With `withProcedure` it also prints its Kenngruppenbuch and
-   * Tauschtafeln to a second PDF, both in a folder the user picks.
+   * Prints the open sheet to a PDF the user picks. With any of `options`, it also prints those documents, each to its own PDF, all in a
+   * folder the user picks: the Kenngruppenbuch and Tauschtafeln, the Offizier and Stab keys, the year's Stichwort envelopes, and the
+   * Wetterkurzschlüssel with the year's setting tables.
    */
-  printKeySheet: (withProcedure?: boolean) => Promise<boolean>;
+  printKeySheet: (options?: PrintOptions) => Promise<boolean>;
+}
+
+/** The documents printed besides a key sheet. */
+export interface PrintOptions {
+  procedure?: boolean;
+  offizier?: boolean;
+  stab?: boolean;
+  stichwort?: boolean;
+  wetter?: boolean;
 }
 
 /** Kenngruppenbücher by id, loaded when first needed. Books are cleared after sheets are generated or imported. */
@@ -817,14 +838,29 @@ export function createMachineStore({
           return false;
         }
         const { network, month, days, kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln } = result.value;
-        const file: KeySheetFile = { network, month, days, kenngruppenbuchId, tauschtafelSetId, kenngruppenbuch, tauschtafeln };
+        const { offizier, stab, stichwortSetId, wetterTafelSetId, stichwoerter, wetterTafeln } = result.value;
+        const file: KeySheetFile = {
+          network,
+          month,
+          days,
+          kenngruppenbuchId,
+          tauschtafelSetId,
+          kenngruppenbuch,
+          tauschtafeln,
+          offizier,
+          stab,
+          stichwortSetId,
+          wetterTafelSetId,
+          stichwoerter,
+          wetterTafeln,
+        };
         try {
           return (await files.saveKeySheet(`${sheet.network}-${sheet.month}.json`, JSON.stringify(file))) !== null;
         } catch (error) {
           return fail({ status: 0, title: 'The file could not be saved.', detail: String(error) });
         }
       },
-      printKeySheet: async (withProcedure = false) => {
+      printKeySheet: async (options = {}) => {
         const sheet = get().keySheet;
         if (!sheet) {
           return false;
@@ -833,19 +869,30 @@ export function createMachineStore({
         if (!result.ok) {
           return false;
         }
-        const name = `${sheet.network}-${sheet.month}.pdf`;
-        const html = keySheetDocument(result.value, sheet.model);
-        const bookHtml = withProcedure ? procedureDocument(result.value) : null;
-        try {
-          if (bookHtml === null) {
-            return (await files.printKeySheet(name, html)) !== null;
+        const file = result.value;
+        let book: Wetterkurzschluessel | null = null;
+        if (options.wetter) {
+          const bookResult = await check(procedure.getWetterkurzschluessel());
+          if (!bookResult.ok) {
+            return false;
           }
-          return (
-            (await files.printToFolder([
-              { name, html },
-              { name: `${procedureName(result.value)}.pdf`, html: bookHtml },
-            ])) !== null
-          );
+          book = bookResult.value;
+        }
+        const named = (name: string, html: string | null) => (html === null ? [] : [{ name: `${name}.pdf`, html }]);
+        const sheetName = `${sheet.network}-${sheet.month}`;
+        const [first, ...others] = [
+          ...named(sheetName, keySheetDocument(file, sheet.model)),
+          ...named(procedureName(file), options.procedure ? procedureDocument(file) : null),
+          ...named(`Offizier-${sheetName}`, options.offizier ? offizierDocument(file, sheet.model) : null),
+          ...named(`Stab-${sheetName}`, options.stab ? stabDocument(file, sheet.model) : null),
+          ...named(stichwortName(file), options.stichwort ? stichwortDocument(file) : null),
+          ...named(wetterName(file), book ? wetterDocument(file, book) : null),
+        ];
+        try {
+          if (others.length === 0) {
+            return (await files.printKeySheet(first.name, first.html)) !== null;
+          }
+          return (await files.printToFolder([first, ...others])) !== null;
         } catch (error) {
           return fail({ status: 0, title: 'The PDF could not be saved.', detail: String(error) });
         }

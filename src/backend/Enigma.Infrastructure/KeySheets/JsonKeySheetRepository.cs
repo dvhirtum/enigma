@@ -67,7 +67,11 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
                 sheet.KenngruppenbuchId,
                 sheet.TauschtafelSetId,
                 sheet.DailyKeys.Where(k => k.Grundstellung is not null)
-                    .ToDictionary(k => k.Day, k => k.Grundstellung!.ToString()));
+                    .ToDictionary(k => k.Day, k => k.Grundstellung!.ToString()),
+                sheet.StichwortSetId,
+                sheet.WetterTafelSetId,
+                KeySheetMapper.ToDocument(sheet.Offizier),
+                KeySheetMapper.ToDocument(sheet.Stab));
             links[sheet.Id] = link;
             Directory.CreateDirectory(Path.GetDirectoryName(HistoricalLinksFile)!);
             File.WriteAllText(HistoricalLinksFile,
@@ -114,10 +118,26 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
         ];
     }
 
-    /// <summary>Applies the stored links and Grundstellungen to a historical sheet. Entries that no longer fit are skipped.</summary>
+    /// <summary>
+    ///     Applies the stored links, Grundstellungen and officer keys to a historical sheet. Entries that no longer fit
+    ///     are skipped.
+    /// </summary>
     private static void Apply(SheetLinks link, KeySheet sheet)
     {
         if (link is { KenngruppenbuchId: { } book, TauschtafelSetId: { } tables }) sheet.Link(book, tables);
+
+        if (link is { StichwortSetId: { } stichwoerter, WetterTafelSetId: { } wetterTafeln })
+            sheet.LinkYearly(stichwoerter, wetterTafeln);
+
+        try
+        {
+            sheet.SetOfficerKeys(KeySheetMapper.FromDocument(link.Offizier, "Offizier"),
+                KeySheetMapper.FromDocument(link.Stab, "Stab"));
+        }
+        catch (DomainException)
+        {
+            // The stored keys do not fit the sheet; the linker generates new ones.
+        }
 
         foreach (var (day, grundstellung) in link.Grundstellungen ?? [])
             try
@@ -192,11 +212,18 @@ public sealed class JsonKeySheetRepository(string historicalPath, string userPat
     }
 }
 
-/// <summary>The Kenngruppenbuch, Tauschtafel set and filled-in Grundstellungen (by day) of a historical sheet.</summary>
+/// <summary>
+///     The Kenngruppenbuch, Tauschtafel set, Stichwort set, weather tables, filled-in Grundstellungen (by day) and
+///     generated Offizier and Stab keys of a historical sheet.
+/// </summary>
 internal sealed record SheetLinks(
     string? KenngruppenbuchId,
     string? TauschtafelSetId,
-    Dictionary<int, string>? Grundstellungen = null);
+    Dictionary<int, string>? Grundstellungen = null,
+    string? StichwortSetId = null,
+    string? WetterTafelSetId = null,
+    OfficerKeyDocument? Offizier = null,
+    OfficerKeyDocument? Stab = null);
 
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, WriteIndented = true)]
 [JsonSerializable(typeof(KeySheetDocument))]
