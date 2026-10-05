@@ -6,6 +6,8 @@ import type { BackendStatus } from './api';
 
 const PORT_LINE = /^ENIGMA_API_PORT=(\d+)$/;
 const START_TIMEOUT_MS = 60_000;
+/** The port of the backend started from source; the packaged app uses a random one. */
+const DEV_PORT = 5174;
 
 export interface Backend {
   status(): BackendStatus;
@@ -29,7 +31,11 @@ function spawnApi(): ChildProcess {
 
   const project = path.resolve(app.getAppPath(), '../backend/Enigma.Api');
   const historical = path.resolve(app.getAppPath(), '../../data/keysheets');
-  return spawn('dotnet', ['run', '--project', project, '--no-launch-profile', '--', '--environment=Development', ...keySheets(historical)], options);
+  return spawn(
+    'dotnet',
+    ['run', '--project', project, '--no-launch-profile', '--', '--environment=Development', `--Api:Port=${DEV_PORT}`, ...keySheets(historical)],
+    options,
+  );
 }
 
 function kill(child: ChildProcess): void {
@@ -109,7 +115,10 @@ export function createBackend(): Backend {
     });
 
     url.then(
-      () => {
+      (baseUrl) => {
+        if (!app.isPackaged) {
+          console.log(`OpenAPI: ${baseUrl}/openapi/v1.json`);
+        }
         if (child === current) {
           setStatus({ state: 'running' });
         }

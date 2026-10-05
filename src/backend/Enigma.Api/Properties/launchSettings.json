@@ -4,7 +4,8 @@
     "Enigma.Api": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Api__Port": "5174"
       }
     }
   }

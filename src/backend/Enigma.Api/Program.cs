@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
 var builder = WebApplication.CreateSlimBuilder(args);
-builder.WebHost.UseUrls("http://127.0.0.1:0");
+builder.WebHost.UseUrls($"http://127.0.0.1:{builder.Configuration["Api:Port"] ?? "0"}");
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, ApiJsonContext.Default));
 builder.Services.AddProblemDetails();

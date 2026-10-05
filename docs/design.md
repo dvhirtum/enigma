@@ -64,7 +64,7 @@ flowchart LR
     subgraph "Enigma.Api (.NET 10, Native AOT)"
         Api --> Infrastructure --> Application --> Domain
     end
-    Main -->|"HTTP 127.0.0.1:&lt;random port&gt;"| Api
+    Main -->|"HTTP 127.0.0.1:HTTP 127.0.0.1:&lt;random port&gt;lt;portHTTP 127.0.0.1:&lt;random port&gt;gt;"| Api
     Infrastructure --> Files[("JSON files<br/>in app data")]
 ```
 
@@ -302,7 +302,8 @@ Electron passes both key sheet paths.
 - ASP.NET Core minimal API, the composition root. Published with Native AOT; JSON uses source generation (`ApiJsonContext`).
 - Invariant violations return 400 `ProblemDetails`; unknown key sheets, books, table sets, stops and the like return 404.
 - Ring settings are numbers 1–26. Positions, keys and lamps are letters.
-- Every endpoint has a tag and a summary. The build writes the OpenAPI document to [`docs/api/enigma-api.json`](api/enigma-api.json). In the Development environment (`dotnet run`, `npm start`) the API also serves it at `/openapi/v1.json`.
+- Every endpoint has a tag and a summary. The build writes the OpenAPI document to [`docs/api/enigma-api.json`](api/enigma-api.json).
+- The API listens on a random port, or on `Api:Port` when set. In the Development environment (`dotnet run`, `npm start`) it uses port 5174 and serves the OpenAPI document at `http://127.0.0.1:5174/openapi/v1.json`.
 
 ## Frontend
 
