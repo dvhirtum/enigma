@@ -50,6 +50,8 @@ jobs:
           cache-dependency-path: '**/packages.lock.json'
       - run: dotnet restore Enigma.slnx --locked-mode
       - run: dotnet build Enigma.slnx --no-restore --configuration Release -p:Version=${{ needs.version.outputs.semver }}
+      - name: Check the OpenAPI document is up to date
+        run: git diff --exit-code docs/api
       - run: dotnet test --solution Enigma.slnx --no-build --configuration Release
       - name: Check for vulnerable packages
         run: |

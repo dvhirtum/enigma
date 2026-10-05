@@ -29,7 +29,7 @@ function spawnApi(): ChildProcess {
 
   const project = path.resolve(app.getAppPath(), '../backend/Enigma.Api');
   const historical = path.resolve(app.getAppPath(), '../../data/keysheets');
-  return spawn('dotnet', ['run', '--project', project, '--no-launch-profile', '--', ...keySheets(historical)], options);
+  return spawn('dotnet', ['run', '--project', project, '--no-launch-profile', '--', '--environment=Development', ...keySheets(historical)], options);
 }
 
 function kill(child: ChildProcess): void {

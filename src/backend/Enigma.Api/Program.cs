@@ -23,15 +23,24 @@ builder.Services.AddKeySheets(builder.Configuration);
 builder.Services.AddOperatorHandlers();
 builder.Services.AddSingleton<IBombeSessionStore, InMemoryBombeSessionStore>();
 builder.Services.AddBombeHandlers();
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer((document, _, _) =>
+{
+    document.Info.Title = "Enigma API";
+    document.Info.Description = "The backend of the Navy Enigma simulator and its Bombe, called by the Electron app.";
+    return Task.CompletedTask;
+}));
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 var version = typeof(Program).Assembly
     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
 
-app.MapGet("/api/health", () => new HealthResponse("ok", version));
+app.MapGet("/api/health", () => new HealthResponse("ok", version))
+    .WithTags("Health")
+    .WithSummary("Reports that the API is up, with its version.");
 app.MapMachineEndpoints();
 app.MapKeySheetEndpoints();
 app.MapOperatorEndpoints();

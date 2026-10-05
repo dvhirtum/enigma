@@ -6,6 +6,7 @@ Navy Enigma simulator (M3 + M4) with a Bombe mode for breaking it. Electron + Re
 
 - Backend follows DDD + Clean Architecture. Dependencies point inward: Api → Infrastructure → Application → Domain. The Domain has no external dependencies.
 - The API is published with Native AOT. Register every JSON type in `ApiJsonContext`, and avoid reflection-based libraries.
+- Give every endpoint a tag and `.WithSummary(...)`. The build regenerates `docs/api/enigma-api.json`; commit it with the change.
 - Rotor and reflector wirings must be historically exact. Back changes with historical test vectors.
 - Backend tests use xUnit. Name them `Should_<expected>_When_<condition>` (snake case), and mark the `// Arrange`, `// Act` and `// Assert` parts of every test.
 - Frontend tests use Vitest + React Testing Library, plus Playwright for end-to-end tests. They follow plain JavaScript naming conventions (the Should_When rule does not apply).

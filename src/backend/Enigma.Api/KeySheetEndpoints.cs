@@ -48,38 +48,60 @@ internal static class KeySheetEndpoints
 
     public static void MapKeySheetEndpoints(this IEndpointRouteBuilder app)
     {
-        var sheets = app.MapGroup("/api/keysheets");
+        var sheets = app.MapGroup("/api/keysheets")
+            .WithTags("Key sheets")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
 
         sheets.MapGet("/", (ListKeySheetsHandler handler) =>
-            handler.Handle(new ListKeySheets()));
+                handler.Handle(new ListKeySheets()))
+            .WithSummary("Lists the key sheets.");
 
         sheets.MapGet("/{id}", (string id, GetKeySheetHandler handler) =>
-            handler.Handle(new GetKeySheet(id)));
+                handler.Handle(new GetKeySheet(id)))
+            .WithSummary("Gets a key sheet with its daily keys.")
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         sheets.MapDelete("/{id}", (string id, DeleteKeySheetHandler handler) =>
-        {
-            handler.Handle(new DeleteKeySheet(id));
-            return Results.NoContent();
-        });
+            {
+                handler.Handle(new DeleteKeySheet(id));
+                return Results.NoContent();
+            })
+            .WithSummary("Deletes a generated or user-defined key sheet.")
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         sheets.MapPost("/generate", (GenerateKeySheets command, GenerateKeySheetsHandler handler) =>
-            handler.Handle(command));
+                handler.Handle(command))
+            .WithSummary("Generates every month of a year for each network, for one model.");
 
         sheets.MapPost("/import", (KeySheetDocument document, ImportKeySheetHandler handler) =>
-            handler.Handle(new ImportKeySheet(document)));
+                handler.Handle(new ImportKeySheet(document)))
+            .WithSummary("Imports a key sheet file as a user-defined sheet.");
 
         sheets.MapGet("/{id}/export", (string id, ExportKeySheetHandler handler) =>
-            handler.Handle(new ExportKeySheet(id)));
+                handler.Handle(new ExportKeySheet(id)))
+            .WithSummary("Exports a key sheet file with its linked books and tables.")
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
-        app.MapGet("/api/kenngruppenbuecher/{id}", (string id, GetKenngruppenbuchHandler handler) =>
-            handler.Handle(new GetKenngruppenbuch(id)));
+        var procedure = app.MapGroup("/api")
+            .WithTags("Key procedure")
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
-        app.MapGet("/api/tauschtafeln/{id}", (string id, GetTauschtafelSetHandler handler) =>
-            handler.Handle(new GetTauschtafelSet(id)));
+        procedure.MapGet("/kenngruppenbuecher/{id}", (string id, GetKenngruppenbuchHandler handler) =>
+                handler.Handle(new GetKenngruppenbuch(id)))
+            .WithSummary("Gets a Kenngruppenbuch with its Zuteilungsliste.");
 
-        app.MapGet("/api/wetterkurzschluessel", YearlyProcedureMapper.Wetterkurzschluessel);
+        procedure.MapGet("/tauschtafeln/{id}", (string id, GetTauschtafelSetHandler handler) =>
+                handler.Handle(new GetTauschtafelSet(id)))
+            .WithSummary("Gets a year's set of bigram tables with its calendar.");
+
+        procedure.MapGet("/wetterkurzschluessel", YearlyProcedureMapper.Wetterkurzschluessel)
+            .WithSummary("Gets the weather short-signal book.");
 
         app.MapPost("/api/machine/daily-key", (DailyKeyRequest request, ApplyDailyKeyHandler handler) =>
-            handler.Handle(new ApplyDailyKey(request.SheetId, request.Day)));
+                handler.Handle(new ApplyDailyKey(request.SheetId, request.Day)))
+            .WithTags("Machine")
+            .WithSummary("Sets up the machine with a key sheet day, switching model if needed.")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
     }
 }
