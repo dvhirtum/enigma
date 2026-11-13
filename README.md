@@ -5,7 +5,7 @@ A simulator of the Kriegsmarine Enigma M3 and M4, with historically exact wiring
 - **Enigma mode:** set the machine up from key sheets and send and receive messages, following the German Navy procedures.
 - **Bombe mode:** break a message the way Hut 8 did. The Hut 8 notebook takes you from a crib to a menu, then to the stops and the key. The machine window shows the Bombe's front, side and back, with drums to fit and cables to plug, and the checking machine. Messages come from historical intercepts, generated exercises or pasted text.
 
-See the [user guide](docs/user/README.md) for how to use it, and [docs/design.md](docs/design.md) for the design.
+See the [website](https://dvhirtum.github.io/enigma/) or the [user guide](docs/user/README.md) for how to use it, and [docs/design.md](docs/design.md) for the design.
 
 ## Resources
 

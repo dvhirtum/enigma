@@ -1,0 +1,17 @@
+title: Enigma
+description: Navy Enigma M3 and M4 simulator with a Bombe mode
+theme: minima
+baseurl: /enigma
+url: https://dvhirtum.github.io
+header_pages:
+  - guide/index.md
+plugins:
+  - jekyll-optional-front-matter
+  - jekyll-relative-links
+  - jekyll-titles-from-headings
+relative_links:
+  collections: false
+titles_from_headings:
+  enabled: true
+  strip_title: true
+  collections: false
