@@ -1,0 +1,6409 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Enigma API",
+    "description": "The backend of the Navy Enigma simulator and its Bombe, called by the Electron app.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Reports that the API is up, with its version.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/daily-key": {
+      "post": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Sets up the machine with a key sheet day, switching model if needed.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine": {
+      "get": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Gets the machine state.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Replaces the machine with a default machine of the model.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMachine"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/key": {
+      "put": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Replaces the machine with one set up with the whole key, all or nothing.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetUpMachine"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/rotors/{slot}": {
+      "put": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Puts a rotor from the box into a slot; a rotor already there goes back to the box.",
+        "parameters": [
+          {
+            "name": "slot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Puts the rotor in a slot back in the box.",
+        "parameters": [
+          {
+            "name": "slot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/rotors/{slot}/position": {
+      "put": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Turns the rotor in a slot to a window letter.",
+        "parameters": [
+          {
+            "name": "slot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/rotor-box/{rotor}/ring": {
+      "put": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Sets the ring (1–26) of a rotor in the box.",
+        "parameters": [
+          {
+            "name": "rotor",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RingSettingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/reflector": {
+      "put": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Fits a reflector.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReflector"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/plugs": {
+      "post": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Plugs a cable between two letters.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectPlug"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/plugs/{letter}": {
+      "delete": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Removes the cable plugged into a letter.",
+        "parameters": [
+          {
+            "name": "letter",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Moves one end of a cable to a free socket.",
+        "parameters": [
+          {
+            "name": "letter",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlugMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/keyboard/press": {
+      "post": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Holds a key down: the rotors step and a lamp lights.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PressKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/keyboard/release": {
+      "post": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Releases the held key.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/machine/lamps": {
+      "delete": {
+        "tags": [
+          "Machine"
+        ],
+        "summary": "Clears the record of lit lamps.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/keysheets": {
+      "get": {
+        "tags": [
+          "Key sheets"
+        ],
+        "summary": "Lists the key sheets.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KeySheetSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/keysheets/{id}": {
+      "get": {
+        "tags": [
+          "Key sheets"
+        ],
+        "summary": "Gets a key sheet with its daily keys.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeySheetDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Key sheets"
+        ],
+        "summary": "Deletes a generated or user-defined key sheet.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/keysheets/generate": {
+      "post": {
+        "tags": [
+          "Key sheets"
+        ],
+        "summary": "Generates every month of a year for each network, for one model.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateKeySheets"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KeySheetSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/keysheets/import": {
+      "post": {
+        "tags": [
+          "Key sheets"
+        ],
+        "summary": "Imports a key sheet file as a user-defined sheet.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeySheetDocument"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeySheetDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/keysheets/{id}/export": {
+      "get": {
+        "tags": [
+          "Key sheets"
+        ],
+        "summary": "Exports a key sheet file with its linked books and tables.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeySheetDocument"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kenngruppenbuecher/{id}": {
+      "get": {
+        "tags": [
+          "Key procedure"
+        ],
+        "summary": "Gets a Kenngruppenbuch with its Zuteilungsliste.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KenngruppenbuchDocument"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tauschtafeln/{id}": {
+      "get": {
+        "tags": [
+          "Key procedure"
+        ],
+        "summary": "Gets a year's set of bigram tables with its calendar.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TauschtafelSetDocument"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wetterkurzschluessel": {
+      "get": {
+        "tags": [
+          "Key procedure"
+        ],
+        "summary": "Gets the weather short-signal book.",
+        "responses": {
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WetterkurzschluesselDocument"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/operator/send": {
+      "post": {
+        "tags": [
+          "Operator"
+        ],
+        "summary": "Starts sending a message with the applied daily key.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/operator/receiving-keys": {
+      "post": {
+        "tags": [
+          "Operator"
+        ],
+        "summary": "Finds the key sheet days a radio message can be received with on a date.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindReceivingKeys"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReceivingKey"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/operator/receive": {
+      "post": {
+        "tags": [
+          "Operator"
+        ],
+        "summary": "Starts receiving a radio message, with a key sheet day or the applied key.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartReceiving"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/operator/groups": {
+      "put": {
+        "tags": [
+          "Operator"
+        ],
+        "summary": "Chooses the Schlüsselkenngruppe, Verfahrenkenngruppe and fillers to send with.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseGroups"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/operator/finish": {
+      "post": {
+        "tags": [
+          "Operator"
+        ],
+        "summary": "Finishes the message being sent and gives the radio message.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/operator": {
+      "delete": {
+        "tags": [
+          "Operator"
+        ],
+        "summary": "Cancels the procedure.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe": {
+      "get": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Gets the job: message, crib, menu, settings and machines.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/cipher-text": {
+      "put": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Loads pasted text as the message: a radio message or bare cipher text; empty clears it.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCipherText"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/intercepts": {
+      "get": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Lists the historical intercepts.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InterceptState"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/source/intercept": {
+      "post": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Loads a historical intercept as the message.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoadIntercept"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/source/exercise": {
+      "post": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Generates an exercise from a day of the M3 key sheets and loads it.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/source/crib": {
+      "get": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Gets the likely crib of the message, or of a message type.",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CribState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/message-types": {
+      "get": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Lists the message types and their cribs.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MessageTypeState"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/source/solution": {
+      "get": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Gets the solution of an intercept or exercise.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolutionState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/source/wheel-orders": {
+      "post": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Shows three wheel orders, one of them the key's.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/source/crib-positions": {
+      "post": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Shows two crib positions of an exercise, one of them the crib's.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/crib": {
+      "put": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Sets the crib.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCrib"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/placement": {
+      "put": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Places the crib at a position and builds the menu; crashes are rejected.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlacementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/menu": {
+      "put": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Sets the menu by hand from links of the placed crib.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMenu"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/menu/build": {
+      "post": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Builds the menu from the placed crib.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/menu/stops": {
+      "get": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Measures the menu's stops per wheel order, with and without the diagonal board.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MenuStopsState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/settings": {
+      "put": {
+        "tags": [
+          "Bombe job"
+        ],
+        "summary": "Sets the diagonal board and the reflector; left out: unchanged.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureBombe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/machine/plug-up": {
+      "post": {
+        "tags": [
+          "Bombe machine"
+        ],
+        "summary": "Plugs up the Bombe with the menu.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/machine/chains/{chain}/scramblers/{scrambler}/jacks/{jack}": {
+      "put": {
+        "tags": [
+          "Bombe machine"
+        ],
+        "summary": "Cables a scrambler jack to a letter; empty unplugs it.",
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "scrambler",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "jack",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/machine/chains/{chain}/rows/{row}": {
+      "put": {
+        "tags": [
+          "Bombe machine"
+        ],
+        "summary": "Fits a drum row of a chain with a rotor, from scrambler 1 up to a scrambler.",
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "row",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RowRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/machine/chains/{chain}/scramblers/{scrambler}/drums/{row}": {
+      "delete": {
+        "tags": [
+          "Bombe machine"
+        ],
+        "summary": "Takes one drum out.",
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "scrambler",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "row",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/machine/chains/{chain}/scramblers/{scrambler}/start": {
+      "put": {
+        "tags": [
+          "Bombe machine"
+        ],
+        "summary": "Turns a scrambler's drums to start letters, such as ZZB.",
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "scrambler",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/machine/chains/{chain}/test-register": {
+      "put": {
+        "tags": [
+          "Bombe machine"
+        ],
+        "summary": "Plugs a chain's test register and sets its input wire; left out: unchanged, empty: unplugged or default.",
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/machine/joins/{join}": {
+      "put": {
+        "tags": [
+          "Bombe machine"
+        ],
+        "summary": "Joins or separates two chains.",
+        "parameters": [
+          {
+            "name": "join",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/run": {
+      "post": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Starts a run at a speed in positions per second, or at full speed.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Stops the run.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Gets the run's progress.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/run/speed": {
+      "put": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Changes the speed of the run.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/run/continue": {
+      "post": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Continues a run paused at a stop.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/printout": {
+      "get": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Gets the printed stops from an index on; count left out: all.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrintedStopState"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Clears the printout.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops": {
+      "get": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Gets the stops logged for the notebook from an index on, with their verdicts; count left out: all.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StopState"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Bombe run"
+        ],
+        "summary": "Clears the logged stops and their checks.",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/checking": {
+      "put": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Sets the checking machine's reflector, drums, rings and windows; left out: unchanged.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCheckingMachine"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/checking/press": {
+      "post": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Presses a key on the checking machine; gives the lamp and, when set up for a stop, its check.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PressCheckingKey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LampState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops/{stop}/checking": {
+      "post": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Sets up the checking machine for a stop.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops/{stop}/check": {
+      "get": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Gets the check of a stop, starting it when first asked for.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Sets the stecker sheet and the right and middle rings; left out: unchanged.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops/{stop}/check/verdict": {
+      "post": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Records the verdict (True, False or Unchecked) and compares it with the solution.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerdictRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmationState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops/{stop}/check/suggest": {
+      "post": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Suggests steckers for the letters not on the sheet, without setting them.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops/{stop}/check/find": {
+      "post": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Scores every right ring and sets the best.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops/{stop}/check/find-middle": {
+      "post": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Scores every middle ring and sets the best.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops/{stop}/check/ring-table": {
+      "get": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Gets the 676 left and middle rings with the cores each leads to at the crib.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RingTableState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/stops/{stop}/check/rings": {
+      "put": {
+        "tags": [
+          "Checking"
+        ],
+        "summary": "Reads the left and middle rings (1–26) off the ring table; both left out: forgets them.",
+        "parameters": [
+          {
+            "name": "stop",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/day/messages/{message}/indicator": {
+      "put": {
+        "tags": [
+          "Day traffic"
+        ],
+        "summary": "Writes down a message's Kenngruppen; left out: unchanged, empty: rubbed out; 0 is the broken message.",
+        "parameters": [
+          {
+            "name": "message",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IndicatorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/day/messages/{message}/indicator/fill-in": {
+      "post": {
+        "tags": [
+          "Day traffic"
+        ],
+        "summary": "Fills in a message's Kenngruppen from the bigram table.",
+        "parameters": [
+          {
+            "name": "message",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bombe/pinch": {
+      "post": {
+        "tags": [
+          "Day traffic"
+        ],
+        "summary": "Takes a pinch of the key sheet day and gives the day's other messages.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BombeState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AllotmentDocument": {
+        "required": [
+          "network",
+          "first",
+          "last"
+        ],
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string"
+          },
+          "first": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "last": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "AppliedKeyState": {
+        "required": [
+          "sheetId",
+          "network",
+          "month",
+          "day",
+          "modified",
+          "grundstellung"
+        ],
+        "type": "object",
+        "properties": {
+          "sheetId": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modified": {
+            "type": "boolean"
+          },
+          "grundstellung": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "BigramSwapState": {
+        "required": [
+          "from",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        }
+      },
+      "BombeMachineState": {
+        "required": [
+          "chains",
+          "joins",
+          "pluggedForMenu",
+          "pluggedByHand",
+          "warnings"
+        ],
+        "type": "object",
+        "properties": {
+          "chains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChainState"
+            }
+          },
+          "joins": {
+            "type": "array",
+            "items": {
+              "type": "boolean"
+            }
+          },
+          "pluggedForMenu": {
+            "type": "boolean"
+          },
+          "pluggedByHand": {
+            "type": "boolean"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "BombeSettings": {
+        "required": [
+          "diagonalBoard",
+          "reflector"
+        ],
+        "type": "object",
+        "properties": {
+          "diagonalBoard": {
+            "type": "boolean"
+          },
+          "reflector": {
+            "type": "string"
+          }
+        }
+      },
+      "BombeState": {
+        "required": [
+          "source",
+          "cipherText",
+          "crib",
+          "placements",
+          "position",
+          "menu",
+          "machine",
+          "checker",
+          "settings",
+          "run",
+          "stops",
+          "printed",
+          "day"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SourceState"
+              }
+            ]
+          },
+          "cipherText": {
+            "type": "string"
+          },
+          "crib": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "placements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlacementState"
+            }
+          },
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "menu": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MenuState"
+              }
+            ]
+          },
+          "machine": {
+            "$ref": "#/components/schemas/BombeMachineState"
+          },
+          "checker": {
+            "$ref": "#/components/schemas/CheckingMachineState"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/BombeSettings"
+          },
+          "run": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunState"
+              }
+            ]
+          },
+          "stops": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "printed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "day": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DayState"
+              }
+            ]
+          }
+        }
+      },
+      "ChainState": {
+        "required": [
+          "testRegister",
+          "input",
+          "scramblers"
+        ],
+        "type": "object",
+        "properties": {
+          "testRegister": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "input": {
+            "type": "string"
+          },
+          "scramblers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScramblerState"
+            }
+          }
+        }
+      },
+      "CheckedKeyState": {
+        "required": [
+          "reflector",
+          "wheelOrder",
+          "rings",
+          "plugs",
+          "messageKey"
+        ],
+        "type": "object",
+        "properties": {
+          "reflector": {
+            "type": "string"
+          },
+          "wheelOrder": {
+            "type": "string"
+          },
+          "rings": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "plugs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "messageKey": {
+            "type": "string"
+          }
+        }
+      },
+      "CheckingMachineState": {
+        "required": [
+          "reflector",
+          "dummy",
+          "drums",
+          "rings",
+          "windows",
+          "stop"
+        ],
+        "type": "object",
+        "properties": {
+          "reflector": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dummy": {
+            "type": "boolean"
+          },
+          "drums": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rings": {
+            "type": "string"
+          },
+          "windows": {
+            "type": "string"
+          },
+          "stop": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StopState"
+              }
+            ]
+          }
+        }
+      },
+      "CheckRequest": {
+        "required": [
+          "steckers",
+          "rightRing",
+          "middleRing"
+        ],
+        "type": "object",
+        "properties": {
+          "steckers": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rightRing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "middleRing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "CheckState": {
+        "required": [
+          "stop",
+          "steckers",
+          "contradicted",
+          "checkedSteckers",
+          "middleRing",
+          "rightRing",
+          "verdict",
+          "crib",
+          "decrypt",
+          "key",
+          "reading"
+        ],
+        "type": "object",
+        "properties": {
+          "stop": {
+            "$ref": "#/components/schemas/StopState"
+          },
+          "steckers": {
+            "type": "string"
+          },
+          "contradicted": {
+            "type": "string"
+          },
+          "checkedSteckers": {
+            "type": "string"
+          },
+          "middleRing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rightRing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "verdict": {
+            "type": "string"
+          },
+          "crib": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CribLetterState"
+            }
+          },
+          "decrypt": {
+            "type": "string"
+          },
+          "key": {
+            "$ref": "#/components/schemas/CheckedKeyState"
+          },
+          "reading": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ReadingState"
+              }
+            ]
+          }
+        }
+      },
+      "ChooseGroups": {
+        "required": [
+          "schluesselkenngruppe",
+          "verfahrenkenngruppe",
+          "fillers"
+        ],
+        "type": "object",
+        "properties": {
+          "schluesselkenngruppe": {
+            "type": "string"
+          },
+          "verfahrenkenngruppe": {
+            "type": "string"
+          },
+          "fillers": {
+            "type": "string"
+          }
+        }
+      },
+      "ColumnRangeDocument": {
+        "required": [
+          "first",
+          "last"
+        ],
+        "type": "object",
+        "properties": {
+          "first": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "last": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ComparisonState": {
+        "required": [
+          "isTrueStop",
+          "verdictCorrect",
+          "wrongPairs",
+          "missingPairs"
+        ],
+        "type": "object",
+        "properties": {
+          "isTrueStop": {
+            "type": "boolean"
+          },
+          "verdictCorrect": {
+            "type": "boolean"
+          },
+          "wrongPairs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "missingPairs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ConfigureBombe": {
+        "required": [
+          "diagonalBoard",
+          "reflector"
+        ],
+        "type": "object",
+        "properties": {
+          "diagonalBoard": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "reflector": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ConfirmationState": {
+        "required": [
+          "verdict",
+          "cribMismatches",
+          "cribUnknown",
+          "solution",
+          "check"
+        ],
+        "type": "object",
+        "properties": {
+          "verdict": {
+            "type": "string"
+          },
+          "cribMismatches": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "cribUnknown": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "solution": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ComparisonState"
+              }
+            ]
+          },
+          "check": {
+            "$ref": "#/components/schemas/CheckState"
+          }
+        }
+      },
+      "ConnectPlug": {
+        "required": [
+          "pair"
+        ],
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateMachine": {
+        "required": [
+          "model"
+        ],
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          }
+        }
+      },
+      "CribLetterState": {
+        "required": [
+          "offset",
+          "plain",
+          "cipher",
+          "match"
+        ],
+        "type": "object",
+        "properties": {
+          "offset": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "plain": {
+            "type": "string"
+          },
+          "cipher": {
+            "type": "string"
+          },
+          "match": {
+            "type": "string"
+          }
+        }
+      },
+      "CribPositionsState": {
+        "required": [
+          "crib",
+          "positions"
+        ],
+        "type": "object",
+        "properties": {
+          "crib": {
+            "type": "string"
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "CribState": {
+        "required": [
+          "crib",
+          "place"
+        ],
+        "type": "object",
+        "properties": {
+          "crib": {
+            "type": "string"
+          },
+          "place": {
+            "type": "string"
+          }
+        }
+      },
+      "DailyKeyDocument": {
+        "required": [
+          "day",
+          "reflector",
+          "rotors",
+          "rings",
+          "plugs",
+          "grundstellung"
+        ],
+        "type": "object",
+        "properties": {
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reflector": {
+            "type": "string"
+          },
+          "rotors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rings": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "plugs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grundstellung": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "DailyKeyRequest": {
+        "required": [
+          "sheetId",
+          "day"
+        ],
+        "type": "object",
+        "properties": {
+          "sheetId": {
+            "type": "string"
+          },
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DayMessageState": {
+        "required": [
+          "message",
+          "indicator",
+          "schluesselkenngruppe",
+          "schluesselkenngruppeRight",
+          "verfahrenkenngruppe",
+          "verfahrenkenngruppeRight"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "indicator": {
+            "type": "string"
+          },
+          "schluesselkenngruppe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "schluesselkenngruppeRight": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "verfahrenkenngruppe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "verfahrenkenngruppeRight": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "DayState": {
+        "required": [
+          "sheetId",
+          "network",
+          "month",
+          "day",
+          "grundstellung",
+          "table",
+          "swaps",
+          "messages"
+        ],
+        "type": "object",
+        "properties": {
+          "sheetId": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "grundstellung": {
+            "type": "string"
+          },
+          "table": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "swaps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayMessageState"
+            }
+          }
+        }
+      },
+      "ExerciseState": {
+        "required": [
+          "sheetId",
+          "network",
+          "month",
+          "day",
+          "grundstellung",
+          "schluesselkenngruppe",
+          "verfahrenkenngruppe"
+        ],
+        "type": "object",
+        "properties": {
+          "sheetId": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "grundstellung": {
+            "type": "string"
+          },
+          "schluesselkenngruppe": {
+            "type": "string"
+          },
+          "verfahrenkenngruppe": {
+            "type": "string"
+          }
+        }
+      },
+      "FindReceivingKeys": {
+        "required": [
+          "message",
+          "date"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          }
+        }
+      },
+      "FindState": {
+        "required": [
+          "rings",
+          "check"
+        ],
+        "type": "object",
+        "properties": {
+          "rings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RingScoreState"
+            }
+          },
+          "check": {
+            "$ref": "#/components/schemas/CheckState"
+          }
+        }
+      },
+      "GenerateKeySheets": {
+        "required": [
+          "model",
+          "year"
+        ],
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "year": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "HealthResponse": {
+        "required": [
+          "status",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "IndicatorRequest": {
+        "required": [
+          "schluesselkenngruppe",
+          "verfahrenkenngruppe"
+        ],
+        "type": "object",
+        "properties": {
+          "schluesselkenngruppe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "verfahrenkenngruppe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "InterceptState": {
+        "required": [
+          "id",
+          "title",
+          "date",
+          "hint"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hint": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "JackRequest": {
+        "required": [
+          "letter"
+        ],
+        "type": "object",
+        "properties": {
+          "letter": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "JoinRequest": {
+        "required": [
+          "joined"
+        ],
+        "type": "object",
+        "properties": {
+          "joined": {
+            "type": "boolean"
+          }
+        }
+      },
+      "KenngruppenbuchDocument": {
+        "required": [
+          "id",
+          "created",
+          "verfahrenkenngruppen",
+          "allotments",
+          "columns"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "verfahrenkenngruppen": {
+            "$ref": "#/components/schemas/ColumnRangeDocument"
+          },
+          "allotments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllotmentDocument"
+            }
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "KeySheetDetails": {
+        "required": [
+          "id",
+          "network",
+          "month",
+          "model",
+          "provenance",
+          "source",
+          "readOnly",
+          "days",
+          "kenngruppenbuchId",
+          "tauschtafelSetId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "provenance": {
+            "type": "string"
+          },
+          "source": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "readOnly": {
+            "type": "boolean"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyKeyDocument"
+            }
+          },
+          "kenngruppenbuchId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tauschtafelSetId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "KeySheetDocument": {
+        "required": [
+          "id",
+          "network",
+          "month",
+          "provenance",
+          "source",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "network": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "provenance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "source": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyKeyDocument"
+            }
+          },
+          "kenngruppenbuchId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tauschtafelSetId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kenngruppenbuch": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/KenngruppenbuchDocument"
+              }
+            ]
+          },
+          "tauschtafeln": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TauschtafelSetDocument"
+              }
+            ]
+          },
+          "offizier": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OfficerKeyDocument"
+              }
+            ]
+          },
+          "stab": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OfficerKeyDocument"
+              }
+            ]
+          },
+          "stichwortSetId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "wetterTafelSetId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "stichwoerter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StichwortSetDocument"
+              }
+            ]
+          },
+          "wetterTafeln": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WetterTafelSetDocument"
+              }
+            ]
+          }
+        }
+      },
+      "KeySheetSummary": {
+        "required": [
+          "id",
+          "network",
+          "month",
+          "model",
+          "provenance",
+          "source",
+          "readOnly"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "provenance": {
+            "type": "string"
+          },
+          "source": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "readOnly": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LampState": {
+        "required": [
+          "lamp",
+          "check"
+        ],
+        "type": "object",
+        "properties": {
+          "lamp": {
+            "type": "string"
+          },
+          "check": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CheckState"
+              }
+            ]
+          }
+        }
+      },
+      "LoadIntercept": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MachineState": {
+        "required": [
+          "model",
+          "reflector",
+          "rotors",
+          "rotorBox",
+          "plugs",
+          "heldKey",
+          "litLamp",
+          "appliedKey",
+          "operator",
+          "lamps"
+        ],
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "reflector": {
+            "type": "string"
+          },
+          "rotors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RotorState"
+            }
+          },
+          "rotorBox": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RotorState"
+            }
+          },
+          "plugs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "heldKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "litLamp": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "appliedKey": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AppliedKeyState"
+              }
+            ]
+          },
+          "operator": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OperatorState"
+              }
+            ]
+          },
+          "lamps": {
+            "type": "string"
+          }
+        }
+      },
+      "MenuState": {
+        "required": [
+          "links",
+          "cribLinks",
+          "testRegister",
+          "connectedLinks",
+          "loops"
+        ],
+        "type": "object",
+        "properties": {
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cribLinks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "testRegister": {
+            "type": "string"
+          },
+          "connectedLinks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "loops": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MenuStopsState": {
+        "required": [
+          "withBoard",
+          "withoutBoard"
+        ],
+        "type": "object",
+        "properties": {
+          "withBoard": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "withoutBoard": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "MessageTypeState": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "OfficerKeyDocument": {
+        "required": [
+          "days",
+          "settings"
+        ],
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyKeyDocument"
+            }
+          },
+          "settings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OperatorState": {
+        "required": [
+          "direction",
+          "step",
+          "network",
+          "kenngruppenbuchId",
+          "table",
+          "grundstellung",
+          "schluesselkenngruppe",
+          "verfahrenkenngruppe",
+          "fillers",
+          "bigrams",
+          "indicator",
+          "spruchschluesselLamps",
+          "spruchschluessel",
+          "typed",
+          "pad",
+          "expectedKey",
+          "fillersNeeded",
+          "cipherText",
+          "message",
+          "warnings"
+        ],
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "string"
+          },
+          "step": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "kenngruppenbuchId": {
+            "type": "string"
+          },
+          "table": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "grundstellung": {
+            "type": "string"
+          },
+          "schluesselkenngruppe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "verfahrenkenngruppe": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "fillers": {
+            "type": "string"
+          },
+          "bigrams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BigramSwapState"
+            }
+          },
+          "indicator": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "spruchschluesselLamps": {
+            "type": "string"
+          },
+          "spruchschluessel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "typed": {
+            "type": "string"
+          },
+          "pad": {
+            "type": "string"
+          },
+          "expectedKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "fillersNeeded": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "cipherText": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PinchRequest": {
+        "required": [
+          "sheetId",
+          "day"
+        ],
+        "type": "object",
+        "properties": {
+          "sheetId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PlacementRequest": {
+        "required": [
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PlacementState": {
+        "required": [
+          "position",
+          "crashes"
+        ],
+        "type": "object",
+        "properties": {
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "crashes": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "PlugMoveRequest": {
+        "required": [
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          }
+        }
+      },
+      "PositionRequest": {
+        "required": [
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string"
+          }
+        }
+      },
+      "PressCheckingKey": {
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PressKey": {
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          }
+        }
+      },
+      "PrintedStopState": {
+        "required": [
+          "index",
+          "chains",
+          "wheelOrder",
+          "drumLetters",
+          "indicator",
+          "testRegister",
+          "liveWires",
+          "stecker"
+        ],
+        "type": "object",
+        "properties": {
+          "index": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "chains": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "wheelOrder": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "drumLetters": {
+            "type": "string"
+          },
+          "indicator": {
+            "type": "string"
+          },
+          "testRegister": {
+            "type": "string"
+          },
+          "liveWires": {
+            "type": "string"
+          },
+          "stecker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ReadingState": {
+        "required": [
+          "left",
+          "middle",
+          "key",
+          "decrypt",
+          "fitsStop",
+          "differences",
+          "ringsRight"
+        ],
+        "type": "object",
+        "properties": {
+          "left": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "middle": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "key": {
+            "$ref": "#/components/schemas/CheckedKeyState"
+          },
+          "decrypt": {
+            "type": "string"
+          },
+          "fitsStop": {
+            "type": "boolean"
+          },
+          "differences": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ringsRight": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "ReceivingKey": {
+        "required": [
+          "sheetId",
+          "network",
+          "month",
+          "day",
+          "model",
+          "schluesselkenngruppe"
+        ],
+        "type": "object",
+        "properties": {
+          "sheetId": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "month": {
+            "type": "string"
+          },
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "model": {
+            "type": "string"
+          },
+          "schluesselkenngruppe": {
+            "type": "string"
+          }
+        }
+      },
+      "RingRowState": {
+        "required": [
+          "left",
+          "middle",
+          "spruchschluessel",
+          "indicator"
+        ],
+        "type": "object",
+        "properties": {
+          "left": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "middle": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "spruchschluessel": {
+            "type": "string"
+          },
+          "indicator": {
+            "type": "string"
+          }
+        }
+      },
+      "RingScoreState": {
+        "required": [
+          "ring",
+          "score",
+          "best"
+        ],
+        "type": "object",
+        "properties": {
+          "ring": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "score": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "best": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RingSettingRequest": {
+        "required": [
+          "ringSetting"
+        ],
+        "type": "object",
+        "properties": {
+          "ringSetting": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RingsRequest": {
+        "required": [
+          "left",
+          "middle"
+        ],
+        "type": "object",
+        "properties": {
+          "left": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "middle": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RingTableState": {
+        "required": [
+          "grundstellung",
+          "verfahrenkenngruppe",
+          "rightRing",
+          "indicator",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "grundstellung": {
+            "type": "string"
+          },
+          "verfahrenkenngruppe": {
+            "type": "string"
+          },
+          "rightRing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "indicator": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RingRowState"
+            }
+          }
+        }
+      },
+      "RotorRequest": {
+        "required": [
+          "rotor"
+        ],
+        "type": "object",
+        "properties": {
+          "rotor": {
+            "type": "string"
+          }
+        }
+      },
+      "RotorState": {
+        "required": [
+          "rotor",
+          "ringSetting",
+          "position",
+          "slot"
+        ],
+        "type": "object",
+        "properties": {
+          "rotor": {
+            "type": "string"
+          },
+          "ringSetting": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "position": {
+            "type": "string"
+          },
+          "slot": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RowRequest": {
+        "required": [
+          "rotor",
+          "upTo"
+        ],
+        "type": "object",
+        "properties": {
+          "rotor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "upTo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RunGroupState": {
+        "required": [
+          "chains",
+          "wheelOrder",
+          "testRegister",
+          "input"
+        ],
+        "type": "object",
+        "properties": {
+          "chains": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "wheelOrder": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "testRegister": {
+            "type": "string"
+          },
+          "input": {
+            "type": "string"
+          }
+        }
+      },
+      "RunRequest": {
+        "required": [
+          "speed",
+          "notebook"
+        ],
+        "type": "object",
+        "properties": {
+          "speed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "notebook": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RunState": {
+        "required": [
+          "status",
+          "speed",
+          "reflector",
+          "groups",
+          "logged",
+          "positionsTested",
+          "positions",
+          "position",
+          "pause",
+          "stops",
+          "allStops",
+          "printed",
+          "error",
+          "elapsedSeconds"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "speed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "reflector": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunGroupState"
+            }
+          },
+          "logged": {
+            "type": "boolean"
+          },
+          "positionsTested": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "positions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "position": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pause": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PrintedStopState"
+              }
+            ]
+          },
+          "stops": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "allStops": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "printed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "elapsedSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "ScramblerState": {
+        "required": [
+          "jacks",
+          "drums",
+          "start"
+        ],
+        "type": "object",
+        "properties": {
+          "jacks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "drums": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "start": {
+            "type": "string"
+          }
+        }
+      },
+      "SetCheckingMachine": {
+        "required": [
+          "reflector",
+          "drums",
+          "rings",
+          "windows"
+        ],
+        "type": "object",
+        "properties": {
+          "reflector": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "drums": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "rings": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "windows": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dummy": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "SetCipherText": {
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SetCrib": {
+        "required": [
+          "crib"
+        ],
+        "type": "object",
+        "properties": {
+          "crib": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SetMenu": {
+        "required": [
+          "links",
+          "testRegister"
+        ],
+        "type": "object",
+        "properties": {
+          "links": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "testRegister": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SetReflector": {
+        "required": [
+          "reflector"
+        ],
+        "type": "object",
+        "properties": {
+          "reflector": {
+            "type": "string"
+          }
+        }
+      },
+      "SetUpMachine": {
+        "required": [
+          "reflector",
+          "rotors",
+          "rings",
+          "plugs",
+          "positions"
+        ],
+        "type": "object",
+        "properties": {
+          "reflector": {
+            "type": "string"
+          },
+          "rotors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rings": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "plugs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "positions": {
+            "type": "string"
+          }
+        }
+      },
+      "SolutionState": {
+        "required": [
+          "reflector",
+          "wheelOrder",
+          "rings",
+          "plugs",
+          "messageKey",
+          "plaintext",
+          "notes",
+          "exercise"
+        ],
+        "type": "object",
+        "properties": {
+          "reflector": {
+            "type": "string"
+          },
+          "wheelOrder": {
+            "type": "string"
+          },
+          "rings": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "plugs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "messageKey": {
+            "type": "string"
+          },
+          "plaintext": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "exercise": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ExerciseState"
+              }
+            ]
+          }
+        }
+      },
+      "SourceState": {
+        "required": [
+          "kind",
+          "title",
+          "hint",
+          "transcript",
+          "message",
+          "hasCrib",
+          "hasSolution",
+          "hasWheelOrders",
+          "wheelOrders",
+          "hasCribPositions",
+          "cribPositions"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "hint": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "transcript": {
+            "type": "string"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasCrib": {
+            "type": "boolean"
+          },
+          "hasSolution": {
+            "type": "boolean"
+          },
+          "hasWheelOrders": {
+            "type": "boolean"
+          },
+          "wheelOrders": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "hasCribPositions": {
+            "type": "boolean"
+          },
+          "cribPositions": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CribPositionsState"
+              }
+            ]
+          }
+        }
+      },
+      "SpeedRequest": {
+        "required": [
+          "speed"
+        ],
+        "type": "object",
+        "properties": {
+          "speed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StartReceiving": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "sheetId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "StartRequest": {
+        "required": [
+          "start"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "StichwortDocument": {
+        "required": [
+          "name",
+          "word"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "word": {
+            "type": "string"
+          }
+        }
+      },
+      "StichwortSetDocument": {
+        "required": [
+          "id",
+          "year",
+          "envelopes"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "year": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "envelopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StichwortDocument"
+            }
+          }
+        }
+      },
+      "StopState": {
+        "required": [
+          "index",
+          "wheelOrder",
+          "position",
+          "indicator",
+          "testRegister",
+          "liveWires",
+          "stecker",
+          "verdict"
+        ],
+        "type": "object",
+        "properties": {
+          "index": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "wheelOrder": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "indicator": {
+            "type": "string"
+          },
+          "testRegister": {
+            "type": "string"
+          },
+          "liveWires": {
+            "type": "string"
+          },
+          "stecker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "verdict": {
+            "type": "string"
+          }
+        }
+      },
+      "SuggestedPairState": {
+        "required": [
+          "pair",
+          "gain"
+        ],
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string"
+          },
+          "gain": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "SuggestionState": {
+        "required": [
+          "pairs",
+          "steckers",
+          "decrypt"
+        ],
+        "type": "object",
+        "properties": {
+          "pairs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedPairState"
+            }
+          },
+          "steckers": {
+            "type": "string"
+          },
+          "decrypt": {
+            "type": "string"
+          }
+        }
+      },
+      "TauschtafelDocument": {
+        "required": [
+          "number",
+          "swaps"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "swaps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TauschtafelSetDocument": {
+        "required": [
+          "id",
+          "year",
+          "tables",
+          "calendar"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "year": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TauschtafelDocument"
+            }
+          },
+          "calendar": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "TestRegisterRequest": {
+        "required": [
+          "letter",
+          "input"
+        ],
+        "type": "object",
+        "properties": {
+          "letter": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "input": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "VerdictRequest": {
+        "required": [
+          "verdict"
+        ],
+        "type": "object",
+        "properties": {
+          "verdict": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "WetterkurzschluesselDocument": {
+        "required": [
+          "order",
+          "signatureLetters",
+          "tables"
+        ],
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "signatureLetters": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WetterTabelleDocument"
+            }
+          }
+        }
+      },
+      "WetterTabelleDocument": {
+        "required": [
+          "number",
+          "title",
+          "historical",
+          "columns",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "historical": {
+            "type": "boolean"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WetterZeileDocument"
+            }
+          }
+        }
+      },
+      "WetterTafelDocument": {
+        "required": [
+          "kennwort",
+          "from",
+          "until",
+          "columns"
+        ],
+        "type": "object",
+        "properties": {
+          "kennwort": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "until": {
+            "type": "string"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "WetterTafelSetDocument": {
+        "required": [
+          "id",
+          "year",
+          "issues"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "year": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WetterTafelDocument"
+            }
+          }
+        }
+      },
+      "WetterZeileDocument": {
+        "required": [
+          "heading",
+          "cells"
+        ],
+        "type": "object",
+        "properties": {
+          "heading": {
+            "type": "string"
+          },
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Machine"
+    },
+    {
+      "name": "Key sheets"
+    },
+    {
+      "name": "Key procedure"
+    },
+    {
+      "name": "Operator"
+    },
+    {
+      "name": "Bombe job"
+    },
+    {
+      "name": "Bombe machine"
+    },
+    {
+      "name": "Bombe run"
+    },
+    {
+      "name": "Checking"
+    },
+    {
+      "name": "Day traffic"
+    }
+  ]
+}

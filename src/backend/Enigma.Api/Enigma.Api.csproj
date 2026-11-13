@@ -1,7 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <PublishAot>true</PublishAot>
+    <OpenApiDocumentsDirectory>$(MSBuildThisFileDirectory)../../../docs/api</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name enigma-api</OpenApiGenerateDocumentsOptions>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Enigma.Infrastructure\Enigma.Infrastructure.csproj"/>
   </ItemGroup>

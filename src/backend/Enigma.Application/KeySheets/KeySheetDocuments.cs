@@ -18,11 +18,14 @@ public sealed record DailyKeyDocument(
     IReadOnlyList<string> Plugs,
     string? Grundstellung);
 
+/// <summary>An Offizier or Stab key: the key for each day (without Grundstellung) and the settings for A to Z.</summary>
+public sealed record OfficerKeyDocument(IReadOnlyList<DailyKeyDocument> Days, IReadOnlyList<string> Settings);
+
 /// <summary>
 ///     A key sheet file. <see cref="Provenance" /> is Historical, Generated or UserDefined; <see cref="Source" /> names
-///     the
-///     document a historical sheet was transcribed from. Imports ignore the id and provenance. An exported file also holds
-///     the linked <see cref="Kenngruppenbuch" /> and <see cref="Tauschtafeln" />, so another installation can use them.
+///     the document a historical sheet was transcribed from. Imports ignore the id and provenance. An exported file also
+///     holds the linked <see cref="Kenngruppenbuch" />, <see cref="Tauschtafeln" />, <see cref="Stichwoerter" /> and
+///     <see cref="WetterTafeln" />, so another installation can use them.
 /// </summary>
 public sealed record KeySheetDocument(
     string? Id,
@@ -36,7 +39,19 @@ public sealed record KeySheetDocument(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     KenngruppenbuchDocument? Kenngruppenbuch = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    TauschtafelSetDocument? Tauschtafeln = null);
+    TauschtafelSetDocument? Tauschtafeln = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    OfficerKeyDocument? Offizier = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    OfficerKeyDocument? Stab = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? StichwortSetId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? WetterTafelSetId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    StichwortSetDocument? Stichwoerter = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    WetterTafelSetDocument? WetterTafeln = null);
 
 public sealed record KeySheetSummary(
     string Id,
@@ -90,7 +105,9 @@ public static class KeySheetMapper
             sheet.Id, sheet.Network, sheet.Month.ToString(),
             ProvenanceName(sheet.Provenance), Source(sheet.Provenance),
             [.. sheet.DailyKeys.Select(ToDocument)],
-            sheet.KenngruppenbuchId, sheet.TauschtafelSetId);
+            sheet.KenngruppenbuchId, sheet.TauschtafelSetId,
+            Offizier: ToDocument(sheet.Offizier), Stab: ToDocument(sheet.Stab),
+            StichwortSetId: sheet.StichwortSetId, WetterTafelSetId: sheet.WetterTafelSetId);
     }
 
     /// <summary>Builds a sheet from a document. Bad data throws <see cref="DomainException" />.</summary>
@@ -107,6 +124,12 @@ public static class KeySheetMapper
             !string.IsNullOrWhiteSpace(document.TauschtafelSetId))
             sheet.Link(document.KenngruppenbuchId, document.TauschtafelSetId);
 
+        if (!string.IsNullOrWhiteSpace(document.StichwortSetId) &&
+            !string.IsNullOrWhiteSpace(document.WetterTafelSetId))
+            sheet.LinkYearly(document.StichwortSetId, document.WetterTafelSetId);
+
+        sheet.SetOfficerKeys(FromDocument(document.Offizier, "Offizier"), FromDocument(document.Stab, "Stab"));
+
         return sheet;
     }
 
@@ -121,6 +144,32 @@ public static class KeySheetMapper
             "Generated" => Provenance.Generated,
             _ => Provenance.UserDefined
         };
+    }
+
+    public static OfficerKeyDocument? ToDocument(OfficerKey? key)
+    {
+        return key is null
+            ? null
+            : new OfficerKeyDocument([.. key.Days.Select(ToDocument)],
+                [.. key.Settings.Settings.Select(s => s.ToString())]);
+    }
+
+    /// <summary>Builds the officer key <paramref name="name" /> from a document. Bad data throws <see cref="DomainException" />.</summary>
+    public static OfficerKey? FromDocument(OfficerKeyDocument? document, string name)
+    {
+        if (document is null) return null;
+
+        if (document is not { Days: not null, Settings: not null })
+            throw new DomainException($"The {name} key needs days and settings.");
+
+        try
+        {
+            return new OfficerKey([.. document.Days.Select(FromDocument)], SettingList.Parse(document.Settings));
+        }
+        catch (DomainException exception)
+        {
+            throw new DomainException($"{name}: {exception.Message}", exception);
+        }
     }
 
     private static DailyKeyDocument ToDocument(DailyKey key)

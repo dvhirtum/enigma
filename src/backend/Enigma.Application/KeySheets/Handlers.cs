@@ -94,15 +94,23 @@ public sealed class ImportKeySheetHandler(IKeySheetRepository repository, KeyShe
         var document = command.Document;
         var book = document.Kenngruppenbuch is { } bookDocument ? ProcedureMapper.FromDocument(bookDocument) : null;
         var set = document.Tauschtafeln is { } setDocument ? ProcedureMapper.FromDocument(setDocument) : null;
+        var stichwortSet = document.Stichwoerter is { } stichwortDocument
+            ? YearlyProcedureMapper.FromDocument(stichwortDocument)
+            : null;
+        var wetterTafelSet = document.WetterTafeln is { } wetterDocument
+            ? YearlyProcedureMapper.FromDocument(wetterDocument)
+            : null;
         var sheet = KeySheetMapper.FromDocument(
             document with
             {
                 KenngruppenbuchId = book?.Id ?? document.KenngruppenbuchId,
-                TauschtafelSetId = set?.Id ?? document.TauschtafelSetId
+                TauschtafelSetId = set?.Id ?? document.TauschtafelSetId,
+                StichwortSetId = stichwortSet?.Id ?? document.StichwortSetId,
+                WetterTafelSetId = wetterTafelSet?.Id ?? document.WetterTafelSetId
             },
             KeySheetIds.New(),
             Provenance.UserDefined);
-        linker.Import(book, set);
+        linker.Import(book, set, stichwortSet, wetterTafelSet);
         linker.Link(sheet);
         repository.Save(sheet);
         return KeySheetMapper.ToDetails(sheet);
@@ -122,7 +130,9 @@ public sealed class ExportKeySheetHandler(KeySheetLinker linker)
             Provenance = null,
             Source = null,
             Kenngruppenbuch = ProcedureMapper.ToDocument(linker.Book(sheet.KenngruppenbuchId!)),
-            Tauschtafeln = ProcedureMapper.ToDocument(linker.Tables(sheet.TauschtafelSetId!))
+            Tauschtafeln = ProcedureMapper.ToDocument(linker.Tables(sheet.TauschtafelSetId!)),
+            Stichwoerter = YearlyProcedureMapper.ToDocument(linker.Stichwoerter(sheet.StichwortSetId!)),
+            WetterTafeln = YearlyProcedureMapper.ToDocument(linker.WetterTafeln(sheet.WetterTafelSetId!))
         };
     }
 }

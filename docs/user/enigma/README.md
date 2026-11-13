@@ -10,3 +10,5 @@ The Enigma M3 and M4 as the Kriegsmarine used them: the machine, the monthly key
 4. [Sending by hand](sending-by-hand.md): encrypting a message yourself, step by step, with a worked example.
 5. [Receiving by hand](receiving-by-hand.md): decrypting a message yourself, plus two historical messages to try.
 6. [Operator's notebook](operator-mode.md): the same procedures with the application guiding each step.
+7. [Officer keys and the Stichwort](officer-keys.md): the Offizier, Stab and Sonder keys, the Stichwort emergency procedure, and using them by hand.
+8. [Weather short signals](weather-short-signals.md): the Wetterkurzschlüssel and its setting tables, and sending and receiving a weather report by hand.

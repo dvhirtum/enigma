@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
 var builder = WebApplication.CreateSlimBuilder(args);
-builder.WebHost.UseUrls("http://127.0.0.1:0");
+builder.WebHost.UseUrls($"http://127.0.0.1:{builder.Configuration["Api:Port"] ?? "0"}");
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, ApiJsonContext.Default));
 builder.Services.AddProblemDetails();
@@ -23,15 +23,24 @@ builder.Services.AddKeySheets(builder.Configuration);
 builder.Services.AddOperatorHandlers();
 builder.Services.AddSingleton<IBombeSessionStore, InMemoryBombeSessionStore>();
 builder.Services.AddBombeHandlers();
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer((document, _, _) =>
+{
+    document.Info.Title = "Enigma API";
+    document.Info.Description = "The backend of the Navy Enigma simulator and its Bombe, called by the Electron app.";
+    return Task.CompletedTask;
+}));
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 var version = typeof(Program).Assembly
     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
 
-app.MapGet("/api/health", () => new HealthResponse("ok", version));
+app.MapGet("/api/health", () => new HealthResponse("ok", version))
+    .WithTags("Health")
+    .WithSummary("Reports that the API is up, with its version.");
 app.MapMachineEndpoints();
 app.MapKeySheetEndpoints();
 app.MapOperatorEndpoints();
@@ -67,6 +76,7 @@ internal sealed record HealthResponse(string Status, string Version);
 [JsonSerializable(typeof(IReadOnlyList<KeySheetSummary>))]
 [JsonSerializable(typeof(KenngruppenbuchDocument))]
 [JsonSerializable(typeof(TauschtafelSetDocument))]
+[JsonSerializable(typeof(WetterkurzschluesselDocument))]
 [JsonSerializable(typeof(FindReceivingKeys))]
 [JsonSerializable(typeof(IReadOnlyList<ReceivingKey>))]
 [JsonSerializable(typeof(StartReceiving))]

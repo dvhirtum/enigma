@@ -9,7 +9,7 @@ A key sheet (Schlüsseltafel) holds one month of daily keys for one network. Ope
 - **Generate** creates a whole year for a model: one sheet per month for each network of the Kenngruppenbuch (Aegir, Hydra, Medusa, Neptun, Niobe, Sleipnir, Süd, Thetis, Tibet and Triton). The rotor order, reflector and rings change every other day; the plugs (10 pairs) and the Grundstellung change daily. A year can be generated once per model; delete its generated sheets to generate it again.
 - **Import** reads a key sheet file (JSON), such as one saved with **Export**. To make your own sheet, edit an exported file and import it.
 
-Each sheet is linked to a Kenngruppenbuch and a set of Tauschtafeln, which the [operator's notebook](operator-mode.md) uses. A network gets its own columns in the Kenngruppenbuch the first time it is used.
+Each sheet is linked to a Kenngruppenbuch and a set of Tauschtafeln, which the [operator's notebook](operator-mode.md) uses. A network gets its own columns in the Kenngruppenbuch the first time it is used. Each sheet also gets an Offizier and a Stab key, and each year a set of Stichwort envelopes and the weather short-signal tables, for use by hand: see [Officer keys and the Stichwort](officer-keys.md#trying-it-by-hand) and [Weather short signals](weather-short-signals.md). Historical and imported sheets get them the first time they are opened.
 
 ## The networks
 
@@ -62,14 +62,20 @@ The rotor positions are not part of the setup: the [indicator procedure](sending
 
 ## Printing a sheet
 
-**Print to PDF** writes the sheet with German headings, as on the originals. With **Also print the Kenngruppenbuch and Tauschtafeln** ticked, it asks for a folder and writes two PDFs there:
+**Print to PDF** writes the sheet with German headings, as on the originals. Tick the other documents you want; it then asks for a folder and writes one PDF for each there:
 
-- `<network>-<month>.pdf`, such as `Triton-1944-06.pdf`: the key sheet.
-- `Kenngruppenbuch-Tauschtafeln-<year>.pdf` (about 40 A4 pages): the Kenngruppenbuch and the Tauschtafeln. They are the same for every network and month of the year, so one copy serves all your sheets.
+| Tick box | File | Holds |
+|---|---|---|
+| | `<network>-<month>.pdf`, such as `Triton-1944-06.pdf` | The key sheet. Always printed. |
+| **Also print the Kenngruppenbuch and Tauschtafeln** (ticked at first) | `Kenngruppenbuch-Tauschtafeln-<year>.pdf` | The Kenngruppenbuch and the Tauschtafeln, about 40 A4 pages. |
+| **Also print the Offizier key** | `Offizier-<network>-<month>.pdf` | The [Offizier key](officer-keys.md#trying-it-by-hand) and its 26 settings. |
+| **Also print the Stab key** | `Stab-<network>-<month>.pdf` | The [Stab key](officer-keys.md#trying-it-by-hand) and its 26 settings. |
+| **Also print the Stichwort envelopes** | `Stichwort-<year>.pdf` | The [Stichwort](officer-keys.md#the-stichwort) rule and the year's envelopes. |
+| **Also print the Wetterkurzschlüssel** | `Wetterkurzschluessel-<year>.pdf` | The [weather short-signal book](weather-short-signals.md) and the year's setting tables. |
 
-If the folder already has files with these names, it asks before replacing them.
+The documents named by year are the same for every network and month of the year, so one copy serves all your sheets. If the folder already has files with these names, it asks before replacing them. With no box ticked, it asks where to save the key sheet only.
 
-Untick the box when you already have the Kenngruppenbuch and Tauschtafeln; it then asks where to save the key sheet only. The documents hold:
+The key sheet, Kenngruppenbuch and Tauschtafeln hold:
 
 1. **Schlüsseltafel**: the daily keys, with the last day at the top, as on the real sheets. Operators cut off and destroyed the days they had used.
 2. **Kenngruppenbuch**: the Zuteilungsliste, then two parts:
@@ -109,6 +115,6 @@ Check the Verfahrenkenngruppe the same way. Its column number must be 100 or low
 
 ## Sharing a sheet
 
-To exchange messages with someone who has the application on another computer, **Export** a sheet and give them the file (compact JSON, without whitespace). They **Import** it. The file holds the daily keys, the Kenngruppenbuch and the Tauschtafeln, so both of you use the same key, Kenngruppen and bigram tables. Messages sent by one can then be received by the other, in the operator's notebook or [by hand](receiving-by-hand.md).
+To exchange messages with someone who has the application on another computer, **Export** a sheet and give them the file (compact JSON, without whitespace). They **Import** it. The file holds the daily keys, the Kenngruppenbuch, the Tauschtafeln, the Offizier and Stab keys, the Stichwort envelopes and the weather tables, so both of you use the same keys, Kenngruppen and tables. Messages sent by one can then be received by the other, in the operator's notebook or [by hand](receiving-by-hand.md).
 
-Share further sheets the same way. When the Kenngruppenbuch is already there, importing adds the networks it lacks. The import is rejected if the file's Kenngruppenbuch or Tauschtafeln clash with the ones on the computer, for example when both sides gave the same columns to different networks. To avoid that, let one person create the sheets for everyone.
+Share further sheets the same way. When the Kenngruppenbuch is already there, importing adds the networks it lacks. The import is rejected if the file's Kenngruppenbuch, Tauschtafeln, Stichwort envelopes or weather tables clash with the ones on the computer, for example when both sides gave the same columns to different networks. To avoid that, let one person create the sheets for everyone.

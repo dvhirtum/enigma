@@ -12,16 +12,23 @@
 | Grundstellung | Starting position of the rotors, given by the daily key. |
 | Innere Einstellung | Inner settings: the reflector, rotor order and ring settings, set by an officer. |
 | Kenngruppenbuch | Indicator book: trigrams in numbered columns. |
+| Kurzsignal | Short signal: a brief report coded from a book, such as a weather short signal (WW). |
+| Offizier | Officer key: the message is encrypted on it, then again on the daily key. |
 | Ringstellung | Ring setting of a rotor, 01–26. |
 | Schlüsselkenngruppe | Trigram that identifies the network, and so the key sheet. |
 | Schlüsselkreis | Radio network sharing one key, such as Hydra or Triton. |
 | Schlüsseltafel | Key sheet: a month of daily keys. |
+| Sonderschlüssel | Special key of a single U-boat, fortress or flotilla, from November 1944. |
 | Spruchschlüssel | Message key: the rotor start for the message itself. |
+| Stab | Staff key: a higher grade of officer key. |
 | Steckerverbindungen | Plugboard connections. |
+| Stichwort | Keyword: an emergency change to the key sheet, ordered with a Stichwortbefehl. |
 | UKW (Umkehrwalze) | Reflector. |
 | Verfahrenkenngruppe | Trigram that, typed at the Grundstellung, gives the Spruchschlüssel. |
 | Walzenlage | Rotor order. |
+| Wetterkurzschlüssel | Weather short-signal book. |
 | Zuteilungsliste | Allotment of Kenngruppenbuch columns to networks. |
+| Zusatzwalze | Extra wheel: the Greek rotor of the M4. |
 
 ## Terms in the messages
 

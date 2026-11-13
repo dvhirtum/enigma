@@ -45,6 +45,7 @@ export const machineRoutes: Routes<MachineApi> = {
 
 export const procedureRoutes: Routes<ProcedureApi> = {
   getBook: (id) => ({ method: 'GET', path: `/api/kenngruppenbuecher/${segment(id)}` }),
+  getWetterkurzschluessel: () => ({ method: 'GET', path: '/api/wetterkurzschluessel' }),
   findReceivingKeys: (message, date) => ({ method: 'POST', path: `${operator}/receiving-keys`, body: { message, date } }),
 };
 

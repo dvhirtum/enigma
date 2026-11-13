@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Enigma.Application.KeySheets;
 using Enigma.Application.Machine;
+using Enigma.Application.Procedure;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Enigma.Api.Tests;
@@ -262,6 +263,41 @@ public sealed class KeySheetEndpointTests : IDisposable
         Assert.Equal(
             await sender.GetStringAsync(Url($"/api/tauschtafeln/{created.TauschtafelSetId}"), Token),
             await receiver.GetStringAsync(Url($"/api/tauschtafeln/{imported.TauschtafelSetId}"), Token));
+    }
+
+    [Fact]
+    public async Task Should_keep_the_officer_keys_of_a_historical_sheet_When_the_api_restarts()
+    {
+        // Arrange
+        var first = CreateClient();
+        var id = (await first.GetFromJsonAsync<List<KeySheetSummary>>(Url("/api/keysheets"), Token))!.Single().Id;
+        var before = await first.GetFromJsonAsync<KeySheetDocument>(Url($"/api/keysheets/{id}/export"), Token);
+
+        // Act
+        var after = await CreateClient().GetFromJsonAsync<KeySheetDocument>(Url($"/api/keysheets/{id}/export"), Token);
+
+        // Assert
+        Assert.Equal(before!.Offizier!.Settings, after!.Offizier!.Settings);
+        Assert.Equal(before.Stab!.Days[0].Plugs, after.Stab!.Days[0].Plugs);
+        Assert.Equal(before.StichwortSetId, after.StichwortSetId);
+        Assert.Equal(before.WetterTafelSetId, after.WetterTafelSetId);
+        Assert.Equal(1943, after.WetterTafeln!.Year);
+    }
+
+    [Fact]
+    public async Task Should_return_the_nine_tables_When_the_Wetterkurzschluessel_is_requested()
+    {
+        // Arrange
+        var client = CreateClient();
+
+        // Act
+        var book = await client.GetFromJsonAsync<WetterkurzschluesselDocument>(Url("/api/wetterkurzschluessel"),
+            Token);
+
+        // Assert
+        Assert.Equal(Enumerable.Range(1, 9), book!.Tables.Select(t => t.Number));
+        Assert.Equal([1, 2, 3, 4, 5, 8, 6, 7, 9], book.Order);
+        Assert.Equal(["AIQ"], book.Tables[8].Rows.Take(1).Select(r => string.Concat(r.Cells)));
     }
 
     private static Uri Url(string path)

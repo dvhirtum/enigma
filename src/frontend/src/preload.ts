@@ -39,6 +39,7 @@ const api: EnigmaApi = {
   },
   procedure: {
     getBook: (id) => invoke('procedure:getBook', id),
+    getWetterkurzschluessel: () => invoke('procedure:getWetterkurzschluessel'),
     findReceivingKeys: (message, date) => invoke('procedure:findReceivingKeys', message, date),
   },
   bombe: {

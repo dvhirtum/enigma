@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { DailyKey, KeySheet } from '../api';
 import { models } from '../machine';
-import { useMachine } from '../store';
+import { useMachine, type PrintOptions } from '../store';
 import { KeySheetSelects, provenanceLabels, shownMonth } from './KeySheetSelects';
 
 function currentYear(): number {
@@ -11,6 +11,15 @@ function currentYear(): number {
 const ring = (value: number) => String(value).padStart(2, '0');
 
 type Mode = 'view' | 'generate';
+
+/** The documents that can be printed besides the key sheet, each with its tick box. */
+const printLabels: [keyof PrintOptions, string][] = [
+  ['procedure', 'Also print the Kenngruppenbuch and Tauschtafeln'],
+  ['offizier', 'Also print the Offizier key'],
+  ['stab', 'Also print the Stab key'],
+  ['stichwort', 'Also print the Stichwort envelopes'],
+  ['wetter', 'Also print the Wetterkurzschlüssel'],
+];
 
 function GenerateForm({ onDone }: { onDone: () => void }) {
   const generate = useMachine((store) => store.generateKeySheets);
@@ -110,7 +119,7 @@ function SheetView({ sheet }: { sheet: KeySheet }) {
   const printKeySheet = useMachine((store) => store.printKeySheet);
   const deleteKeySheet = useMachine((store) => store.deleteKeySheet);
   const [deleting, setDeleting] = useState(false);
-  const [withProcedure, setWithProcedure] = useState(true);
+  const [options, setOptions] = useState<Required<PrintOptions>>({ procedure: true, offizier: false, stab: false, stichwort: false, wetter: false });
 
   return (
     <section className="sheet" aria-label={`${sheet.network} ${sheet.month}`}>
@@ -122,7 +131,7 @@ function SheetView({ sheet }: { sheet: KeySheet }) {
         <button type="button" onClick={() => void exportKeySheet()}>
           Export
         </button>
-        <button type="button" onClick={() => void printKeySheet(withProcedure)}>
+        <button type="button" onClick={() => void printKeySheet(options)}>
           Print to PDF
         </button>
         {!sheet.readOnly && (
@@ -131,10 +140,12 @@ function SheetView({ sheet }: { sheet: KeySheet }) {
           </button>
         )}
       </div>
-      <label className="sheet-option">
-        <input type="checkbox" checked={withProcedure} onChange={(event) => setWithProcedure(event.target.checked)} />
-        Also print the Kenngruppenbuch and Tauschtafeln
-      </label>
+      {printLabels.map(([option, label]) => (
+        <label key={option} className="sheet-option">
+          <input type="checkbox" checked={options[option]} onChange={(event) => setOptions({ ...options, [option]: event.target.checked })} />
+          {label}
+        </label>
+      ))}
       {deleting && (
         <p className="day-confirm" role="group" aria-label="Confirm delete">
           Delete {sheet.network} {sheet.month}?

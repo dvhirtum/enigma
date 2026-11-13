@@ -36,6 +36,6 @@ The receiver reversed the table, typed the Verfahrenkenngruppe at the same Grund
 
 At Bletchley Park, Hut 8 worked on the Navy's traffic. Alan Turing worked out the indicator procedure, and electromechanical bombes searched for the daily keys. Reconstructing the bigram tables by analysis was slow, and captured material helped a great deal: in 1941 it came from the trawler Krebs, the weather ships München and Lauenburg, and U-110.
 
-The M4 cut Bletchley Park off from the U-boat net, which it called Shark, for most of 1942. Papers recovered from U-559 in October 1942 helped break back in from December 1942.
+The M4 cut Bletchley Park off from the U-boat net, which it called Shark, for most of 1942. Papers recovered from U-559 in October 1942 helped break back in from December 1942; see [Breaking the M4](../bombe/breaking-the-m4.md). Officers had keys of their own for confidential messages; see [Officer keys and the Stichwort](officer-keys.md).
 
 The [receiving page](receiving-by-hand.md) has two real messages to decrypt: one from U-264 in November 1942, and one sent by the battleship Scharnhorst on 26 December 1943, the day she was sunk at the Battle of the North Cape.

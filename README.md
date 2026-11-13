@@ -50,3 +50,13 @@ Backend:
 dotnet test --solution Enigma.slnx
 dotnet run --project src/backend/Enigma.Api
 ```
+
+### API
+
+The API is described by an OpenAPI document. The build writes it to [`docs/api/enigma-api.json`](docs/api/enigma-api.json). When the backend runs from source (`npm start` or `dotnet run`), it listens on port 5174 and serves the document at:
+
+```
+http://127.0.0.1:5174/openapi/v1.json
+```
+
+`npm start` also prints this URL in its terminal. Run only one of `npm start` and `dotnet run` at a time, since both use port 5174. The installed app uses a random port and does not serve the document.

@@ -44,6 +44,46 @@ internal sealed class FakeTauschtafelSetRepository(params TauschtafelSet[] sets)
     }
 }
 
+internal sealed class FakeStichwortSetRepository(params StichwortSet[] sets) : IStichwortSetRepository
+{
+    public Dictionary<string, StichwortSet> Sets { get; } = sets.ToDictionary(s => s.Id);
+
+    public IReadOnlyList<StichwortSet> List()
+    {
+        return [.. Sets.Values];
+    }
+
+    public StichwortSet? Find(string id)
+    {
+        return Sets.GetValueOrDefault(id);
+    }
+
+    public void Save(StichwortSet stichwortSet)
+    {
+        Sets[stichwortSet.Id] = stichwortSet;
+    }
+}
+
+internal sealed class FakeWetterTafelSetRepository(params WetterTafelSet[] sets) : IWetterTafelSetRepository
+{
+    public Dictionary<string, WetterTafelSet> Sets { get; } = sets.ToDictionary(s => s.Id);
+
+    public IReadOnlyList<WetterTafelSet> List()
+    {
+        return [.. Sets.Values];
+    }
+
+    public WetterTafelSet? Find(string id)
+    {
+        return Sets.GetValueOrDefault(id);
+    }
+
+    public void Save(WetterTafelSet wetterTafelSet)
+    {
+        Sets[wetterTafelSet.Id] = wetterTafelSet;
+    }
+}
+
 /// <summary>A clock stopped at 1944-06-19 18:40 UTC.</summary>
 internal sealed class FixedTimeProvider : TimeProvider
 {
@@ -62,10 +102,13 @@ internal static class Linking
     public static KeySheetLinker For(
         IKeySheetRepository sheets,
         IKenngruppenbuchRepository? books = null,
-        ITauschtafelSetRepository? tables = null)
+        ITauschtafelSetRepository? tables = null,
+        IStichwortSetRepository? stichwoerter = null,
+        IWetterTafelSetRepository? wetterTafeln = null)
     {
         return new KeySheetLinker(sheets, books ?? new FakeKenngruppenbuchRepository(),
             tables ?? new FakeTauschtafelSetRepository(),
+            stichwoerter ?? new FakeStichwortSetRepository(), wetterTafeln ?? new FakeWetterTafelSetRepository(),
             new Random(1), new FixedTimeProvider());
     }
 }

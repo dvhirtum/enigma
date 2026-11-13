@@ -100,10 +100,15 @@ public sealed class KeySheetLinkerTests
         var book = Book("book", new DateTimeOffset(1943, 1, 1, 0, 0, 0, TimeSpan.Zero), "Triton");
         var newer = Book("newer", new DateTimeOffset(1944, 1, 1, 0, 0, 0, TimeSpan.Zero), "Triton");
         var set = TauschtafelSet.Generate("set", 1944, new Random(4));
+        var stichwoerter = StichwortSet.Generate("stichwoerter", 1944, new Random(4));
+        var wetterTafeln = WetterTafelSet.Generate("wetter", 1944, new Random(4));
         var linker = Linking.For(new FakeKeySheetRepository(), new FakeKenngruppenbuchRepository(book, newer),
-            new FakeTauschtafelSetRepository(set));
+            new FakeTauschtafelSetRepository(set), new FakeStichwortSetRepository(stichwoerter),
+            new FakeWetterTafelSetRepository(wetterTafeln));
         var sheet = Sheet("s", "Triton");
         sheet.Link("book", "set");
+        sheet.LinkYearly("stichwoerter", "wetter");
+        sheet.FillMissingOfficerKeys(new Random(5));
 
         // Act
         var changed = linker.Link(sheet);
@@ -193,5 +198,27 @@ public sealed class KeySheetLinkerTests
         Assert.Equal(string.Join(' ', book.Column(1)), document.Columns[0]);
         Assert.Equal(new AllotmentDocument("Triton", 101, 120), Assert.Single(document.Allotments));
         Assert.Equal(book.Column(676), back.Column(676));
+    }
+
+    [Fact]
+    public void Should_share_one_Stichwort_set_and_one_weather_table_set_When_two_sheets_of_a_year_are_linked()
+    {
+        // Arrange
+        var stichwoerter = new FakeStichwortSetRepository();
+        var wetterTafeln = new FakeWetterTafelSetRepository();
+        var linker = Linking.For(new FakeKeySheetRepository(), stichwoerter: stichwoerter, wetterTafeln: wetterTafeln);
+        var triton = Sheet("t", "Triton");
+        var hydra = Sheet("h", "Hydra", "1944-11");
+
+        // Act
+        linker.Link(triton);
+        linker.Link(hydra);
+
+        // Assert
+        Assert.Equal(1944, Assert.Single(stichwoerter.Sets.Values).Year);
+        Assert.Equal(1944, Assert.Single(wetterTafeln.Sets.Values).Year);
+        Assert.Equal((triton.StichwortSetId, triton.WetterTafelSetId), (hydra.StichwortSetId, hydra.WetterTafelSetId));
+        Assert.NotNull(triton.Offizier);
+        Assert.NotNull(hydra.Stab);
     }
 }
